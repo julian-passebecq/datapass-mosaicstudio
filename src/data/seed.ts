@@ -1,5 +1,12 @@
 /** Deterministic demonstration data, never presented as a client's real results. */
+const extensionRepository=new URL('duckdb/extensions',new URL(import.meta.env.BASE_URL,location.href)).href.replaceAll("'","''");
 export const seedSql=`
+SET custom_extension_repository = '${extensionRepository}';
+SET allow_community_extensions = false;
+INSTALL json;
+LOAD json;
+INSTALL parquet;
+LOAD parquet;
 CREATE TABLE IF NOT EXISTS operations AS
 SELECT i::INTEGER AS id,
   (1 + (i % 30))::INTEGER AS day,
