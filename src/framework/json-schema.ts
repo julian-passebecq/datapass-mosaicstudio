@@ -1,0 +1,26 @@
+/** Structural authoring schemas. Runtime validators also enforce bounds across fields and references. */
+const id={type:'string',pattern:'^[a-z][a-zA-Z0-9_-]{0,79}$',not:{enum:['constructor','prototype','__proto__']}};
+const text=(max=2000)=>({type:'string',maxLength:max});
+const scalar={type:['string','number','boolean','null'],maxLength:4000};
+const obj=(properties:Record<string,unknown>,required=Object.keys(properties))=>({type:'object',additionalProperties:false,properties,required});
+const list=(items:unknown,maxItems:number,minItems=0)=>({type:'array',items,maxItems,minItems});
+const ids=list(id,100);const finite={type:'number',minimum:-1e12,maximum:1e12};
+const common={id,label:{...text(160),minLength:1},role:{enum:['input','view']},unit:text(40)};
+const field={oneOf:[obj({...common,type:{const:'number'},default:finite,min:finite,max:finite,step:{type:'number',minimum:1e-12,maximum:1e12}},['id','label','role','type','default','min','max','step']),obj({...common,type:{const:'select'},default:{...text(160),minLength:1},options:list(obj({value:{...text(160),minLength:1},label:{...text(160),minLength:1}}),100,1)},['id','label','role','type','default','options']),obj({...common,type:{const:'toggle'},default:{type:'boolean'}},['id','label','role','type','default'])]};
+const column=obj({id,label:{...text(120),minLength:1},type:{enum:['string','number','boolean']},unit:text(40),nullable:{type:'boolean'}},['id','label','type']);
+const dataset=obj({id,title:{...text(200),minLength:1},layer:{...text(80),minLength:1},description:text(),source:{enum:['inline','derived','task']},provenance:{enum:['synthetic','user-provided','derived']},rowKey:id,columns:list(column,40,1),inputs:ids,dependsOn:list(id,50)});
+const value={oneOf:[obj({literal:scalar}),obj({field:id}),obj({dataset:id,row:{...text(160),minLength:1},column:id})]};
+const block=(type:string,props:Record<string,unknown>,required:string[])=>obj({id,type:{const:type},span:{type:'integer',minimum:1,maximum:4},title:{...text(200),minLength:1},...props},['id','type',...required]);
+const blocks={oneOf:[
+  block('text',{text:text(20000),tone:{enum:['lead','body','note']}},['text']),
+  block('metric',{value,unit:text(40),digits:{type:'integer',minimum:0,maximum:6},note:text()},['value']),
+  block('input',{field:id,control:{enum:['field','slider']}},['field']),block('table',{dataset:id,pageSize:{type:'integer',minimum:1,maximum:100}},['dataset']),
+  block('chart',{dataset:id,x:id,y:id,kind:{enum:['bar','line','scatter']},unit:text(30)},['dataset','x','y','kind']),
+  block('task',{task:id},['task']),block('catalog',{},[]),block('code',{text:text(20000),language:{...text(40),minLength:1}},['text','language']),
+  block('scene3d',{resource:id,explode:id,phase:id,camera:id,selection:id},['resource','explode','phase','camera','selection']),
+  ...['story-controls','story-figure','architecture','custom'].map(type=>block(type,{resource:id},['resource']))
+]};
+export const manifestSchema={$schema:'https://json-schema.org/draft/2020-12/schema',title:'DataPass web app v1',...obj({format:{const:'datapass.web-app'},schemaVersion:{const:1},id,version:{...text(40),minLength:1},title:{...text(160),minLength:1},description:text(),label:{...text(120),minLength:1},theme:obj({accent:{type:'string',pattern:'^#[a-fA-F0-9]{6}$'},density:{enum:['compact','comfortable']}}),fields:list(field,100),datasets:list(dataset,50),tasks:list(obj({id,label:{...text(160),minLength:1},output:id,timeoutMs:{type:'integer',minimum:100,maximum:60000}}),50),pages:list(obj({id,title:{...text(160),minLength:1},description:text(),sections:list(obj({id,title:{...text(160),minLength:1},columns:{type:'integer',minimum:1,maximum:4},blocks:list(blocks,40,1)},['id','columns','blocks']),30,1)}),20,1)})};
+export const savedStateSchema={$schema:'https://json-schema.org/draft/2020-12/schema',title:'DataPass web input snapshot v1',...obj({format:{const:'datapass.web-state'},version:{const:1},appId:id,appVersion:{...text(40),minLength:1},page:id,values:{type:'object',maxProperties:100,propertyNames:id,additionalProperties:scalar}})};
+const vector={type:'array',items:{type:'number',minimum:-1000,maximum:1000},minItems:3,maxItems:3};
+export const sceneSchema={$schema:'https://json-schema.org/draft/2020-12/schema',title:'DataPass procedural scene v1',...obj({format:{const:'datapass.scene3d'},version:{const:1},title:{...text(200),minLength:1},note:{...text(),minLength:1},entities:list(obj({id,label:{...text(160),minLength:1},description:{...text(),minLength:1}}),64,1),parts:list(obj({id,parent:{anyOf:[id,{type:'null'}]},entity:{anyOf:[id,{type:'null'}]},shape:{enum:['group','box','cylinder','sphere','cone']},size:{...vector,items:{type:'number',exclusiveMinimum:0,maximum:1000}},position:vector,rotation:vector,explode:vector,color:{type:'string',pattern:'^#[a-fA-F0-9]{6}$'},spin:obj({axis:{enum:['x','y','z']},turns:{type:'number',minimum:-10,maximum:10}})},['id','parent','entity','shape','size','position','rotation','explode','color']),128,1),cameras:list(obj({id,label:{...text(100),minLength:1},position:vector,target:vector}),12,1)})};

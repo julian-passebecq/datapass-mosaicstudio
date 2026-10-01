@@ -18,8 +18,8 @@ export class SiteRuntime {
   constructor(definition: AppDefinition) {
     this.manifest=freeze(validateDefinition(definition));
     // Source functions are not cloned or serialized. Inline data and resources are copied.
-    this.definition={manifest:this.manifest,bindings:{inline:freeze(structuredClone(definition.bindings.inline||{})),derive:{...definition.bindings.derive},tasks:{...definition.bindings.tasks}},resources:freeze(structuredClone(definition.resources||{}))};
-    this.snapshot=freeze({values:Object.fromEntries(this.manifest.fields.map(f=>[f.id,f.default])),revision:0,tasks:Object.fromEntries(this.manifest.tasks.map(t=>[t.id,{status:'idle',progress:0,message:''} satisfies TaskState]))});
+    this.definition=freeze({manifest:this.manifest,components:{...definition.components},bindings:{inline:freeze(structuredClone(definition.bindings.inline||{})),derive:{...definition.bindings.derive},tasks:{...definition.bindings.tasks}},resources:freeze(structuredClone(definition.resources||{}))});
+    this.snapshot=freeze({values:Object.fromEntries(this.manifest.fields.map(f=>[f.id,f.default])),revision:0,restoreEpoch:0,tasks:Object.fromEntries(this.manifest.tasks.map(t=>[t.id,{status:'idle',progress:0,message:''} satisfies TaskState]))});
   }
   getSnapshot=():Snapshot=>this.snapshot;
   subscribe=(listener:()=>void)=>{this.listeners.add(listener);return()=>{this.listeners.delete(listener);};};
@@ -66,9 +66,20 @@ export class SiteRuntime {
     return row?.[ref.column]??null;
   }
   diagnostics(){return this.manifest.datasets.map(d=>({id:d.id,cached:this.cache.has(d.id),derivations:this.derivations.get(d.id)||0}));}
+  private invalidateDependents(output:string){
+    const affected=new Set([output]);
+    let changed=true;while(changed){changed=false;for(const dataset of this.manifest.datasets)if(!affected.has(dataset.id)&&dataset.dependsOn.some(id=>affected.has(id))){affected.add(dataset.id);changed=true;}}
+    const tasks={...this.snapshot.tasks};let stale=false;
+    for(const task of this.manifest.tasks){if(task.output===output||!affected.has(task.output))continue;
+      const state=tasks[task.id];if(!['ready','running'].includes(state.status))continue;
+      this.runs.get(task.id)?.abort.abort();this.runs.delete(task.id);this.readyKeys.delete(task.id);this.cache.delete(task.output);
+      tasks[task.id]={status:'stale',progress:0,message:'An upstream task changed. Run this task again.'};stale=true;
+    }
+    if(stale){this.snapshot=freeze({...this.snapshot,tasks});this.emit();}
+  }
   async runTask(id:string):Promise<TaskState>{
     const task=this.manifest.tasks.find(t=>t.id===id);if(!task)throw new Error('Unknown task');
-    this.cancelTask(id);
+    this.cancelTask(id);this.invalidateDependents(task.output);
     let prepared:ReturnType<SiteRuntime['prepare']>;
     try{prepared=this.prepare(task.output);}catch(e){const state:TaskState={status:'error',message:errorText(e),progress:0};this.taskState(id,state);return state;}
     const ticket=++this.tickets,abort=new AbortController();this.runs.set(id,{ticket,key:prepared.key,abort});
@@ -98,6 +109,7 @@ export class SiteRuntime {
   cancelAll(){for(const id of [...this.runs.keys()])this.cancelTask(id);}
   save(page:string):SavedState{if(!this.manifest.pages.some(p=>p.id===page))throw new Error('Unknown page');return {format:'datapass.web-state',version:1,appId:this.manifest.id,appVersion:this.manifest.version,page,values:{...this.snapshot.values}};}
   review(source:string):SavedState{return parseSavedState(source,this.manifest);}
-  restore(value:SavedState){const checked=this.review(JSON.stringify(value));this.cancelAll();this.patch(checked.values);return checked.page;}
-  reset(){this.cancelAll();this.patch(Object.fromEntries(this.manifest.fields.map(f=>[f.id,f.default])));}
+  private stopPresentation(){this.snapshot=freeze({...this.snapshot,restoreEpoch:this.snapshot.restoreEpoch+1});this.emit();}
+  restore(value:SavedState){const checked=this.review(JSON.stringify(value));this.cancelAll();this.stopPresentation();this.patch(checked.values);return checked.page;}
+  reset(){this.cancelAll();this.stopPresentation();this.patch(Object.fromEntries(this.manifest.fields.map(f=>[f.id,f.default])));}
 }

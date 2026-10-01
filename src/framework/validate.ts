@@ -14,7 +14,7 @@ function number(v: unknown, min: number, max: number, label: string, integer = f
 export function scalar(v: unknown): v is Scalar {return v === null || typeof v === 'boolean' || (typeof v === 'string' && v.length <= 4000) || (typeof v === 'number' && Number.isFinite(v));}
 function unique(items: unknown[], label: string): Set<string> {const seen = new Set<string>(); for (const x of items) {identifier(x, label); if (seen.has(x)) throw new Error(label + ': duplicate id ' + x); seen.add(x);} return seen;}
 export function validateValue(field: Field, v: unknown): asserts v is Scalar {
-  if (field.type === 'number') number(v, field.min!, field.max!, field.id);
+  if (field.type === 'number') {number(v, field.min!, field.max!, field.id); const units=(v-field.min!)/field.step!; if(Math.abs(units-Math.round(units))>Math.max(1e-8,Math.abs(units)*Number.EPSILON*4))throw new Error(field.id+': value must follow the declared step');}
   else if (field.type === 'toggle') {if (typeof v !== 'boolean') throw new Error(field.id + ': boolean required');}
   else if (typeof v !== 'string' || !field.options!.some(o => o.value === v)) throw new Error(field.id + ': unknown option');
 }
@@ -39,8 +39,8 @@ function validateDataset(d: unknown, fieldIds: Set<string>): asserts d is Datase
   if (d.source === 'inline' && (d.inputs.length || d.dependsOn.length)) throw new Error('Inline data cannot declare compute dependencies');
 }
 const blockFields = {
-  text:['text','tone'], metric:['value','unit','digits','note'], input:['field'], table:['dataset','pageSize'], chart:['dataset','x','y','kind','unit'], task:['task'], catalog:[], code:['text','language'],
-  scene3d:['resource','explode','phase','camera','selection'], 'story-controls':['resource'], 'story-figure':['resource'], architecture:['resource'],
+  text:['text','tone'], metric:['value','unit','digits','note'], input:['field','control'], table:['dataset','pageSize'], chart:['dataset','x','y','kind','unit'], task:['task'], catalog:[], code:['text','language'],
+  scene3d:['resource','explode','phase','camera','selection'], 'story-controls':['resource'], 'story-figure':['resource'], architecture:['resource'], custom:['resource'],
 } as const;
 export const BLOCK_TYPES = Object.freeze(Object.keys(blockFields));
 function valueRef(v: unknown, manifest: Manifest): void {
@@ -55,13 +55,14 @@ function validateBlock(v: unknown, m: Manifest, columns: number): asserts v is B
   if (v.type === 'text' || v.type === 'code') {text(v.text, 'block.text', 20000, false); if (v.type === 'code') text(v.language, 'code.language', 40); else if (v.tone !== undefined) oneOf(v.tone, ['lead','body','note'], 'text.tone');}
   if (v.type === 'metric') {valueRef(v.value, m); if (v.unit !== undefined) text(v.unit, 'metric.unit', 40, false); if (v.note !== undefined) text(v.note, 'metric.note', 2000, false); if (v.digits !== undefined) number(v.digits, 0, 6, 'metric.digits', true);}
   if (v.type === 'input' && !m.fields.some(f => f.id === v.field)) throw new Error('Unknown block input');
+  if (v.type === 'input' && v.control !== undefined) {oneOf(v.control, ['field','slider'], 'input.control'); if(v.control==='slider' && m.fields.find(f=>f.id===v.field)?.type!=='number') throw new Error('Slider needs a numeric field');}
   if (v.type === 'table' || v.type === 'chart') {
     const d = m.datasets.find(d => d.id === v.dataset); if (!d) throw new Error('Unknown block dataset');
     if (v.type === 'table' && v.pageSize !== undefined) number(v.pageSize, 1, 100, 'table.pageSize', true);
     if (v.type === 'chart') {oneOf(v.kind, ['bar','line','scatter'], 'chart.kind'); const x=d.columns.find(c => c.id === v.x), y=d.columns.find(c => c.id === v.y); if (!x || y?.type !== 'number' || (v.kind !== 'bar' && x.type !== 'number')) throw new Error('Invalid chart encoding types'); if (v.unit !== undefined) text(v.unit, 'chart.unit', 30, false);}
   }
   if (v.type === 'task' && !m.tasks.some(t => t.id === v.task)) throw new Error('Unknown task block');
-  if (['scene3d','story-controls','story-figure','architecture'].includes(v.type as string)) identifier(v.resource, 'block.resource');
+  if (['scene3d','story-controls','story-figure','architecture','custom'].includes(v.type as string)) identifier(v.resource, 'block.resource');
   if (v.type === 'scene3d') for (const key of ['explode','phase','camera','selection']) {const f=m.fields.find(f => f.id === v[key]); if (!f || f.role !== 'view' || (['explode','phase'].includes(key) ? f.type !== 'number' || f.min! < 0 || f.max! > 1 : f.type !== 'select')) throw new Error('Scene controls must reference bounded view fields');}
 }
 export function validateManifest(value: unknown): Manifest {
@@ -96,6 +97,7 @@ export function validateDefinition(d: AppDefinition): Manifest {
   }
   for(const t of manifest.tasks) if(typeof d.bindings.tasks?.[t.id]!=='function') throw new Error('Missing trusted task binding: '+t.id);
   for(const b of manifest.pages.flatMap(p=>p.sections.flatMap(s=>s.blocks))) {
+    if(b.type==='custom'){if(typeof d.components?.[b.resource]!=='function')throw new Error('Missing trusted custom component: '+b.resource);continue;}
     const resource=b.type==='scene3d'?d.resources?.scenes:b.type==='architecture'?d.resources?.architectures:b.type==='story-controls'||b.type==='story-figure'?d.resources?.stories:null;
     if('resource' in b && (!resource || !Object.hasOwn(resource,b.resource))) throw new Error('Missing resource: '+b.resource);
   }
