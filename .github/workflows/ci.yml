@@ -93,16 +93,3 @@ jobs:
             test-results/
             playwright-report/
           retention-days: 3
-      - name: Preserve public development dependencies for isolated local diagnosis
-        if: always() && github.ref == 'refs/heads/feat/studio2-framework-kit'
-        run: |
-          if test -d node_modules && test -d .upstream; then
-            tar -czf studio-development.tar.gz node_modules .upstream .generated public package-lock.json package.json
-          fi
-      - uses: actions/upload-artifact@v4
-        if: always() && github.ref == 'refs/heads/feat/studio2-framework-kit'
-        with:
-          name: studio-development-capsule
-          path: studio-development.tar.gz
-          retention-days: 1
-          if-no-files-found: ignore
