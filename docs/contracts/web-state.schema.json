@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataPass web input snapshot v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "datapass.web-state"
+    },
+    "version": {
+      "const": 1
+    },
+    "appId": {
+      "type": "string",
+      "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+      "not": {
+        "enum": [
+          "constructor",
+          "prototype",
+          "__proto__"
+        ]
+      }
+    },
+    "appVersion": {
+      "type": "string",
+      "maxLength": 40,
+      "minLength": 1
+    },
+    "page": {
+      "type": "string",
+      "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+      "not": {
+        "enum": [
+          "constructor",
+          "prototype",
+          "__proto__"
+        ]
+      }
+    },
+    "values": {
+      "type": "object",
+      "maxProperties": 100,
+      "propertyNames": {
+        "type": "string",
+        "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+        "not": {
+          "enum": [
+            "constructor",
+            "prototype",
+            "__proto__"
+          ]
+        }
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "number",
+          "boolean",
+          "null"
+        ],
+        "maxLength": 4000
+      }
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "appId",
+    "appVersion",
+    "page",
+    "values"
+  ]
+}
