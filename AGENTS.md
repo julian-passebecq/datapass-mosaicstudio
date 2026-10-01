@@ -14,3 +14,12 @@ Read README and docs/ARCHITECTURE.md before changing code.
 10. Keep CI bounded and avoid duplicate or scheduled expensive jobs. No deployment, extra infrastructure or hosted compute without user authorization.
 11. The Git-based donor cache records a source pin; the marker alone is not a security audit of subsequent local edits. Review pin changes deliberately.
 12. Core runtime source modules are not published npm packages yet. Promote shared libraries only after a second real consumer proves the boundary.
+
+## Source website SDK
+
+13. Read docs/AI_SITE_AUTHORING.md and docs/FRAMEWORK_KIT.md for client websites. Client content/calculations/assets live under clients/<id>; do not change src/framework to create an ordinary client.
+14. The workbench build allowlists three public reference clients. Use build:client for a selected site. Never auto-add private client folders to the review registry or copy the workbench public directory into client builds.
+15. Dataset layers are metadata, not a lakehouse. Small client bindings are not another SQL/Mosaic engine. Imported state is inert; only repository-owned source can register custom components/tasks.
+16. Keep one original VizForge story controller for coordinated views. Three renderer interpolation is not a second story timer. Pause on restore/reset/hidden/unmount/reduced motion.
+17. Validate task output rows; invalidate downstream task results and reject late/superseded responses. No reference result is client or scientific evidence.
+18. Run contracts:check, client:check, original visual-contract checks, both browser gates and selected-client build isolation before describing this as qualified. Do not substitute generated JSON Schemas for runtime semantic validation.

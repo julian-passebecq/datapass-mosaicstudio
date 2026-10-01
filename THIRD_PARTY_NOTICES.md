@@ -9,3 +9,5 @@ The two DataPass visual source repositories are commit-pinned in `upstreams.lock
 The source installer keeps donor checkouts in ignored `.upstream/`. It does not commit their entire repositories, archived overlays, private-client assets or dependency trees. Only selected source entrypoints are imported into the application build. The generated Fluent bridge references official public SVG icon modules; it does not copy icon geometry or distribute font files.
 
 The complete SQL parser is prebundled without dropping dialects. Its generated ESM keeps legal comments. Core library attribution and source pins must survive any packaging or later extraction.
+
+- **Three.js / OrbitControls** (MIT), pinned as the `three` dependency: actual WebGL2 scene rendering and orbit/pan/zoom controls. The client scene grammar and procedural example are DataPass code; no external CAD/model asset was imported in this pass.

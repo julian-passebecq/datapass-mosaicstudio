@@ -1,79 +1,83 @@
 # DataPass MosaicStudio
 
-Web-first Studio 2: actual SQLRooms + DuckDB-WASM + UWData Mosaic, with the existing DataPass VizForge and ConceptMotion engines. This is an implemented integration foundation, not a complete Streamlit-compatible Python framework.
+Web-first application framework and analytical workbench. The v0.2 **source SDK** lets a client own its pages, content, data and models under `clients/<id>/`, while Studio owns reusable state, layouts and renderers. It is not a published npm package, a notebook IDE or a source-compatible Streamlit clone.
 
-Work is isolated on `feat/sqlrooms-studio2-foundation`. The original Studio, Mosaic Workbench, Factory, Data X-ray, Hop and VS Code repositories are not replaced or modified.
+Development is isolated on `feat/studio2-framework-kit`, based on the qualified architecture/foundation branches. No original Studio, Mosaic, Factory, Hop, Data X-ray or VS Code repository is replaced.
 
-## Run
+## Build a client website
 
-Node 22.16+ and Git are required for development. Python is not required to use the web app. The first source setup needs network access to npm and the commit-pinned public donor repositories.
+Node 22.16+, npm and Git are required. Initial setup retrieves public, commit-pinned visual-engine sources. Python is not a website runtime requirement.
 
 ```sh
-npm install
+npm ci
+npm run client:new -- my-client --title "Client project"
 npm run dev
+# Open ?app=my-client at the printed address
+npm run client:check -- my-client
+npm run build:client -- my-client
 ```
 
-Once `package-lock.json` is committed by the successful first qualification run, use `npm ci` instead of `npm install`.
+The isolated output is `dist-clients/my-client/`. No deployment occurs. Use `--custom` with `client:new` to include a client-owned TSX component. Scaffolding refuses existing folders. The default production review build includes only the three public reference clients, not every client directory.
 
-```sh
-npm test
-npm run build
-npm run preview
-```
+Start with [AI authoring](docs/AI_SITE_AUTHORING.md), [component catalog](docs/contracts/components.json), [framework scope](docs/FRAMEWORK_KIT.md) and [new-client work order](docs/AI_CLIENT_BRIEF.md).
 
-`build` retrieves exact upstream commits, prepares same-origin WASM/worker assets, type-checks real source and builds with Vite. It never fetches private DataPass repositories or client files. Do not use `--legacy-peer-deps` to bypass incompatible packages.
+## Reference acceptance clients
 
-## Implemented surfaces
+Open `?sites=1`, or select a client directly:
 
-| Surface | Actual engine and behavior |
+| Client | Exercises |
 |---|---|
-| Data explorer | Open CSV/JSON/Parquet locally; actual DuckDB rows, schema, on-demand SUMMARIZE, Parquet file metadata; paginated preview and CSV export |
-| Linked views | Actual SQLRooms Mosaic slice and one UWData coordinator shared by charts and table; scatter brushing and region selection |
-| SQL workspace | SQLRooms' existing tabbed editor, real DuckDB SQL, result limits and explicit run/cancel controls |
-| Pipeline designer | React Flow canvas, editable/movable activities, dependencies, cycle diagnostics, bounded ADF/Fabric JSON import, source inspector and DataPass JSON export |
-| Visual stories | Original VizForge StoryView/StoryPlayer and D3 renderers, not a reimplementation |
-| Concept lab | Original ConceptMotion semantic renderer and canonical algorithm frames, with manual/playback controls and reduced-motion behavior |
-| Project board | Session-local Kanban consumer with keyboard-accessible status editing and explicit draft export |
+| `?app=wind-reference` | Real Three.js assembly, camera/part selection, explode/phase, original VizForge shared story, indicative scenario model and explicit tasks |
+| `?app=operations-reference` | Input filters, cached derived indicators, original D3 chart, sorted/paginated table, CSV and dataset contracts |
+| `?app=architecture-reference` | Existing architecture review, declared dependencies, schema snapshots, presentation and report exports |
 
-The default renewable-operations data is deliberately synthetic. Software execution is real; the values are not client measurements.
+All three are **synthetic framework acceptance clients**, not final customer websites or validated domain models. Their client-only routes do not initialize DuckDB/SQLRooms. `build:client` selects a single source graph/public directory and avoids copying the workbench WASM assets.
 
-## Web applications, not only a workbench
+## Reusable website blocks
 
-The selected module can be opened directly with `?module=linked`, `?module=pipeline`, `?module=stories`, `?module=explain`, `?module=sql`, `?module=board` or `?module=explore`.
+Text, code, metrics, validated inputs/sliders, tables, charts, tasks, data catalog, 3D scenes, coordinated story controls/figures, architecture and trusted custom React components. Definitions are inert; executable calculations and custom components stay in trusted source. JSON Schemas help authors; runtime validators enforce semantic references and bounds.
 
-`?module=explain&embed=1` and `?module=stories&embed=1` render narrative views without creating a RoomStore or initializing DuckDB. They can be composed into a portfolio, documentation page or client website. Data modes retain the shared database host. This is browser composition, not a qualified VSIX/Electron adapter or SSR integration.
+Typed small-data bindings declare input and upstream dependencies. UI/camera changes do not invalidate unrelated model calculations. Explicit async tasks support progress, cancellation, timeouts and stale-result rejection. Saved inputs are exported/restored through a review dialog; they do not contain dataset files or computed task results.
 
-## Data and execution boundaries
+## Original analytical workbench remains
 
-- Files are opened into the browser session, with a 64 MiB per-file cap. Import currently loads a file into an in-memory table: this is **not** a promise of zero-copy or lazy multi-gigabyte Parquet access.
-- Reloading discards imported data and unsaved application state. Draft exports are explicit. The full draft format has no import/restore implementation yet; pipeline JSON has its own validated round trip.
-- SQL is intentionally real and may modify the in-memory database. Original source files are not overwritten.
-- The pipeline canvas does **not** run ADF, Airflow, Hop, Fabric or arbitrary imported source code. Its exported document is not an Azure deployment artifact. Only bundled demo queries may be opened for explicit review/run in the SQL editor.
-- Browser DuckDB is not DuckLake. No DuckLake catalog, Python kernel, native filesystem, authentication, cloud scheduler, collaboration or deployment service is supplied here.
-- No runtime CDN is required: WASM and workers are copied to same-origin assets. Production preview carries a restrictive CSP; `_headers` is generated for compatible static hosts. Inspect hosting headers before publishing.
+Open the root without `app` or `sites`. Existing modules are unchanged in scope:
 
-## Reuse, not a restart
+- SQLRooms + DuckDB-WASM data explorer, local CSV/JSON/Parquet, schema/profile, paginated rows and CSV.
+- Actual SQLRooms SQL editor and UWData Mosaic coordinated filtering.
+- React Flow pipeline designer and bounded inert ADF/Fabric/DataPass imports; no orchestrator is run.
+- Original VizForge visual stories and ConceptMotion semantic explanations.
+- Project Kanban and architecture-review workspace.
 
-`upstreams.lock.json` records the exact source commits. `scripts/bootstrap-upstreams.mjs` verifies fetched Git identities and keeps sources in ignored `.upstream/`. Selected source imports are intentional; entire donor apps are not bundled as iframes.
+Direct workbench routes use `?module=explore`, `linked`, `sql`, `pipeline`, `stories`, `explain`, `board` or `architecture`. Narrative/architecture standalone views also accept `&embed=1`. Workbench import limits remain 64 MiB per data file; data is materialized in browser memory, not lazy multi-gigabyte remote access. Reloading discards imported workbench data and unsaved state.
 
-- VizForge: `Fluent2_J_Viz/src/adapters/react.tsx`, its story engine, D3 renderers and example specifications.
-- ConceptMotion: `project/conceptmotion_studio/packages/{core,svg,react}` and the canonical algorithm visual definitions.
-- SQLRooms: actual shell/database/Mosaic/editor packages; example source audited separately.
-- Fluent: genuine Fluent v9 controls. The compact application shell is DataPass CSS, not a claim that every layout primitive is an official Fluent component.
+## Boundaries and provenance
 
-See [architecture](docs/ARCHITECTURE.md), [source/example audit](docs/UPSTREAM_AUDIT.md), [host roadmap](docs/HOST_PORTS.md) and [third-party notes](THIRD_PARTY_NOTICES.md).
+- SQLRooms owns its database/editor/layout infrastructure. UWData Mosaic owns cross-filter query coordination.
+- VizForge owns analytical grammar/D3/StoryPlayer; ConceptMotion owns semantic explanations. Pins in `upstreams.lock.json` are retained.
+- Three.js owns WebGL2 rendering. The scene block currently describes primitives, not GLTF/CAD/physics/video generation.
+- Bronze/Silver/Gold are optional metadata layers, not DuckLake/Delta tables.
+- `createJsonTask` is a bounded same-origin transport adapter, not an implemented/hosted Python service. A real service must independently validate, authorize and limit work.
+- No remote Parquet, X-ray port, DuckLake, notebook server, native host, authentication, cloud deployment manager or automatic publication is added here.
+- Client build isolation does not prevent a developer from explicitly importing private data into source. Review every public bundle and exported input file before sharing.
+
+See [workbench architecture](docs/ARCHITECTURE.md), [architecture review](docs/ARCHITECTURE_REVIEW.md), [upstream audit](docs/UPSTREAM_AUDIT.md), [native host boundaries](docs/HOST_PORTS.md) and [notices](THIRD_PARTY_NOTICES.md).
 
 ## Qualification
 
-Core tests, strict TypeScript checks, production builds and real Chromium interactions are separate gates. The workflow is bounded to one job, 12 minutes and three-day evidence retention. It does not deploy anything. The first successful run records its genuinely generated npm lock on this feature branch only, with a non-force push. No automatic merge is configured.
-
 ```sh
+npm run contracts:check
+npm test
+npm run build
+npm run client:check
+npm run test:visual-contracts
 python -m pip install duckdb==1.4.3
 npm run test:fixtures
 npx playwright install chromium
 npm run test:browser
+npm run test:client-builds
 ```
 
-Python DuckDB is used only to create tiny synthetic Parquet test fixtures, not as the application runtime. Browser tests navigate the real built app, perform file imports, execute SQL, interact with graphs, use original visual engines and inspect actual downloads. See each run's `studio-web-evidence` artifact; a workflow definition alone is not a passing test result.
+Python DuckDB creates tiny synthetic test fixtures only. The browser gate opens real production HTTP pages; the target-build gate builds and opens all reference clients plus a fresh TSX scaffold, verifies source files stayed unchanged, and checks that unrelated clients/WASM are absent. Physical GPU/mobile/Safari/Firefox support is not inferred from hosted Chromium/software rendering.
 
-Do not describe this as a complete notebook platform, full Data X-ray port, or universal Streamlit replacement. The next useful work is to connect another real client and reuse existing pure lineage/data contracts, not recreate editors, orchestration backends or a second visualization engine.
+Consult the exact GitHub Actions run before claiming the complete gate passed. The bounded workflow preserves source, builds, screenshots and failure evidence, and never deploys or merges. The first successful framework run records the genuine npm lock and generated schemas; subsequent runs use the frozen lock and schema drift checks.

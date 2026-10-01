@@ -9,5 +9,5 @@
       "@datapass/content":[".upstream/conceptmotion/project/conceptmotion_studio/packages/content/src/index.ts"]
     }
   },
-  "include":["src","vite.config.ts"]
+  "include":["src","clients","vite.config.ts","vite.client.config.ts","scripts/client-plugin.ts"]
 }
