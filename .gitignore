@@ -2,9 +2,15 @@ node_modules/
 dist/
 .upstream/
 .tmp-upstream/
+.generated/
 test-results/
 playwright-report/
 *.tar.gz
 .env
 .env.*
 !.env.example
+public/duckdb/
+public/vendor/
+public/_headers
+tests/fixtures/*.parquet
+qa/*.json

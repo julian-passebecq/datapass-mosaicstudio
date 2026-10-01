@@ -1,0 +1,17 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {identifier,literal,pageQuery,tableId,displayValue,toCsv,RevisionGate} from '../src/core/queries.ts';
+import {safeRelativePath,browserCapabilities} from '../src/core/host.ts';
+import {demoPipeline,validatePipeline,pipelineIssues,parsePipeline} from '../src/core/pipeline.ts';
+test('query names and values cannot escape quoting',()=>{assert.equal(identifier('a"b'),'"a""b"');assert.equal(literal("a'b"),"'a''b'");assert.throws(()=>identifier('a\0b'));});
+test('row pages are bounded',()=>{assert.equal(pageQuery('sales',100,100),'SELECT * FROM "sales" LIMIT 100 OFFSET 100');for(const n of [-1,NaN,1.5])assert.throws(()=>pageQuery('sales',n));assert.throws(()=>pageQuery('sales',0,501));});
+test('import IDs are safe and collision-separated',()=>{assert.match(tableId('../Sales 2026.csv',2),/^data_2_[a-zA-Z0-9_]+$/);assert.notEqual(tableId('sales.csv',1),tableId('sales.csv',2));});
+test('bigint and null display do not crash',()=>{assert.equal(displayValue(9007199254740993n),'9007199254740993');assert.match(displayValue({a:1n}),/"1"/);});
+test('CSV is quoted and defuses spreadsheet formulas',()=>{const csv=toCsv(['name'],[{name:'=HYPERLINK("bad")'}]);assert.ok(csv.includes("'=HYPERLINK"));assert.ok(csv.includes('""bad""'));});
+test('late results cannot replace newer requests',()=>{const gate=new RevisionGate(),old=gate.next(),current=gate.next();assert.equal(gate.current(old),false);assert.equal(gate.current(current),true);gate.invalidate();assert.equal(gate.current(current),false);});
+test('browser host does not pretend to have native or Python features',()=>{assert.equal(browserCapabilities.nativeDuckLake,false);assert.equal(browserCapabilities.pythonKernel,false);});
+test('source paths are capability-safe',()=>{assert.ok(safeRelativePath('models/sales.sql'));for(const p of ['../secrets','/tmp/a','C:\\x','https://x','a//b'])assert.equal(safeRelativePath(p),false);});
+test('pipeline source data is cloned and contains no executable fields',()=>{const result=validatePipeline(demoPipeline);result.activities[0].name='Changed';assert.notEqual(result.activities[0].name,demoPipeline.activities[0].name);assert.throws(()=>validatePipeline({...demoPipeline,onLoad:'run()'}));});
+test('cycles are reported rather than executed',()=>{const p=structuredClone(demoPipeline);p.dependencies.push({id:'loop',from:'publish',to:'landing',condition:'Succeeded'});assert.match(pipelineIssues(p)[0],/cycle/);});
+test('ADF definitions retain conditions and nested source locations',()=>{const p=parsePipeline(JSON.stringify({name:'daily',properties:{activities:[{name:'load',type:'Copy'},{name:'loop',type:'ForEach',dependsOn:[{activity:'load',dependencyConditions:['Succeeded']}],typeProperties:{activities:[{name:'query',type:'Script'}]}}]}}));assert.equal(p.activities.length,3);assert.ok(p.dependencies.some(e=>e.condition==='contains'));assert.match(p.activities[2].sourcePath,/typeProperties.activities/);});
+test('malformed and oversized imports fail before state changes',()=>{assert.throws(()=>parsePipeline('{'));assert.throws(()=>parsePipeline(' '.repeat(2*1024*1024+1)));assert.throws(()=>parsePipeline(JSON.stringify({activities:[{name:'x',type:'Copy',dependsOn:[{activity:'absent'}]}]})));});

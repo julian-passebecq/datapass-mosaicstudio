@@ -1,7 +1,48 @@
 {
- "name":"datapass-mosaicstudio","version":"0.1.0","private":true,"type":"module","engines":{"node":">=22.16.0"},
- "scripts":{"dev":"vite --host 127.0.0.1","bootstrap":"node scripts/bootstrap-upstreams.mjs","typecheck":"tsc --noEmit","test":"node --test tests/*.test.mjs","build":"npm run bootstrap && npm run typecheck && vite build","preview":"vite preview --host 127.0.0.1","test:browser":"playwright test"},
- "overrides":{"@duckdb/duckdb-wasm":"1.32.0"},
- "dependencies":{"@sqlrooms/duckdb":"0.29.0-rc.7","@sqlrooms/mosaic":"0.29.0-rc.7","@sqlrooms/room-shell":"0.29.0-rc.7","@sqlrooms/sql-editor":"0.29.0-rc.7","@sqlrooms/ui":"0.29.0-rc.7","@fluentui/react-components":"9.74.5","@xyflow/react":"12.8.5","d3":"7.9.0","d3-sankey":"0.12.3","lucide-react":"0.555.0","react":"19.2.8","react-dom":"19.2.8","zod":"3.24.2"},
- "devDependencies":{"@playwright/test":"1.63.0","@tailwindcss/vite":"4.1.18","@types/d3":"7.4.3","@types/d3-sankey":"0.12.4","@types/node":"22.13.10","@types/react":"19.2.18","@types/react-dom":"19.2.7","@vitejs/plugin-react":"5.0.3","tailwindcss":"4.1.18","typescript":"5.9.2","vite":"7.1.5"}
+  "name": "datapass-mosaicstudio",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {"node": ">=22.16.0"},
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "predev": "npm run bootstrap && node scripts/prepare-assets.mjs",
+    "bootstrap": "node scripts/bootstrap-upstreams.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node --experimental-strip-types --test tests/*.test.mjs",
+    "build": "npm run bootstrap && node scripts/prepare-assets.mjs && npm run typecheck && vite build",
+    "preview": "vite preview --host 127.0.0.1",
+    "test:browser": "playwright test",
+    "test:fixtures": "python scripts/make-test-fixtures.py"
+  },
+  "overrides": {"@duckdb/duckdb-wasm": "1.32.0"},
+  "dependencies": {
+    "@sqlrooms/duckdb": "0.29.0-rc.7",
+    "@sqlrooms/mosaic": "0.29.0-rc.7",
+    "@sqlrooms/room-shell": "0.29.0-rc.7",
+    "@sqlrooms/sql-editor": "0.29.0-rc.7",
+    "@sqlrooms/ui": "0.29.0-rc.7",
+    "@fluentui/react-components": "9.74.5",
+    "@xyflow/react": "12.8.5",
+    "d3": "7.9.0",
+    "d3-sankey": "0.12.3",
+    "lucide-react": "0.555.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "zod": "3.24.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@tailwindcss/vite": "4.1.18",
+    "@types/d3": "7.4.3",
+    "@types/d3-sankey": "0.12.4",
+    "@types/node": "22.13.10",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "@vitejs/plugin-react": "5.0.3",
+    "tailwindcss": "4.1.18",
+    "typescript": "5.9.2",
+    "vite": "7.1.5",
+    "esbuild": "0.25.12"
+  }
 }
