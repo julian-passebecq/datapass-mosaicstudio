@@ -1,0 +1,20 @@
+import {test,expect} from '@playwright/test';
+import {readFile} from 'node:fs/promises';
+test('restore preserves manual 3D values across a different shared-story index',async({page},info)=>{
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});await page.goto('/?app=wind-reference');await expect(page.locator('.site-render-status')).toHaveText('3D ready');
+  await page.getByRole('button',{name:'Next shared scene'}).click();
+  await page.getByLabel('Camera preset',{exact:true}).selectOption('iso');
+  await page.getByRole('group',{name:'Select model component'}).getByRole('button',{name:'Tower',exact:true}).click();
+  await page.locator('.site-session summary').click();const download=page.waitForEvent('download');await page.getByRole('button',{name:'Export inputs',exact:true}).click();const saved=JSON.parse(await readFile((await(await download).path())!,'utf8'));expect(saved.values.storyStep).toBe(1);expect(saved.values.selection).toBe('tower');
+  await page.locator('.site-session summary').click();
+  await page.getByRole('button',{name:'Next shared scene'}).click();await expect(page.getByTestId('scene3d')).toHaveAttribute('data-selection','generator');
+  await page.getByLabel('Restore saved site inputs').setInputFiles({name:'inputs.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify(saved))});
+  await page.getByRole('button',{name:'Apply saved inputs',exact:true}).click();
+  await expect(page.locator('.site-story-figure')).toHaveAttribute('data-scene','rotor-focus');
+  await expect(page.getByTestId('scene3d')).toHaveAttribute('data-selection','tower');
+  await expect(page.getByTestId('scene3d')).toHaveAttribute('data-camera','iso');await page.getByRole('button',{name:'Next shared scene'}).click();
+  await expect(page.locator('.site-story-controls h2')).toHaveText('Open the nacelle');
+  await expect(page.locator('canvas[data-renderer=three-webgl2]')).toHaveAttribute('data-animating','false');
+  await page.screenshot({path:info.outputPath('framework-3d-d3-connected.png'),fullPage:true});
+  expect(errors).toEqual([]);
+});

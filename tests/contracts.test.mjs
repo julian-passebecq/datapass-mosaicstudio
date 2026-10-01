@@ -1,0 +1,15 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFile} from 'node:fs/promises';
+import {chartInput} from '../src/framework/chart-input.ts';
+import {manifestSchema,savedStateSchema,sceneSchema} from '../src/framework/json-schema.ts';
+import {componentCatalog} from '../src/framework/catalog.ts';
+const dataset={id:'chart',title:'Chart',description:'Example',provenance:'synthetic',rowKey:'id',columns:[{id:'id',label:'ID',type:'string'},{id:'x',label:'X',type:'number'},{id:'y',label:'Y',type:'number'}]};
+const block={id:'chart',type:'chart',dataset:'chart',x:'x',y:'y',kind:'line'};
+test('chart adapter emits existing VizForge grammar rather than geometry',()=>{const v=chartInput(block,dataset,[{id:'a',x:1,y:2},{id:'b',x:2,y:4}]);assert.equal(v.input.type,'time-series');assert.equal(v.input.data[0].entity,'series');assert.ok(!('path' in v.input));});
+test('chart adapter does not bridge null observations',()=>{assert.ok(chartInput(block,dataset,[{id:'a',x:1,y:null}]).note.includes('missing'));});
+test('duplicate X values require explicit aggregation',()=>{assert.ok(chartInput(block,dataset,[{id:'a',x:1,y:2},{id:'b',x:1,y:3}]).note.includes('one row'));});
+test('ranking adapter is bounded and cannot hide negative values',()=>{assert.ok(chartInput({...block,kind:'bar'},dataset,[{id:'a',x:1,y:-2}]).note);assert.ok(chartInput({...block,kind:'bar'},dataset,Array.from({length:31},(_,i)=>({id:'r'+i,x:i,y:i}))).note);});
+test('empty charts are valid and explicit',()=>{assert.deepEqual(chartInput(block,dataset,[]),{input:null,note:''});});
+test('generated schemas and catalog are stable',async()=>{for(const [file,value] of Object.entries({'web-app.schema.json':manifestSchema,'web-state.schema.json':savedStateSchema,'scene3d.schema.json':sceneSchema,'components.json':componentCatalog})){assert.equal(await readFile('docs/contracts/'+file,'utf8'),JSON.stringify(value,null,2)+'\n');}});
+test('manifest schema covers the same block discriminators as the registry catalog',()=>{const schemas=manifestSchema.properties.pages.items.properties.sections.items.properties.blocks.items.oneOf;assert.deepEqual(schemas.map(s=>s.properties.type.const).sort(),componentCatalog.map(c=>c.type).sort());});

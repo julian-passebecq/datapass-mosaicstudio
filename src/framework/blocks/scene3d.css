@@ -1,0 +1,6 @@
+/* Range inputs have an intrinsic width. Keep all three controls inside their
+   grid cells instead of clipping the camera select at narrow viewport widths. */
+.studio-site .site-scene-controls{grid-template-columns:repeat(3,minmax(0,1fr))}
+.studio-site .site-scene-controls label{min-width:0}
+.studio-site .site-scene-controls input[type=range],
+.studio-site .site-scene-controls select{width:100%;min-width:0;max-width:100%}

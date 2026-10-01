@@ -16,3 +16,9 @@ public/_headers
 public/THIRD_PARTY_NOTICES.md
 tests/fixtures/*.parquet
 qa/*.json
+
+dist-clients/
+qa/client-manifests/
+qa/client-builds/
+qa/*.tap
+clients/acceptance-fresh/
