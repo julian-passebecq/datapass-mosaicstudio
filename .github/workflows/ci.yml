@@ -30,8 +30,16 @@ jobs:
         run: |
           python -m pip install duckdb==1.4.3
           npm run test:fixtures
-      - name: Install Chromium
-        run: npx playwright install --with-deps chromium
+      - name: Select and record a real browser
+        run: |
+          browser="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if test -n "$browser"; then
+            echo "CI_BROWSER_PATH=$browser" >> "$GITHUB_ENV"
+            "$browser" --version | tee qa/browser-version.txt
+          else
+            npx playwright install --with-deps chromium
+            echo 'Playwright-managed Chromium' > qa/browser-version.txt
+          fi
       - name: Real HTTP browser tests
         run: npm run test:browser
       - name: Record the genuine tested dependency lock once
