@@ -4,7 +4,7 @@ import {parseStory,type StorySpec} from '@vizforge/core/spec';
 import {Figure} from '@vizforge/adapters/react';
 import {useRuntime,useSiteState,useReducedMotion} from '../hooks';
 import type {StoryResource,Block} from '../types';
-type Controlled={player:StoryPlayer;story:StorySpec;resource:StoryResource};
+type Controlled={player:StoryPlayer;story:StorySpec;resource:StoryResource;synchronizing:boolean};
 const Context=createContext<Map<string,Controlled>|null>(null);
 export function StoryScope({ids,children}:{ids:string[];children:ReactNode}){
   const runtime=useRuntime(),snapshot=useSiteState(),reduced=useReducedMotion();
@@ -14,19 +14,20 @@ export function StoryScope({ids,children}:{ids:string[];children:ReactNode}){
     if(field.max!==story.scenes.length-1||!Number.isInteger(field.default))throw new Error('Story index bounds must match its scene count');
     for(const name of Object.keys(resource.cues))if(!story.scenes.some(s=>s.id===name))throw new Error('Cue references an unknown VizForge scene');
     const player=new StoryPlayer(story,reduced);player.seek(Number(snapshot.values[resource.indexField]));
-    return [id,{player,story,resource}] as const;
+    return [id,{player,story,resource,synchronizing:false} as Controlled] as const;
   })),[runtime,key]);
   useEffect(()=>{
-    const cleanup=[...controllers.values()].map(({player,story,resource})=>{
+    const cleanup=[...controllers.values()].map(controller=>{
+      const {player,story,resource}=controller;
       let last=player.getState().index;
-      const off=player.subscribe(()=>{const index=player.getState().index;if(index===last)return;last=index;runtime.applyCue({...resource.cues[story.scenes[index].id],[resource.indexField]:index});});
+      const off=player.subscribe(()=>{const index=player.getState().index;if(index===last)return;last=index;if(controller.synchronizing)return;runtime.applyCue({...resource.cues[story.scenes[index].id],[resource.indexField]:index});});
       return ()=>{off();player.pause();};
     });
     const hidden=()=>{if(document.hidden)controllers.forEach(c=>c.player.pause());};
     document.addEventListener('visibilitychange',hidden);
     return ()=>{cleanup.forEach(fn=>fn());document.removeEventListener('visibilitychange',hidden);};
   },[controllers,runtime]);
-  useEffect(()=>{controllers.forEach(({player,resource})=>{const index=Number(snapshot.values[resource.indexField]);if(player.getState().index!==index){player.pause();player.seek(index);}});},[controllers,snapshot.values]);
+  useEffect(()=>{controllers.forEach(controller=>{const {player,resource}=controller;const index=Number(snapshot.values[resource.indexField]);if(player.getState().index!==index){player.pause();controller.synchronizing=true;try{player.seek(index);}finally{controller.synchronizing=false;}}});},[controllers,snapshot.values]);
   useEffect(()=>{controllers.forEach(c=>{c.player.setReducedMotion(reduced);if(reduced)c.player.pause();});},[controllers,reduced]);
   useEffect(()=>{controllers.forEach(c=>c.player.pause());},[controllers,snapshot.restoreEpoch]);
   return <Context.Provider value={controllers}>{children}</Context.Provider>;

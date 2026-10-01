@@ -4,9 +4,9 @@ import {fileURLToPath} from 'node:url';
 export async function scaffoldClient({id,title=id,root=process.cwd(),custom=false}){
   if(typeof id!=='string'||!/^[a-z][a-z0-9-]{0,59}$/.test(id)||['node-modules','src','public'].includes(id))throw new Error('Use a lowercase client id with letters, numbers and hyphens');
   if(typeof title!=='string'||!title.trim()||title.length>120)throw new Error('Title must contain 1-120 characters');
+  if(typeof custom!=='boolean')throw new Error('custom must be a boolean');
   const clients=path.join(root,'clients');await mkdir(clients,{recursive:true});if((await lstat(clients)).isSymbolicLink())throw new Error('Refusing a symbolic clients directory');
   const target=path.join(clients,id);await mkdir(target); // EEXIST is deliberate: never overwrite a client.
-  if(typeof custom!=='boolean')throw new Error('custom must be a boolean');
   const customImport=custom?"import {ClientNote} from './ClientNote.tsx';\n":'';
   const customBlock=custom?",{id:'client-note',type:'custom',resource:'clientNote',span:2}":'';
   const components=custom?",components:{clientNote:ClientNote}":'';

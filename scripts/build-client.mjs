@@ -6,13 +6,14 @@ import {loadClient} from './load-client.mjs';
 const id=process.argv[2];
 if(!id||!/^[a-z][a-z0-9-]{0,59}$/.test(id)||process.argv.length!==3)throw new Error('Usage: npm run build:client -- <client-id>');
 const dir=path.resolve('clients',id);if(!existsSync(path.join(dir,'app.ts'))||lstatSync(dir).isSymbolicLink())throw new Error('Unknown or symbolic client directory');
+const bootstrap=spawnSync(process.execPath,['scripts/bootstrap-upstreams.mjs'],{stdio:'inherit',env:process.env});
+if(bootstrap.status!==0)process.exit(bootstrap.status||1);
 const definition=await loadClient(id);
 const features=[...new Set(definition.manifest.pages.flatMap(p=>p.sections.flatMap(s=>s.blocks.map(b=>b.type))))];
 // Opaque custom components can compose built-in renderers. Do not incorrectly
 // eliminate them just because their nested block types are absent from JSON.
 if(features.includes('custom'))features.push('chart','scene3d','story-controls','architecture');
 const run=(args)=>{const p=spawnSync(process.execPath,args,{stdio:'inherit',env:{...process.env,STUDIO_CLIENT:id,STUDIO_BLOCKS:JSON.stringify(features),STUDIO_TITLE:definition.manifest.title,STUDIO_DESCRIPTION:definition.manifest.description}});if(p.status!==0)process.exit(p.status||1);};
-run(['scripts/bootstrap-upstreams.mjs']);
 run(['scripts/prepare-fluent-icons.mjs']);
 run(['--experimental-strip-types','scripts/check-clients.mjs',id]);
 await mkdir('.generated',{recursive:true});

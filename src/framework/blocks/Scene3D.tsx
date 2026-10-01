@@ -16,7 +16,7 @@ export default function Scene3D({block}:{block:Extract<Block,{type:'scene3d'}>})
   const [status,setStatus]=useState('Preparing 3D'),[error,setError]=useState(''),[reset,setReset]=useState(0);
   const selected=scene.entities.find(e=>e.id===view.selection);
   useEffect(()=>{
-    const root=host.current!,canvas=document.createElement('canvas');canvas.setAttribute('aria-label',scene.title+' interactive 3D model');canvas.tabIndex=0;
+    const root=host.current!,canvas=document.createElement('canvas');canvas.setAttribute('aria-label',scene.title+' interactive 3D model');canvas.tabIndex=0;canvas.dataset.animating='false';
     // Probe WebGL2 before constructing Three, so an unavailable GPU has an honest
     // accessible fallback rather than a 2D image silently labelled as 3D.
     const context=canvas.getContext('webgl2',{antialias:true,preserveDrawingBuffer:true});
@@ -56,13 +56,13 @@ export default function Scene3D({block}:{block:Extract<Block,{type:'scene3d'}>})
     canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointerup',up);canvas.addEventListener('webglcontextlost',lost);
     api.current={
       update(next,noMotion){
-        cancelAnimationFrame(frame);const from={...displayed},began=performance.now(),cameraChanged=lastCamera!==next.camera;
+        cancelAnimationFrame(frame);canvas.dataset.animating='true';const from={...displayed},began=performance.now(),cameraChanged=lastCamera!==next.camera;
         const fromPosition=camera.position.clone(),fromTarget=controls.target.clone(),preset=cameraPreset(next.camera),toPosition=new THREE.Vector3(...preset.position),toTarget=new THREE.Vector3(...preset.target);lastCamera=next.camera;
         const duration=noMotion||!cameraChanged&&from.explode===next.explode&&from.phase===next.phase?0:420;
-        const draw=(now:number)=>{if(!alive)return;const raw=duration?Math.min(1,(now-began)/duration):1,t=raw*raw*(3-2*raw);displayed={...next,explode:from.explode+(next.explode-from.explode)*t,phase:from.phase+(next.phase-from.phase)*t};place(displayed);if(cameraChanged){camera.position.lerpVectors(fromPosition,toPosition,t);controls.target.lerpVectors(fromTarget,toTarget,t);controls.update();}render();if(raw<1)frame=requestAnimationFrame(draw);};
+        const draw=(now:number)=>{if(!alive)return;const raw=duration?Math.min(1,(now-began)/duration):1,t=raw*raw*(3-2*raw);displayed={...next,explode:from.explode+(next.explode-from.explode)*t,phase:from.phase+(next.phase-from.phase)*t};place(displayed);if(cameraChanged){camera.position.lerpVectors(fromPosition,toPosition,t);controls.target.lerpVectors(fromTarget,toTarget,t);controls.update();}render();if(raw<1)frame=requestAnimationFrame(draw);else canvas.dataset.animating='false';};
         draw(began);
       },
-      resetCamera(){cancelAnimationFrame(frame);place(latest.current);displayed={...latest.current};applyCamera(latest.current.camera);render();},
+      resetCamera(){cancelAnimationFrame(frame);canvas.dataset.animating='false';place(latest.current);displayed={...latest.current};applyCamera(latest.current.camera);render();},
       capture(){render();return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('PNG capture failed')),'image/png'));}
     };
     setStatus('3D ready');setError('');canvas.dataset.renderer='three-webgl2';
@@ -73,7 +73,7 @@ export default function Scene3D({block}:{block:Extract<Block,{type:'scene3d'}>})
   return <section className="site-scene" data-testid="scene3d" data-explode={view.explode} data-phase={view.phase} data-selection={view.selection} data-camera={view.camera}><div className="site-scene-toolbar"><span>{block.title||scene.title}</span><span className="site-render-status" role="status">{status}</span><button type="button" onClick={()=>api.current?.resetCamera()} disabled={status!=='3D ready'}>Reset camera</button><button type="button" disabled={status!=='3D ready'} onClick={async()=>{try{createBrowserHost().saveDownload(block.resource+'-scene.png',await api.current!.capture());}catch(e){setError(String(e));}}}>Capture PNG</button></div>
     <div ref={host} className="site-scene-canvas"/>
     {error&&<div className="site-notice" role="status"><p>{error}</p><button type="button" onClick={()=>setReset(n=>n+1)}>Retry 3D</button></div>}
-    <div className="site-scene-controls"><label>{field(block.explode).label}<input aria-label={field(block.explode).label} type="range" min={0} max={1} step={.01} value={view.explode} onChange={e=>runtime.set(block.explode,Number(e.target.value))}/></label><label>{field(block.phase).label}<input aria-label={field(block.phase).label} type="range" min={0} max={1} step={.01} value={view.phase} onChange={e=>runtime.set(block.phase,Number(e.target.value))}/></label><label>{field(block.camera).label}<select aria-label={field(block.camera).label} value={view.camera} onChange={e=>runtime.set(block.camera,e.target.value)}>{scene.cameras.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select></label></div>
+    <div className="site-scene-controls"><label>{field(block.explode).label}<input aria-label={field(block.explode).label} type="range" min={field(block.explode).min} max={field(block.explode).max} step={field(block.explode).step} value={view.explode} onChange={e=>runtime.set(block.explode,Number(e.target.value))}/></label><label>{field(block.phase).label}<input aria-label={field(block.phase).label} type="range" min={field(block.phase).min} max={field(block.phase).max} step={field(block.phase).step} value={view.phase} onChange={e=>runtime.set(block.phase,Number(e.target.value))}/></label><label>{field(block.camera).label}<select aria-label={field(block.camera).label} value={view.camera} onChange={e=>runtime.set(block.camera,e.target.value)}>{scene.cameras.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select></label></div>
     <div className="site-parts" role="group" aria-label="Select model component"><button type="button" aria-pressed={view.selection==='none'} onClick={()=>runtime.set(block.selection,'none')}>All parts</button>{scene.entities.map(e=><button type="button" key={e.id} aria-pressed={view.selection===e.id} onClick={()=>runtime.set(block.selection,e.id)}>{e.label}</button>)}</div><div className="site-part-description" aria-live="polite"><strong>{selected?.label||'Interactive assembly'}</strong><p>{selected?.description||'Drag to orbit, scroll to zoom, or select a component using the buttons. Geometry is illustrative, not an engineering model.'}</p></div><small className="site-scene-note">{scene.note}</small>
   </section>;
 }
