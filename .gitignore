@@ -22,3 +22,6 @@ qa/client-manifests/
 qa/client-builds/
 qa/*.tap
 clients/acceptance-fresh/
+
+clients/acceptance-knowledge/
+clients/acceptance-spatial/

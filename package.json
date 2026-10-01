@@ -1,9 +1,11 @@
 {
   "name": "datapass-mosaicstudio",
-  "version": "0.2.0-alpha.1",
+  "version": "0.3.0-alpha.1",
   "private": true,
   "type": "module",
-  "engines": {"node": ">=22.16.0"},
+  "engines": {
+    "node": ">=22.16.0"
+  },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "predev": "npm run bootstrap && node scripts/prepare-assets.mjs",
@@ -22,7 +24,9 @@
     "build:client": "node --experimental-strip-types scripts/build-client.mjs",
     "test:client-builds": "node --experimental-strip-types scripts/test-client-builds.mjs"
   },
-  "overrides": {"@duckdb/duckdb-wasm": "1.32.0"},
+  "overrides": {
+    "@duckdb/duckdb-wasm": "1.32.0"
+  },
   "dependencies": {
     "@duckdb/duckdb-wasm": "1.32.0",
     "@sqlrooms/duckdb": "0.29.0-rc.7",

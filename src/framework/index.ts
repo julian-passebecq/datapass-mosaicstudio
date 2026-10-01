@@ -11,3 +11,9 @@ export function defineApp(app:AppDefinition):AppDefinition{validateDefinition(ap
 
 export {createJsonTask} from './http-task.ts';
 export type {JsonTaskOptions} from './http-task.ts';
+
+export {validateExplorer,explorerFields,explorerBlock,validateExplorerState,readExplorerState,explorerStatePatch} from './explorer/model.ts';
+export type {ExplorerSpec,ExplorerState,ExplorerItem,ExplorerDocument,ExplorerBlock} from './explorer/model.ts';
+export {navigateExplorer,ancestors,contextDocuments,explorerCamera,searchExplorer,explorerLink,readExplorerLink} from './explorer/navigation.ts';
+export {validateExplanation} from './explanation.ts';
+export type {ExplanationResource} from './explanation.ts';

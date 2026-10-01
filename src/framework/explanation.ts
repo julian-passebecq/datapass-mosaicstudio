@@ -22,7 +22,7 @@ export function validateExplanation(input:unknown,manifest?:Manifest):Explanatio
   uniqueIds(s.frames.map(f=>{strict(f,['id','iteration','pointerItemId','activeItemIds','doneItemIds','order','variables','codeLineIds','operation','caption'],'loop frame');
     if(typeof f.iteration!=='number'||!Number.isSafeInteger(f.iteration)||f.iteration<0||f.iteration>1e6)throw new Error('Invalid iteration');text(f.operation,'operation',120);text(f.caption,'caption',2000);
     for(const key of ['activeItemIds','doneItemIds','order'])if(f[key]!==undefined){list(f[key],key,40);const ids=uniqueIds(f[key]);if([...ids].some(id=>!items.has(id)))throw new Error('Unknown explanation item reference');if(key==='order'&&ids.size!==items.size)throw new Error('Order must contain every item exactly once');}
-    if(f.pointerItemId!==undefined&&!items.has(String(f.pointerItemId)))throw new Error('Unknown pointer item');
+    if(f.pointerItemId!==undefined){identifier(f.pointerItemId,'pointer item');if(!items.has(f.pointerItemId))throw new Error('Unknown pointer item');}
     list(f.codeLineIds,'code references',80);if([...uniqueIds(f.codeLineIds)].some(id=>!code.has(id)))throw new Error('Unknown explanation code reference');
     if(f.variables!==undefined){if(!object(f.variables)||Object.keys(f.variables).length>20)throw new Error('Explanation variable limit');for(const [key,value] of Object.entries(f.variables)){identifier(key,'variable');atom(value);}}
     return f.id;

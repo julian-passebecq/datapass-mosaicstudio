@@ -11,7 +11,7 @@ export async function loadClient(id){
   await mkdir('.generated',{recursive:true});
   const file=path.resolve('.generated','check-'+id+'.mjs');
   await build({entryPoints:[path.join(root,'app.ts')],outfile:file,bundle:true,platform:'node',format:'esm',packages:'external',jsx:'automatic',
-    define:{__STUDIO_CHARTS__:'false',__STUDIO_3D__:'false',__STUDIO_STORIES__:'false',__STUDIO_ARCHITECTURE__:'false'},
-    alias:{'@vizforge':path.resolve('.upstream/vizforge/src')},logLevel:'warning'});
+    define:{__STUDIO_CHARTS__:'false',__STUDIO_3D__:'false',__STUDIO_STORIES__:'false',__STUDIO_ARCHITECTURE__:'false',__STUDIO_EXPLORER__:'false',__STUDIO_EXPLANATIONS__:'false'},
+    alias:{'@vizforge':path.resolve('.upstream/vizforge/src'),...Object.fromEntries(['core','svg','react'].map(name=>['@conceptmotion/'+name,path.resolve('.upstream/conceptmotion/project/conceptmotion_studio/packages',name,'src/index.ts')]))},logLevel:'warning'});
   return (await import(pathToFileURL(file).href+'?load='+Date.now())).default;
 }

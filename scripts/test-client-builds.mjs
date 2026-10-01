@@ -13,22 +13,24 @@ import {scaffoldClient} from './scaffold-client.mjs';
 async function files(dir){let result=[];for(const entry of await readdir(dir,{withFileTypes:true})){const full=path.join(dir,entry.name);if(entry.isDirectory())result.push(...await files(full));else if(entry.isFile())result.push(full);}return result;}
 async function digest(dir){const h=createHash('sha256');for(const f of (await files(dir)).sort()){h.update(f);h.update(await readFile(f));}return h.digest('hex');}
 const before=await digest('src'),report=[];
-const fresh='acceptance-fresh';if(existsSync('clients/'+fresh))throw new Error('Refusing to replace existing acceptance-fresh client');
+const fresh='acceptance-fresh',knowledge='acceptance-knowledge',spatial='acceptance-spatial';for(const id of [fresh,knowledge,spatial])if(existsSync('clients/'+id))throw new Error('Refusing to replace existing acceptance client: '+id);
 await mkdir('qa/client-builds',{recursive:true});
 let browser;
 try{
   await scaffoldClient({id:fresh,title:'Fresh scaffold acceptance',custom:true});
+  await scaffoldClient({id:knowledge,title:'Fresh knowledge acceptance',template:'knowledge'});
+  await scaffoldClient({id:spatial,title:'Fresh spatial acceptance',template:'spatial'});
   browser=await chromium.launch({...(process.env.CI_BROWSER_PATH?{executablePath:process.env.CI_BROWSER_PATH}:{}),args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-  for(const id of ['operations-reference','wind-reference','architecture-reference',fresh]){
+  for(const id of ['operations-reference','wind-reference','architecture-reference','experience-reference',fresh,knowledge,spatial]){
     const built=spawnSync(process.execPath,['--experimental-strip-types','scripts/build-client.mjs',id],{encoding:'utf8',timeout:180000,env:process.env});
     await writeFile('qa/client-builds/'+id+'-build.log',(built.stdout||'')+(built.stderr||''));
     if(built.status!==0)throw new Error('Client build failed: '+id+'\n'+built.stderr+'\n'+built.stdout);
     const root=path.join('dist-clients',id),all=await files(root),js=all.filter(f=>f.endsWith('.js'));
     assert.ok(!all.some(f=>/\.wasm$|duckdb|sql-parser/.test(f)),'Client build accidentally includes database assets');
     const contents=(await Promise.all(js.map(f=>readFile(f,'utf8')))).join('\n');
-    const titles={'operations-reference':'Operations / reference app','wind-reference':'Wind / reference app','architecture-reference':'Architecture / reference app',[fresh]:'Fresh scaffold acceptance'};
+    const titles={'operations-reference':'Operations / reference app','wind-reference':'Wind / reference app','architecture-reference':'Architecture / reference app','experience-reference':'Experience / reference app',[fresh]:'Fresh scaffold acceptance',[knowledge]:'Fresh knowledge acceptance',[spatial]:'Fresh spatial acceptance'};
     for(const [other,title] of Object.entries(titles))if(other!==id)assert.ok(!contents.includes(title),'Unexpected other-client payload: '+other+' in '+id);
-    if(id==='operations-reference')assert.ok(!all.some(f=>/Scene3D|Architecture-/.test(f)),'Basic data app includes an unused 3D/architecture chunk');
+    if(id==='operations-reference'||id===knowledge)assert.ok(!all.some(f=>/Scene3D|SceneViewport|Architecture-/.test(f)),'Basic data app includes an unused 3D/architecture chunk');
     const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--config','vite.client.config.ts','--strictPort','--port','4174'],{env:{...process.env,STUDIO_CLIENT:id},stdio:['ignore','pipe','pipe']});
     let output='';server.stdout.on('data',v=>{output+=v;});server.stderr.on('data',v=>{output+=v;});
     const context=await browser.newContext({viewport:{width:1440,height:960}}),page=await context.newPage();
@@ -39,6 +41,8 @@ try{
       const response=await page.goto('http://127.0.0.1:4174');assert.ok(response.headers()['content-security-policy'].includes("script-src 'self'"));
       await page.locator('.studio-site[data-app-id="'+id+'"]').waitFor();
       if(id==='wind-reference'){await page.getByText('3D ready',{exact:true}).waitFor();await page.getByRole('button',{name:'Next shared scene'}).click();await page.waitForFunction(()=>document.querySelector('[data-testid=scene3d]')?.getAttribute('data-selection')==='rotor');}
+      else if(id==='experience-reference'||id===spatial){await page.getByText('3D ready',{exact:true}).waitFor();await page.getByRole('group',{name:'Explorer views'}).getByRole('button',{name:'Library',exact:true}).click();await page.locator('.explorer-library').waitFor();}
+      else if(id===knowledge){await page.getByTestId('explorer').waitFor();assert.equal(await page.getByTestId('explorer').getAttribute('data-view'),'library');assert.equal(await page.locator('canvas').count(),0);await page.locator('.explorer-library-card').first().click();await page.getByRole('article',{name:'Platform overview',exact:true}).waitFor();}
       else if(id==='architecture-reference')await page.locator('.arch-node').first().waitFor();
       else if(id===fresh)await page.getByRole('heading',{name:'Client-owned component',exact:true}).waitFor();
       else await page.getByTestId('metric-observation-count').waitFor();
@@ -53,4 +57,4 @@ try{
     }finally{await context.close();server.kill('SIGTERM');await new Promise(resolve=>{if(server.exitCode!==null)return resolve();server.once('exit',resolve);setTimeout(()=>{server.kill('SIGKILL');resolve();},3000).unref();});await writeFile('qa/client-builds/'+id+'-preview.log',output);}
   }
   assert.equal(await digest('src'),before,'Client creation/build changed framework source');
-}finally{await browser?.close();await rm('clients/'+fresh,{recursive:true,force:true});await writeFile('qa/client-builds/results.json',JSON.stringify({sourceUnchanged:await digest('src')===before,clients:report},null,2)+'\n');}
+}finally{await browser?.close();for(const id of [fresh,knowledge,spatial])await rm('clients/'+id,{recursive:true,force:true});await writeFile('qa/client-builds/results.json',JSON.stringify({sourceUnchanged:await digest('src')===before,clients:report},null,2)+'\n');}

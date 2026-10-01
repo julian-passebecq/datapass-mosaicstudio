@@ -12,7 +12,8 @@ const definition=await loadClient(id);
 const features=[...new Set(definition.manifest.pages.flatMap(p=>p.sections.flatMap(s=>s.blocks.map(b=>b.type))))];
 // Opaque custom components can compose built-in renderers. Do not incorrectly
 // eliminate them just because their nested block types are absent from JSON.
-if(features.includes('custom'))features.push('chart','scene3d','story-controls','architecture');
+if(features.includes('custom'))features.push('chart','scene3d','story-controls','architecture','explorer','explanation');
+if(features.includes('explorer')&&Object.values(definition.resources?.explorers||{}).some(e=>e.scene))features.push('scene3d');
 const run=(args)=>{const p=spawnSync(process.execPath,args,{stdio:'inherit',env:{...process.env,STUDIO_CLIENT:id,STUDIO_BLOCKS:JSON.stringify(features),STUDIO_TITLE:definition.manifest.title,STUDIO_DESCRIPTION:definition.manifest.description}});if(p.status!==0)process.exit(p.status||1);};
 run(['scripts/prepare-fluent-icons.mjs']);
 run(['--experimental-strip-types','scripts/check-clients.mjs',id]);

@@ -29,13 +29,15 @@ export type Block = {id: string; span?: number; title?: string} & (
   | {type: 'story-controls'; resource: string}
   | {type: 'story-figure'; resource: string}
   | {type: 'architecture'; resource: string}
+  | {type: 'explorer'; resource: string; focus: string; facet: string; view: string; level: string; group: string; document: string; scroll?: boolean}
+  | {type: 'explanation'; resource: string}
   | {type: 'custom'; resource: string}
 );
 export type Section = {id: string; title?: string; columns: number; blocks: Block[]};
 export type Page = {id: string; title: string; description: string; sections: Section[]};
 export type Manifest = {
   format: 'datapass.web-app'; schemaVersion: 1; id: string; version: string;
-  title: string; description: string; label: string; theme: {accent: string; density: 'compact' | 'comfortable'};
+  title: string; description: string; label: string; theme: {accent: string; density: 'compact' | 'comfortable'; mode?: 'light' | 'dark'};
   fields: Field[]; datasets: Dataset[]; tasks: TaskSpec[]; pages: Page[];
 };
 export type DeriveContext = {values: Values; datasets: Readonly<Record<string, Rows>>};
@@ -47,7 +49,7 @@ export type Bindings = {
 };
 /** StorySpec is validated by the pinned VizForge parser in the adapter, not by a clone. */
 export type StoryResource = {indexField: string; spec: unknown; cues: Record<string, Record<string, Scalar>>};
-export type Resources = {scenes?: Record<string, unknown>; stories?: Record<string, StoryResource>; architectures?: Record<string, unknown>};
+export type Resources = {scenes?: Record<string, unknown>; stories?: Record<string, StoryResource>; architectures?: Record<string, unknown>; explorers?: Record<string, unknown>; explanations?: Record<string, unknown>};
 export type AppDefinition = {manifest: Manifest; bindings: Bindings; resources?: Resources; components?: Record<string, unknown>};
 export type TaskState = {status: 'idle' | 'running' | 'ready' | 'stale' | 'cancelled' | 'error'; progress: number; message: string};
 export type Snapshot = {values: Values; revision: number; restoreEpoch: number; tasks: Readonly<Record<string, TaskState>>};

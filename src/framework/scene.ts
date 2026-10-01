@@ -1,4 +1,4 @@
-import {strict,text,identifier} from './validate.ts';
+import {strict,text,identifier} from './guards.ts';
 export type Vec3=[number,number,number];
 export type ScenePart={id:string;parent:string|null;entity:string|null;shape:'group'|'box'|'cylinder'|'sphere'|'cone';size:Vec3;position:Vec3;rotation:Vec3;explode:Vec3;color:string;spin?:{axis:'x'|'y'|'z';turns:number}};
 export type SceneSpec={format:'datapass.scene3d';version:1;title:string;note:string;entities:{id:string;label:string;description:string}[];parts:ScenePart[];cameras:{id:string;label:string;position:Vec3;target:Vec3}[]};

@@ -1,13 +1,9 @@
 import type {Manifest, Field, Scalar, Dataset, Rows, Block, AppDefinition, ValueRef, SavedState} from './types.ts';
 export const LIMITS = Object.freeze({fields: 100, datasets: 50, pages: 20, blocks: 200, rows: 10000, columns: 40, stateBytes: 65536});
-export function object(v: unknown): v is Record<string, unknown> {return !!v && typeof v === 'object' && !Array.isArray(v) && Object.getPrototypeOf(v) === Object.prototype;}
-export function strict(v: unknown, keys: string[], label: string): asserts v is Record<string, unknown> {
-  if (!object(v) || Object.keys(v).some(k => !keys.includes(k))) throw new Error(label + ': unexpected fields or non-object');
-}
-export function text(v: unknown, label: string, max = 2000, required = true): asserts v is string {
-  if (typeof v !== 'string' || v.length > max || (required && !v.trim())) throw new Error(label + ': invalid text');
-}
-export function identifier(v: unknown, label: string): asserts v is string {if (typeof v !== 'string' || !/^[a-z][a-zA-Z0-9_-]{0,79}$/.test(v) || ['constructor','prototype','__proto__'].includes(v)) throw new Error(label + ': invalid id');}
+import {object, strict, text, identifier} from './guards.ts';
+export {object, strict, text, identifier} from './guards.ts';
+import {validateExplorer, validateExplorerBinding} from './explorer/model.ts';
+import {validateExplanation} from './explanation.ts';
 function list(v: unknown, label: string, max: number, min = 0): asserts v is unknown[] {if (!Array.isArray(v) || v.length < min || v.length > max) throw new Error(label + ': array size limit');}
 function oneOf(v: unknown, choices: readonly string[], label: string): void {if (typeof v !== 'string' || !choices.includes(v)) throw new Error(label + ': invalid choice');}
 function number(v: unknown, min: number, max: number, label: string, integer = false): asserts v is number {if (typeof v !== 'number' || !Number.isFinite(v) || v < min || v > max || (integer && !Number.isSafeInteger(v))) throw new Error(label + ': invalid number');}
@@ -40,7 +36,7 @@ function validateDataset(d: unknown, fieldIds: Set<string>): asserts d is Datase
 }
 const blockFields = {
   text:['text','tone'], metric:['value','unit','digits','note'], input:['field','control'], table:['dataset','pageSize'], chart:['dataset','x','y','kind','unit'], task:['task'], catalog:[], code:['text','language'],
-  scene3d:['resource','explode','phase','camera','selection'], 'story-controls':['resource'], 'story-figure':['resource'], architecture:['resource'], custom:['resource'],
+  scene3d:['resource','explode','phase','camera','selection'], 'story-controls':['resource'], 'story-figure':['resource'], architecture:['resource'], custom:['resource'], explanation:['resource'], explorer:['resource','focus','facet','view','level','group','document','scroll'],
 } as const;
 export const BLOCK_TYPES = Object.freeze(Object.keys(blockFields));
 function valueRef(v: unknown, manifest: Manifest): void {
@@ -62,13 +58,17 @@ function validateBlock(v: unknown, m: Manifest, columns: number): asserts v is B
     if (v.type === 'chart') {oneOf(v.kind, ['bar','line','scatter'], 'chart.kind'); const x=d.columns.find(c => c.id === v.x), y=d.columns.find(c => c.id === v.y); if (!x || y?.type !== 'number' || (v.kind !== 'bar' && x.type !== 'number')) throw new Error('Invalid chart encoding types'); if (v.unit !== undefined) text(v.unit, 'chart.unit', 30, false);}
   }
   if (v.type === 'task' && !m.tasks.some(t => t.id === v.task)) throw new Error('Unknown task block');
-  if (['scene3d','story-controls','story-figure','architecture','custom'].includes(v.type as string)) identifier(v.resource, 'block.resource');
+  if (['scene3d','story-controls','story-figure','architecture','custom','explorer','explanation'].includes(v.type as string)) identifier(v.resource, 'block.resource');
+  if (v.type === 'explorer') {
+    for (const key of ['focus','facet','view','level','group','document']) {const f=m.fields.find(f=>f.id===v[key]); if(!f||f.role!=='view'||f.type!=='select')throw new Error('Explorer controls must reference select view fields');}
+    if(v.scroll!==undefined&&typeof v.scroll!=='boolean')throw new Error('Invalid explorer scroll option');
+  }
   if (v.type === 'scene3d') for (const key of ['explode','phase','camera','selection']) {const f=m.fields.find(f => f.id === v[key]); if (!f || f.role !== 'view' || (['explode','phase'].includes(key) ? f.type !== 'number' || f.min! < 0 || f.max! > 1 : f.type !== 'select')) throw new Error('Scene controls must reference bounded view fields');}
 }
 export function validateManifest(value: unknown): Manifest {
   strict(value, ['format','schemaVersion','id','version','title','description','label','theme','fields','datasets','tasks','pages'], 'app');
   if (value.format !== 'datapass.web-app' || value.schemaVersion !== 1) throw new Error('Unsupported app format'); identifier(value.id, 'app.id'); text(value.version, 'app.version', 40); text(value.title, 'app.title', 160); text(value.description, 'app.description', 2000, false); text(value.label, 'app.label', 120);
-  strict(value.theme, ['accent','density'], 'theme'); if (typeof value.theme.accent !== 'string' || !/^#[a-fA-F0-9]{6}$/.test(value.theme.accent)) throw new Error('Theme accent must be a hex color'); oneOf(value.theme.density, ['compact','comfortable'], 'theme.density');
+  strict(value.theme, ['accent','density','mode'], 'theme'); if(value.theme.mode!==undefined) oneOf(value.theme.mode,['light','dark'],'theme.mode'); if (typeof value.theme.accent !== 'string' || !/^#[a-fA-F0-9]{6}$/.test(value.theme.accent)) throw new Error('Theme accent must be a hex color'); oneOf(value.theme.density, ['compact','comfortable'], 'theme.density');
   list(value.fields, 'fields', LIMITS.fields); value.fields.forEach(validateField); const fieldIds = unique(value.fields.map(f => (f as Field).id), 'field');
   list(value.datasets, 'datasets', LIMITS.datasets); value.datasets.forEach(d => validateDataset(d, fieldIds)); const datasetIds = unique(value.datasets.map(d => (d as Dataset).id), 'dataset');
   const datasets = value.datasets as Dataset[], state = new Map<string, number>();
@@ -98,8 +98,10 @@ export function validateDefinition(d: AppDefinition): Manifest {
   for(const t of manifest.tasks) if(typeof d.bindings.tasks?.[t.id]!=='function') throw new Error('Missing trusted task binding: '+t.id);
   for(const b of manifest.pages.flatMap(p=>p.sections.flatMap(s=>s.blocks))) {
     if(b.type==='custom'){if(typeof d.components?.[b.resource]!=='function')throw new Error('Missing trusted custom component: '+b.resource);continue;}
-    const resource=b.type==='scene3d'?d.resources?.scenes:b.type==='architecture'?d.resources?.architectures:b.type==='story-controls'||b.type==='story-figure'?d.resources?.stories:null;
+    const resource=b.type==='scene3d'?d.resources?.scenes:b.type==='architecture'?d.resources?.architectures:b.type==='explorer'?d.resources?.explorers:b.type==='explanation'?d.resources?.explanations:b.type==='story-controls'||b.type==='story-figure'?d.resources?.stories:null;
     if('resource' in b && (!resource || !Object.hasOwn(resource,b.resource))) throw new Error('Missing resource: '+b.resource);
+    if(b.type==='explanation')validateExplanation(d.resources!.explanations![b.resource],manifest);
+    if(b.type==='explorer')validateExplorerBinding(validateExplorer(d.resources!.explorers![b.resource]),b,manifest,d);
   }
   for(const story of Object.values(d.resources?.stories||{})) {const step=manifest.fields.find(f=>f.id===story.indexField); if(!step||step.type!=='number'||step.role!=='view'||step.min!==0||step.step!==1) throw new Error('Story index must be an integer view field'); if(!object(story.cues)) throw new Error('Invalid story cues'); for(const patch of Object.values(story.cues)) {if(!object(patch)) throw new Error('Invalid cue patch'); for(const [id,v] of Object.entries(patch)) {const f=manifest.fields.find(f=>f.id===id); if(!f || f.role!=='view') throw new Error('Story cues can only change declared view fields'); validateValue(f,v);}}}
   return manifest;
