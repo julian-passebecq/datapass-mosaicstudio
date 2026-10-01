@@ -52,10 +52,13 @@ jobs:
             git commit -m 'build: record tested npm dependency lock [skip ci]'
             git push origin "HEAD:$GITHUB_REF_NAME"
           fi
-      - name: Package reviewable source and built web app
+      - name: Package tracked source and built web app
         if: always()
         run: |
-          tar -czf studio-source.tar.gz src scripts tests docs .github package.json package-lock.json tsconfig.json vite.config.ts playwright.config.ts index.html upstreams.lock.json .gitignore README.md AGENTS.md THIRD_PARTY_NOTICES.md
+          mkdir review-source
+          git archive HEAD | tar -x -C review-source
+          if test -f package-lock.json; then cp package-lock.json review-source/; fi
+          tar -czf studio-source.tar.gz -C review-source .
           if test -d dist; then tar -czf studio-web.tar.gz -C dist .; fi
       - uses: actions/upload-artifact@v4
         if: always()

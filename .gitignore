@@ -5,6 +5,7 @@ dist/
 .generated/
 test-results/
 playwright-report/
+review-source/
 *.tar.gz
 .env
 .env.*
@@ -12,5 +13,6 @@ playwright-report/
 public/duckdb/
 public/vendor/
 public/_headers
+public/THIRD_PARTY_NOTICES.md
 tests/fixtures/*.parquet
 qa/*.json

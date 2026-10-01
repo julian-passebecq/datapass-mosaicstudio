@@ -1,5 +1,6 @@
 import {createRoomStore,createRoomShellSlice,type RoomShellSliceState,type LayoutConfig} from '@sqlrooms/room-shell';
 import {createWasmDuckDbConnector} from '@sqlrooms/duckdb';
+import {DuckDBDataProtocol} from '@duckdb/duckdb-wasm';
 import {createMosaicSlice,type MosaicSliceState} from '@sqlrooms/mosaic/dist/MosaicSlice';
 import {createSqlEditorSlice,type SqlEditorSliceState} from '@sqlrooms/sql-editor/dist/SqlEditorSlice';
 import {Database,PanelTop} from 'lucide-react';
@@ -45,13 +46,22 @@ export const {roomStore,useRoomStore}=createRoomStore<RoomState>((set,get,store)
       const extension=file.name.split('.').pop()?.toLowerCase();if(!extension||!['csv','json','parquet'].includes(extension))throw new Error('Supported: .csv, .json and .parquet');
       const table=tableId(file.name,++importSequence),registeredFile=`${table}.${extension}`;
       set(s=>({datapass:{...s.datapass,importing:true,error:null}}));
+      let retained=false;
       try {
         const safeFile=new File([file],registeredFile,{type:file.type});
-        await get().db.connector.loadFile(safeFile,table);
+        if(extension==='parquet'){
+          // SQLRooms drops its temporary File registration after materialization.
+          // Own a session-scoped handle so later metadata queries still see the file.
+          await connector.getDb().registerFileHandle(registeredFile,safeFile,DuckDBDataProtocol.BROWSER_FILEREADER,true);
+          retained=true;
+          await get().db.connector.loadFile(registeredFile,table);
+        }else await get().db.connector.loadFile(safeFile,table);
         await get().db.refreshTableSchemas();
-        set(s=>({datapass:{...s.datapass,selectedTable:table,module:'explore',datasets:{...s.datapass.datasets,[table]:{table,name:file.name,kind:'user-file',bytes:file.size,registeredFile}}}}));
-      } catch(error){get().datapass.setError(error instanceof Error?error.message:String(error));throw error;}
-      finally {set(s=>({datapass:{...s.datapass,importing:false}}));}
+        set(s=>({datapass:{...s.datapass,selectedTable:table,module:'explore',datasets:{...s.datapass.datasets,[table]:{table,name:file.name,kind:'user-file',bytes:file.size,registeredFile:retained?registeredFile:undefined}}}}));
+      } catch(error){
+        if(retained)try{await connector.getDb().dropFile(registeredFile);}catch(cleanupError){console.warn('Parquet handle cleanup failed',cleanupError);}
+        get().datapass.setError(error instanceof Error?error.message:String(error));throw error;
+      } finally {set(s=>({datapass:{...s.datapass,importing:false}}));}
     }
   }
 }));
