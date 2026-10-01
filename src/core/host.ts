@@ -38,4 +38,5 @@ export const modules: readonly StudioModule[] = [
   {id:'stories',title:'Visual stories',description:'Existing analytical D3 stories',kind:'explanation',status:'implemented',engine:'VizForge'},
   {id:'explain',title:'Concept lab',description:'Semantic algorithm explanation',kind:'explanation',status:'implemented',engine:'ConceptMotion'},
   {id:'board',title:'Project board',description:'A non-SQL consumer of the same workspace',kind:'business',status:'implemented',engine:'DataPass'},
+  {id:'architecture',title:'Architecture review',description:'System map, schema drift and stakeholder presentation',kind:'explanation',status:'implemented',engine:'React Flow / DataPass architecture artifacts'},
 ];
