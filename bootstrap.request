@@ -1,1 +1,1 @@
-2: use the verified React 19-compatible Fluent package; no peer-dependency bypass.
+3: align Vite major with Tailwind and React plugin peer ranges; retain strict dependency resolution.
