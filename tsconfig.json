@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "target":"ES2022","lib":["ES2022","DOM","DOM.Iterable"],"module":"ESNext","moduleResolution":"Bundler","jsx":"react-jsx","strict":true,"skipLibCheck":true,"noEmit":true,"allowImportingTsExtensions":true,"esModuleInterop":true,"resolveJsonModule":true,"types":["vite/client"],"baseUrl":".",
+    "paths": {
+      "@vizforge/*":[".upstream/vizforge/src/*"],
+      "@conceptmotion/core":[".upstream/conceptmotion/project/conceptmotion_studio/packages/core/src/index.ts"],
+      "@conceptmotion/svg":[".upstream/conceptmotion/project/conceptmotion_studio/packages/svg/src/index.ts"],
+      "@conceptmotion/react":[".upstream/conceptmotion/project/conceptmotion_studio/packages/react/src/index.ts"],
+      "@datapass/content":[".upstream/conceptmotion/project/conceptmotion_studio/packages/content/src/index.ts"]
+    }
+  },
+  "include":["src","vite.config.ts"]
+}

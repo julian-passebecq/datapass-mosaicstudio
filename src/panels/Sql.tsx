@@ -1,0 +1,3 @@
+import SqlEditor from '@sqlrooms/sql-editor/dist/SqlEditor';
+import {useRoomStore} from '../store';
+export default function Sql(){const open=useRoomStore(s=>s.datapass.openModule);return <section className="sql-workspace"><div className="sql-notice"><strong>SQL workspace</strong><span>Real local DuckDB &middot; query tabs &middot; result limits &middot; explicit run/cancel</span></div><div className="sql-editor-host"><SqlEditor isOpen onClose={()=>open('explore')}/></div><p className="footnote">This is SQLRooms' editor, not a new notebook kernel. Queries may change the in-memory database. Imported source files are not modified.</p></section>;}

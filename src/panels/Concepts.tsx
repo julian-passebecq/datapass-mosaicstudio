@@ -1,0 +1,14 @@
+import {useEffect,useState} from 'react';
+import {Button} from '../fluent';
+import {ConceptScene,useReducedMotion} from '@conceptmotion/react';
+import type {LoopSceneSpec} from '@conceptmotion/core';
+import {algorithmVisuals} from '../../.upstream/conceptmotion/project/conceptmotion_studio/content/visuals/algorithms';
+import {Header} from './Common';
+export default function Concepts(){const [id,setId]=useState('algorithm-binary-search');const item=algorithmVisuals.find(x=>x.id===id)||algorithmVisuals[0];return <section className="panel-content"><Header eyebrow="Explain / ConceptMotion" title="Code, state and the idea behind it" detail="The existing semantic explanation engine is reused here. These are authored algorithm traces, not a Python execution kernel."/><div className="story-layout"><nav className="story-catalog" aria-label="Algorithm catalog">{algorithmVisuals.map(v=><button key={v.id} className={v.id===id?'active':''} onClick={()=>setId(v.id)}><strong>{v.sourceFamily.replaceAll('-',' ')}</strong><small>{v.domain}</small></button>)}</nav><Algorithm key={id} spec={item.figure.spec as unknown as LoopSceneSpec} invariant={item.invariant}/></div></section>;}
+function Algorithm({spec,invariant}:{spec:LoopSceneSpec;invariant:string}){
+ const [index,setIndex]=useState(0),[playing,setPlaying]=useState(false),reducedMotion=useReducedMotion();
+ useEffect(()=>{if(reducedMotion)setPlaying(false);},[reducedMotion]);
+ useEffect(()=>{if(!playing||reducedMotion)return;if(index>=spec.frames.length-1){setPlaying(false);return;}const t=setTimeout(()=>setIndex(i=>i+1),1400);return()=>clearTimeout(t);},[index,playing,reducedMotion,spec]);
+ const frame=spec.frames[index];
+ return <div className="story-stage"><h2>{typeof spec.title==='string'?spec.title:'Algorithm trace'}</h2><ConceptScene spec={spec} frameIndex={index} reducedMotion={reducedMotion}/><div className="playback"><Button size="small" disabled={index===0} onClick={()=>{setPlaying(false);setIndex(i=>i-1);}}>Previous step</Button><Button size="small" disabled={reducedMotion} onClick={()=>{if(index===spec.frames.length-1)setIndex(0);setPlaying(p=>!p);}}>{playing?'Pause':'Play'}</Button><Button size="small" disabled={index===spec.frames.length-1} onClick={()=>{setPlaying(false);setIndex(i=>i+1);}}>Next step</Button><label>Step <input type="range" min={0} max={spec.frames.length-1} value={index} onChange={e=>{setPlaying(false);setIndex(Number(e.target.value));}}/></label><span>{index+1} / {spec.frames.length}</span></div><p aria-live="polite" className="concept-caption">{String(frame.caption)}</p><div className="invariant"><strong>Invariant</strong><p>{invariant}</p></div><details className="details"><summary>Frame / source code</summary><pre>{JSON.stringify(frame,null,2)}</pre></details>{reducedMotion&&<p className="footnote">Reduced motion is enabled; manual steps remain available.</p>}</div>;
+}
