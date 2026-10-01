@@ -6,6 +6,7 @@ import {RenderBlock,SharedStoryScope} from './registry';
 import {createBrowserHost} from '../core/host';
 import {LIMITS} from './validate';
 import './site.css';
+import './visual-theme.css';
 export class SiteBoundary extends Component<{children:ReactNode},{error:string|null}>{
   state={error:null as string|null};
   static getDerivedStateFromError(e:Error){return {error:e.message};}

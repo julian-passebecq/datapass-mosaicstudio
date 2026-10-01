@@ -1,0 +1,10 @@
+/* Generated visuals use explicit engine themes; unrelated authored stories stay unchanged. */
+.studio-site .site-block-metric{align-self:start}
+.studio-site .site-viz[data-theme=dark]{background:#0f1b29;color:#e1ebf5}
+.studio-site .site-viz[data-theme=dark] .vf-table th,.studio-site .site-viz[data-theme=dark] .vf-table td{border-color:#293e50;color:#d4e2ed}
+.studio-site .site-viz[data-theme=dark] .vf-table thead th{background:#142638;color:#9fb5c9}
+.studio-site.dark .site-explanation{background:#111f2e;color:#e1ebf5}
+.studio-site.dark .site-explanation-caption{background:#142a3d;border-color:#293e50}
+.studio-site.dark .site-explanation-caption p,.studio-site.dark .site-explanation li p,.studio-site.dark .site-explanation footer{color:#a1b3c6}
+.studio-site.dark .site-explanation footer{border-color:#293e50}
+.studio-site.dark .site-explanation summary{color:var(--site-accent)}

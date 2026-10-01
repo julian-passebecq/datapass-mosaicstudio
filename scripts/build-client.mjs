@@ -19,7 +19,7 @@ run(['scripts/prepare-fluent-icons.mjs']);
 run(['--experimental-strip-types','scripts/check-clients.mjs',id]);
 await mkdir('.generated',{recursive:true});
 const tsconfig='.generated/tsconfig-client-'+id+'.json';
-await writeFile(tsconfig,JSON.stringify({extends:'../tsconfig.json',include:['../clients/'+id,'../src/client-main.tsx','../src/framework','../vite.client.config.ts']},null,2));
+await writeFile(tsconfig,JSON.stringify({extends:'../tsconfig.json',include:['../clients/'+id,'../src/client-main.tsx','../src/framework','../src/dom-compat.d.ts','../vite.client.config.ts']},null,2));
 run(['node_modules/typescript/bin/tsc','--noEmit','-p',tsconfig]);
 run(['node_modules/vite/bin/vite.js','build','--config','vite.client.config.ts']);
 console.log(`Client ${id} built to dist-clients/${id}. No deployment was performed.`);
