@@ -1,1 +1,1 @@
-1: prepare pinned SQLRooms and public DataPass visual dependencies for the new repository only.
+2: use the verified React 19-compatible Fluent package; no peer-dependency bypass.

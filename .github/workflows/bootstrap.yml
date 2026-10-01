@@ -23,7 +23,7 @@ jobs:
       - name: Retrieve commit-pinned public visual engines and reference examples
         run: npm run bootstrap
       - name: Package development dependencies for isolated local verification
-        run: tar -czf development-bootstrap.tar.gz node_modules .upstream package-lock.json
+        run: tar -czf development-bootstrap.tar.gz node_modules .upstream package-lock.json package.json upstreams.lock.json scripts .github .gitignore bootstrap.request README.md
       - uses: actions/upload-artifact@v4
         with:
           name: development-bootstrap
