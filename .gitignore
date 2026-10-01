@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.upstream/
+.tmp-upstream/
+test-results/
+playwright-report/
+*.tar.gz
+.env
+.env.*
+!.env.example
