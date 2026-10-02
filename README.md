@@ -1,12 +1,10 @@
 # DataPass MosaicStudio
 
-**v0.4 alpha source SDK for AI-built technical websites.** Start with the smallest useful application family and let actual blocks determine the optional capabilities. Client content, domain logic and assets stay under `clients/<id>/`; reusable contracts and rendering stay under `src/framework/`.
+**v0.5 alpha source SDK for AI-built technical websites.** Build client content under `clients/<id>/`, discover only the necessary capabilities, and keep reusable contracts/rendering under `src/framework/`.
 
-Current branch: `feat/studio2-families-replay`, draft PR #5. This extends v0.3 without replacing the workbench or changing the pinned visual-engine repositories. No merge, deployment or npm package publication is implied.
+Current branch: `feat/studio2-motion-evidence`, draft PR #6. This extends the qualified v0.4 without merging, deploying, publishing a package or modifying pinned donor repositories.
 
-## Read the minimum needed
-
-Read `docs/recipes/START.md`, choose a family, and generate a client-specific context. Do not open all the 3D or SQL libraries to author an ordinary site.
+## Start with a small client
 
 ```sh
 npm ci
@@ -20,54 +18,55 @@ npm run client:check -- my-project
 npm run build:client -- my-project
 ```
 
-`client:context` writes `.generated/client-context/my-project/GUIDE.md` and `plan.json`. The guide lists only the used block contracts, required capabilities and relevant recipes. It is not a constraint on future requirements.
+Read `docs/recipes/START.md` and the generated `.generated/client-context/<id>/GUIDE.md`. Families are starter compositions, not restrictions: content, knowledge, analytics, spatial and replay. The actual build plan follows used blocks/resources and optional source-owned capability declarations.
 
-| Family | Starting composition | Default optional engines |
-| --- | --- | --- |
-| content | Pages, text, indicators, optional custom React | None |
-| knowledge | Outline, search, documents and context | Explorer / 2D map |
-| analytics | Validated filter, chart and table | VizForge / D3 |
-| spatial | Authored system with optional 3D representation | Explorer / shared Three.js viewport |
-| replay | Supplied time samples, plan, measurements and events | VizForge player/chart; no 3D by default |
+A simple content/data site does not need Three.js. The root development repository still installs its pinned dependencies; context and production-bundle isolation are not yet separate minimal npm packages.
 
-Mix families by adding blocks. The preferred family in `client.config.json` never overrides the actual build plan or locks the appearance. An advanced client can combine all five.
+## New: authored motion without WebGL
 
-## Optional really means optional
+```sh
+npm run client:new -- process-demo --family content --motion
+npm run client:context -- process-demo
+npm run build:client -- process-demo
+```
 
-A selected build derives capabilities from used blocks/resources and emits `studio-build.json`. It checks the actual module graph for undeclared Three.js and accidental SQLRooms/DuckDB workbench imports. A pure data, document or 2D replay client must not carry the 3D renderer.
+One small MotionSpec describes stations, tokens, links and authored steps. The same object IDs appear in a flat 2D diagram, an isometric SVG projection, a context inspector and public source excerpts. The compiler builds immutable target snapshots; seeking does not replay code or require a particular UI history.
 
-Client-owned custom React components can declare `customCapabilities`. An explicit empty list creates a lightweight extension. Older undeclared custom bindings conservatively retain every renderer and produce a warning rather than silently breaking.
+The original VizForge StoryPlayer owns progression. D3 performs finite adjacent-step transitions rather than adding another autoplay or physics clock. Isometric SVG does not load Three.js or create a WebGL context. Source excerpts are inert, with exact line references; state/timing labels are authored explanations, not runtime measurements.
 
-The repository still installs its pinned development dependency set. This is source/context and production-bundle isolation, not yet separately published minimal npm packages or a sandbox for arbitrary trusted source.
+The new compositional WorkspaceShell and SourceReader are reusable separately from the motion block: optional rail/outline, tabs, main view, inspector and status without a filesystem, editor or notebook. SVG target snapshots and script-free HTML reports are explicit exports. Source code is omitted from reports by default.
 
-## Engineering replay
+Read `docs/MOTION_KIT.md`, the short `docs/recipes/motion.md` and the exact `docs/MOTION_V0_5_QUALIFICATION.md` record.
 
-The new `replay` block coordinates a 2D installation plan, selected signal, current measurements, chart cursor, annotated events and optional 3D through one supplied sample index. It reuses the original VizForge StoryPlayer and its injectable scheduler. No duplicate chart timer or physics engine was created.
+## Existing capabilities remain
 
-Playback honors irregular elapsed timestamps and speed, supports manual seeking, and pauses for restore, hidden/offscreen views and unmount. Reduced motion preserves manual inspection. Null measurements remain unavailable; timestamp gaps and null intervals split the chart instead of inventing data. Limits are deliberately bounded: 200 samples, 24 entities, 8 channels and 1 MiB of replay JSON.
+Six public reference clients are included in the integrated review build:
 
-The energy reference uses three abstract oscillating-plate assemblies and invented signals. It is not a validated Foil'o mechanism, a conventional-turbine assumption, live telemetry or a final client site. The shared Three.js viewport accepts validated additive pose offsets; visual interpolation never creates scientific measurements.
+| Route | Purpose |
+| --- | --- |
+| `?app=motion-reference` | Two authored process explanations, 2D/isometric SVG and exact source context |
+| `?app=energy-replay-reference` | Supplied-sample engineering replay with optional 3D |
+| `?app=experience-reference` | One selected context across 3D, map and documents |
+| `?app=operations-reference` | Typed rows, filters, metrics, D3 and CSV |
+| `?app=architecture-reference` | Artifact-backed architecture/schema review and presentation |
+| `?app=wind-reference` | Original illustrative assembly, shared story and explicit computation tasks |
 
-## Preserved workbench and reference clients
+These are synthetic/author-owned acceptance examples, not final client websites, actual Foil'o engineering, live infrastructure or measured performance claims.
 
-The root still opens the separate SQLRooms/DuckDB analytical workbench. Client websites have their own host, public directory and selected build; the workbench database is not initialized implicitly.
+The root route remains the separate SQLRooms/DuckDB analytical workbench; `?sites=1` opens the reference gallery. Client builds have their own host/public directory and do not initialize the database by default. New client folders are not automatically published in that reference list.
 
-Use `?sites=1` for the reference gallery, or:
+The catalog now has **17 block types**. The motion capability is optional and does not add a new compulsory app family. Existing VizForge, ConceptMotion, Three.js and React Flow engines retain their roles rather than being replaced.
 
-- `?app=energy-replay-reference`: the new 2D-first engineering recording and optional 3D.
-- `?app=operations-reference`: data filtering, metrics, D3 and rows.
-- `?app=architecture-reference`: artifact-backed architecture/schema review and presentation.
-- `?app=experience-reference`: shared context across spatial, map and documents.
-- `?app=wind-reference`: the original illustrative assembly/story and task example.
+## Build and privacy boundaries
 
-The built-in catalog now has sixteen block types, including the existing explorer and semantic explanation. New client folders are not automatically included in the public workbench build. Their selected outputs go to `dist-clients/<id>/` without deployment.
+A selected output is `dist-clients/<id>/`. Its build checks actual rendered module inclusion and emits `studio-build.json`; undeclared Three.js or accidental workbench imports fail. Custom source components can declare their minimum `customCapabilities`; legacy undeclared components retain all engines with a warning.
 
-## Qualification
+This is not a sandbox for arbitrary repository code. Static sites expose their embedded content. Approve source excerpts, data and public assets before publishing. Domain filters, evidence tabs and view links are not access control. Saved input JSON may contain sensitive values even though source bodies and result data are excluded.
 
-Implementation `0900c8a93d47456e663cc44a61b4b575647a69a5` passed workflow `36961220238`: **223 unit/boundary tests, strict TypeScript/build, original visual contracts, 43 production browser scenarios and ten independent client build/browser targets**. The five freshly generated clients left framework source unchanged. The final documentation-only follow-up does not change that implementation. See `docs/FAMILIES_V0_4_QUALIFICATION.md` for exact evidence, measurements and limits; `docs/FIRST_ENERGY_CLIENT.md` defines the approved inputs needed for the first real energy client.
+No deployment happens in a client build. Read `docs/AI_SITE_AUTHORING.md` for advanced state/task/export rules and `docs/FIRST_ENERGY_CLIENT.md` for the boundary between synthetic fixtures and a real energy client.
 
-## Boundaries
+## Verification and release status
 
-Read `docs/FAMILIES_REPLAY.md` for detailed behavior and `docs/recipes/replay.md` for the small authoring contract. Use `docs/AI_SITE_AUTHORING.md` for advanced state, task and privacy boundaries. Historical v0.2/v0.3 records remain in `docs/`.
+The final v0.5 implementation and completed workflow are recorded in `docs/MOTION_V0_5_QUALIFICATION.md`. Read that source-backed record rather than treating a pending PR or configured test suite as a successful gate. Existing clients remain regression targets; actual captures and independent generated-client outputs are inspected.
 
-Real applications still need approved data/assets, tested domain assumptions and a deployment/security decision. Static filters are not access control. No live telemetry backend, weather/physics model, GLTF/CAD import, video encoder, new notebook/IDE, Hop runtime, X-ray or DuckLake was introduced. The next client can justify a narrow, independently tested extension without turning every site into the same application.
+The project remains an alpha source SDK. A general v1 requires approved real-client acceptance, stable API/version/migration policy and broader browser/device/accessibility/performance qualification. This pass does not supply a general Scenario Engine, notebook/Python execution, GLTF/CAD import, live backend, PDF/PPTX/video encoder, DuckLake or a rewrite of AtlasNote/Cloud Diagram.

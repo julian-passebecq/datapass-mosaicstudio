@@ -183,6 +183,22 @@
     "limits": "200 supplied samples, 24 entities, 8 channels; missing values are not interpolated; no live stream or physical model"
   },
   {
+    "type": "motion",
+    "purpose": "Authored tokens and objects through deterministic 2D/isometric steps, with source evidence",
+    "required": [
+      "id",
+      "type",
+      "resource",
+      "step",
+      "selection",
+      "projection",
+      "panel",
+      "source"
+    ],
+    "engine": "D3 SVG / original VizForge StoryPlayer",
+    "limits": "40 objects, 64 steps, four inert command types; no WebGL, code execution or physical model"
+  },
+  {
     "type": "custom",
     "purpose": "Client-owned React component registered in trusted source",
     "required": [

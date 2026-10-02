@@ -22,3 +22,9 @@ export {planCapabilities,capabilityCatalog,appFamilies,familyById} from './capab
 export type {AppFamily,CapabilityId,CapabilityPlan} from './capabilities.ts';
 export {validateReplay,replayFields,replayBlock,sampleValue,nearestSample} from './replay/model.ts';
 export type {ReplaySpec,ReplayBlock,ReplayEntity,ReplayChannel,ReplayMotion} from './replay/model.ts';
+
+export {validateMotion,motionFields,motionBlock} from './motion/model.ts';
+export type {MotionSpec,MotionBlock,MotionEntity,MotionStep,MotionCommand} from './motion/model.ts';
+export {compileMotion,motionFrame} from './motion/compile.ts';
+export {validateSources,validateEvidence} from './evidence/model.ts';
+export type {SourceArtifact,EvidenceRef} from './evidence/model.ts';

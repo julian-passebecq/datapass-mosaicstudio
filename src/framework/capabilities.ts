@@ -1,7 +1,7 @@
 /** Pure capability planning. Families guide authors; they do not restrict composition. */
 import type {AppDefinition} from './types.ts';
 import {object} from './guards.ts';
-export const CAPABILITY_IDS = ['charts','stories','spatial','architecture','explorer','explanation','replay'] as const;
+export const CAPABILITY_IDS = ['charts','stories','spatial','architecture','explorer','explanation','replay','motion'] as const;
 export type CapabilityId = typeof CAPABILITY_IDS[number];
 export const capabilityCatalog = {
   charts: {title:'Analytical charts', flag:'__STUDIO_CHARTS__', guide:'docs/recipes/analytics.md', engines:['VizForge / D3']},
@@ -10,6 +10,7 @@ export const capabilityCatalog = {
   architecture: {title:'Architecture review', flag:'__STUDIO_ARCHITECTURE__', guide:'docs/ARCHITECTURE_REVIEW.md', engines:['React Flow']},
   explorer: {title:'Context and documents', flag:'__STUDIO_EXPLORER__', guide:'docs/recipes/knowledge.md', engines:['React Flow']},
   explanation: {title:'Semantic explanations', flag:'__STUDIO_EXPLANATIONS__', guide:'docs/recipes/explanation.md', engines:['ConceptMotion']},
+  motion: {title:'Authored 2D / isometric motion', flag:'__STUDIO_MOTION__', guide:'docs/recipes/motion.md', engines:['D3 SVG / VizForge StoryPlayer']},
   replay: {title:'Sampled engineering replay', flag:'__STUDIO_REPLAY__', guide:'docs/recipes/replay.md', engines:['VizForge StoryPlayer / Figure']},
 } satisfies Record<CapabilityId,{title:string;flag:string;guide:string;engines:string[]}>;
 export type CapabilityPlan = {capabilities:CapabilityId[];reasons:Record<string,string[]>;blocks:string[];guides:string[];warnings:string[]};
@@ -29,6 +30,7 @@ export function planCapabilities(definition:AppDefinition):CapabilityPlan {
   for(const b of definition.manifest.pages.flatMap(p=>p.sections.flatMap(s=>s.blocks))){
     blocks.add(b.type);
     switch(b.type){
+      case 'motion':need('motion',b.id);break;
       case 'chart':need('charts',b.id);break;
       case 'scene3d':need('spatial',b.id);break;
       case 'architecture':need('architecture',b.id);break;
