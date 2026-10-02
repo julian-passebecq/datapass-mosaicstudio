@@ -53,6 +53,12 @@
             "compact",
             "comfortable"
           ]
+        },
+        "mode": {
+          "enum": [
+            "light",
+            "dark"
+          ]
         }
       },
       "required": [
@@ -1103,6 +1109,127 @@
                             }
                           },
                           "type": {
+                            "const": "explorer"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "resource": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "focus": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "facet": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "view": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "level": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "group": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "document": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "scroll": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "resource",
+                          "focus",
+                          "facet",
+                          "view",
+                          "level",
+                          "group",
+                          "document"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
                             "const": "story-controls"
                           },
                           "span": {
@@ -1242,6 +1369,52 @@
                           },
                           "type": {
                             "const": "custom"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "resource": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "resource"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "explanation"
                           },
                           "span": {
                             "type": "integer",

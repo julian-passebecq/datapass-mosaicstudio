@@ -139,6 +139,34 @@
     "limits": "Static artifact; not a live analyzer or orchestrator"
   },
   {
+    "type": "explorer",
+    "purpose": "One context across spatial objects, relationship map and a document library",
+    "required": [
+      "id",
+      "type",
+      "resource",
+      "focus",
+      "facet",
+      "view",
+      "level",
+      "group",
+      "document"
+    ],
+    "engine": "Shared Three.js viewport / React Flow / React documents",
+    "limits": "64 items, 80 documents, reviewed view IDs; optional native scroll tour, no notebook or repository analyzer"
+  },
+  {
+    "type": "explanation",
+    "purpose": "Client-authored algorithm/transformation explanation with semantic frames",
+    "required": [
+      "id",
+      "type",
+      "resource"
+    ],
+    "engine": "Original ConceptMotion LoopScene and semantic compiler",
+    "limits": "40 items, 100 manual frames; no executable code, no duplicate animation engine"
+  },
+  {
     "type": "custom",
     "purpose": "Client-owned React component registered in trusted source",
     "required": [
