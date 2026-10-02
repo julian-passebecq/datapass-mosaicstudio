@@ -21,3 +21,11 @@ export function pose(part:ScenePart,explode:number,phase:number):{position:Vec3;
   if(part.spin)rotation[{x:0,y:1,z:2}[part.spin.axis]]+=part.spin.turns*phase*Math.PI*2;
   return {position,rotation};
 }
+
+/** Optional additive pose deltas supplied by trusted client adapters, not executable tracks. */
+export type PartPoseOffsets=Record<string,{position?:Vec3;rotation?:Vec3}>;
+export function validatePoseOffsets(scene:SceneSpec,input:unknown):PartPoseOffsets{
+  strict(input,scene.parts.map(p=>p.id),'part pose offsets');
+  for(const value of Object.values(input)){strict(value,['position','rotation'],'part pose');if(value.position!==undefined)vec(value.position,'pose position');if(value.rotation!==undefined)vec(value.rotation,'pose rotation');}
+  return structuredClone(input) as PartPoseOffsets;
+}

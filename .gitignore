@@ -25,3 +25,6 @@ clients/acceptance-fresh/
 
 clients/acceptance-knowledge/
 clients/acceptance-spatial/
+
+clients/acceptance-analytics/
+clients/acceptance-replay/

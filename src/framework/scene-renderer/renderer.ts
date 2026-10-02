@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
-import {pose, type SceneSpec} from '../scene';
+import {pose,validatePoseOffsets, type SceneSpec,type PartPoseOffsets} from '../scene';
 
 export type SceneView = {explode:number; phase:number; camera:string; selection:string};
 export type ProjectedAnchor = {entity:string; x:number; y:number; visible:boolean};
 export type SceneRenderer = {
-  update(view:SceneView, reduced:boolean, highlighted?:readonly string[]|null):void;
+  update(view:SceneView, reduced:boolean, highlighted?:readonly string[]|null,offsets?:PartPoseOffsets):void;
   resetCamera():void;
   capture():Promise<Blob>;
   dispose():void;
@@ -53,6 +53,7 @@ export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:S
   ground.position.y=-.03;world.add(ground);geometries.add(ground.geometry);
   (Array.isArray(ground.material)?ground.material:[ground.material]).forEach(m=>materials.add(m));
   let alive=true,frame=0,displayed={...initial},desired={...initial},lastCamera='',highlighted:readonly string[]|null=null;
+  let displayedOffsets:PartPoseOffsets={},desiredOffsets:PartPoseOffsets={};
   const cameraPreset=(id:string)=>scene.cameras.find(c=>c.id===id)||scene.cameras[0];
   const boxes=new Map(scene.entities.map(e=>[e.id,new THREE.Box3()]));
   const box=new THREE.Box3(),point3=new THREE.Vector3();
@@ -71,8 +72,9 @@ export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:S
     }));
   }
   function render(){if(alive&&!context.isContextLost()){renderer.render(world,camera);anchors();}}
-  function place(v:SceneView){
-    for(const p of scene.parts){const object=items.get(p.id)!,target=pose(p,v.explode,v.phase);object.position.fromArray(target.position);object.rotation.set(...target.rotation);
+  function place(v:SceneView,offsets:PartPoseOffsets=displayedOffsets){
+    for(const p of scene.parts){const object=items.get(p.id)!,target=pose(p,v.explode,v.phase);const delta=offsets[p.id];
+      object.position.fromArray(target.position.map((v,i)=>v+(delta?.position?.[i]||0)) as [number,number,number]);object.rotation.set(...target.rotation.map((v,i)=>v+(delta?.rotation?.[i]||0)) as [number,number,number]);
       if(object instanceof THREE.Mesh){const m=object.material as THREE.MeshStandardMaterial,active=object.userData.entity===v.selection,dim=highlighted!==null&&object.userData.entity&&!highlighted.includes(object.userData.entity);
         m.emissive.set(active?(dark?'#3a7388':'#24566b'):'#000000');m.emissiveIntensity=active?.32:0;
         m.transparent=!!dim;m.opacity=dim?.18:1;m.depthWrite=!dim;
@@ -81,7 +83,7 @@ export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:S
   }
   function stop(){cancelAnimationFrame(frame);frame=0;canvas.dataset.animating='false';}
   function applyCamera(id:string){const p=cameraPreset(id);camera.position.fromArray(p.position);controls.target.fromArray(p.target);controls.update();lastCamera=id;}
-  function settle(){stop();displayed={...desired};place(displayed);applyCamera(desired.camera);render();}
+  function settle(){stop();displayed={...desired};displayedOffsets=desiredOffsets;place(displayed);applyCamera(desired.camera);render();}
   function resize(){const width=Math.max(1,root.clientWidth),height=Math.max(1,root.clientHeight);renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();render();}
   function hide(){if(document.hidden)settle();}
   const observer=new ResizeObserver(resize);
@@ -103,14 +105,18 @@ export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:S
   document.addEventListener('visibilitychange',hide);
   root.appendChild(canvas);canvas.dataset.renderer='three-webgl2';applyCamera(initial.camera);place(initial);observer.observe(root);resize();
   return {
-    update(next,noMotion,nextHighlighted=null){
-      if(!alive)return;stop();desired={...next};highlighted=nextHighlighted;
+    update(next,noMotion,nextHighlighted=null,offsets={}){
+      if(!alive)return;const checkedOffsets=validatePoseOffsets(scene,offsets);stop();desired={...next};highlighted=nextHighlighted;
+      const fromOffsets=displayedOffsets,offsetChanged=JSON.stringify(fromOffsets)!==JSON.stringify(checkedOffsets);desiredOffsets=checkedOffsets;
       const from={...displayed},began=performance.now(),cameraChanged=lastCamera!==next.camera;
       const fromPosition=camera.position.clone(),fromTarget=controls.target.clone(),preset=cameraPreset(next.camera),toPosition=new THREE.Vector3(...preset.position),toTarget=new THREE.Vector3(...preset.target);lastCamera=next.camera;
-      const duration=noMotion||document.hidden||!cameraChanged&&from.explode===next.explode&&from.phase===next.phase?0:420;
+      const duration=noMotion||document.hidden||!cameraChanged&&from.explode===next.explode&&from.phase===next.phase&&!offsetChanged?0:420;
       canvas.dataset.animating=String(duration>0);
       const draw=(now:number)=>{if(!alive)return;const raw=duration?Math.min(1,(now-began)/duration):1,t=raw*raw*(3-2*raw);
-        displayed={...next,explode:from.explode+(next.explode-from.explode)*t,phase:from.phase+(next.phase-from.phase)*t};place(displayed);
+        displayed={...next,explode:from.explode+(next.explode-from.explode)*t,phase:from.phase+(next.phase-from.phase)*t};
+        displayedOffsets={};
+        for(const id of new Set([...Object.keys(fromOffsets),...Object.keys(checkedOffsets)])){const out:PartPoseOffsets[string]={};for(const key of ['position','rotation'] as const){const a=fromOffsets[id]?.[key],b=checkedOffsets[id]?.[key];if(a||b)out[key]=[0,1,2].map(i=>(a?.[i]||0)+((b?.[i]||0)-(a?.[i]||0))*t) as [number,number,number];}displayedOffsets[id]=out;}
+        place(displayed);
         if(cameraChanged){camera.position.lerpVectors(fromPosition,toPosition,t);controls.target.lerpVectors(fromTarget,toTarget,t);controls.update();}
         render();if(raw<1)frame=requestAnimationFrame(draw);else canvas.dataset.animating='false';
       };draw(began);

@@ -1,6 +1,6 @@
 {
   "name": "datapass-mosaicstudio",
-  "version": "0.3.0-alpha.1",
+  "version": "0.4.0-alpha.1",
   "private": true,
   "type": "module",
   "engines": {
@@ -18,11 +18,13 @@
     "test:fixtures": "python scripts/make-test-fixtures.py",
     "contracts": "node --experimental-strip-types scripts/export-contracts.mjs",
     "contracts:check": "node --experimental-strip-types scripts/export-contracts.mjs --check",
-    "client:new": "node scripts/scaffold-client.mjs",
+    "client:new": "node --experimental-strip-types scripts/scaffold-client.mjs",
     "client:check": "node --experimental-strip-types scripts/check-clients.mjs",
     "test:visual-contracts": "node scripts/check-visuals.mjs",
     "build:client": "node --experimental-strip-types scripts/build-client.mjs",
-    "test:client-builds": "node --experimental-strip-types scripts/test-client-builds.mjs"
+    "test:client-builds": "node --experimental-strip-types scripts/test-client-builds.mjs",
+    "client:context": "node --experimental-strip-types scripts/client-context.mjs",
+    "client:families": "node --experimental-strip-types scripts/client-context.mjs --families"
   },
   "overrides": {
     "@duckdb/duckdb-wasm": "1.32.0"

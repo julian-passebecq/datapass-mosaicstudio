@@ -1,5 +1,7 @@
 # DataPass MosaicStudio agent rules
 
+Start small: read `docs/recipes/START.md`, choose `client:families`, then run `client:context -- <id>`. Read only the generated capability-specific route unless a requirement exposes a gap. Families are guidance, not restrictions. Do not open Three.js or the donor trees just to author a normal client.
+
 1. This repository is a web-first framework/application, not a VS Code clone or notebook IDE.
 2. Preserve the upstream visual engines. `.upstream/` is ignored, immutable and commit-pinned. Do not edit those directories or copy their application shells into the framework.
 3. Existing visual stories use VizForge; semantic explanations use ConceptMotion. D3/React Flow/Three are rendering libraries, not a reason to create duplicate story clocks.
@@ -16,9 +18,13 @@
 14. Run unit tests, TypeScript, source/client contracts, production build and actual browser checks. Configured CI is not completed CI. Report actual counts and failures.
 15. Public website builds are not access control. Client data, documentation and public assets must be approved before publication.
 16. No automatic merge, deployment, package publication or branch replacement without explicit authorization. Work on an isolated branch and preserve prior checkpoints.
-17. Public reference clients are `wind-reference`, `operations-reference`, `architecture-reference`, and `experience-reference`. The default production workbench must not include arbitrary new clients.
-18. Read `docs/AI_SITE_AUTHORING.md`, `docs/contracts/components.json`, `docs/AI_CLIENT_BRIEF.md` and `docs/EXPERIENCE_KIT.md` before building a new client.
+17. Public reference clients are `wind-reference`, `operations-reference`, `architecture-reference`, `experience-reference`, and `energy-replay-reference`. The default production workbench must not include arbitrary new clients.
+18. Read `docs/recipes/START.md` and the client-focused generated guide first. Use the longer AI/experience guides only for the capabilities actually needed.
 19. An explorer has one selected identity across Spatial, Map and Library. Context facets, camera targets and an explicit open-project action must remain separate concepts; do not duplicate content or selection state per renderer.
 20. Native scroll tours are optional. Do not intercept wheel input or remove accessible direct controls. Pause tour following for direct interaction, restored state, hidden pages and reduced motion.
 21. Explorer state must be jointly validated and updated atomically through the helpers. Individual valid field values can still form an invalid combined context.
 22. A real client may justify a generic framework extension. Isolate it, document it and prove it with a concrete consumer plus regressions. Keep arbitrary client-specific features in client-owned TSX rather than mutating the shared framework for every page.
+
+23. The engineering replay consumes supplied samples. Reuse the existing player scheduler; never invent observations, silently fill missing data, add an unrelated autoplay timer or treat illustrative geometry as a validated Foil'o model.
+24. Custom components should declare minimum `customCapabilities`; undeclared legacy components retain all renderers. This is a build contract, not a security sandbox.
+25. Selected-client build evidence must confirm optional 3D is absent where unneeded and only requested after a visitor chooses it when the default is 2D. Keep family metadata out of business/model logic.
