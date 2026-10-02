@@ -1,0 +1,58 @@
+{
+  "charts": {
+    "title": "Analytical charts",
+    "flag": "__STUDIO_CHARTS__",
+    "guide": "docs/recipes/analytics.md",
+    "engines": [
+      "VizForge / D3"
+    ]
+  },
+  "stories": {
+    "title": "Authored visual stories",
+    "flag": "__STUDIO_STORIES__",
+    "guide": "docs/recipes/stories.md",
+    "engines": [
+      "VizForge StoryPlayer"
+    ]
+  },
+  "spatial": {
+    "title": "Optional 3D scenes",
+    "flag": "__STUDIO_3D__",
+    "guide": "docs/recipes/spatial.md",
+    "engines": [
+      "Three.js"
+    ]
+  },
+  "architecture": {
+    "title": "Architecture review",
+    "flag": "__STUDIO_ARCHITECTURE__",
+    "guide": "docs/ARCHITECTURE_REVIEW.md",
+    "engines": [
+      "React Flow"
+    ]
+  },
+  "explorer": {
+    "title": "Context and documents",
+    "flag": "__STUDIO_EXPLORER__",
+    "guide": "docs/recipes/knowledge.md",
+    "engines": [
+      "React Flow"
+    ]
+  },
+  "explanation": {
+    "title": "Semantic explanations",
+    "flag": "__STUDIO_EXPLANATIONS__",
+    "guide": "docs/recipes/explanation.md",
+    "engines": [
+      "ConceptMotion"
+    ]
+  },
+  "replay": {
+    "title": "Sampled engineering replay",
+    "flag": "__STUDIO_REPLAY__",
+    "guide": "docs/recipes/replay.md",
+    "engines": [
+      "VizForge StoryPlayer / Figure"
+    ]
+  }
+}
