@@ -47,6 +47,14 @@
       "ConceptMotion"
     ]
   },
+  "motion": {
+    "title": "Authored 2D / isometric motion",
+    "flag": "__STUDIO_MOTION__",
+    "guide": "docs/recipes/motion.md",
+    "engines": [
+      "D3 SVG / VizForge StoryPlayer"
+    ]
+  },
   "replay": {
     "title": "Sampled engineering replay",
     "flag": "__STUDIO_REPLAY__",
