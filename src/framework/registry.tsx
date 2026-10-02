@@ -6,6 +6,8 @@ import type {SiteRuntime} from './runtime';
 const Chart=__STUDIO_CHARTS__?lazy(()=>import('./blocks/Chart')):null;
 const Scene=__STUDIO_3D__?lazy(()=>import('./blocks/Scene3D')):null;
 const Story=__STUDIO_STORIES__?lazy(()=>import('./blocks/Story')):null;
+const Motion=__STUDIO_MOTION__?lazy(()=>import('./motion/Motion')):null;
+export const SharedMotionScope=__STUDIO_MOTION__?lazy(()=>import('./motion/Scope').then(m=>({default:m.MotionScope}))):function MissingMotion(_: {blocks:import('./motion/model').MotionBlock[];children:import('react').ReactNode}){throw new Error('Motion was not included in this build');};
 const Replay=__STUDIO_REPLAY__?lazy(()=>import('./replay/Replay')):null;
 export const SharedReplayScope=__STUDIO_REPLAY__?lazy(()=>import('./replay/Scope').then(m=>({default:m.ReplayScope}))):function MissingReplay(_: {blocks:import('./replay/model').ReplayBlock[];children:import('react').ReactNode}){throw new Error('Replay was not included in this build');};
 const Explorer=__STUDIO_EXPLORER__?lazy(()=>import('./explorer/Explorer')):null;
@@ -17,6 +19,7 @@ export type CustomBlockProps={runtime:SiteRuntime};
 export function RenderBlock({block}:{block:Block}){
   const runtime=useRuntime();
   switch(block.type){
+    case 'motion':if(!Motion)throw new Error('Motion not included in build');return <Motion block={block}/>;
     case 'chart':if(!Chart)throw new Error('Chart not included in build');return <Chart block={block}/>;
     case 'scene3d':if(!Scene)throw new Error('3D not included in build');return <Scene block={block}/>;
     case 'story-controls':case 'story-figure':if(!Story)throw new Error('Story not included in build');return <Story block={block}/>;
