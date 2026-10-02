@@ -1,22 +1,39 @@
-# AI work order for a new Studio client
+# Client website work order for an AI agent
 
-Use the existing Studio source SDK; do not rebuild the UI/data/graphics infrastructure.
+Copy this brief into a new client task. Read `AI_SITE_AUTHORING.md` and the component catalog before coding.
 
-## Inputs to request/confirm
+## Required input
 
-Client name and audience; public versus private data; required pages and decisions; approved source data/model assets; units, assumptions and domain authority; desired visual style; static versus service-backed computation; hosting constraints; acceptance scenarios.
+- Client id and site title:
+- Intended visitors and primary task:
+- Public/synthetic/private classification:
+- Pages and information hierarchy:
+- Visual references (what is liked and what must not be copied):
+- Approved data and its schema/units:
+- Approved images/models and their usage rights:
+- Model assumptions and correctness checks:
+- Inputs that stay local versus inputs sent to an approved service:
+- Required accessibility, mobile and reduced-motion behavior:
+- Hosting target and required computation service (if any):
 
-## Work sequence
+## Agent contract
 
-1. Read AGENTS.md, docs/AI_SITE_AUTHORING.md and docs/contracts/components.json.
-2. Scaffold a new clients/<id> folder. Use --custom only when the brief needs a source-owned React extension.
-3. Keep app.ts manifest declarative. Put domain functions in model.ts and test them independently.
-4. Use only the necessary blocks. A brochure or architecture site must not initialize a SQL workbench.
-5. Reuse existing VizForge, scene3d and architecture bindings rather than writing duplicate renderers.
-6. Label synthetic data, explicit calculations, imported snapshots and live results correctly.
-7. Add client unit/browser tests, run client:check and build:client, inspect the actual result at desktop and mobile widths.
-8. Report exact files changed, tests run, known limitations and build directory. Do not deploy, merge or publish private data without authorization.
+Create source under `clients/<client-id>/`. Use framework blocks before creating custom components. Do not copy a reference client's domain data or edit framework internals for ordinary pages. Keep executable domain calculations in trusted source bindings, not in JSON strings.
 
-## Definition of done
+A public build makes its embedded content available to visitors. Do not include secrets or private evidence. Labelling a dataset private does not secure a static bundle.
 
-The requested site is assembled primarily under clients/<id>, framework internals remain unchanged, the selected bundle contains no unrelated client artifacts, and its specific acceptance tests pass. Any missing generic capability is proposed separately with a small reproducible consumer rather than implemented as an opaque one-off in the framework.
+No deployment, domain change, authentication setup or external service write is implied by this brief. Confirm the actual target and authorization before those operations.
+
+## Acceptance
+
+Run the client's source validation, strict TypeScript, selected production build and real browser checks. Test calculations, empty/error states, exports/restores, mobile, keyboard and reduced motion. Record failures and fix them rather than suppressing checks. Deliver the client source, build output and a clear distinction between implemented behavior and planned integrations.
+
+## Experience and navigation choices
+
+Specify whether the primary composition is a spatial map, a 2D architecture map, a minimal knowledge/document site, or an ordinary analytical app. Define stable objects and the information facets for each: for example capabilities, companies, projects and evidence.
+
+Decide what selecting an object does, which facets change its camera, and which explicit action opens a separate project page. Do not confuse a selection with navigation or a declared relationship with measured runtime lineage.
+
+For scroll-driven experiences, provide authored stops and retain direct controls. State whether geometry is illustrative or an approved product asset. No physical performance or weather effect may be inferred from presentation animation.
+
+When no existing block fits, propose either a client-owned custom React component or a narrowly scoped generic framework extension with validation, documentation and a concrete regression test. Do not silently turn the framework into an IDE or a collection of client-specific exceptions.
