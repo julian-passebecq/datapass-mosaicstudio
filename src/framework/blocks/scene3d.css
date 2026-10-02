@@ -4,3 +4,10 @@
 .studio-site .site-scene-controls label{min-width:0}
 .studio-site .site-scene-controls input[type=range],
 .studio-site .site-scene-controls select{width:100%;min-width:0;max-width:100%}
+.studio-scene-stage{position:relative;min-width:0}
+.studio-scene-anchors{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.studio-scene-anchors button{position:absolute;transform:translate(-50%,-115%);max-width:160px;border:1px solid #b5c9d9;background:#ffffffec;color:#18354d;padding:6px 10px;border-radius:5px;font:500 11px/1.35 system-ui;cursor:pointer;pointer-events:auto;box-shadow:0 2px 9px #1023370f;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.studio-scene-anchors button[aria-pressed=true]{outline:2px solid var(--site-accent);outline-offset:2px}
+.studio-scene-viewport.dark .site-scene-toolbar{background:#0e1b29;border-color:#23384b;color:#bdd0df}
+.studio-scene-viewport.dark .site-scene-toolbar button{border-color:#385267;color:#d7e8f4;background:#142638}
+.studio-scene-viewport.dark .studio-scene-anchors button{background:#0e2133e8;color:#dbedf8;border-color:#426c8a}

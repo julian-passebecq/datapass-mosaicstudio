@@ -1,3 +1,4 @@
+import {validateExplorerValues} from './explorer/model.ts';
 import type {AppDefinition, Manifest, Values, Rows, Scalar, ValueRef, Snapshot, TaskState, SavedState, DeriveContext} from './types.ts';
 import {validateDefinition, validateRows, validateValue, object, parseSavedState} from './validate.ts';
 function freeze<T>(value: T): T {if (value && typeof value==='object' && !Object.isFrozen(value)) {Object.freeze(value); Object.values(value).forEach(freeze);} return value;}
@@ -28,6 +29,7 @@ export class SiteRuntime {
   patch(values:Record<string,unknown>){
     if(!object(values))throw new Error('State patch must be a plain object');
     for(const [id,value] of Object.entries(values)){const f=this.manifest.fields.find(f=>f.id===id);if(!f)throw new Error('Unknown field: '+id);validateValue(f,value);}
+    validateExplorerValues(this.definition,{...this.snapshot.values,...values} as Values);
     if(Object.entries(values).every(([id,v])=>Object.is(this.snapshot.values[id],v)))return;
     this.snapshot=freeze({...this.snapshot,values:{...this.snapshot.values,...values} as Values,revision:this.snapshot.revision+1});
     // Only tasks whose declared inputs changed are invalidated. Camera/selection
@@ -108,7 +110,7 @@ export class SiteRuntime {
   cancelTask(id:string){const run=this.runs.get(id);if(!run)return;this.runs.delete(id);run.abort.abort();this.taskState(id,{status:'cancelled',progress:0,message:'Task cancelled. No result was applied.'});}
   cancelAll(){for(const id of [...this.runs.keys()])this.cancelTask(id);}
   save(page:string):SavedState{if(!this.manifest.pages.some(p=>p.id===page))throw new Error('Unknown page');return {format:'datapass.web-state',version:1,appId:this.manifest.id,appVersion:this.manifest.version,page,values:{...this.snapshot.values}};}
-  review(source:string):SavedState{return parseSavedState(source,this.manifest);}
+  review(source:string):SavedState{const saved=parseSavedState(source,this.manifest);validateExplorerValues(this.definition,saved.values);return saved;}
   private stopPresentation(){this.snapshot=freeze({...this.snapshot,restoreEpoch:this.snapshot.restoreEpoch+1});this.emit();}
   restore(value:SavedState){const checked=this.review(JSON.stringify(value));this.cancelAll();this.stopPresentation();this.patch(checked.values);return checked.page;}
   reset(){this.cancelAll();this.stopPresentation();this.patch(Object.fromEntries(this.manifest.fields.map(f=>[f.id,f.default])));}

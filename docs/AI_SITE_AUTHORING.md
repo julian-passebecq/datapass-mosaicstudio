@@ -4,7 +4,7 @@
 
 Studio owns reusable rendering, typed state, small-data bindings, guarded tasks and build boundaries. **The client owns domain logic, content, data, assets, pages and evidence.** Do not edit `src/framework` just to build another site.
 
-This is the **v0.2 source SDK**, not a published npm package, not Streamlit source compatibility and not a notebook runtime. Workbench features remain in the repository, but a client build has a different entry point and does not initialize SQLRooms or DuckDB unless a future explicit integration adds them.
+This is the **v0.3 source SDK**, not a published npm package, not Streamlit source compatibility and not a notebook runtime. Workbench features remain in the repository, but a client build has a different entry point and does not initialize SQLRooms or DuckDB unless a future explicit integration adds them.
 
 Read `docs/contracts/components.json`, `src/framework/types.ts` and one reference `clients/*/app.ts` first. Runtime validation is authoritative for semantic references; the generated JSON Schemas assist authoring but cannot prove dependency correctness or domain validity.
 
@@ -19,7 +19,7 @@ npm run client:check -- client-name
 npm run build:client -- client-name
 ```
 
-Output: `dist-clients/client-name/`. No deployment happens. The regular `npm run build` is the integrated review/workbench build and includes only the three public reference clients. It does **not** automatically include every new client folder.
+Output: `dist-clients/client-name/`. No deployment happens. The regular `npm run build` is the integrated review/workbench build and includes only the four public reference clients. It does **not** automatically include every new client folder.
 
 `npm run client:new -- client-name --title "Client project" --custom` also creates a client-owned TSX component and binds it through the `custom` block. Scaffolding refuses an existing folder and never overwrites another client or framework file.
 
@@ -110,7 +110,7 @@ The `chart` block translates a small typed dataset into the **existing VizForge 
 
 Cues can modify only declared `view` fields, never financial or scientific inputs. The index field must be an integer view field covering the story's scene count. Autoplay pauses when hidden, when inputs are restored/reset, on unmount, and under reduced motion. A scene change applies its canonical cue; manually changing a camera afterward does not rewrite the scene's authored meaning.
 
-`scene3d` is a real Three.js/WebGL2 component with orbit/pan/zoom, camera presets, hierarchy, selectable entities, explode vectors, phase-driven rotation, PNG capture and a non-WebGL accessible fallback. It renders validated primitives, not arbitrary JavaScript or downloaded models. Client-owned geometry/cues are in `wind-reference`; renderer code remains generic. This pass does not supply GLTF import, CAD precision, physics, video encoding or scroll-based cinematic choreography.
+`scene3d` is a real Three.js/WebGL2 component with orbit/pan/zoom, camera presets, hierarchy, selectable entities, explode vectors, phase-driven rotation, PNG capture and a non-WebGL accessible fallback. It renders validated primitives, not arbitrary JavaScript or downloaded models. Client-owned geometry/cues are in `wind-reference`; renderer code remains generic. This pass does not supply GLTF import, CAD precision, physics, video encoding or continuous scroll-based cinematic choreography. The optional explorer tour below selects authored stops using native page scroll.
 
 ## Custom component escape hatch
 
@@ -143,3 +143,15 @@ Saved input JSON is intentionally not a whole-project archive: it excludes impor
 6. Sharing/export behavior is explicit and privacy-reviewed.
 
 Reference clients prove composition only. They are not final Foil'o, wind LCOE or portfolio websites.
+
+## System exploration, knowledge libraries and semantic explanation
+
+Read `docs/EXPERIENCE_KIT.md` before building a spatial portfolio, an interactive architecture showcase or a minimal document site. Use `--template knowledge` for a lightweight outline/search/document starter, or `--template spatial` for the same canonical content with a procedural 3D scene. Both remain client-owned source and are tested through isolated builds.
+
+`explorer` keeps one focus/facet/domain across Spatial, Map and Library; explicit project opening is separate from focus. Its optional native scroll tour is opt-in, pauses for direct interaction and restores, and retains non-scroll alternatives on small screens or with reduced motion. All six view fields must be patched atomically with the exported helpers. Domains and evidence levels are not permission boundaries.
+
+`explanation` consumes bounded client-authored loop/ordered-item frames through the original ConceptMotion compiler and renderer. It displays code and invariants without executing them. Use a custom source component for other semantic families until a tested generic adapter is added.
+
+`theme.mode` may be `light` or `dark`; omitting it keeps the original light mode. Generated chart inputs and the explanation block adapt to the original engines' theme contracts. Authored StorySpecs retain their own themes. Do not promise a pixel-identical transformation of every third-party renderer by changing site chrome.
+
+The AI may propose a reusable framework extension when a real brief exposes a gap. Put it on an isolated feature branch with semantic validation, docs and a concrete consumer/regression test; do not solve every requirement by changing shared internals or by copying an existing client's code.
