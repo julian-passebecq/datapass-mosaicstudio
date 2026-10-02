@@ -1,4 +1,4 @@
-import {lazy,Suspense,useEffect,useMemo,useRef,useSyncExternalStore,type CSSProperties} from 'react';
+import {lazy,Suspense,useEffect,useMemo,useRef,useSyncExternalStore,useState,type CSSProperties} from 'react';
 import {Figure} from '@vizforge/adapters/react';
 import {parseVisualization,type Scene} from '@vizforge/core/spec';
 import {useRuntime,useSiteState,useReducedMotion} from '../hooks';
@@ -8,11 +8,13 @@ import {replayChartInput} from './visual';
 import {withSiteChartTheme} from '../visual-theme';
 import {validateScene} from '../scene';
 import './replay.css';
+import './camera-controls.css';
 import '../blocks/scene3d.css';
 const Spatial=__STUDIO_3D__?lazy(()=>import('../scene-renderer/SceneViewport')):null;
 const valueText=(value:number|null,digits:number)=>value===null?'Unavailable':new Intl.NumberFormat('en',{maximumFractionDigits:digits,minimumFractionDigits:digits}).format(value);
 export default function Replay({block}:{block:ReplayBlock}){
   const runtime=useRuntime(),state=useSiteState(),reduced=useReducedMotion(),root=useRef<HTMLElement>(null);
+  const [cameraScope,setCameraScope]=useState<'site'|'selection'>('site');
   const {controller}=useReplay(block.resource),clock=useSyncExternalStore(controller.subscribe,controller.getSnapshot,controller.getSnapshot),spec=controller.spec;
   const view=readReplayState(block,state.values),entity=spec.entities.find(e=>e.id===view.selection)!,channel=spec.channels.find(c=>c.id===view.channel)!,time=spec.time[view.frame];
   const chart=useMemo(()=>{const input=replayChartInput(spec,view.selection,view.channel);return input?parseVisualization(withSiteChartTheme(input,runtime.manifest.theme)):null;},[spec,view.selection,view.channel,runtime]);
@@ -39,7 +41,7 @@ export default function Replay({block}:{block:ReplayBlock}){
     {(reduced||gap||missing>0)&&<p className="replay-message" role="status">{reduced?'Reduced motion: manual samples remain available. ':''}{gap?'There is a gap before this supplied sample. ':''}{missing>0?missing+' signal(s) unavailable at this sample. No values are filled in.':''}</p>}
     <div className="replay-workspace"><div className="replay-main">
       {view.view==='plan'?<div className="replay-plan" aria-label="Installation plan"><div className="replay-plan-grid"/>{spec.entities.map(item=>{const value=sampleValue(spec,item.id,view.channel,view.frame);return <button key={item.id} type="button" className="replay-unit" aria-label={'Select installation '+item.label} aria-pressed={item.id===entity.id} style={{left:(20+(item.position[0]-domain.x0)/domain.w*60)+'%',top:(22+(item.position[1]-domain.y0)/domain.h*56)+'%'} as CSSProperties} onClick={()=>runtime.set(block.selection,item.id)}><span className="replay-unit-glyph" aria-hidden="true"><i/><i/><i/></span><strong>{item.label}</strong><span>{valueText(value,channel.digits)} {value!==null&&<small>{channel.unit}</small>}</span></button>;})}<div className="replay-plan-caption">Schematic positions / {channel.label} / one supplied sample</div></div>:
-        scene&&Spatial?<Suspense fallback={<div className="site-loading">Loading the optional 3D renderer...</div>}><Spatial scene={scene} view={{camera:entity.camera||spec.overviewCamera!,selection:entity.id,phase:0,explode:0}} offsets={offsets} onSelect={id=>{if(spec.entities.some(e=>e.id===id))runtime.set(block.selection,id);}} appearance={runtime.manifest.theme.mode||'light'} title="Signal-driven illustration" fileName={block.resource} pageScroll/></Suspense>:<p>3D was not included in this client build. The plan and measurements remain available.</p>}
+        scene&&Spatial?<Suspense fallback={<div className="site-loading">Loading the optional 3D renderer...</div>}><div className="replay-camera-controls"><span>Illustrative geometry / sampled motion</span><label>Framing<select aria-label="Replay camera framing" value={cameraScope} onChange={e=>setCameraScope(e.target.value as typeof cameraScope)}><option value="site">Entire site</option><option value="selection">Selected installation</option></select></label></div><Spatial scene={scene} view={{camera:cameraScope==='site'?spec.overviewCamera!:entity.camera||spec.overviewCamera!,selection:entity.id,phase:0,explode:0}} offsets={offsets} onSelect={id=>{if(spec.entities.some(e=>e.id===id))runtime.set(block.selection,id);}} appearance={runtime.manifest.theme.mode||'light'} title="Signal-driven illustration" fileName={block.resource} pageScroll/></Suspense>:<p>3D was not included in this client build. The plan and measurements remain available.</p>}
       <div className="replay-chart-head"><strong>{entity.label} / signal history</strong><label>Signal<select aria-label="Replay signal" value={channel.id} onChange={e=>runtime.set(block.channel,e.target.value)}>{spec.channels.map(c=><option key={c.id} value={c.id}>{c.label}</option>)}</select></label></div>
       {chart?<div className="site-viz replay-trace" data-theme={runtime.manifest.theme.mode||'light'} data-cursor={time}><Figure spec={chart} scene={cursor} options={{animate:false,reducedMotion:true}}/></div>:<p className="replay-message">No supplied values for this signal.</p>}
     </div><aside className="replay-inspector" aria-label="Replay measurements"><span className="site-kicker">Selected installation</span><h3>{entity.label}</h3><p>{entity.description}</p>

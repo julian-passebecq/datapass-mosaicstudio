@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import {CameraTransition} from './camera-transition';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {pose,validatePoseOffsets, type SceneSpec,type PartPoseOffsets} from '../scene';
 
@@ -52,7 +53,8 @@ export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:S
   const ground=new THREE.GridHelper(40,40,dark?'#23364a':'#c8d5df',dark?'#152638':'#e1e8ee');
   ground.position.y=-.03;world.add(ground);geometries.add(ground.geometry);
   (Array.isArray(ground.material)?ground.material:[ground.material]).forEach(m=>materials.add(m));
-  let alive=true,frame=0,displayed={...initial},desired={...initial},lastCamera='',highlighted:readonly string[]|null=null;
+  let alive=true,frame=0,displayed={...initial},desired={...initial},highlighted:readonly string[]|null=null;
+  const cameraTransition=new CameraTransition(initial.camera);
   let displayedOffsets:PartPoseOffsets={},desiredOffsets:PartPoseOffsets={};
   const cameraPreset=(id:string)=>scene.cameras.find(c=>c.id===id)||scene.cameras[0];
   const boxes=new Map(scene.entities.map(e=>[e.id,new THREE.Box3()]));
@@ -71,7 +73,7 @@ export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:S
       return {entity,x:(point3.x+1)/2*width,y:(1-point3.y)/2*height,visible:point3.z>=-1&&point3.z<=1&&Math.abs(point3.x)<.97&&Math.abs(point3.y)<.94};
     }));
   }
-  function render(){if(alive&&!context.isContextLost()){renderer.render(world,camera);anchors();}}
+  function render(){if(alive&&!context.isContextLost()){renderer.render(world,camera);canvas.dataset.cameraPosition=camera.position.toArray().map(v=>v.toFixed(4)).join(',');anchors();}}
   function place(v:SceneView,offsets:PartPoseOffsets=displayedOffsets){
     for(const p of scene.parts){const object=items.get(p.id)!,target=pose(p,v.explode,v.phase);const delta=offsets[p.id];
       object.position.fromArray(target.position.map((v,i)=>v+(delta?.position?.[i]||0)) as [number,number,number]);object.rotation.set(...target.rotation.map((v,i)=>v+(delta?.rotation?.[i]||0)) as [number,number,number]);
@@ -82,7 +84,7 @@ export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:S
     }
   }
   function stop(){cancelAnimationFrame(frame);frame=0;canvas.dataset.animating='false';}
-  function applyCamera(id:string){const p=cameraPreset(id);camera.position.fromArray(p.position);controls.target.fromArray(p.target);controls.update();lastCamera=id;}
+  function applyCamera(id:string){const p=cameraPreset(id);camera.position.fromArray(p.position);controls.target.fromArray(p.target);controls.update();cameraTransition.reset(id);}
   function settle(){stop();displayed={...desired};displayedOffsets=desiredOffsets;place(displayed);applyCamera(desired.camera);render();}
   function resize(){const width=Math.max(1,root.clientWidth),height=Math.max(1,root.clientHeight);renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();render();}
   function hide(){if(document.hidden)settle();}
@@ -99,7 +101,7 @@ export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:S
   const cancelled=()=>{start=null;};
   const lost=(e:Event)=>{e.preventDefault();stop();options.onUnavailable('The WebGL context was lost. Retry 3D or keep using the outline and documents.');};
   // Direct manipulation always owns the camera until another explicit target is selected.
-  const interaction=()=>{stop();};
+  const interaction=()=>{stop();cameraTransition.cancel();};
   controls.addEventListener('change',render);controls.addEventListener('start',interaction);
   canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',cancelled);canvas.addEventListener('webglcontextlost',lost);
   document.addEventListener('visibilitychange',hide);
@@ -108,17 +110,17 @@ export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:S
     update(next,noMotion,nextHighlighted=null,offsets={}){
       if(!alive)return;const checkedOffsets=validatePoseOffsets(scene,offsets);stop();desired={...next};highlighted=nextHighlighted;
       const fromOffsets=displayedOffsets,offsetChanged=JSON.stringify(fromOffsets)!==JSON.stringify(checkedOffsets);desiredOffsets=checkedOffsets;
-      const from={...displayed},began=performance.now(),cameraChanged=lastCamera!==next.camera;
-      const fromPosition=camera.position.clone(),fromTarget=controls.target.clone(),preset=cameraPreset(next.camera),toPosition=new THREE.Vector3(...preset.position),toTarget=new THREE.Vector3(...preset.target);lastCamera=next.camera;
-      const duration=noMotion||document.hidden||!cameraChanged&&from.explode===next.explode&&from.phase===next.phase&&!offsetChanged?0:420;
-      canvas.dataset.animating=String(duration>0);
+      const from={...displayed},began=performance.now(),preset=cameraPreset(next.camera);
+      cameraTransition.request(next.camera,{position:camera.position.toArray(),target:controls.target.toArray()},{position:preset.position,target:preset.target},began,noMotion||document.hidden);
+      const duration=noMotion||document.hidden||from.explode===next.explode&&from.phase===next.phase&&!offsetChanged?0:420;
+      canvas.dataset.animating=String(duration>0||cameraTransition.active);
       const draw=(now:number)=>{if(!alive)return;const raw=duration?Math.min(1,(now-began)/duration):1,t=raw*raw*(3-2*raw);
         displayed={...next,explode:from.explode+(next.explode-from.explode)*t,phase:from.phase+(next.phase-from.phase)*t};
         displayedOffsets={};
         for(const id of new Set([...Object.keys(fromOffsets),...Object.keys(checkedOffsets)])){const out:PartPoseOffsets[string]={};for(const key of ['position','rotation'] as const){const a=fromOffsets[id]?.[key],b=checkedOffsets[id]?.[key];if(a||b)out[key]=[0,1,2].map(i=>(a?.[i]||0)+((b?.[i]||0)-(a?.[i]||0))*t) as [number,number,number];}displayedOffsets[id]=out;}
         place(displayed);
-        if(cameraChanged){camera.position.lerpVectors(fromPosition,toPosition,t);controls.target.lerpVectors(fromTarget,toTarget,t);controls.update();}
-        render();if(raw<1)frame=requestAnimationFrame(draw);else canvas.dataset.animating='false';
+        const cameraPose=cameraTransition.at(now);if(cameraPose){camera.position.fromArray(cameraPose.position);controls.target.fromArray(cameraPose.target);controls.update();}
+        render();if(raw<1||cameraTransition.active)frame=requestAnimationFrame(draw);else canvas.dataset.animating='false';
       };draw(began);
     },
     resetCamera:settle,
