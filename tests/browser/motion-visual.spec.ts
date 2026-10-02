@@ -56,3 +56,22 @@ test('mobile workspace uses a short horizontal rail and a full-width readable in
   await expect(page.locator('.source-lines [data-highlight=true]')).toHaveCount(3);
   await page.screenshot({path: info.outputPath('motion-mobile-refined.png'), fullPage: true});
 });
+
+test('isometric module labels remain distinct at the settled dependency snapshot', async({page}, info) => {
+  await page.goto('/?app=motion-reference&page=modules');
+  await expect(page.getByTestId('motion')).toBeVisible();
+  await page.getByRole('button', {name: 'Use isometric projection', exact: true}).click();
+  await page.getByLabel('Motion step', {exact: true}).selectOption('3');
+  const svg = page.getByTestId('motion-svg');
+  await expect(svg).toHaveAttribute('data-animating', 'false');
+  const boxes = await svg.locator('.motion-label').evaluateAll(elements => elements.map(element => {
+    const rect = element.getBoundingClientRect();
+    return {id: element.parentElement?.getAttribute('data-entity'), x: rect.left, y: rect.top, right: rect.right, bottom: rect.bottom};
+  }));
+  for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+    const a = boxes[i], b = boxes[j];
+    expect(a.x < b.right && a.right > b.x && a.y < b.bottom && a.bottom > b.y, `${a.id} overlaps ${b.id}`).toBe(false);
+  }
+  await expect(svg.locator('[data-entity=package] .motion-label-leader')).not.toHaveAttribute('d', '');
+  await page.screenshot({path: info.outputPath('motion-module-labels.png'), fullPage: true});
+});

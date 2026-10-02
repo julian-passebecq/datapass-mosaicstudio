@@ -4,7 +4,7 @@ import {stationAnchor, settledDisplay, type CompiledMotion, type MotionDisplay, 
 export type Point2 = [number, number];
 export type MotionObject = {
   id: string; label: string; kind: MotionEntity['kind']; status: string; alpha: number; color: string;
-  faces: Point2[][]; labelPosition: Point2; labelLines: string[]; center: Point2; depth: number;
+  faces: Point2[][]; labelPosition: Point2; labelLines: string[]; center: Point2; depth: number; leader: Point2[];
 };
 export type MotionDrawing = {
   objects: MotionObject[];
@@ -45,21 +45,56 @@ function faces(position: Point3, size: Point3, mode: MotionProjection): Point2[]
 }
 export function drawing(compiled: CompiledMotion, frame: MotionFrame, mode: MotionProjection, display: MotionDisplay = settledDisplay(frame)): MotionDrawing {
   const entities = new Map(compiled.spec.entities.map(e => [e.id, e]));
-  const objects = compiled.spec.entities.map(entity => {
+  const objects: MotionObject[] = compiled.spec.entities.map(entity => {
     const pose = display[entity.id], size: Point3 = entity.kind === 'station' ? entity.size : [entity.size, entity.size, entity.size];
     const polygons = faces(pose.position, size, mode), center = project(pose.position, mode);
     const bottom = Math.max(...polygons.flat().map(p => p[1]));
     return {
       id: entity.id, label: entity.label, kind: entity.kind, color: entity.color, status: pose.status, alpha: pose.alpha,
       faces: polygons, center, labelPosition: [center[0], entity.kind === 'station' ? bottom + 20 : Math.min(...polygons.flat().map(p => p[1])) - 24] as Point2,
-      labelLines: lines(entity.label), depth: pose.position[0] + pose.position[1] + pose.position[2] * .001 + (entity.kind === 'token' ? .1 : 0),
+      labelLines: lines(entity.label), leader: [], depth: pose.position[0] + pose.position[1] + pose.position[2] * .001 + (entity.kind === 'token' ? .1 : 0),
     };
   }).sort((a, b) => a.depth - b.depth || a.id.localeCompare(b.id, 'en'));
   const links = compiled.spec.links.map(link => ({
     id: link.id, label: link.label, active: frame.activeLinks.includes(link.id),
     path: [stationAnchor(entities.get(link.from)!, display[link.from]), ...link.via, stationAnchor(entities.get(link.to)!, display[link.to])].map(p => project(p, mode)),
   }));
+  positionLabels(objects);
   return {objects, links};
+}
+/** Conservative text boxes shared by live and exported geometry. No DOM measurement. */
+export function labelBounds(object: MotionObject): Bounds {
+  const font = object.kind === 'station' ? 12 : 10;
+  const width = Math.max(28, ...object.labelLines.map(line => line.length * font * .65));
+  return {x: object.labelPosition[0] - width / 2, y: object.labelPosition[1] - 12, width, height: object.labelLines.length * 15 + 3};
+}
+function overlaps(a: Bounds, b: Bounds, padding = 6): boolean {
+  return a.x < b.x + b.width + padding && a.x + a.width + padding > b.x && a.y < b.y + b.height + padding && a.y + a.height + padding > b.y;
+}
+/** Prefer nearby free labels, with a small leader when displaced. This is not graph layout. */
+function positionLabels(objects: MotionObject[]): void {
+  const occupied: Bounds[] = objects.filter(o => o.alpha > 0).map(o => {
+    const points = o.faces.flat(), xs = points.map(p => p[0]), ys = points.map(p => p[1]);
+    return {x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys)};
+  });
+  // Fixed component labels are placed before moving token labels.
+  const ordered = [...objects].sort((a, b) => Number(a.kind === 'token') - Number(b.kind === 'token') || a.id.localeCompare(b.id, 'en'));
+  for (const object of ordered) {
+    if (object.alpha === 0) continue;
+    const original = [...object.labelPosition] as Point2;
+    const candidates: Point2[] = [[0, 0]];
+    for (let ring = 1; ring <= 8; ring++) for (const [x, y] of [[0, -22], [0, 22], [32, 0], [-32, 0], [24, -18], [-24, -18], [24, 18], [-24, 18]]) candidates.push([x * ring, y * ring]);
+    let placed = false;
+    for (const [dx, dy] of candidates) {
+      object.labelPosition = [original[0] + dx, original[1] + dy];
+      if (!occupied.some(box => overlaps(labelBounds(object), box))) {placed = true; break;}
+    }
+    if (!placed) object.labelPosition = [original[0], Math.min(...occupied.map(box => box.y)) - object.labelLines.length * 15 - 16];
+    if (object.labelPosition[0] !== original[0] || object.labelPosition[1] !== original[1]) {
+      object.leader = [[object.center[0], Math.min(...object.faces.flat().map(p => p[1])) - 4], [object.labelPosition[0], object.labelPosition[1] + 3]];
+    }
+    occupied.push(labelBounds(object));
+  }
 }
 function bounds(points: readonly Point2[]): Bounds {
   const minX = Math.min(...points.map(p => p[0])) - 35, maxX = Math.max(...points.map(p => p[0])) + 35;

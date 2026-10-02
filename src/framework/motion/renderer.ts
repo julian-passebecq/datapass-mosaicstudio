@@ -26,7 +26,7 @@ export function createMotionRenderer(svg: SVGSVGElement, compiled: CompiledMotio
       .attr('d', d => pathData(d.path)).attr('fill', 'none').attr('stroke', d => d.active ? '#3284a4' : '#b4c5d0').attr('stroke-width', d => d.active ? 2.5 : 1.4).attr('marker-end', `url(#${uid})`).attr('data-link', d => d.id);
     const nodes = objects.selectAll<SVGGElement, MotionObject>('g.motion-object').data(scene.objects, d => d.id).join(enter => {
       const node = enter.append('g').attr('class', 'motion-object').attr('role', 'button').attr('tabindex', 0);
-      node.append('title'); node.append('g').attr('class', 'motion-faces'); node.append('circle').attr('class', 'motion-status'); node.append('g').attr('class', 'motion-label');
+      node.append('title'); node.append('g').attr('class', 'motion-faces'); node.append('path').attr('class', 'motion-label-leader'); node.append('circle').attr('class', 'motion-status'); node.append('g').attr('class', 'motion-label');
       return node;
     });
     nodes.order().attr('data-entity', d => d.id).attr('data-world', d => display[d.id].position.map(n => n.toFixed(4)).join(','))
@@ -42,6 +42,7 @@ export function createMotionRenderer(svg: SVGSVGElement, compiled: CompiledMotio
         .attr('fill', (_, i) => shade(object.color, i === 0 && projection === 'isometric' ? -.24 : i === 1 ? -.12 : .6))
         .attr('stroke', object.id === selection ? '#124b6c' : shade(object.color, -.2)).attr('stroke-width', object.id === selection ? 2.6 : 1.2)
         .attr('stroke-linejoin', 'round');
+      node.select('.motion-label-leader').attr('d', pathData(object.leader)).attr('fill', 'none').attr('stroke', '#93a8b8').attr('stroke-width', .8).attr('stroke-dasharray', '2 3').attr('pointer-events', 'none');
       node.select('.motion-status').attr('cx', object.center[0]).attr('cy', Math.min(...object.faces.flat().map(p => p[1])) - 9).attr('r', object.kind === 'station' ? 3 : 0).attr('fill', statusColor(object.status));
       node.select('.motion-label').selectAll<SVGTextElement, string>('text').data(object.labelLines).join('text').text(d => d)
         .attr('x', object.labelPosition[0]).attr('y', (_, i) => object.labelPosition[1] + i * 15).attr('text-anchor', 'middle')
