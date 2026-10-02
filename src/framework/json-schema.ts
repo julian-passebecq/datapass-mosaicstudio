@@ -18,6 +18,7 @@ const blocks={oneOf:[
   block('chart',{dataset:id,x:id,y:id,kind:{enum:['bar','line','scatter']},unit:text(30)},['dataset','x','y','kind']),
   block('task',{task:id},['task']),block('catalog',{},[]),block('code',{text:text(20000),language:{...text(40),minLength:1}},['text','language']),
   block('scene3d',{resource:id,explode:id,phase:id,camera:id,selection:id},['resource','explode','phase','camera','selection']),
+  block('replay',{resource:id,frame:id,selection:id,channel:id,view:id,speed:id},['resource','frame','selection','channel','view','speed']),
   block('explorer',{resource:id,focus:id,facet:id,view:id,level:id,group:id,document:id,scroll:{type:'boolean'}},['resource','focus','facet','view','level','group','document']),
   ...['story-controls','story-figure','architecture','custom','explanation'].map(type=>block(type,{resource:id},['resource']))
 ]};
@@ -32,3 +33,13 @@ export const explorerSchema={$schema:'https://json-schema.org/draft/2020-12/sche
 
 const atom={type:['string','number','boolean','null'],maxLength:1000,minimum:-1e12,maximum:1e12};
 export const explanationSchema={$schema:'https://json-schema.org/draft/2020-12/schema',title:'Bounded ConceptMotion loop resource',...obj({frameField:id,note:{...text(2000),minLength:1},source:{...text(1000),minLength:1},spec:obj({kind:{const:'loop'},version:{...text(40),minLength:1},id,title:{...text(200),minLength:1},items:list(obj({id,label:{...text(120),minLength:1},value:atom},['id','value']),40,1),codeLines:list(obj({id,text:text(2000)}),80,1),frames:list(obj({id,iteration:{type:'integer',minimum:0,maximum:1000000},pointerItemId:id,activeItemIds:list(id,40),doneItemIds:list(id,40),order:list(id,40),variables:{type:'object',maxProperties:20,propertyNames:id,additionalProperties:atom},codeLineIds:list(id,80),operation:{...text(120),minLength:1},caption:{...text(2000),minLength:1}},['id','iteration','codeLineIds','operation','caption']),100,1)})})};
+
+export const replaySchema={$schema:'https://json-schema.org/draft/2020-12/schema',title:'DataPass sampled replay v1',...obj({
+  format:{const:'datapass.replay'},version:{const:1},title:{...text(160),minLength:1},description:{...text(2000),minLength:1},source:{...text(1000),minLength:1},provenance:{enum:['synthetic','recorded']},
+  time:list({type:'number',minimum:0,maximum:86400},200,2),maxGapSeconds:{type:'number',minimum:.1,maximum:86400},
+  entities:list(obj({id,label:{...text(100),minLength:1},description:{...text(1000),minLength:1},position:{type:'array',items:{type:'number',minimum:-1000,maximum:1000},minItems:2,maxItems:2},camera:id},['id','label','description','position']),24,1),
+  channels:list(obj({id,label:{...text(100),minLength:1},unit:text(40),digits:{type:'integer',minimum:0,maximum:6},domain:{type:'array',items:{type:'number',minimum:-1e9,maximum:1e9},minItems:2,maxItems:2},values:{type:'object',maxProperties:24,propertyNames:id,additionalProperties:list({type:['number','null'],minimum:-1e9,maximum:1e9},200,2)}}),8,1),
+  events:list(obj({id,time:{type:'number',minimum:0,maximum:86400},entity:{anyOf:[id,{type:'null'}]},label:{...text(120),minLength:1},detail:{...text(1500),minLength:1}}),100),
+  scene:id,overviewCamera:id,motion:list(obj({part:id,entity:id,channel:id,kind:{enum:['translate','rotate']},axis:{enum:['x','y','z']},scale:{type:'number',minimum:-1000,maximum:1000},offset:{type:'number',minimum:-1000,maximum:1000}}),96)
+},['format','version','title','description','source','provenance','time','maxGapSeconds','entities','channels','events'])};
+export const clientProfileSchema={$schema:'https://json-schema.org/draft/2020-12/schema',title:'DataPass client family profile',...obj({format:{const:'datapass.client-profile'},version:{const:1},family:{enum:['content','knowledge','analytics','spatial','replay']}})};

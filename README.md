@@ -1,89 +1,73 @@
 # DataPass MosaicStudio
 
-**v0.3 alpha source SDK for AI-built technical websites and data applications.** Client content, calculations, scenes and optional React components live under `clients/<id>/`. Reusable state, contracts, blocks and rendering live under `src/framework/`.
+**v0.4 alpha source SDK for AI-built technical websites.** Start with the smallest useful application family and let actual blocks determine the optional capabilities. Client content, domain logic and assets stay under `clients/<id>/`; reusable contracts and rendering stay under `src/framework/`.
 
-The current implementation is on `feat/studio2-experience-navigation`, draft PR #4. It extends the qualified v0.2 kit without replacing its workbench or modifying the donor repositories. No deployment, package publication or general v1 release is claimed.
+Current branch: `feat/studio2-families-replay`, draft PR #5. This extends v0.3 without replacing the workbench or changing the pinned visual-engine repositories. No merge, deployment or npm package publication is implied.
 
-Read the [AI authoring guide](docs/AI_SITE_AUTHORING.md), [experience kit](docs/EXPERIENCE_KIT.md), [component catalog](docs/contracts/components.json) and [verified v0.3 qualification](docs/EXPERIENCE_V0_3_QUALIFICATION.md).
+## Read the minimum needed
 
-## Start
-
-Use Node 22.16 or later. Initial dependency installation and commit-pinned upstream bootstrap require network access.
+Read `docs/recipes/START.md`, choose a family, and generate a client-specific context. Do not open all the 3D or SQL libraries to author an ordinary site.
 
 ```sh
-git clone --branch feat/studio2-experience-navigation https://github.com/julian-passebecq/datapass-mosaicstudio.git mosaicstudio-v03
-cd mosaicstudio-v03
 npm ci
+npm run bootstrap
+npm run client:families
+npm run client:new -- my-project --family analytics --title "Client project"
+npm run client:context -- my-project
 npm run dev
+# Open the printed address with ?app=my-project
+npm run client:check -- my-project
+npm run build:client -- my-project
 ```
 
-Open the address printed by Vite. The root opens the existing SQLRooms workbench. Add `?sites=1` for the client gallery or use a reference route below.
+`client:context` writes `.generated/client-context/my-project/GUIDE.md` and `plan.json`. The guide lists only the used block contracts, required capabilities and relevant recipes. It is not a constraint on future requirements.
 
-## Two entry points, one repository
+| Family | Starting composition | Default optional engines |
+| --- | --- | --- |
+| content | Pages, text, indicators, optional custom React | None |
+| knowledge | Outline, search, documents and context | Explorer / 2D map |
+| analytics | Validated filter, chart and table | VizForge / D3 |
+| spatial | Authored system with optional 3D representation | Explorer / shared Three.js viewport |
+| replay | Supplied time samples, plan, measurements and events | VizForge player/chart; no 3D by default |
 
-The **workbench** retains local CSV/JSON/Parquet exploration, DuckDB-WASM SQL, UWData Mosaic linked analytics, the existing pipeline/architecture views, original VizForge stories, original ConceptMotion explanations and a project board.
+Mix families by adding blocks. The preferred family in `client.config.json` never overrides the actual build plan or locks the appearance. An advanced client can combine all five.
 
-**Client websites** enter through a separate host. They do not initialize the workbench RoomStore or DuckDB by default. A selected client has its own asset directory and compiled output; the builder does not silently include unrelated clients or the workbench WASM.
+## Optional really means optional
 
-## Four synthetic reference clients
+A selected build derives capabilities from used blocks/resources and emits `studio-build.json`. It checks the actual module graph for undeclared Three.js and accidental SQLRooms/DuckDB workbench imports. A pure data, document or 2D replay client must not carry the 3D renderer.
 
-| Route | What it demonstrates |
-| --- | --- |
-| `?app=wind-reference` | Interactive procedural turbine assembly, shared VizForge story, small-data scenario calculations and explicit tasks |
-| `?app=operations-reference` | Filters, metrics, original D3 charts, typed rows, sorting, pagination and CSV |
-| `?app=architecture-reference` | Artifact-backed system review, schema comparison, presentation and script-free report export |
-| `?app=experience-reference` | One selected context across a 3D system, a 2D map and searchable documents; facets, native scroll tour and semantic explanation |
+Client-owned custom React components can declare `customCapabilities`. An explicit empty list creates a lightweight extension. Older undeclared custom bindings conservatively retain every renderer and produce a warning rather than silently breaking.
 
-These are framework acceptance clients, not finished wind, Foil'o or personal portfolio websites. Geometry and example evidence are labelled synthetic. They do not assert real employer achievements, certifications, physics or live production status.
+The repository still installs its pinned development dependency set. This is source/context and production-bundle isolation, not yet separately published minimal npm packages or a sandbox for arbitrary trusted source.
 
-## Create an independent client
+## Engineering replay
 
-```sh
-npm run client:new -- client-name --title "Client project"
-# Or start from a focused composition:
-npm run client:new -- client-docs --template knowledge --title "Project knowledge"
-npm run client:new -- client-atlas --template spatial --title "Product explorer"
+The new `replay` block coordinates a 2D installation plan, selected signal, current measurements, chart cursor, annotated events and optional 3D through one supplied sample index. It reuses the original VizForge StoryPlayer and its injectable scheduler. No duplicate chart timer or physics engine was created.
 
-npm run client:check -- client-name
-npm run build:client -- client-name
-```
+Playback honors irregular elapsed timestamps and speed, supports manual seeking, and pauses for restore, hidden/offscreen views and unmount. Reduced motion preserves manual inspection. Null measurements remain unavailable; timestamp gaps and null intervals split the chart instead of inventing data. Limits are deliberately bounded: 200 samples, 24 entities, 8 channels and 1 MiB of replay JSON.
 
-The output is `dist-clients/client-name/`. No hosting or deployment action occurs. The regular workbench production build includes the four approved reference clients only, not arbitrary new client folders.
+The energy reference uses three abstract oscillating-plate assemblies and invented signals. It is not a validated Foil'o mechanism, a conventional-turbine assumption, live telemetry or a final client site. The shared Three.js viewport accepts validated additive pose offsets; visual interpolation never creates scientific measurements.
 
-The default `basic` template also accepts `--custom` to create a client-owned React component. Scaffolding never overwrites an existing directory. A client can add custom source UI when a built-in block is insufficient; a reusable framework extension should be isolated and proved against existing consumers.
+## Preserved workbench and reference clients
 
-## Reusable building blocks
+The root still opens the separate SQLRooms/DuckDB analytical workbench. Client websites have their own host, public directory and selected build; the workbench database is not initialized implicitly.
 
-The current catalog has fifteen types: text, metric, input, table, chart, task, catalog, code, scene3d, story-controls, story-figure, architecture, explorer, explanation and custom.
+Use `?sites=1` for the reference gallery, or:
 
-App/page/section manifests are inert. Inputs and view state are validated separately from trusted source callbacks. Derived small-data bindings declare their dependencies and cache accordingly. Explicit tasks support cancellation, timeouts, stale-result handling and revision-safe results. Saved inputs require review and exact client/version compatibility.
+- `?app=energy-replay-reference`: the new 2D-first engineering recording and optional 3D.
+- `?app=operations-reference`: data filtering, metrics, D3 and rows.
+- `?app=architecture-reference`: artifact-backed architecture/schema review and presentation.
+- `?app=experience-reference`: shared context across spatial, map and documents.
+- `?app=wind-reference`: the original illustrative assembly/story and task example.
 
-VizForge owns analytical chart/story rendering. ConceptMotion owns the supported semantic explanation frames. One demand-rendered Three.js viewport serves both the assembly block and spatial exploration. React Flow supplies the relationship canvas; architecture imports reuse the existing artifact parser and viewer.
-
-Explorer facets can change an authored camera angle and the right-hand context panel without duplicating the underlying object. Selection focuses an item; a separate action opens its project page. The optional native scroll tour selects finite authored stops, preserves manual alternatives and does not trap wheel input. This is not continuous cinematic timeline scrubbing.
+The built-in catalog now has sixteen block types, including the existing explorer and semantic explanation. New client folders are not automatically included in the public workbench build. Their selected outputs go to `dist-clients/<id>/` without deployment.
 
 ## Qualification
 
-The final tested implementation is `12eee93d82fb01bbb018f9fabc3e89f541ff38ea`. Workflow `36943432246` passed **168 unit/boundary tests, strict TypeScript/build, original visual contracts, 34 production browser scenarios and seven isolated client build/browser checks**. The generated custom, knowledge and spatial clients did not modify framework source. See [the qualification record](docs/EXPERIENCE_V0_3_QUALIFICATION.md) for exact identities, measurements, artifacts and limitations.
+Implementation `0900c8a93d47456e663cc44a61b4b575647a69a5` passed workflow `36961220238`: **223 unit/boundary tests, strict TypeScript/build, original visual contracts, 43 production browser scenarios and ten independent client build/browser targets**. The five freshly generated clients left framework source unchanged. The final documentation-only follow-up does not change that implementation. See `docs/FAMILIES_V0_4_QUALIFICATION.md` for exact evidence, measurements and limits; `docs/FIRST_ENERGY_CLIENT.md` defines the approved inputs needed for the first real energy client.
 
-```sh
-npm test
-npm run contracts:check
-npm run build
-npm run client:check
-npm run test:visual-contracts
-# The browser gate also needs a real supported Chromium installation and fixtures.
-npm run test:fixtures
-npm run test:browser
-npm run test:client-builds
-```
+## Boundaries
 
-Fixture generation uses Python with DuckDB 1.4.3. Browser evidence is from hosted Linux Chrome using software WebGL2; it is not universal device/GPU/Safari/Firefox qualification. Existing integrated-workbench upstream annotation/chunk-size warnings are not represented as fixed.
+Read `docs/FAMILIES_REPLAY.md` for detailed behavior and `docs/recipes/replay.md` for the small authoring contract. Use `docs/AI_SITE_AUTHORING.md` for advanced state, task and privacy boundaries. Historical v0.2/v0.3 records remain in `docs/`.
 
-## Boundaries before publication
-
-A static build exposes its embedded content. Domain filters, evidence levels and view links are not access control. The optional same-origin JSON task transport does not provide an authenticated backend. Imported code excerpts are displayed as text, never executed.
-
-Not included: GLTF/CAD model import, a weather/rotor physics engine, video encoding, remote Parquet, File X-ray, DuckLake/Delta, a notebook or IDE, a Hop runtime, a deployment control plane, or silent snapshot migrations. Add only capabilities justified by actual client briefs, with approved assets/data and concrete regression tests.
-
-Historical qualification and design records remain in `docs/FRAMEWORK_KIT.md`, `docs/FRAMEWORK_V0_2_QUALIFICATION.md`, `qa/FRAMEWORK_FINAL_GATE.md` and `docs/ARCHITECTURE_REVIEW.md`. Research boundaries for this pass are in `docs/EXPERIENCE_RESEARCH.md`.
+Real applications still need approved data/assets, tested domain assumptions and a deployment/security decision. Static filters are not access control. No live telemetry backend, weather/physics model, GLTF/CAD import, video encoder, new notebook/IDE, Hop runtime, X-ray or DuckLake was introduced. The next client can justify a narrow, independently tested extension without turning every site into the same application.

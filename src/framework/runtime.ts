@@ -19,7 +19,7 @@ export class SiteRuntime {
   constructor(definition: AppDefinition) {
     this.manifest=freeze(validateDefinition(definition));
     // Source functions are not cloned or serialized. Inline data and resources are copied.
-    this.definition=freeze({manifest:this.manifest,components:{...definition.components},bindings:{inline:freeze(structuredClone(definition.bindings.inline||{})),derive:{...definition.bindings.derive},tasks:{...definition.bindings.tasks}},resources:freeze(structuredClone(definition.resources||{}))});
+    this.definition=freeze({manifest:this.manifest,components:{...definition.components},customCapabilities:structuredClone(definition.customCapabilities),bindings:{inline:freeze(structuredClone(definition.bindings.inline||{})),derive:{...definition.bindings.derive},tasks:{...definition.bindings.tasks}},resources:freeze(structuredClone(definition.resources||{}))});
     this.snapshot=freeze({values:Object.fromEntries(this.manifest.fields.map(f=>[f.id,f.default])),revision:0,restoreEpoch:0,tasks:Object.fromEntries(this.manifest.tasks.map(t=>[t.id,{status:'idle',progress:0,message:''} satisfies TaskState]))});
   }
   getSnapshot=():Snapshot=>this.snapshot;

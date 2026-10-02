@@ -1109,6 +1109,112 @@
                             }
                           },
                           "type": {
+                            "const": "replay"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "resource": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "frame": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "selection": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "channel": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "view": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "speed": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "resource",
+                          "frame",
+                          "selection",
+                          "channel",
+                          "view",
+                          "speed"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
                             "const": "explorer"
                           },
                           "span": {

@@ -17,3 +17,8 @@ export type {ExplorerSpec,ExplorerState,ExplorerItem,ExplorerDocument,ExplorerBl
 export {navigateExplorer,ancestors,contextDocuments,explorerCamera,searchExplorer,explorerLink,readExplorerLink} from './explorer/navigation.ts';
 export {validateExplanation} from './explanation.ts';
 export type {ExplanationResource} from './explanation.ts';
+
+export {planCapabilities,capabilityCatalog,appFamilies,familyById} from './capabilities.ts';
+export type {AppFamily,CapabilityId,CapabilityPlan} from './capabilities.ts';
+export {validateReplay,replayFields,replayBlock,sampleValue,nearestSample} from './replay/model.ts';
+export type {ReplaySpec,ReplayBlock,ReplayEntity,ReplayChannel,ReplayMotion} from './replay/model.ts';

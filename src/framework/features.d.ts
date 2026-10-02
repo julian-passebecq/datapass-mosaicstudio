@@ -5,3 +5,5 @@ declare const __STUDIO_ARCHITECTURE__:boolean;
 
 declare const __STUDIO_EXPLORER__:boolean;
 declare const __STUDIO_EXPLANATIONS__:boolean;
+
+declare const __STUDIO_REPLAY__:boolean;

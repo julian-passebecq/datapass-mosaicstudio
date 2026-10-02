@@ -167,6 +167,22 @@
     "limits": "40 items, 100 manual frames; no executable code, no duplicate animation engine"
   },
   {
+    "type": "replay",
+    "purpose": "One sample clock across a plan, signals, events and optional 3D",
+    "required": [
+      "id",
+      "type",
+      "resource",
+      "frame",
+      "selection",
+      "channel",
+      "view",
+      "speed"
+    ],
+    "engine": "Original VizForge StoryPlayer / Figure; optional shared Three viewport",
+    "limits": "200 supplied samples, 24 entities, 8 channels; missing values are not interpolated; no live stream or physical model"
+  },
+  {
     "type": "custom",
     "purpose": "Client-owned React component registered in trusted source",
     "required": [
@@ -175,6 +191,6 @@
       "resource"
     ],
     "engine": "Client component",
-    "limits": "Source binding only; imported JSON cannot provide components or code"
+    "limits": "Source binding only; optional customCapabilities declares minimum renderers; imported JSON cannot provide code"
   }
 ]

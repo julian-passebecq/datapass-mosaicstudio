@@ -1,7 +1,7 @@
 import type {Plugin} from 'vite';
 import {existsSync,readdirSync,lstatSync} from 'node:fs';
 import path from 'node:path';
-const references=['wind-reference','operations-reference','architecture-reference','experience-reference'];
+const references=['wind-reference','operations-reference','architecture-reference','experience-reference','energy-replay-reference'];
 export function validClientId(id:string){return /^[a-z][a-z0-9-]{0,59}$/.test(id);}
 export function clientDirectory(id:string){if(!validClientId(id))throw new Error('Invalid client id');const dir=path.resolve('clients',id);if(!existsSync(path.join(dir,'app.ts'))||lstatSync(dir).isSymbolicLink())throw new Error('Client does not exist or is a symlink: '+id);return dir;}
 /** Dev sees local clients; the review build allows references only; target builds one client. */

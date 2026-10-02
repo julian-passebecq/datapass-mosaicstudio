@@ -1,157 +1,81 @@
-# Build a client website with the Studio source SDK
+# AI client authoring: v0.4 source SDK
 
-## Objective and contract
+## Start with the task, not the libraries
 
-Studio owns reusable rendering, typed state, small-data bindings, guarded tasks and build boundaries. **The client owns domain logic, content, data, assets, pages and evidence.** Do not edit `src/framework` just to build another site.
-
-This is the **v0.3 source SDK**, not a published npm package, not Streamlit source compatibility and not a notebook runtime. Workbench features remain in the repository, but a client build has a different entry point and does not initialize SQLRooms or DuckDB unless a future explicit integration adds them.
-
-Read `docs/contracts/components.json`, `src/framework/types.ts` and one reference `clients/*/app.ts` first. Runtime validation is authoritative for semantic references; the generated JSON Schemas assist authoring but cannot prove dependency correctness or domain validity.
-
-## Fast start
+Read `docs/recipes/START.md`. Families are useful starting compositions, not a restriction on future requirements or visual design.
 
 ```sh
 npm ci
-npm run client:new -- client-name --title "Client project"
+npm run bootstrap
+npm run client:families
+npm run client:new -- my-client --family analytics --title "Client project"
+npm run client:context -- my-client
 npm run dev
-# Open the printed address with ?app=client-name
-npm run client:check -- client-name
-npm run build:client -- client-name
+# Open the printed address with ?app=my-client
+npm run client:check -- my-client
+npm run build:client -- my-client
 ```
 
-Output: `dist-clients/client-name/`. No deployment happens. The regular `npm run build` is the integrated review/workbench build and includes only the four public reference clients. It does **not** automatically include every new client folder.
+The context command writes `.generated/client-context/my-client/GUIDE.md` and `plan.json`. Read that guide before exploring more source: it includes the used block contracts, required capabilities and relevant recipes. Do not open Three.js for a client that has no spatial capability.
 
-`npm run client:new -- client-name --title "Client project" --custom` also creates a client-owned TSX component and binds it through the `custom` block. Scaffolding refuses an existing folder and never overwrites another client or framework file.
+## Client and framework ownership
 
-## Client folder
+Edit `clients/my-client/`: app definition, approved content, data, trusted domain calculations, optional recordings, scenes and custom React components. Keep public assets in that client's `public/` directory. Scaffolding refuses existing folders. The directory name must equal the manifest ID.
 
-```text
-clients/client-name/
-  app.ts              # defineApp({manifest, bindings, resources, components})
-  model.ts            # trusted, testable domain calculations
-  scene.ts            # optional inert primitive assembly and cameras
-  story.ts            # optional original VizForge StorySpec plus view cues
-  ClientNote.tsx      # optional client-owned React component
-  public/             # ONLY this client's static public assets
-  README.md
-  AGENTS.md
-```
+Use `src/framework/authoring.ts` for `defineApp` and core types. Use `src/framework/ui.ts` for lightweight React hooks. Both avoid importing optional renderers. Existing broad exports remain compatible. Do not edit `.upstream` or copy its application shells.
 
-`app.ts` is trusted repository source. Build checks evaluate it locally with esbuild, including TSX imports. Never load an untrusted downloaded client module. Imported *saved state* is a different, bounded inert JSON format and cannot register source code.
+An ordinary client must not modify framework internals. A real requirement may justify a narrowly scoped generic extension: isolate it on a branch, define its semantic boundaries and prove it with a consumer and regression tests. Otherwise keep it in client-owned TSX.
 
-The directory name must equal `manifest.id`. IDs use the validator's declared syntax; avoid prototype-sensitive names. App/version identity is checked on restore.
+## Choose a short recipe
 
-## Minimal app
+| Need | Recipe |
+| --- | --- |
+| Pages and simple custom UI | `docs/recipes/content.md` |
+| Documents, search, context and architecture | `docs/recipes/knowledge.md` |
+| Filters, typed data, charts and indicators | `docs/recipes/analytics.md` |
+| Optional geometry, cameras and spatial exploration | `docs/recipes/spatial.md` |
+| Supplied samples, signals and engineering replay | `docs/recipes/replay.md` |
+| Authored analytical scenes | `docs/recipes/stories.md` |
+| Semantic transformation explanation | `docs/recipes/explanation.md` |
 
-```ts
-import {defineApp} from '../../src/framework/index.ts';
+The preferred family in `client.config.json` is advisory. The build plan follows actual blocks and referenced resources. Unused scene resources do not force 3D. A client can combine families without changing its basic ownership model.
 
-export default defineApp({
-  manifest: {
-    format: 'datapass.web-app', schemaVersion: 1,
-    id: 'example', version: '0.1.0',
-    title: 'Example', description: 'A client website.',
-    label: 'Synthetic prototype',
-    theme: {accent: '#286b7d', density: 'compact'},
-    fields: [], datasets: [], tasks: [],
-    pages: [{
-      id: 'overview', title: 'Overview', description: 'Project summary.',
-      sections: [{id: 'summary', columns: 2, blocks: [
-        {id: 'intro', type: 'text', title: 'Project', text: 'Client-owned text.'},
-        {id: 'kpi', type: 'metric', title: 'Example value', value: {literal: 42}}
-      ]}]
-    }]
-  },
-  bindings: {}
-});
-```
+For extended context/navigation behavior read `docs/EXPERIENCE_KIT.md`; for replay and capability planning read `docs/FAMILIES_REPLAY.md`. For the first real energy client read `docs/FIRST_ENERGY_CLIENT.md`. The generated component and JSON Schema files are under `docs/contracts/`; semantic runtime validators remain authoritative.
 
-No callbacks are embedded in the manifest. `value` is a literal, a declared state field, or an exact dataset row/column reference. It is never an expression string.
+## State, data and execution boundaries
 
-## State and data
+Manifests are inert: they reference fields, data and trusted source bindings rather than containing executable strings. Build checks evaluate `app.ts` as trusted repository source; never use this mechanism to load an untrusted downloaded module.
 
-Fields are `number`, `select` or `toggle`. `role: 'input'` means model/filter input; `role: 'view'` means camera, playback or other presentation state. Use an `input` block with `control: 'slider'` for a numeric slider, or omit it for the native number field. Bounds, options and step alignment are validated before state changes.
+Model/filter inputs and presentation fields are distinct. Derived datasets receive only their declared inputs and dependencies. Unrelated camera or selection updates must not recalculate a model. Rows require typed cells and stable unique keys. Null means unavailable, not zero. The small website contract supports at most 10,000 rows and 40 columns; layer labels do not imply persistence or a lakehouse.
 
-A dataset declares `columns`, `rowKey`, `source`, `provenance`, `layer`, `inputs` and `dependsOn`. Inline rows are cloned and frozen; derived bindings receive **only their declared inputs and upstream datasets**. Cache keys track those dependencies, not every UI event. `Bronze`, `Silver` and `Gold` are useful metadata labels here; they do not imply DuckLake, Delta, materialized ETL or persistence.
+Task execution is explicit, bounded and cancellable. Late or superseded results cannot replace newer state. Cancellation is cooperative; it cannot preempt arbitrary synchronous code blocking the browser. Expensive work belongs in a worker or an approved service. The optional fixed same-origin JSON task transport does not supply authentication or a backend.
 
-```ts
-bindings: {
-  inline: {raw: [{id: 'a', value: 4}]},
-  derive: {
-    scaled: ({values, datasets}) => datasets.raw.map(row => ({
-      id: row.id,
-      value: Number(row.value) * Number(values.gain)
-    }))
-  }
-}
-```
+SQLRooms/Mosaic remain the separate workbench query foundation. Do not bundle that workbench to display a few client indicators. No notebook, IDE, Hop runtime, remote Parquet or DuckLake is needed by default.
 
-Each output is validated against its typed column contract and unique row key. `null` must be explicitly allowed and is displayed as unavailable, not zero. The small-data contract is capped at 10,000 rows and 40 columns. SQLRooms/UWData Mosaic still own the existing larger-data query/editor/cross-filter workbench; this small client binding layer is not a new SQL engine or replacement query coordinator.
+## Optional components and payload
 
-## Async computation
+Register a custom React function in `components` and reference it by a `custom` block. For a lightweight component declare `customCapabilities: {clientNote: []}`; otherwise list only the optional capabilities it actually uses. The `--custom` basic scaffold creates this lightweight form.
 
-Register a trusted `bindings.tasks[id]` and a declared `source: 'task'` output dataset. A `task` block provides explicit run/cancel controls. Inputs changing during or after a run invalidate the result; late and superseded responses cannot overwrite a newer task. Upstream task reruns invalidate dependent tasks too.
+Legacy custom components without declarations keep all renderers and emit a warning. This compatibility behavior is deliberate. A selected build checks actual rendered modules and rejects undeclared Three.js or an implicit SQL workbench import. It records `studio-build.json`. This is not a security sandbox against arbitrary source code.
 
-Cancellation is cooperative for the actual worker/service. The UI stops accepting a cancelled result; it cannot forcibly interrupt arbitrary CPU-bound JavaScript that blocks the browser thread. Expensive work belongs in a worker or a service.
+The repository still installs the full pinned development dependencies. Isolation currently reduces AI reading context and delivered browser code, not installation size through separate npm packages. No new dependency versions or donor pins were introduced for this pass.
 
-The optional `createJsonTask({endpoint: 'api/calculate'})` helper POSTs only the task's declared input snapshot to a fixed same-origin route, refuses redirects, caps request/response bytes and expects a typed row array. A client may bind an actual approved Python service this way. **No such backend is provided or deployed in this pass.** The server still owns authentication, authorization, validation, timeouts, concurrency and allowlisted calculations. Disclose which inputs leave the browser; never serialize credentials into the app manifest or saved state.
+## Replay and 3D honesty
 
-## Visuals and stories
+The replay family starts in 2D. One original VizForge player schedules supplied timestamps; the plan, current values, chart cursor, events and optional scene share the sample index. Do not add another autoplay timer. Missing values and time gaps remain explicit. The original chart data table must stay accessible.
 
-The `chart` block translates a small typed dataset into the **existing VizForge Figure/D3 renderer**. It is not a new chart engine. The simple bar adapter supports up to 30 nonnegative categories; line/scatter require numeric X. Nulls or ambiguous duplicate X values produce an explicit message rather than a misleading line. For advanced analytical visuals, use the original StorySpec or a trusted custom component.
+Current replay limits: 200 samples, 24 entities, eight channels and 1 MiB. This is not a high-frequency live telemetry platform. The 3D viewport uses bounded primitives and validated pose offsets, not a GLTF/CAD loader or physical model. Visual interpolation never creates a measured observation.
 
-`story-controls` and `story-figure` with the same resource share **one original VizForge StoryPlayer** per page. A story resource adds only:
+The energy reference contains generic oscillating plates and invented signals, not approved Foil'o design or performance. Real geometry, model assumptions, numerical tests and data remain client-owned. Its local framing/free-orbit preferences are not serialized; sample, installation, signal, presentation and speed are saved input state.
 
-```ts
-{indexField: 'storyStep', spec: originalVizForgeStory, cues: {
-  'scene-id': {camera: 'detail', explode: 0.8, selection: 'generator'}
-}}
-```
+## Delivery and acceptance
 
-Cues can modify only declared `view` fields, never financial or scientific inputs. The index field must be an integer view field covering the story's scene count. Autoplay pauses when hidden, when inputs are restored/reset, on unmount, and under reduced motion. A scene change applies its canonical cue; manually changing a camera afterward does not rewrite the scene's authored meaning.
+A selected build emits `dist-clients/my-client/`, using only that client's public directory. New clients are not silently added to the public workbench reference list. No deployment is performed.
 
-`scene3d` is a real Three.js/WebGL2 component with orbit/pan/zoom, camera presets, hierarchy, selectable entities, explode vectors, phase-driven rotation, PNG capture and a non-WebGL accessible fallback. It renders validated primitives, not arbitrary JavaScript or downloaded models. Client-owned geometry/cues are in `wind-reference`; renderer code remains generic. This pass does not supply GLTF import, CAD precision, physics, video encoding or continuous scroll-based cinematic choreography. The optional explorer tour below selects authored stops using native page scroll.
+Public bundles expose embedded content. Review source imports, document bodies, schemas, data, asset rights and public directories before publication. Filters, view links and evidence levels are not access control.
 
-## Custom component escape hatch
+Saved input JSON excludes recording data, dataset bytes, task results and source callbacks. It may contain sensitive user-entered values. Restore requires review and exact app/version compatibility; invalid or jointly incoherent values leave the existing application unchanged.
 
-```tsx
-// clients/example/ClientNote.tsx
-import {useSiteState} from '../../src/framework/hooks';
-export function ClientNote() {
-  const state = useSiteState();
-  return <p>State revision: {state.revision}</p>;
-}
-```
+For each real client, run source validation, relevant model/unit tests, strict TypeScript, selected production build and actual browser acceptance. Test missing/error states, navigation, restore/export, keyboard, mobile and reduced motion. Inspect rendered screenshots and verify optional 3D has a useful 2D/data fallback. Obtain explicit deployment/security approval.
 
-Bind it in source as `components: {clientNote: ClientNote}` and place `{id: 'note', type: 'custom', resource: 'clientNote'}`. JSON names the binding; it does not contain the function. The renderer passes `{runtime}` and supplies the normal runtime React context. Custom UI remains subject to privacy, lifecycle, accessibility and testing requirements. A custom block conservatively keeps optional built-in renderer chunks available because nested source components cannot be inferred reliably from JSON alone.
-
-## Build/publication boundaries
-
-The client builder validates a single client, typechecks its source and framework, and emits a separate client-only application. It does not copy the workbench public directory. Only the selected client's public directory is copied; symbolic client/public directories are rejected. Unused built-in 3D/story/architecture chunks are pruned for known block-only apps.
-
-This prevents *implicit registry/public-directory inclusion* of other clients. It is not a sandbox or a guarantee against a developer explicitly importing private files into source. Review assets, source imports, schemas and labels before publishing. A static bundle and all data embedded in it are readable by its visitors.
-
-Saved input JSON is intentionally not a whole-project archive: it excludes imported files, computed task results, source callbacks and credentials. It may still contain sensitive user-supplied values. Restore requires a review dialog and exact app/version match.
-
-## Acceptance checklist for each real client
-
-1. Domain assumptions and units are documented and tested; synthetic values are labelled.
-2. `client:check`, relevant unit tests, full TypeScript and selected build pass.
-3. Real browser tests cover the client's inputs, page navigation, empty/error states and mobile layout.
-4. Visuals have readable paused/reduced-motion states and keyboard alternatives.
-5. No unrelated client payload, unnecessary WASM or unauthorized remote request is present.
-6. Sharing/export behavior is explicit and privacy-reviewed.
-
-Reference clients prove composition only. They are not final Foil'o, wind LCOE or portfolio websites.
-
-## System exploration, knowledge libraries and semantic explanation
-
-Read `docs/EXPERIENCE_KIT.md` before building a spatial portfolio, an interactive architecture showcase or a minimal document site. Use `--template knowledge` for a lightweight outline/search/document starter, or `--template spatial` for the same canonical content with a procedural 3D scene. Both remain client-owned source and are tested through isolated builds.
-
-`explorer` keeps one focus/facet/domain across Spatial, Map and Library; explicit project opening is separate from focus. Its optional native scroll tour is opt-in, pauses for direct interaction and restores, and retains non-scroll alternatives on small screens or with reduced motion. All six view fields must be patched atomically with the exported helpers. Domains and evidence levels are not permission boundaries.
-
-`explanation` consumes bounded client-authored loop/ordered-item frames through the original ConceptMotion compiler and renderer. It displays code and invariants without executing them. Use a custom source component for other semantic families until a tested generic adapter is added.
-
-`theme.mode` may be `light` or `dark`; omitting it keeps the original light mode. Generated chart inputs and the explanation block adapt to the original engines' theme contracts. Authored StorySpecs retain their own themes. Do not promise a pixel-identical transformation of every third-party renderer by changing site chrome.
-
-The AI may propose a reusable framework extension when a real brief exposes a gap. Put it on an isolated feature branch with semantic validation, docs and a concrete consumer/regression test; do not solve every requirement by changing shared internals or by copying an existing client's code.
+The current framework is a qualified alpha source SDK, not general v1. Exact results and limitations are recorded in `docs/FAMILIES_V0_4_QUALIFICATION.md`. Broader browser/device qualification and stable API/migration policy remain release work.
