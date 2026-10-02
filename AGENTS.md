@@ -18,7 +18,7 @@ Start small: read `docs/recipes/START.md`, choose `client:families`, then run `c
 14. Run unit tests, TypeScript, source/client contracts, production build and actual browser checks. Configured CI is not completed CI. Report actual counts and failures.
 15. Public website builds are not access control. Client data, documentation and public assets must be approved before publication.
 16. No automatic merge, deployment, package publication or branch replacement without explicit authorization. Work on an isolated branch and preserve prior checkpoints.
-17. Public reference clients are `wind-reference`, `operations-reference`, `architecture-reference`, `experience-reference`, and `energy-replay-reference`. The default production workbench must not include arbitrary new clients.
+17. Public reference clients are `wind-reference`, `operations-reference`, `architecture-reference`, `experience-reference`, `energy-replay-reference`, and `motion-reference`. The default production workbench must not include arbitrary new clients.
 18. Read `docs/recipes/START.md` and the client-focused generated guide first. Use the longer AI/experience guides only for the capabilities actually needed.
 19. An explorer has one selected identity across Spatial, Map and Library. Context facets, camera targets and an explicit open-project action must remain separate concepts; do not duplicate content or selection state per renderer.
 20. Native scroll tours are optional. Do not intercept wheel input or remove accessible direct controls. Pause tour following for direct interaction, restored state, hidden pages and reduced motion.
@@ -28,3 +28,8 @@ Start small: read `docs/recipes/START.md`, choose `client:families`, then run `c
 23. The engineering replay consumes supplied samples. Reuse the existing player scheduler; never invent observations, silently fill missing data, add an unrelated autoplay timer or treat illustrative geometry as a validated Foil'o model.
 24. Custom components should declare minimum `customCapabilities`; undeclared legacy components retain all renderers. This is a build contract, not a security sandbox.
 25. Selected-client build evidence must confirm optional 3D is absent where unneeded and only requested after a visitor chooses it when the default is 2D. Keep family metadata out of business/model logic.
+
+26. Authored motion is an optional SVG/D3 capability. Isometric projection must not force Three.js or a data-workbench dependency. Keep source-owned narrative and semantic IDs separate from renderer state.
+27. Reuse the original VizForge player for progression. D3 transitions are finite visual interpolation, not another autoplay or simulation clock. Seek/reverse/restore select deterministic targets; never reexecute domain actions.
+28. SourceArtifact text and exact evidence references are public, inert excerpts. Do not treat an authored state or code reference as proof of execution, authorization or client correctness.
+29. WorkspaceShell, SourceReader and MotionViewport are separately reusable source components. Do not force the whole workbench or motion application shell onto every client.

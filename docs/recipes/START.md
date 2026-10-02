@@ -15,3 +15,5 @@ Do not embed sensitive data or tokens in a static bundle. State exports contain 
 For a reusable missing capability, propose a narrow shared change with a client and tests. Otherwise use client-owned TSX. `customCapabilities: {name: []}` declares a lightweight custom component. Missing declarations retain all renderers for compatibility; explicit declarations require review and testing.
 
 Read the full AI guide only for tasks, complex state or publication boundaries. Do not read Three.js, a notebook or a SQL engine just to create a normal site.
+
+For a pedagogical process, add the optional motion capability with `--family content --motion`, then read `docs/recipes/motion.md`. This is not an additional compulsory family and does not require 3D.

@@ -12,3 +12,6 @@ Recovery boundary: recovery/studio2-interrupted-20261002 is retained separately 
 Environment: mounted v0.4 source archive was extracted and its complete Git tree verified as 6e7edb4bc889cecd6b2f9ea8079aa2b649d20b1b, exactly matching the saved base. Local dependency network access is unavailable. Pure model tests and syntax checks can run locally; the full frozen-dependency/build/browser gate must run in the ordinary repository workflow. Do not claim it has passed before checking its completed result.
 
 Save readable source commits at milestones. Do not rely on dangling blobs or the temporary filesystem. Keep prior branches, donor repositories and client sites unchanged.
+## Completed handoff
+
+The motion, source reader and optional workspace implementation is qualified at `255ae06ba41d9cd54573f30ace8995ef94631241`. Workflow `37046067565` completed with 282 unit/boundary/controller tests, 56 production browser scenarios and twelve isolated client build/browser targets passing. Read `docs/MOTION_V0_5_QUALIFICATION.md` for exact source identity, verification, measured outputs and boundaries. Later documentation-only commits are not new implementation gates.

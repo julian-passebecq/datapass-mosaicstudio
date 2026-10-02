@@ -1,4 +1,4 @@
-# AI client authoring: v0.4 source SDK
+# AI client authoring: v0.5 source SDK
 
 ## Start with the task, not the libraries
 
@@ -35,6 +35,7 @@ An ordinary client must not modify framework internals. A real requirement may j
 | Filters, typed data, charts and indicators | `docs/recipes/analytics.md` |
 | Optional geometry, cameras and spatial exploration | `docs/recipes/spatial.md` |
 | Supplied samples, signals and engineering replay | `docs/recipes/replay.md` |
+| Authored process motion and source context | `docs/recipes/motion.md` |
 | Authored analytical scenes | `docs/recipes/stories.md` |
 | Semantic transformation explanation | `docs/recipes/explanation.md` |
 
@@ -78,4 +79,10 @@ Saved input JSON excludes recording data, dataset bytes, task results and source
 
 For each real client, run source validation, relevant model/unit tests, strict TypeScript, selected production build and actual browser acceptance. Test missing/error states, navigation, restore/export, keyboard, mobile and reduced motion. Inspect rendered screenshots and verify optional 3D has a useful 2D/data fallback. Obtain explicit deployment/security approval.
 
-The current framework is a qualified alpha source SDK, not general v1. Exact results and limitations are recorded in `docs/FAMILIES_V0_4_QUALIFICATION.md`. Broader browser/device qualification and stable API/migration policy remain release work.
+The current framework is a qualified alpha source SDK, not general v1. Exact results and limitations are recorded in `docs/MOTION_V0_5_QUALIFICATION.md`. Broader browser/device qualification and stable API/migration policy remain release work.
+
+## Optional authored motion and evidence workspace
+
+`--family content --motion` creates a fresh client-owned explanation. Any client can add the capability manually without changing families. Read `docs/recipes/motion.md`, then the focused generated guide. Do not open Three.js source for an SVG isometric scene.
+
+Use immutable authored steps rather than executable animation strings. The original player owns progression, D3 owns a finite transition, and source references point only to approved inert excerpts. The separate WorkspaceShell and SourceReader may be composed in custom UI without creating an IDE or copying the motion client.
