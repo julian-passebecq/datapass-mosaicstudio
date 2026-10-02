@@ -13,7 +13,7 @@ import {scaffoldClient} from './scaffold-client.mjs';
 async function files(dir){let result=[];for(const entry of await readdir(dir,{withFileTypes:true})){const full=path.join(dir,entry.name);if(entry.isDirectory())result.push(...await files(full));else if(entry.isFile())result.push(full);}return result;}
 async function digest(dir){const h=createHash('sha256');for(const f of (await files(dir)).sort()){h.update(f);h.update(await readFile(f));}return h.digest('hex');}
 const before=await digest('src'),report=[];
-const fresh='acceptance-fresh',knowledge='acceptance-knowledge',spatial='acceptance-spatial',analytics='acceptance-analytics',replay='acceptance-replay';for(const id of [fresh,knowledge,spatial,analytics,replay])if(existsSync('clients/'+id))throw new Error('Refusing to replace existing acceptance client: '+id);
+const fresh='acceptance-fresh',knowledge='acceptance-knowledge',spatial='acceptance-spatial',analytics='acceptance-analytics',replay='acceptance-replay',motion='acceptance-motion';for(const id of [fresh,knowledge,spatial,analytics,replay,motion])if(existsSync('clients/'+id))throw new Error('Refusing to replace existing acceptance client: '+id);
 await mkdir('qa/client-builds',{recursive:true});
 let browser;
 try{
@@ -22,19 +22,20 @@ try{
   await scaffoldClient({id:spatial,title:'Fresh spatial acceptance',template:'spatial'});
   await scaffoldClient({id:analytics,title:'Fresh analytics acceptance',family:'analytics'});
   await scaffoldClient({id:replay,title:'Fresh replay acceptance',family:'replay'});
+  await scaffoldClient({id:motion,title:'Fresh motion acceptance',family:'content',motion:true});
   browser=await chromium.launch({...(process.env.CI_BROWSER_PATH?{executablePath:process.env.CI_BROWSER_PATH}:{}),args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-  for(const id of ['operations-reference','wind-reference','architecture-reference','experience-reference','energy-replay-reference',fresh,knowledge,spatial,analytics,replay]){
+  for(const id of ['operations-reference','wind-reference','architecture-reference','experience-reference','energy-replay-reference','motion-reference',fresh,knowledge,spatial,analytics,replay,motion]){
     const built=spawnSync(process.execPath,['--experimental-strip-types','scripts/build-client.mjs',id],{encoding:'utf8',timeout:180000,env:process.env});
     await writeFile('qa/client-builds/'+id+'-build.log',(built.stdout||'')+(built.stderr||''));
     if(built.status!==0)throw new Error('Client build failed: '+id+'\n'+built.stderr+'\n'+built.stdout);
     const root=path.join('dist-clients',id),all=await files(root),js=all.filter(f=>f.endsWith('.js'));
     assert.ok(!all.some(f=>/\.wasm$|duckdb|sql-parser/.test(f)),'Client build accidentally includes database assets');
     const evidence=JSON.parse(await readFile(path.join(root,'studio-build.json'),'utf8'));assert.equal(evidence.client,id);
-    if([fresh,knowledge,analytics,replay,'operations-reference'].includes(id))assert.equal(evidence.containsThree,false,'Unexpected Three in a non-spatial build');
+    if([fresh,knowledge,analytics,replay,motion,'operations-reference','motion-reference'].includes(id))assert.equal(evidence.containsThree,false,'Unexpected Three in a non-spatial build');
     const contents=(await Promise.all(js.map(f=>readFile(f,'utf8')))).join('\n');
-    const titles={'operations-reference':'Operations / reference app','wind-reference':'Wind / reference app','architecture-reference':'Architecture / reference app','experience-reference':'Experience / reference app',[fresh]:'Fresh scaffold acceptance',[knowledge]:'Fresh knowledge acceptance',[spatial]:'Fresh spatial acceptance',[analytics]:'Fresh analytics acceptance',[replay]:'Fresh replay acceptance','energy-replay-reference':'Energy / replay reference'};
+    const titles={'operations-reference':'Operations / reference app','wind-reference':'Wind / reference app','architecture-reference':'Architecture / reference app','experience-reference':'Experience / reference app',[fresh]:'Fresh scaffold acceptance',[knowledge]:'Fresh knowledge acceptance',[spatial]:'Fresh spatial acceptance',[analytics]:'Fresh analytics acceptance',[replay]:'Fresh replay acceptance','energy-replay-reference':'Energy / replay reference','motion-reference':'Motion / reference app',[motion]:'Fresh motion acceptance'};
     for(const [other,title] of Object.entries(titles))if(other!==id)assert.ok(!contents.includes(title),'Unexpected other-client payload: '+other+' in '+id);
-    if(id==='operations-reference'||id===knowledge||id===fresh||id===analytics||id===replay)assert.ok(!all.some(f=>/Scene3D|SceneViewport|Architecture-/.test(f)),'Basic data app includes an unused 3D/architecture chunk');
+    if(id==='operations-reference'||id===knowledge||id===fresh||id===analytics||id===replay||id===motion||id==='motion-reference')assert.ok(!all.some(f=>/Scene3D|SceneViewport|Architecture-/.test(f)),'Basic data app includes an unused 3D/architecture chunk');
     const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--config','vite.client.config.ts','--strictPort','--port','4174'],{env:{...process.env,STUDIO_CLIENT:id},stdio:['ignore','pipe','pipe']});
     let output='';server.stdout.on('data',v=>{output+=v;});server.stderr.on('data',v=>{output+=v;});
     const context=await browser.newContext({viewport:{width:1440,height:960}}),page=await context.newPage();
@@ -44,7 +45,8 @@ try{
       assert.ok(ready,'Target preview failed: '+output);
       const response=await page.goto('http://127.0.0.1:4174');assert.ok(response.headers()['content-security-policy'].includes("script-src 'self'"));
       await page.locator('.studio-site[data-app-id="'+id+'"]').waitFor();
-      if(id==='energy-replay-reference'||id===replay){await page.getByTestId('replay').waitFor();assert.equal(await page.getByTestId('replay').getAttribute('data-view'),'plan');assert.equal(await page.locator('canvas').count(),0);assert.ok(!requests.some(r=>/SceneViewport/.test(r)),'2D replay eagerly loads 3D');await page.getByRole('button',{name:'Next replay sample',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-testid=replay]')?.getAttribute('data-frame')==='1');if(id==='energy-replay-reference'){await page.getByRole('button',{name:'3D scene',exact:true}).click();await page.getByText('3D ready',{exact:true}).waitFor();}}
+      if(id==='motion-reference'||id===motion){await page.getByTestId('motion').waitFor();await page.getByRole('button',{name:'Use isometric projection',exact:true}).click();await page.getByRole('button',{name:'Next motion step',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-testid=motion]')?.getAttribute('data-step-index')==='1');await page.waitForFunction(()=>document.querySelector('[data-testid=motion-svg]')?.getAttribute('data-animating')==='false');assert.equal(await page.locator('canvas').count(),0);assert.deepEqual(evidence.capabilities,['motion']);}
+      else if(id==='energy-replay-reference'||id===replay){await page.getByTestId('replay').waitFor();assert.equal(await page.getByTestId('replay').getAttribute('data-view'),'plan');assert.equal(await page.locator('canvas').count(),0);assert.ok(!requests.some(r=>/SceneViewport/.test(r)),'2D replay eagerly loads 3D');await page.getByRole('button',{name:'Next replay sample',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-testid=replay]')?.getAttribute('data-frame')==='1');if(id==='energy-replay-reference'){await page.getByRole('button',{name:'3D scene',exact:true}).click();await page.getByText('3D ready',{exact:true}).waitFor();}}
       else if(id===analytics){await page.getByLabel('Region',{exact:true}).selectOption('north');await page.locator('.site-data-table').getByRole('cell',{name:'North',exact:true}).waitFor();}
       else if(id==='wind-reference'){await page.getByText('3D ready',{exact:true}).waitFor();await page.getByRole('button',{name:'Next shared scene'}).click();await page.waitForFunction(()=>document.querySelector('[data-testid=scene3d]')?.getAttribute('data-selection')==='rotor');}
       else if(id==='experience-reference'||id===spatial){await page.getByText('3D ready',{exact:true}).waitFor();await page.getByRole('group',{name:'Explorer views'}).getByRole('button',{name:'Library',exact:true}).click();await page.locator('.explorer-library').waitFor();}
@@ -63,4 +65,4 @@ try{
     }finally{await context.close();server.kill('SIGTERM');await new Promise(resolve=>{if(server.exitCode!==null)return resolve();server.once('exit',resolve);setTimeout(()=>{server.kill('SIGKILL');resolve();},3000).unref();});await writeFile('qa/client-builds/'+id+'-preview.log',output);}
   }
   assert.equal(await digest('src'),before,'Client creation/build changed framework source');
-}finally{await browser?.close();for(const id of [fresh,knowledge,spatial,analytics,replay])await rm('clients/'+id,{recursive:true,force:true});await writeFile('qa/client-builds/results.json',JSON.stringify({sourceUnchanged:await digest('src')===before,clients:report},null,2)+'\n');}
+}finally{await browser?.close();for(const id of [fresh,knowledge,spatial,analytics,replay,motion])await rm('clients/'+id,{recursive:true,force:true});await writeFile('qa/client-builds/results.json',JSON.stringify({sourceUnchanged:await digest('src')===before,clients:report},null,2)+'\n');}

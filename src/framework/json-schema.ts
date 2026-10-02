@@ -18,6 +18,7 @@ const blocks={oneOf:[
   block('chart',{dataset:id,x:id,y:id,kind:{enum:['bar','line','scatter']},unit:text(30)},['dataset','x','y','kind']),
   block('task',{task:id},['task']),block('catalog',{},[]),block('code',{text:text(20000),language:{...text(40),minLength:1}},['text','language']),
   block('scene3d',{resource:id,explode:id,phase:id,camera:id,selection:id},['resource','explode','phase','camera','selection']),
+  block('motion',{resource:id,step:id,selection:id,projection:id,panel:id,source:id},['resource','step','selection','projection','panel','source']),
   block('replay',{resource:id,frame:id,selection:id,channel:id,view:id,speed:id},['resource','frame','selection','channel','view','speed']),
   block('explorer',{resource:id,focus:id,facet:id,view:id,level:id,group:id,document:id,scroll:{type:'boolean'}},['resource','focus','facet','view','level','group','document']),
   ...['story-controls','story-figure','architecture','custom','explanation'].map(type=>block(type,{resource:id},['resource']))
@@ -43,3 +44,21 @@ export const replaySchema={$schema:'https://json-schema.org/draft/2020-12/schema
   scene:id,overviewCamera:id,motion:list(obj({part:id,entity:id,channel:id,kind:{enum:['translate','rotate']},axis:{enum:['x','y','z']},scale:{type:'number',minimum:-1000,maximum:1000},offset:{type:'number',minimum:-1000,maximum:1000}}),96)
 },['format','version','title','description','source','provenance','time','maxGapSeconds','entities','channels','events'])};
 export const clientProfileSchema={$schema:'https://json-schema.org/draft/2020-12/schema',title:'DataPass client family profile',...obj({format:{const:'datapass.client-profile'},version:{const:1},family:{enum:['content','knowledge','analytics','spatial','replay']}})};
+
+const evidenceRef = obj({artifact:id,start:{type:'integer',minimum:1,maximum:2000},end:{type:'integer',minimum:1,maximum:2000},label:{...text(160),minLength:1}});
+export const sourceArtifactSchema = {$schema:'https://json-schema.org/draft/2020-12/schema',title:'Inert client source excerpt',...obj({id,path:{...text(500),minLength:1},language:{enum:['python','sql','typescript','json','markdown','text']},title:{...text(160),minLength:1},text:text(64000),provenance:{enum:['synthetic','provided']}})};
+const motionPoint={type:'array',items:{type:'number',minimum:-30,maximum:30},minItems:3,maxItems:3};
+const motionBase={id,label:{...text(80),minLength:1},description:{...text(2000),minLength:1},color:{type:'string',pattern:'^#[a-fA-F0-9]{6}$'},evidence:list(evidenceRef,8)};
+const motionCommands={oneOf:[
+  obj({type:{const:'move'},entity:id,position:motionPoint}),
+  obj({type:{const:'transfer'},entity:id,link:id}),
+  obj({type:{const:'state'},entity:id,value:{enum:['idle','active','complete','warning','muted']}}),
+  obj({type:{const:'visibility'},entity:id,visible:{type:'boolean'}}),
+]};
+export const motionSchema={$schema:'https://json-schema.org/draft/2020-12/schema',title:'DataPass authored motion v1',...obj({
+  format:{const:'datapass.motion'},version:{const:1},title:{...text(160),minLength:1},description:{...text(2000),minLength:1},provenance:{enum:['synthetic','authored']},note:{...text(2000),minLength:1},
+  entities:list({oneOf:[obj({...motionBase,kind:{const:'station'},position:motionPoint,size:{...motionPoint,items:{type:'number',minimum:.1,maximum:8}}}),obj({...motionBase,kind:{const:'token'},at:id,size:{type:'number',minimum:.1,maximum:1}})]},40,1),
+  links:list(obj({id,from:id,to:id,label:text(100),via:list(motionPoint,8)}),64),
+  steps:list(obj({id,title:{...text(160),minLength:1},caption:{...text(3000),minLength:1},focus:id,holdMs:{type:'integer',minimum:800,maximum:15000},transitionMs:{type:'integer',minimum:0,maximum:1800},commands:list(motionCommands,80),activeLinks:list(id,64),evidence:list(evidenceRef,8)}),64,1),
+  sources:list(sourceArtifactSchema,24),
+})};

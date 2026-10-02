@@ -1,4 +1,5 @@
 import {useEffect, useRef} from 'react';
+import './motion.css';
 import type {CompiledMotion} from './compile';
 import {createMotionRenderer, type MotionRenderer, type MotionView} from './renderer';
 
