@@ -1,8 +1,8 @@
 # DataPass MosaicStudio
 
-**v0.6 alpha source SDK for AI-built technical websites.** Client content, approved data, domain calculations and page composition live under `clients/<id>/`; reusable state, contracts and rendering live under `src/framework/`.
+**v0.7 alpha source SDK for AI-built technical websites.** Client content, approved data, domain calculations and page composition live under `clients/<id>/`; reusable state, contracts and rendering live under `src/framework/`.
 
-Working branch: `feat/studio2-foundation-runs-context`, draft PR #7. This extends qualified v0.5. No merge, deployment, package publication, dependency upgrade or donor-repository modification is implied.
+Working branch: `feat/studio2-model-assets`, draft PR #8. This extends qualified v0.6. No merge, deployment, package publication, dependency upgrade or donor-repository modification is implied.
 
 ## Start with the smallest useful client
 
@@ -50,13 +50,29 @@ Selected builds support optional `publication.json`: title, description, languag
 
 Read `docs/recipes/public-site.md`. There is no domain verification, deployment, translation or full page prerendering in this feature. The compact portfolio remains a separate lightweight design task, not a copy of the technical workbench.
 
+## New: approved static product models, still optional
+
+```sh
+npm run client:new -- product-demo --family spatial --model
+npm run model:inspect -- clients/product-demo/public/models/product-demo/assembly.glb
+npm run client:context -- product-demo
+npm run build:client -- product-demo
+```
+
+The `model3d` capability accepts a deliberately narrow self-contained **static GLB 2.0** profile. The approved bytes are identified by exact length and SHA-256 before the pinned Three.js `GLTFLoader` is allowed to decode them. Client-owned semantic part IDs bind to nodes in that exact hashed file, so selection, annotations, ContextInspector, source evidence, authored cameras and exploded offsets share one identity.
+
+The first profile supports static triangle geometry, opaque untextured PBR materials and TRS transforms. It refuses external files/data URIs, textures, codecs/extensions, skins, morphs and animation tracks. Modes are assembled, exploded, wireframe, isolate and an uncapped visual cutaway. These are presentation states, not CAD measurements, physics or scientific simulation. The outline/source view works before loading WebGL and remains the fallback when 3D is unavailable.
+
+Read `docs/recipes/models.md` and `docs/MODEL_ASSET_V0_7_QUALIFICATION.md`. A compact portfolio does not need this capability.
+
 ## Existing experiences remain available
 
-The root route is still the separate SQLRooms/DuckDB workbench. `?sites=1` lists synthetic reference applications. The integrated review build includes only these seven approved references:
+The root route is still the separate SQLRooms/DuckDB workbench. `?sites=1` lists synthetic reference applications. The integrated review build includes only these eight approved references:
 
 | Route | Purpose |
 | --- | --- |
 | `?app=foundation-reference` | Captured results/runs, shared semantic navigation and local source context |
+| `?app=model-reference` | Verified static GLB, semantic part binding, product modes and evidence |
 | `?app=motion-reference` | Authored 2D/isometric D3 scenes and read-only evidence |
 | `?app=energy-replay-reference` | Supplied-sample replay with optional 3D |
 | `?app=experience-reference` | Shared context across spatial, map and document views |
@@ -66,12 +82,12 @@ The root route is still the separate SQLRooms/DuckDB workbench. `?sites=1` lists
 
 Reference values, geometry and relationships are illustrative acceptance fixtures, not real Foil'o engineering or a canonical Galaxy registry. New client folders are not silently added to the public workbench list. Selected outputs are in `dist-clients/<id>/`; no deployment occurs.
 
-There are now **18 block types**, nine optional capabilities and still five families. Existing VizForge, ConceptMotion, Three.js, React Flow and SQLRooms/Mosaic retain their roles.
+There are now **19 block types**, ten optional capabilities and still five families. Existing VizForge, ConceptMotion, Three.js, React Flow and SQLRooms/Mosaic retain their roles.
 
 ## Qualification and release boundaries
 
-See `docs/FOUNDATION_V0_6_QUALIFICATION.md` for exact qualified implementation, completed workflow, actual counts, artifacts and limits. A documentation-only head is distinguished from the tested implementation. Review `docs/CLIENT_READINESS_V0_6.md` for the five future clients.
+See `docs/MODEL_ASSET_V0_7_QUALIFICATION.md` for the latest qualified model-asset implementation and `docs/FOUNDATION_V0_6_QUALIFICATION.md` for the underlying foundation. Review `docs/CLIENT_READINESS_V0_7.md` for the five future clients.
 
-This remains an alpha source SDK. It does not implement a general Scenario Engine, full SemanticOverlay renderer, GLTF/GLB ModelAsset pipeline, persistent cloud history, notebook execution, DuckLake or PDF/PPTX/video exports. Real client data/assets, scientific tests, final design, deployment security and broader browser/device acceptance remain necessary.
+This remains an alpha source SDK. It does not implement a general Scenario Engine, full SemanticOverlay renderer, universal glTF/CAD pipeline, persistent cloud history, notebook execution, DuckLake or PDF/PPTX/video exports. The delivered model profile is intentionally static, local, bounded and opt-in. Real client data/assets, scientific tests, final design, deployment security and broader browser/device acceptance remain necessary.
 
 No Rust rewrite or speculative toolchain upgrade was used to deliver these features.
