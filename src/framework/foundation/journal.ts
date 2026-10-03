@@ -17,7 +17,7 @@ export type RunRecord={
   startedAt:string;finishedAt:string|null;durationMs:number;
   artifact:Artifact|null;retention:'pending'|'retained'|'none'|'omitted-budget'|'invalid-output';message:string;
 };
-export type JournalSnapshot={records:readonly RunRecord[];evicted:number;notCaptured:number;revision:number};
+export type JournalSnapshot={records:readonly RunRecord[];evicted:number;notCaptured:number;revision:number;selectedId:string|null;followingLatest:boolean};
 export type JournalOptions={maxRecords?:number;maxBytes?:number};
 const STATUSES=['running','succeeded','failed','cancelled','superseded','timed-out','unobserved'];
 function timestamp(value:unknown):asserts value is string{
@@ -53,7 +53,7 @@ export function validateRunRecord(value:unknown):RunRecord{
   }else if(value.status!=='running'&&(value.artifact!==null||value.retention!=='none'))throw new Error('Unsuccessful run cannot carry a result');
   return freezeValue(structuredClone(value) as RunRecord);
 }
-export function validateRunSpec(value:unknown,runtime:SiteRuntime):RunSpec{
+export function validateRunSpec(value:unknown,runtime:Pick<SiteRuntime,'manifest'>):RunSpec{
   boundedJson(value,32000);
   strict(value,['format','version','taskId','modelId','modelVersion','providerId','source','provenance','representations'],'run spec');
   if(value.format!=='datapass.run-spec'||value.version!==1)throw new Error('Unsupported run spec');
@@ -70,7 +70,7 @@ export function validateRunSpec(value:unknown,runtime:SiteRuntime):RunSpec{
  * Records are immutable snapshots; it is NOT a durable backend or resume engine.
  */
 export class RunJournal{
-  private snapshot:JournalSnapshot=freezeValue({records:[],evicted:0,notCaptured:0,revision:0});
+  private snapshot:JournalSnapshot=freezeValue({records:[],evicted:0,notCaptured:0,revision:0,selectedId:null,followingLatest:true});
   private listeners=new Set<()=>void>();
   private readonly specs:Map<string,RunSpec>;
   private readonly pending=new Map<number,{id:string;output:Dataset}>();
@@ -98,7 +98,9 @@ export class RunJournal{
     while(records.length>this.maxRecords||jsonBytes(records)>this.maxBytes){records.shift();evicted++;}
     const retained=new Set(records.map(r=>r.id));
     for(const [ticket,pending] of this.pending)if(!retained.has(pending.id))this.pending.delete(ticket);
-    this.snapshot=freezeValue({records,evicted,notCaptured,revision:this.snapshot.revision+1});
+    const followingLatest=this.snapshot.followingLatest||!records.some(r=>r.id===this.snapshot.selectedId);
+    const selectedId=followingLatest?(records.at(-1)?.id??null):this.snapshot.selectedId;
+    this.snapshot=freezeValue({records,evicted,notCaptured,revision:this.snapshot.revision+1,selectedId,followingLatest});
     for(const fn of [...this.listeners]){try{fn();}catch{/* Presentation subscribers cannot corrupt execution. */}}
   }
   private observe=(event:TaskRunEvent)=>{
@@ -122,6 +124,11 @@ export class RunJournal{
     const updated=validateRunRecord({...previous,status:event.phase,finishedAt:event.at,durationMs:event.elapsedMs,artifact,retention,message:message.slice(0,2000)});
     this.publish(this.snapshot.records.map(r=>r.id===previous.id?updated:r));
   };
+  select(id:string|null){
+    if(id!==null&&!this.snapshot.records.some(r=>r.id===id))throw new Error('Unknown selected run');
+    this.snapshot=freezeValue({...this.snapshot,followingLatest:id===null,selectedId:id??this.snapshot.records.at(-1)?.id??null});
+    this.publish([...this.snapshot.records]);
+  }
   clear(){this.pending.clear();this.publish([]);}
   exportRecord(id:string):string{
     const record=this.snapshot.records.find(r=>r.id===id);if(!record)throw new Error('Unknown run');
@@ -134,5 +141,30 @@ export function compareRuns(a:RunRecord,b:RunRecord){
   validateRunRecord(a);validateRunRecord(b);
   if(a.modelId!==b.modelId||a.modelVersion!==b.modelVersion||a.taskId!==b.taskId||a.appId!==b.appId||a.appVersion!==b.appVersion||a.providerId!==b.providerId)throw new Error('Runs do not share the same declared model/task/provider contract');
   if(a.status!=='succeeded'||b.status!=='succeeded')throw new Error('Compare successful runs only');
-  return {parameters:[...new Set([...Object.keys(a.parameters),...Object.keys(b.parameters)])].sort().map(id=>({id,before:a.parameters[id]??null,after:b.parameters[id]??null,changed:!Object.is(a.parameters[id],b.parameters[id])})),durationDeltaMs:b.durationMs-a.durationMs};
+  const metrics:{id:string;title:string;before:Scalar;after:Scalar;delta:number|null;unit:string}[]=[];
+  if(a.artifact?.payload.kind==='table'&&b.artifact?.payload.kind==='table'){
+    const left=a.artifact.payload,right=b.artifact.payload;
+    if(JSON.stringify(left.columns)===JSON.stringify(right.columns)&&left.rowKey===right.rowKey){
+      for(const rep of a.artifact.representations){
+        if(rep.kind!=='metric')continue;
+        const other=b.artifact.representations.find(r=>r.id===rep.id);
+        if(other?.kind!=='metric'||other.row!==rep.row||other.column!==rep.column||other.unit!==rep.unit)continue;
+        const before=left.rows.find(r=>String(r[left.rowKey])===rep.row)?.[rep.column]??null;
+        const after=right.rows.find(r=>String(r[right.rowKey])===other.row)?.[other.column]??null;
+        metrics.push({id:rep.id,title:rep.title,before,after,delta:typeof before==='number'&&typeof after==='number'&&Number.isFinite(after-before)?after-before:null,unit:rep.unit||left.columns.find(c=>c.id===rep.column)?.unit||''});
+      }
+    }
+  }
+  return {parameters:[...new Set([...Object.keys(a.parameters),...Object.keys(b.parameters)])].sort().map(id=>({id,before:a.parameters[id]??null,after:b.parameters[id]??null,changed:!Object.is(a.parameters[id],b.parameters[id])})),durationDeltaMs:b.durationMs-a.durationMs,metrics};
+}
+
+export type RunResource={specs:RunSpec[];maxRecords?:number;maxBytes?:number};
+export function validateRunResource(input:unknown,runtime:Pick<SiteRuntime,'manifest'>):RunResource{
+  boundedJson(input,262144);strict(input,['specs','maxRecords','maxBytes'],'run resource');
+  if(!Array.isArray(input.specs)||!input.specs.length||input.specs.length>10)throw new Error('Run resource spec budget');
+  const specs=input.specs.map(s=>validateRunSpec(s,runtime));
+  if(new Set(specs.map(s=>s.taskId)).size!==specs.length)throw new Error('Duplicate task run specification');
+  if(input.maxRecords!==undefined)integerRange(input.maxRecords,1,100,'journal record limit');
+  if(input.maxBytes!==undefined)integerRange(input.maxBytes,4096,16777216,'journal byte limit');
+  return freezeValue({...structuredClone(input),specs} as RunResource);
 }
