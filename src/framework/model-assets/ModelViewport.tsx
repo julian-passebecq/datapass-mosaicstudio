@@ -1,8 +1,8 @@
 import {useCallback,useMemo} from 'react';
-import SceneViewport from '../scene-renderer/SceneViewport';
-import type {SceneSpec} from '../scene';
-import {prepareModel} from './prepare';
-import type {ModelSpec,ModelState} from './model';
+import SceneViewport from '../scene-renderer/SceneViewport.tsx';
+import type {SceneSpec} from '../scene.ts';
+import {prepareModel} from './prepare.ts';
+import type {ModelSpec,ModelState} from './model.ts';
 import '../blocks/scene3d.css';
 
 export default function ModelViewport({spec,state,onSelect}:{spec:ModelSpec;state:ModelState;onSelect(id:string):void}) {

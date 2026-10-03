@@ -5,7 +5,7 @@ import Basic from './blocks/Basic';
 import type {SiteRuntime} from './runtime';
 const Runs=__STUDIO_RUNS__?lazy(()=>import('./foundation/RunWorkbench')):null;
 export const SharedRunScope=__STUDIO_RUNS__?lazy(()=>import('./foundation/RunScope').then(m=>({default:m.RunScope}))):function MissingRuns(_: {ids:string[];children:import('react').ReactNode}){throw new Error('Run capability was not included in this build');};
-const Model=__STUDIO_MODELS__?lazy(()=>import('./model-assets/Model')):null;
+const Model=__STUDIO_MODELS__?lazy(()=>import('./model-assets/ModelBlock')):null;
 const Chart=__STUDIO_CHARTS__?lazy(()=>import('./blocks/Chart')):null;
 const Scene=__STUDIO_3D__?lazy(()=>import('./blocks/Scene3D')):null;
 const Story=__STUDIO_STORIES__?lazy(()=>import('./blocks/Story')):null;

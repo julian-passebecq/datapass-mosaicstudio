@@ -4,7 +4,7 @@ import {WorkspaceShell} from '../workspace';
 import {SourceReader} from '../evidence/SourceReader';
 import {ContextInspector} from '../foundation/ContextInspector';
 import {modelContext} from './context';
-import {validateModel,readModelState,MODEL_MODES,type ModelBlock} from './model';
+import {validateModel,readModelState,MODEL_MODES,type ModelBlock} from './model.ts';
 import './model.css';
 const Viewport=lazy(()=>import('./ModelViewport'));
 export default function Model({block}:{block:ModelBlock}) {

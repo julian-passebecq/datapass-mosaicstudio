@@ -1,10 +1,10 @@
 import * as THREE from 'three';
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
-import {fetchModelBytes,verifyModelBytes} from './load';
-import {validatePartBindings} from './glb';
-import {validateModel,type ModelSpec} from './model';
-import type {SceneSpec,Vec3} from '../scene';
-import type {LoadedScene} from '../scene-renderer/content';
+import {fetchModelBytes,verifyModelBytes} from './load.ts';
+import {validatePartBindings} from './glb.ts';
+import {validateModel,type ModelSpec} from './model.ts';
+import type {SceneSpec,Vec3} from '../scene.ts';
+import type {LoadedScene} from '../scene-renderer/content.ts';
 
 /** Reuses the pinned Three loader, after a bounded file/profile check; owns every resource. */
 export async function prepareModel(input:ModelSpec,signal:AbortSignal,base=location.href):Promise<LoadedScene> {
