@@ -18,6 +18,7 @@ await mkdir('qa/client-builds',{recursive:true});
 let browser;
 try{
   await scaffoldClient({id:fresh,title:'Fresh scaffold acceptance',custom:true});
+  await writeFile('clients/'+fresh+'/publication.json',JSON.stringify({format:'datapass.publication',version:1,visibility:'public',language:'en',canonicalUrl:'https://example.test/acceptance/'}));
   await scaffoldClient({id:knowledge,title:'Fresh knowledge acceptance',template:'knowledge'});
   await scaffoldClient({id:spatial,title:'Fresh spatial acceptance',template:'spatial'});
   await scaffoldClient({id:analytics,title:'Fresh analytics acceptance',family:'analytics'});
@@ -45,6 +46,13 @@ try{
       let ready=false;for(let i=0;i<100;i++){try{const r=await fetch('http://127.0.0.1:4174');if(r.ok){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,100));}
       assert.ok(ready,'Target preview failed: '+output);
       const response=await page.goto('http://127.0.0.1:4174');assert.ok(response.headers()['content-security-policy'].includes("script-src 'self'"));
+      const metadata=JSON.parse(await readFile(path.join(root,'studio-publication.json'),'utf8'));
+      const initialHtml=await response.text();
+      assert.ok(initialHtml.includes('property="og:title"'),'Missing build-time social metadata');
+      assert.ok(initialHtml.includes(id===fresh?'content="index,follow"':'content="noindex,nofollow"'));
+      assert.equal(metadata.visibility,id===fresh?'public':'preview');
+      assert.ok((await readFile(path.join(root,'robots.txt'),'utf8')).includes(id===fresh?'Allow: /':'Disallow: /'));
+      if(id===fresh)assert.ok(initialHtml.includes('href="https://example.test/acceptance/"'));
       await page.locator('.studio-site[data-app-id="'+id+'"]').waitFor();
       if(id==='foundation-reference'||id===foundation){await page.getByTestId('runs').waitFor();await page.getByRole('button',{name:id===foundation?'Evaluate samples':'Evaluate example',exact:true}).click();await page.getByTestId('artifact').waitFor();assert.equal(await page.getByTestId('runs').getAttribute('data-run-count'),'1');await page.getByLabel('Artifact representation').selectOption(id===foundation?'final':'metric');await page.getByTestId(id===foundation?'metric-final':'metric-metric').waitFor();assert.equal(await page.locator('canvas').count(),0);assert.deepEqual(evidence.capabilities,['charts','runs']);}
       else if(id==='motion-reference'||id===motion){await page.getByTestId('motion').waitFor();await page.getByRole('button',{name:'Use isometric projection',exact:true}).click();await page.getByRole('button',{name:'Next motion step',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-testid=motion]')?.getAttribute('data-step-index')==='1');await page.waitForFunction(()=>document.querySelector('[data-testid=motion-svg]')?.getAttribute('data-animating')==='false');assert.equal(await page.locator('canvas').count(),0);assert.deepEqual(evidence.capabilities,['motion']);}
