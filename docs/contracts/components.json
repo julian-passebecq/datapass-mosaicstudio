@@ -199,6 +199,17 @@
     "limits": "40 objects, 64 steps, four inert command types; no WebGL, code execution or physical model"
   },
   {
+    "type": "runs",
+    "purpose": "Optional captured task parameters, bounded run history and multiple views of one result",
+    "required": [
+      "id",
+      "type",
+      "resource"
+    ],
+    "engine": "Existing SiteRuntime tasks / original table, metric and chart blocks",
+    "limits": "In-memory opt-in history; no backend persistence, resume engine or automatic execution"
+  },
+  {
     "type": "custom",
     "purpose": "Client-owned React component registered in trusted source",
     "required": [

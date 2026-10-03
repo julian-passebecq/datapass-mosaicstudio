@@ -1,3 +1,4 @@
+import {readPublication} from './publication.mjs';
 import {spawnSync} from 'node:child_process';
 import {existsSync,lstatSync} from 'node:fs';
 import {mkdir,writeFile} from 'node:fs/promises';
@@ -10,9 +11,10 @@ const dir=path.resolve('clients',id);if(!existsSync(path.join(dir,'app.ts'))||ls
 const bootstrap=spawnSync(process.execPath,['scripts/bootstrap-upstreams.mjs'],{stdio:'inherit',env:process.env});
 if(bootstrap.status!==0)process.exit(bootstrap.status||1);
 const definition=await loadClient(id);
+const publication=await readPublication(dir,{title:definition.manifest.title,description:definition.manifest.description||'A DataPass client application.'});
 const plan=planCapabilities(definition);
 for(const warning of plan.warnings)console.warn(warning);
-const run=(args)=>{const p=spawnSync(process.execPath,args,{stdio:'inherit',env:{...process.env,STUDIO_CLIENT:id,STUDIO_CAPABILITIES:JSON.stringify(plan.capabilities),STUDIO_TITLE:definition.manifest.title,STUDIO_DESCRIPTION:definition.manifest.description}});if(p.status!==0)process.exit(p.status||1);};
+const run=(args)=>{const p=spawnSync(process.execPath,args,{stdio:'inherit',env:{...process.env,STUDIO_CLIENT:id,STUDIO_PUBLICATION:JSON.stringify(publication),STUDIO_CAPABILITIES:JSON.stringify(plan.capabilities),STUDIO_TITLE:definition.manifest.title,STUDIO_DESCRIPTION:definition.manifest.description}});if(p.status!==0)process.exit(p.status||1);};
 run(['scripts/prepare-fluent-icons.mjs']);
 run(['--experimental-strip-types','scripts/check-clients.mjs',id]);
 await mkdir('.generated',{recursive:true});

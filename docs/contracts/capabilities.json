@@ -1,4 +1,12 @@
 {
+  "runs": {
+    "title": "Run history and result views",
+    "flag": "__STUDIO_RUNS__",
+    "guide": "docs/recipes/runs.md",
+    "engines": [
+      "Existing SiteRuntime tasks / artifact adapters"
+    ]
+  },
   "charts": {
     "title": "Analytical charts",
     "flag": "__STUDIO_CHARTS__",

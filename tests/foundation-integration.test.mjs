@@ -1,0 +1,22 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,readdir,readFile,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+import {SiteRuntime} from '../src/framework/runtime.ts';
+import {validateRunResource,RunJournal,compareRuns} from '../src/framework/foundation/journal.ts';
+import {planCapabilities} from '../src/framework/capabilities.ts';
+import {scaffoldClient} from '../scripts/scaffold-client.mjs';
+import {definition,runSpec} from './foundation-fixture.mjs';
+function app(){const d=definition();d.resources={runs:{results:{specs:[runSpec()]}}};d.manifest.pages[0].sections[0].blocks=[{id:'history',type:'runs',resource:'results'}];return d;}
+test('runs reuse existing chart capability and do not opt into spatial or workbench modules',()=>{assert.deepEqual(planCapabilities(app()).capabilities,['charts','runs']);const d=app();d.resources.runs.results.specs[0].representations=[{id:'table',title:'Table',kind:'table'}];assert.deepEqual(planCapabilities(d).capabilities,['runs']);});
+test('run resource validates task ownership and exact representation structure before mounting',()=>{const d=app();new SiteRuntime(d);d.resources.runs.other={specs:[runSpec()]};d.manifest.pages[0].sections[0].blocks.push({id:'other',type:'runs',resource:'other'});assert.throws(()=>new SiteRuntime(d),/one resource owner/);});
+test('the same journal may be rendered on several pages without a competing task owner',()=>{const d=app();d.manifest.pages.push({id:'next',title:'Next',description:'Second view',sections:[{id:'view',columns:1,blocks:[{id:'second',type:'runs',resource:'results'}]}]});new SiteRuntime(d);});
+test('run resource bounds and unknown task are rejected',()=>{const r=new SiteRuntime(definition());for(const resource of [{specs:[]},{specs:[runSpec()],maxRecords:0},{specs:[runSpec()],maxBytes:10},{specs:[runSpec()],handler:'run()'},{specs:[{...runSpec(),taskId:'unknown'}]}])assert.throws(()=>validateRunResource(resource,r));});
+test('metric comparison keeps missing values unavailable and never manufactures zero differences',async()=>{const d=definition();d.bindings.tasks.compute=async({values})=>[{id:'a',value:values.gain===1?null:4,time:0}];const r=new SiteRuntime(d),j=new RunJournal(r,[runSpec()]);j.attach();await r.runTask('compute');r.set('gain',2);await r.runTask('compute');const result=compareRuns(...j.getSnapshot().records);assert.equal(result.metrics[0].before,null);assert.equal(result.metrics[0].after,4);assert.equal(result.metrics[0].delta,null);});
+test('fresh foundation scaffold contains client-owned computation and no reference-client data',async()=>{const root=await mkdtemp(path.join(tmpdir(),'foundation-scaffold-'));try{const dir=await scaffoldClient({root,id:'new-result',title:'A "new" result',family:'analytics',foundation:true});const text=await readFile(path.join(dir,'app.ts'),'utf8');assert.ok(text.includes("type:'runs'"));assert.ok(!text.includes('foundation-reference'));assert.ok(!text.includes('three'));await assert.rejects(()=>scaffoldClient({root,id:'new-result',family:'analytics',foundation:true}));}finally{await rm(root,{recursive:true,force:true});}});
+test('incompatible foundation flags fail without creating any client folder',async()=>{const root=await mkdtemp(path.join(tmpdir(),'bad-foundation-'));try{for(const options of [{family:'content'},{family:'spatial'},{family:'analytics',motion:true},{family:'analytics',custom:true}])await assert.rejects(()=>scaffoldClient({root,id:'bad',foundation:true,...options}));assert.deepEqual(await readdir(root),[]);}finally{await rm(root,{recursive:true,force:true});}});
+test('valid long parameter values are shortened only for inspector display, not in the record',async()=>{
+  const {runContext}=await import('../src/framework/foundation/context.ts');const d=definition();d.manifest.fields.push({id:'long-option',label:'Long option',type:'select',role:'input',default:'x'.repeat(150),options:[{value:'x'.repeat(150),label:'Example'}]});
+  const r=new SiteRuntime(d),j=new RunJournal(r,[runSpec()]);j.attach();await r.runTask('compute');const record=structuredClone(j.getSnapshot().records[0]);record.parameters.description='x'.repeat(2000);const view=runContext(record);assert.ok(view.facts.find(f=>f.label==='description').value.includes('truncated'));assert.equal(record.parameters.description.length,2000);
+});

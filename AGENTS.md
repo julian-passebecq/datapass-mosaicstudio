@@ -18,7 +18,7 @@ Start small: read `docs/recipes/START.md`, choose `client:families`, then run `c
 14. Run unit tests, TypeScript, source/client contracts, production build and actual browser checks. Configured CI is not completed CI. Report actual counts and failures.
 15. Public website builds are not access control. Client data, documentation and public assets must be approved before publication.
 16. No automatic merge, deployment, package publication or branch replacement without explicit authorization. Work on an isolated branch and preserve prior checkpoints.
-17. Public reference clients are `wind-reference`, `operations-reference`, `architecture-reference`, `experience-reference`, `energy-replay-reference`, and `motion-reference`. The default production workbench must not include arbitrary new clients.
+17. Public reference clients are `wind-reference`, `operations-reference`, `architecture-reference`, `experience-reference`, `energy-replay-reference`, `motion-reference`, and `foundation-reference`. The default production workbench must not include arbitrary new clients.
 18. Read `docs/recipes/START.md` and the client-focused generated guide first. Use the longer AI/experience guides only for the capabilities actually needed.
 19. An explorer has one selected identity across Spatial, Map and Library. Context facets, camera targets and an explicit open-project action must remain separate concepts; do not duplicate content or selection state per renderer.
 20. Native scroll tours are optional. Do not intercept wheel input or remove accessible direct controls. Pause tour following for direct interaction, restored state, hidden pages and reduced motion.
@@ -33,3 +33,13 @@ Start small: read `docs/recipes/START.md`, choose `client:families`, then run `c
 27. Reuse the original VizForge player for progression. D3 transitions are finite visual interpolation, not another autoplay or simulation clock. Seek/reverse/restore select deterministic targets; never reexecute domain actions.
 28. SourceArtifact text and exact evidence references are public, inert excerpts. Do not treat an authored state or code reference as proof of execution, authorization or client correctness.
 29. WorkspaceShell, SourceReader and MotionViewport are separately reusable source components. Do not force the whole workbench or motion application shell onto every client.
+
+
+30. Artifact views reuse existing renderers; changing a representation or inspector must not run domain calculations. ViewProfile is presentation filtering, not an access-control or redaction boundary.
+31. RunJournal observes SiteRuntime; it must never become a second scheduler. Synchronous task-run observers are read-only and failures must not corrupt task results. History is bounded and in-memory unless a client explicitly supplies approved storage.
+32. Capture exact declared inputs and distinguish observed outcomes from declared model/provider metadata. Local dependency revisions are not content hashes or verified cloud lineage. An unobserved terminal outcome is not a cancellation or success.
+33. Run/artifact exports include potentially sensitive result data. They are separate from saved UI values and require deliberate sharing review. Never silently retain old results under a failed/new run.
+34. Static knowledge is literal search over approved excerpts, not automatic RAG. Authored summaries and exact excerpts must remain distinct. Check the actual serialized context byte size, not a differently formatted preview.
+35. Semantic navigation uses existing view fields with source-only joint validation. Projection/facet changes preserve identity; hidden selection is not erased. Real Galaxy data must come from its canonical registry.
+36. Publication metadata defaults to preview/noindex. Public mode requires an explicit canonical URL and approved source-owned assets. Robots directives are not authentication, and metadata generation is not deployment or full SSR.
+37. The compact portfolio does not require spatial navigation, a journal, SQLRooms or 3D. Foil'o geometry/physics cannot be inferred from a conventional turbine reference. The five clients are pressure tests, not five products completed by a framework pass.

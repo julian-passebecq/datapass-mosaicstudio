@@ -1,0 +1,289 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataPass observed task/model profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "datapass.run-spec"
+    },
+    "version": {
+      "const": 1
+    },
+    "taskId": {
+      "type": "string",
+      "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+      "not": {
+        "enum": [
+          "constructor",
+          "prototype",
+          "__proto__"
+        ]
+      }
+    },
+    "modelId": {
+      "type": "string",
+      "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+      "not": {
+        "enum": [
+          "constructor",
+          "prototype",
+          "__proto__"
+        ]
+      }
+    },
+    "modelVersion": {
+      "type": "string",
+      "maxLength": 80
+    },
+    "providerId": {
+      "type": "string",
+      "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+      "not": {
+        "enum": [
+          "constructor",
+          "prototype",
+          "__proto__"
+        ]
+      }
+    },
+    "source": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "provenance": {
+      "enum": [
+        "synthetic",
+        "provided",
+        "computed"
+      ]
+    },
+    "representations": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "kind": {
+                "const": "table"
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "kind"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "kind": {
+                "const": "text"
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "kind"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "kind": {
+                "const": "json"
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "kind"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "kind": {
+                "const": "chart"
+              },
+              "chart": {
+                "enum": [
+                  "bar",
+                  "line",
+                  "scatter"
+                ]
+              },
+              "x": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              "y": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              "unit": {
+                "type": "string",
+                "maxLength": 30
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "kind",
+              "chart",
+              "x",
+              "y"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              "title": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "kind": {
+                "const": "metric"
+              },
+              "row": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "column": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              "unit": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "digits": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 6
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "kind",
+              "row",
+              "column"
+            ]
+          }
+        ]
+      },
+      "maxItems": 12,
+      "minItems": 1
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "taskId",
+    "modelId",
+    "modelVersion",
+    "providerId",
+    "source",
+    "provenance",
+    "representations"
+  ]
+}

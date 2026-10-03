@@ -1,4 +1,4 @@
-# AI client authoring: v0.5 source SDK
+# AI client authoring: v0.6 source SDK
 
 ## Start with the task, not the libraries
 
@@ -36,6 +36,8 @@ An ordinary client must not modify framework internals. A real requirement may j
 | Optional geometry, cameras and spatial exploration | `docs/recipes/spatial.md` |
 | Supplied samples, signals and engineering replay | `docs/recipes/replay.md` |
 | Authored process motion and source context | `docs/recipes/motion.md` |
+| Captured tasks, results and comparison | `docs/recipes/runs.md` |
+| Public-site canonical/social metadata | `docs/recipes/public-site.md` |
 | Authored analytical scenes | `docs/recipes/stories.md` |
 | Semantic transformation explanation | `docs/recipes/explanation.md` |
 
@@ -79,10 +81,19 @@ Saved input JSON excludes recording data, dataset bytes, task results and source
 
 For each real client, run source validation, relevant model/unit tests, strict TypeScript, selected production build and actual browser acceptance. Test missing/error states, navigation, restore/export, keyboard, mobile and reduced motion. Inspect rendered screenshots and verify optional 3D has a useful 2D/data fallback. Obtain explicit deployment/security approval.
 
-The current framework is a qualified alpha source SDK, not general v1. Exact results and limitations are recorded in `docs/MOTION_V0_5_QUALIFICATION.md`. Broader browser/device qualification and stable API/migration policy remain release work.
+The current framework is a qualified alpha source SDK, not general v1. Exact results and limitations are recorded in `docs/FOUNDATION_V0_6_QUALIFICATION.md`. Broader browser/device qualification and stable API/migration policy remain release work.
 
 ## Optional authored motion and evidence workspace
 
 `--family content --motion` creates a fresh client-owned explanation. Any client can add the capability manually without changing families. Read `docs/recipes/motion.md`, then the focused generated guide. Do not open Three.js source for an SVG isometric scene.
 
 Use immutable authored steps rather than executable animation strings. The original player owns progression, D3 owns a finite transition, and source references point only to approved inert excerpts. The separate WorkspaceShell and SourceReader may be composed in custom UI without creating an IDE or copying the motion client.
+
+
+## Optional result/run and context foundation
+
+`--family analytics --foundation` creates a client-owned task and an opt-in runs block. Read only `docs/recipes/runs.md` and the generated guide initially. The task runtime remains authoritative; the journal observes it rather than executing independently. One artifact may have several existing renderers. Local history survives page changes, not closing or reloading the app.
+
+Pure result/run/navigation/knowledge contracts are in `src/framework/foundation/index.ts`. UI components are explicit imports. Knowledge/search/context and generic ContextInspector can be used by a custom client without the runs workbench. Register a source-only `validateViewState` invariant for coherent combined navigation state; no callbacks belong in imported manifests.
+
+For a compact public portfolio start with content, not the foundation workbench. `publication.json` supplies explicit static metadata without forcing any data/3D engines. See `docs/CLIENT_READINESS_V0_6.md`; richer model assets and general overlays remain separate extensions, not assumptions the client agent should make.

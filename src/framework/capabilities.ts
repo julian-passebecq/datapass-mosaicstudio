@@ -1,9 +1,10 @@
 /** Pure capability planning. Families guide authors; they do not restrict composition. */
 import type {AppDefinition} from './types.ts';
 import {object} from './guards.ts';
-export const CAPABILITY_IDS = ['charts','stories','spatial','architecture','explorer','explanation','replay','motion'] as const;
+export const CAPABILITY_IDS = ['charts','stories','spatial','architecture','explorer','explanation','replay','motion','runs'] as const;
 export type CapabilityId = typeof CAPABILITY_IDS[number];
 export const capabilityCatalog = {
+  runs: {title:'Run history and result views', flag:'__STUDIO_RUNS__', guide:'docs/recipes/runs.md', engines:['Existing SiteRuntime tasks / artifact adapters']},
   charts: {title:'Analytical charts', flag:'__STUDIO_CHARTS__', guide:'docs/recipes/analytics.md', engines:['VizForge / D3']},
   stories: {title:'Authored visual stories', flag:'__STUDIO_STORIES__', guide:'docs/recipes/stories.md', engines:['VizForge StoryPlayer']},
   spatial: {title:'Optional 3D scenes', flag:'__STUDIO_3D__', guide:'docs/recipes/spatial.md', engines:['Three.js']},
@@ -30,6 +31,7 @@ export function planCapabilities(definition:AppDefinition):CapabilityPlan {
   for(const b of definition.manifest.pages.flatMap(p=>p.sections.flatMap(s=>s.blocks))){
     blocks.add(b.type);
     switch(b.type){
+      case 'runs':{need('runs',b.id);const resource=definition.resources?.runs?.[b.resource] as {specs?:{representations?:{kind:string}[]}[]}|undefined;if(resource?.specs?.some(s=>s.representations?.some(r=>r.kind==='chart')))need('charts',b.id+' result views');break;}
       case 'motion':need('motion',b.id);break;
       case 'chart':need('charts',b.id);break;
       case 'scene3d':need('spatial',b.id);break;
@@ -48,7 +50,7 @@ export function planCapabilities(definition:AppDefinition):CapabilityPlan {
       case 'custom':{
         const declared=definition.customCapabilities?.[b.resource];
         if(declared===undefined){for(const id of CAPABILITY_IDS)need(id,b.id+' legacy opaque component');warnings.push('Custom '+b.resource+' has no capability declaration; all optional renderers are retained.');}
-        else for(const id of declared){need(id,b.id+' declared extension');if(id==='replay')need('charts',b.id+' replay chart');}
+        else for(const id of declared){need(id,b.id+' declared extension');if(id==='replay'||id==='runs')need('charts',b.id+' result chart');}
         break;
       }
     }
