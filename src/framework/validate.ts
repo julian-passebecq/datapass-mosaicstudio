@@ -1,3 +1,4 @@
+import {validateRunResource} from './foundation/journal.ts';
 import {compileMotion} from './motion/compile.ts';
 import {validateMotionBinding,validateMotionControllers} from './motion/model.ts';
 import {validateReplay,validateReplayBinding,validateReplayControllers} from './replay/model.ts';
@@ -40,7 +41,7 @@ function validateDataset(d: unknown, fieldIds: Set<string>): asserts d is Datase
 }
 const blockFields = {
   text:['text','tone'], metric:['value','unit','digits','note'], input:['field','control'], table:['dataset','pageSize'], chart:['dataset','x','y','kind','unit'], task:['task'], catalog:[], code:['text','language'],
-  motion:['resource','step','selection','projection','panel','source'], scene3d:['resource','explode','phase','camera','selection'], 'story-controls':['resource'], 'story-figure':['resource'], architecture:['resource'], replay:['resource','frame','selection','channel','view','speed'], custom:['resource'], explanation:['resource'], explorer:['resource','focus','facet','view','level','group','document','scroll'],
+  runs:['resource'], motion:['resource','step','selection','projection','panel','source'], scene3d:['resource','explode','phase','camera','selection'], 'story-controls':['resource'], 'story-figure':['resource'], architecture:['resource'], replay:['resource','frame','selection','channel','view','speed'], custom:['resource'], explanation:['resource'], explorer:['resource','focus','facet','view','level','group','document','scroll'],
 } as const;
 export const BLOCK_TYPES = Object.freeze(Object.keys(blockFields));
 function valueRef(v: unknown, manifest: Manifest): void {
@@ -62,7 +63,7 @@ function validateBlock(v: unknown, m: Manifest, columns: number): asserts v is B
     if (v.type === 'chart') {oneOf(v.kind, ['bar','line','scatter'], 'chart.kind'); const x=d.columns.find(c => c.id === v.x), y=d.columns.find(c => c.id === v.y); if (!x || y?.type !== 'number' || (v.kind !== 'bar' && x.type !== 'number')) throw new Error('Invalid chart encoding types'); if (v.unit !== undefined) text(v.unit, 'chart.unit', 30, false);}
   }
   if (v.type === 'task' && !m.tasks.some(t => t.id === v.task)) throw new Error('Unknown task block');
-  if (['scene3d','story-controls','story-figure','architecture','custom','explorer','explanation','replay','motion'].includes(v.type as string)) identifier(v.resource, 'block.resource');
+  if (['scene3d','story-controls','story-figure','architecture','custom','explorer','explanation','replay','motion','runs'].includes(v.type as string)) identifier(v.resource, 'block.resource');
   if(v.type==='motion'){for(const key of ['step','selection','projection','panel','source']){const f=m.fields.find(f=>f.id===v[key]);if(!f||f.role!=='view'||f.type!==(key==='step'?'number':'select'))throw new Error('Motion controls require declared view fields');}}
   if(v.type==='replay'){for(const key of ['frame','selection','channel','view','speed']){const f=m.fields.find(f=>f.id===v[key]);if(!f||f.role!=='view'||f.type!==(key==='frame'?'number':'select'))throw new Error('Replay controls require declared view fields');}}
   if (v.type === 'explorer') {
@@ -104,12 +105,18 @@ export function validateDefinition(d: AppDefinition): Manifest {
   for(const t of manifest.tasks) if(typeof d.bindings.tasks?.[t.id]!=='function') throw new Error('Missing trusted task binding: '+t.id);
   for(const b of manifest.pages.flatMap(p=>p.sections.flatMap(s=>s.blocks))) {
     if(b.type==='custom'){if(typeof d.components?.[b.resource]!=='function')throw new Error('Missing trusted custom component: '+b.resource);continue;}
-    const resource=b.type==='scene3d'?d.resources?.scenes:b.type==='architecture'?d.resources?.architectures:b.type==='explorer'?d.resources?.explorers:b.type==='explanation'?d.resources?.explanations:b.type==='replay'?d.resources?.replays:b.type==='motion'?d.resources?.motions:b.type==='story-controls'||b.type==='story-figure'?d.resources?.stories:null;
+    const resource=b.type==='scene3d'?d.resources?.scenes:b.type==='architecture'?d.resources?.architectures:b.type==='explorer'?d.resources?.explorers:b.type==='explanation'?d.resources?.explanations:b.type==='replay'?d.resources?.replays:b.type==='motion'?d.resources?.motions:b.type==='runs'?d.resources?.runs:b.type==='story-controls'||b.type==='story-figure'?d.resources?.stories:null;
     if('resource' in b && (!resource || !Object.hasOwn(resource,b.resource))) throw new Error('Missing resource: '+b.resource);
+    if(b.type==='runs')validateRunResource(d.resources!.runs![b.resource],{manifest});
     if(b.type==='motion')validateMotionBinding(compileMotion(d.resources!.motions![b.resource]).spec,b,manifest);
     if(b.type==='replay')validateReplayBinding(validateReplay(d.resources!.replays![b.resource]),b,manifest,d);
     if(b.type==='explanation')validateExplanation(d.resources!.explanations![b.resource],manifest);
     if(b.type==='explorer')validateExplorerBinding(validateExplorer(d.resources!.explorers![b.resource]),b,manifest,d);
+  }
+  const runOwners=new Map<string,string>();
+  for(const id of new Set(manifest.pages.flatMap(p=>p.sections.flatMap(s=>s.blocks)).filter(b=>b.type==='runs').map(b=>(b as {resource:string}).resource))){
+    const resource=validateRunResource(d.resources!.runs![id],{manifest});
+    for(const spec of resource.specs){if(runOwners.has(spec.taskId)&&runOwners.get(spec.taskId)!==id)throw new Error('A task history requires one resource owner');runOwners.set(spec.taskId,id);}
   }
   validateReplayControllers(d);validateMotionControllers(d);
   for(const story of Object.values(d.resources?.stories||{})) {const step=manifest.fields.find(f=>f.id===story.indexField); if(!step||step.type!=='number'||step.role!=='view'||step.min!==0||step.step!==1) throw new Error('Story index must be an integer view field'); if(!object(story.cues)) throw new Error('Invalid story cues'); for(const patch of Object.values(story.cues)) {if(!object(patch)) throw new Error('Invalid cue patch'); for(const [id,v] of Object.entries(patch)) {const f=manifest.fields.find(f=>f.id===id); if(!f || f.role!=='view') throw new Error('Story cues can only change declared view fields'); validateValue(f,v);}}}

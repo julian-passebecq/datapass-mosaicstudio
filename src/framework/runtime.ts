@@ -16,6 +16,8 @@ export class SiteRuntime {
   private runs=new Map<string,{ticket:number; key:string; abort:AbortController; started:number; reported:boolean}>();
   private runListeners=new Set<(event:TaskRunEvent)=>void>();
   private observerErrors=0;
+  private notifyingRunObservers=false;
+  private assertWritable(){if(this.notifyingRunObservers)throw new Error('Task run observers are read-only; defer any runtime action until after notification.');}
   private readyKeys=new Map<string,string>();
   private tickets=0;
   private derivations=new Map<string,number>();
@@ -36,7 +38,8 @@ export class SiteRuntime {
     if(!this.runListeners.size)return;
     freeze(event);
     // A broken presentation/recorder must not change the underlying task result.
-    for(const listener of [...this.runListeners])try{listener(event);}catch{this.observerErrors++;}
+    this.notifyingRunObservers=true;
+    try{for(const listener of [...this.runListeners])try{listener(event);}catch{this.observerErrors++;}}finally{this.notifyingRunObservers=false;}
   }
   private finishRun(id:string,phase:Exclude<TaskRunEvent['phase'],'started'>,message='',rows:Rows=[]){
     const run=this.runs.get(id);if(!run||run.reported)return;run.reported=true;
@@ -46,6 +49,7 @@ export class SiteRuntime {
   private emit(){for(const fn of this.listeners)fn();}
   private taskState(id:string,next:TaskState){this.snapshot=freeze({...this.snapshot,tasks:{...this.snapshot.tasks,[id]:next}});this.emit();}
   patch(values:Record<string,unknown>){
+    this.assertWritable();
     if(!object(values))throw new Error('State patch must be a plain object');
     for(const [id,value] of Object.entries(values)){const f=this.manifest.fields.find(f=>f.id===id);if(!f)throw new Error('Unknown field: '+id);validateValue(f,value);}
     const nextValues=freeze({...this.snapshot.values,...values} as Values);
@@ -99,7 +103,8 @@ export class SiteRuntime {
     }
     if(stale){this.snapshot=freeze({...this.snapshot,tasks});this.emit();}
   }
-  async runTask(id:string):Promise<TaskState>{
+  runTask(id:string):Promise<TaskState>{this.assertWritable();return this.executeTask(id);}
+  private async executeTask(id:string):Promise<TaskState>{
     const task=this.manifest.tasks.find(t=>t.id===id);if(!task)throw new Error('Unknown task');
     this.stopTask(id,'superseded');this.invalidateDependents(task.output);
     let prepared:ReturnType<SiteRuntime['prepare']>;
@@ -135,11 +140,11 @@ export class SiteRuntime {
     this.finishRun(id,phase,phase==='superseded'?'A newer run replaced this execution.':'Task cancelled by the caller.');
     this.runs.delete(id);run.abort.abort();this.taskState(id,{status:'cancelled',progress:0,message:'Task cancelled. No result was applied.'});
   }
-  cancelTask(id:string){this.stopTask(id,'cancelled');}
-  cancelAll(){for(const id of [...this.runs.keys()])this.cancelTask(id);}
+  cancelTask(id:string){this.assertWritable();this.stopTask(id,'cancelled');}
+  cancelAll(){this.assertWritable();for(const id of [...this.runs.keys()])this.cancelTask(id);}
   save(page:string):SavedState{if(!this.manifest.pages.some(p=>p.id===page))throw new Error('Unknown page');return {format:'datapass.web-state',version:1,appId:this.manifest.id,appVersion:this.manifest.version,page,values:{...this.snapshot.values}};}
   review(source:string):SavedState{const saved=parseSavedState(source,this.manifest);validateExplorerValues(this.definition,saved.values);this.definition.bindings.validateViewState?.(freeze(saved.values));return saved;}
   private stopPresentation(){this.snapshot=freeze({...this.snapshot,restoreEpoch:this.snapshot.restoreEpoch+1});this.emit();}
-  restore(value:SavedState){const checked=this.review(JSON.stringify(value));this.cancelAll();this.stopPresentation();this.patch(checked.values);return checked.page;}
-  reset(){this.cancelAll();this.stopPresentation();this.patch(Object.fromEntries(this.manifest.fields.map(f=>[f.id,f.default])));}
+  restore(value:SavedState){this.assertWritable();const checked=this.review(JSON.stringify(value));this.cancelAll();this.stopPresentation();this.patch(checked.values);return checked.page;}
+  reset(){this.assertWritable();this.cancelAll();this.stopPresentation();this.patch(Object.fromEntries(this.manifest.fields.map(f=>[f.id,f.default])));}
 }

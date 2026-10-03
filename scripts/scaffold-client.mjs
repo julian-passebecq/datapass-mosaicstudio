@@ -1,3 +1,4 @@
+import {foundationTemplate} from './templates/foundation.mjs';
 import {motionTemplate} from './templates/motion.mjs';
 import {mkdir,writeFile,lstat,rm} from 'node:fs/promises';
 import path from 'node:path';
@@ -6,7 +7,7 @@ import {explorerTemplate} from './templates/explorer.mjs';
 import {analyticsTemplate} from './templates/analytics.mjs';
 import {replayTemplate} from './templates/replay.mjs';
 import {familyById,appFamilies} from '../src/framework/capabilities.ts';
-export async function scaffoldClient({id,title=id,root=process.cwd(),custom=false,template,family,motion=false}){
+export async function scaffoldClient({id,title=id,root=process.cwd(),custom=false,template,family,motion=false,foundation=false}){
   if(family!==undefined){const selected=familyById(family);if(template!==undefined&&template!==selected.template)throw new Error('Family and template disagree');template=selected.template;}
   template??='basic';
   if(typeof id!=='string'||!/^[a-z][a-z0-9-]{0,59}$/.test(id)||['node-modules','src','public'].includes(id))throw new Error('Use a lowercase client id with letters, numbers and hyphens');
@@ -14,6 +15,7 @@ export async function scaffoldClient({id,title=id,root=process.cwd(),custom=fals
   if(typeof custom!=='boolean')throw new Error('custom must be a boolean');
   if(!['basic','knowledge','spatial','analytics','replay'].includes(template)||custom&&template!=='basic')throw new Error('Choose basic, knowledge, spatial, analytics or replay; --custom applies to the basic template');
   if(typeof motion!=='boolean'||motion&&(template!=='basic'||custom))throw new Error('--motion starts a content client without --custom; other families can add the capability explicitly');
+  if(typeof foundation!=='boolean'||foundation&&(template!=='analytics'||custom||motion))throw new Error('--foundation requires the analytics family without --custom or --motion');
   const clients=path.join(root,'clients');await mkdir(clients,{recursive:true});if((await lstat(clients)).isSymbolicLink())throw new Error('Refusing a symbolic clients directory');
   const target=path.join(clients,id);await mkdir(target); // EEXIST is deliberate: never overwrite a client.
   const customImport=custom?"import {ClientNote} from './ClientNote.tsx';\n":'';
@@ -21,7 +23,8 @@ export async function scaffoldClient({id,title=id,root=process.cwd(),custom=fals
   const components=custom?",components:{clientNote:ClientNote},customCapabilities:{clientNote:[]}":'';
   const text=`${customImport}import {defineApp} from '../../src/framework/authoring.ts';\nexport default defineApp({manifest:{format:'datapass.web-app',schemaVersion:1,id:${JSON.stringify(id)},version:'0.1.0',title:${JSON.stringify(title)},label:'Synthetic starter - replace before release',description:'A client-owned application built with DataPass Studio.',theme:{accent:'#286b7d',density:'compact'},fields:[],datasets:[],tasks:[],pages:[{id:'overview',title:'Overview',description:'Start with the client brief, then choose blocks from docs/contracts/components.json.',sections:[{id:'intro',columns:2,blocks:[{id:'intro-text',type:'text',title:${JSON.stringify(title)},text:'Edit this client file. Framework internals stay unchanged.',tone:'lead'},{id:'starter-metric',type:'metric',title:'Example indicator',value:{literal:42},note:'Replace this synthetic placeholder'}${customBlock}]}]}]},bindings:{}${components}});\n`;
   try{
-    if(motion){for(const [name,content] of Object.entries(motionTemplate({id,title})))await writeFile(path.join(target,name),content,{flag:'wx'});}
+    if(foundation){for(const [name,content] of Object.entries(foundationTemplate({id,title})))await writeFile(path.join(target,name),content,{flag:'wx'});}
+    else if(motion){for(const [name,content] of Object.entries(motionTemplate({id,title})))await writeFile(path.join(target,name),content,{flag:'wx'});}
     else if(template==='basic')await writeFile(path.join(target,'app.ts'),text,{flag:'wx'});
     else for(const [name,content] of Object.entries(template==='analytics'?analyticsTemplate({id,title}):template==='replay'?replayTemplate({id,title}):explorerTemplate({id,title,template})))await writeFile(path.join(target,name),content,{flag:'wx'});
     if(custom)await writeFile(path.join(target,'ClientNote.tsx'),"import {useSiteState} from '../../src/framework/ui';\nexport function ClientNote(){const state=useSiteState();return <section className=\"site-text\"><h2>Client-owned component</h2><p>This TSX component belongs only to this client. State revision: {state.revision}.</p></section>;}\n",{flag:'wx'});
@@ -34,7 +37,7 @@ export async function scaffoldClient({id,title=id,root=process.cwd(),custom=fals
   return target;
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
-  const [id,...rest]=process.argv.slice(2);let title=id,custom=false,motion=false,template,family;
-  for(let i=0;i<rest.length;i++){if(rest[i]==='--title'&&rest[i+1])title=rest[++i];else if(rest[i]==='--motion')motion=true;else if(rest[i]==='--custom')custom=true;else if(rest[i]==='--template'&&rest[i+1])template=rest[++i];else if(rest[i]==='--family'&&rest[i+1])family=rest[++i];else throw new Error('Usage: npm run client:new -- id [--title "Title"] [--custom | --motion] [--family content|knowledge|analytics|spatial|replay] [--template basic|knowledge|spatial|analytics|replay]');}
-  const dir=await scaffoldClient({id,title,custom,template,family,motion});console.log('Created '+dir+' without changing framework files.');
+  const [id,...rest]=process.argv.slice(2);let title=id,custom=false,motion=false,foundation=false,template,family;
+  for(let i=0;i<rest.length;i++){if(rest[i]==='--title'&&rest[i+1])title=rest[++i];else if(rest[i]==='--foundation')foundation=true;else if(rest[i]==='--motion')motion=true;else if(rest[i]==='--custom')custom=true;else if(rest[i]==='--template'&&rest[i+1])template=rest[++i];else if(rest[i]==='--family'&&rest[i+1])family=rest[++i];else throw new Error('Usage: npm run client:new -- id [--title "Title"] [--custom | --motion | --foundation] [--family content|knowledge|analytics|spatial|replay] [--template basic|knowledge|spatial|analytics|replay]');}
+  const dir=await scaffoldClient({id,title,custom,template,family,motion,foundation});console.log('Created '+dir+' without changing framework files.');
 }
