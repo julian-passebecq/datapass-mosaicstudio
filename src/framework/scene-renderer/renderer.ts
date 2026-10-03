@@ -97,8 +97,8 @@ export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:S
       object.visible=v.mode!=='isolate'||v.selection==='none'||active;
       for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof THREE.MeshStandardMaterial){
         const base=original.get(material)!;
-        material.emissive.copy(active?new THREE.Color(dark?'#3a7388':'#24566b'):base.emissive);material.emissiveIntensity=active?.32:base.intensity;
-        material.transparent=!!dim;material.opacity=dim?.18:1;material.depthWrite=!dim;
+        material.emissive.copy(active?new THREE.Color(dark?'#3a7388':'#24566b'):base.emissive);material.emissiveIntensity=active ? .32 : base.intensity;
+        material.transparent=!!dim;material.opacity=dim ? .18 : 1;material.depthWrite=!dim;
         material.wireframe=v.mode==='wireframe';
         const clipping=supplied&&v.mode==='section';
         const previousClipping=!!material.clippingPlanes?.length;
