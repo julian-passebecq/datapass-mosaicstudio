@@ -1,4 +1,12 @@
 {
+  "models": {
+    "title": "Approved static GLB models",
+    "flag": "__STUDIO_MODELS__",
+    "guide": "docs/recipes/models.md",
+    "engines": [
+      "Shared Three.js viewport / GLTFLoader"
+    ]
+  },
   "runs": {
     "title": "Run history and result views",
     "flag": "__STUDIO_RUNS__",
