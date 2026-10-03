@@ -5,6 +5,7 @@ import Basic from './blocks/Basic';
 import type {SiteRuntime} from './runtime';
 const Runs=__STUDIO_RUNS__?lazy(()=>import('./foundation/RunWorkbench')):null;
 export const SharedRunScope=__STUDIO_RUNS__?lazy(()=>import('./foundation/RunScope').then(m=>({default:m.RunScope}))):function MissingRuns(_: {ids:string[];children:import('react').ReactNode}){throw new Error('Run capability was not included in this build');};
+const Model=__STUDIO_MODELS__?lazy(()=>import('./model-assets/Model')):null;
 const Chart=__STUDIO_CHARTS__?lazy(()=>import('./blocks/Chart')):null;
 const Scene=__STUDIO_3D__?lazy(()=>import('./blocks/Scene3D')):null;
 const Story=__STUDIO_STORIES__?lazy(()=>import('./blocks/Story')):null;
@@ -22,6 +23,7 @@ export function RenderBlock({block}:{block:Block}){
   const runtime=useRuntime();
   switch(block.type){
     case 'runs':if(!Runs)throw new Error('Run history not included in build');return <Runs resource={block.resource}/>;
+    case 'model3d':if(!Model)throw new Error('Models not included in build');return <Model block={block}/>;
     case 'motion':if(!Motion)throw new Error('Motion not included in build');return <Motion block={block}/>;
     case 'chart':if(!Chart)throw new Error('Chart not included in build');return <Chart block={block}/>;
     case 'scene3d':if(!Scene)throw new Error('3D not included in build');return <Scene block={block}/>;

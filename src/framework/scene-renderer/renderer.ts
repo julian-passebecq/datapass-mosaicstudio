@@ -1,9 +1,10 @@
 import * as THREE from 'three';
 import {CameraTransition} from './camera-transition';
+import type {SceneContent} from './content';
 import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
 import {pose,validatePoseOffsets, type SceneSpec,type PartPoseOffsets} from '../scene';
 
-export type SceneView = {explode:number; phase:number; camera:string; selection:string};
+export type SceneView = {explode:number; phase:number; camera:string; selection:string; mode?:'assembled'|'exploded'|'wireframe'|'isolate'|'section'; section?:number};
 export type ProjectedAnchor = {entity:string; x:number; y:number; visible:boolean};
 export type SceneRenderer = {
   update(view:SceneView, reduced:boolean, highlighted?:readonly string[]|null,offsets?:PartPoseOffsets):void;
@@ -15,6 +16,7 @@ export type SceneRendererOptions = {
   appearance:'light'|'dark'; pageScroll:boolean; interactive:boolean;
   onSelect(entity:string):void; onUnavailable(message:string):void;
   onAnchors?(anchors:ProjectedAnchor[]):void;
+  content?:SceneContent;
 };
 /** Shared, demand-rendered geometry host. A renderer transition is not a story clock. */
 export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:SceneView, options:SceneRendererOptions):SceneRenderer {
@@ -35,10 +37,14 @@ export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:S
   if(options.pageScroll)controls.touches.ONE=THREE.TOUCH.PAN;
   world.add(new THREE.HemisphereLight('#ffffff',dark?'#26344e':'#788a91',2.4));
   const sun=new THREE.DirectionalLight('#ffffff',3.2);sun.position.set(8,16,12);world.add(sun);
-  const items=new Map<string,THREE.Object3D>(),geometries=new Set<THREE.BufferGeometry>(),materials=new Set<THREE.Material>();
+  const supplied=options.content;
+  const items=supplied?.items??new Map<string,THREE.Object3D>(),geometries=supplied?.geometries??new Set<THREE.BufferGeometry>(),materials=supplied?.materials??new Set<THREE.Material>();
+  const cutPlane=new THREE.Plane(new THREE.Vector3(1,0,0),0);
+  const original=new Map<THREE.Material,{emissive:THREE.Color;intensity:number}>();
+  renderer.localClippingEnabled=!!supplied;
   const byPart=new Map(scene.parts.map(p=>[p.id,p]));
   const entityFor=(partId:string):string|null=>{let p=byPart.get(partId)!;while(p){if(p.entity)return p.entity;if(!p.parent)return null;p=byPart.get(p.parent)!;}return null;};
-  for(const part of scene.parts){
+  if(!supplied)for(const part of scene.parts){
     let object:THREE.Object3D;
     if(part.shape==='group')object=new THREE.Group();
     else {
@@ -49,7 +55,10 @@ export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:S
     }
     object.name=part.id; object.userData.entity=entityFor(part.id); items.set(part.id,object);
   }
-  for(const p of scene.parts)(p.parent?items.get(p.parent)!:world).add(items.get(p.id)!);
+  if(supplied)world.add(supplied.root);
+  else for(const p of scene.parts)(p.parent?items.get(p.parent)!:world).add(items.get(p.id)!);
+  const pickable=supplied?.meshes??[...items.values()].filter((o):o is THREE.Mesh=>o instanceof THREE.Mesh);
+  for(const object of pickable)for(const mat of Array.isArray(object.material)?object.material:[object.material])if(mat instanceof THREE.MeshStandardMaterial)original.set(mat,{emissive:mat.emissive.clone(),intensity:mat.emissiveIntensity});
   const ground=new THREE.GridHelper(40,40,dark?'#23364a':'#c8d5df',dark?'#152638':'#e1e8ee');
   ground.position.y=-.03;world.add(ground);geometries.add(ground.geometry);
   (Array.isArray(ground.material)?ground.material:[ground.material]).forEach(m=>materials.add(m));
@@ -63,29 +72,44 @@ export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:S
     if(!options.onAnchors)return;
     for(const bounds of boxes.values())bounds.makeEmpty();
     world.updateMatrixWorld(true); camera.updateMatrixWorld(true);
-    for(const object of items.values())if(object instanceof THREE.Mesh&&boxes.has(object.userData.entity)){
+    for(const object of pickable)if(object.visible&&boxes.has(object.userData.entity)){
       box.setFromObject(object);boxes.get(object.userData.entity)!.union(box);
     }
     const width=root.clientWidth,height=root.clientHeight;
     options.onAnchors([...boxes].map(([entity,bounds])=>{
       if(bounds.isEmpty())return {entity,x:0,y:0,visible:false};
-      bounds.getCenter(point3);point3.y=bounds.max.y+.18;point3.project(camera);
+      const explicit=supplied?.anchors?.get(entity);
+      if(explicit)point3.fromArray(explicit.position).applyMatrix4(explicit.object.matrixWorld);
+      else {bounds.getCenter(point3);point3.y=bounds.max.y+.18;}
+      if(desired.mode==='section'&&cutPlane.distanceToPoint(point3)<0)return {entity,x:0,y:0,visible:false};
+      point3.project(camera);
       return {entity,x:(point3.x+1)/2*width,y:(1-point3.y)/2*height,visible:point3.z>=-1&&point3.z<=1&&Math.abs(point3.x)<.97&&Math.abs(point3.y)<.94};
     }));
   }
-  function render(){if(alive&&!context.isContextLost()){renderer.render(world,camera);canvas.dataset.cameraPosition=camera.position.toArray().map(v=>v.toFixed(4)).join(',');anchors();}}
+  function render(){if(alive&&!context.isContextLost()){renderer.render(world,camera);if(supplied){canvas.dataset.modelMode=displayed.mode??'assembled';canvas.dataset.partPositions=JSON.stringify(Object.fromEntries([...items].map(([id,o])=>[id,o.position.toArray()])));canvas.dataset.visibleParts=JSON.stringify([...new Set(pickable.filter(o=>o.visible).map(o=>o.userData.entity))]);}canvas.dataset.cameraPosition=camera.position.toArray().map(v=>v.toFixed(4)).join(',');anchors();}}
   function place(v:SceneView,offsets:PartPoseOffsets=displayedOffsets){
     for(const p of scene.parts){const object=items.get(p.id)!,target=pose(p,v.explode,v.phase);const delta=offsets[p.id];
       object.position.fromArray(target.position.map((v,i)=>v+(delta?.position?.[i]||0)) as [number,number,number]);object.rotation.set(...target.rotation.map((v,i)=>v+(delta?.rotation?.[i]||0)) as [number,number,number]);
-      if(object instanceof THREE.Mesh){const m=object.material as THREE.MeshStandardMaterial,active=object.userData.entity===v.selection,dim=highlighted!==null&&object.userData.entity&&!highlighted.includes(object.userData.entity);
-        m.emissive.set(active?(dark?'#3a7388':'#24566b'):'#000000');m.emissiveIntensity=active?.32:0;
-        m.transparent=!!dim;m.opacity=dim?.18:1;m.depthWrite=!dim;
+    }
+    const range=supplied?.sectionBounds??[0,1];cutPlane.constant=-(range[0]+(range[1]-range[0])*(v.section??.5));
+    for(const object of pickable){
+      const active=object.userData.entity===v.selection,dim=highlighted!==null&&object.userData.entity&&!highlighted.includes(object.userData.entity);
+      object.visible=v.mode!=='isolate'||v.selection==='none'||active;
+      for(const material of Array.isArray(object.material)?object.material:[object.material])if(material instanceof THREE.MeshStandardMaterial){
+        const base=original.get(material)!;
+        material.emissive.copy(active?new THREE.Color(dark?'#3a7388':'#24566b'):base.emissive);material.emissiveIntensity=active?.32:base.intensity;
+        material.transparent=!!dim;material.opacity=dim?.18:1;material.depthWrite=!dim;
+        material.wireframe=v.mode==='wireframe';
+        const clipping=supplied&&v.mode==='section';
+        const previousClipping=!!material.clippingPlanes?.length;
+        material.clippingPlanes=clipping?[cutPlane]:null;
+        if(previousClipping!==!!clipping)material.needsUpdate=true;
       }
     }
   }
   function stop(){cancelAnimationFrame(frame);frame=0;canvas.dataset.animating='false';}
   function applyCamera(id:string){const p=cameraPreset(id);camera.position.fromArray(p.position);controls.target.fromArray(p.target);controls.update();cameraTransition.reset(id);}
-  function settle(){stop();displayed={...desired};displayedOffsets=desiredOffsets;place(displayed);applyCamera(desired.camera);render();}
+  function settle(reset=false){stop();displayed={...desired};displayedOffsets=desiredOffsets;place(displayed);if(reset)applyCamera(desired.camera);else {const end=cameraTransition.at(performance.now()+100000);if(end){camera.position.fromArray(end.position);controls.target.fromArray(end.target);controls.update();}}render();}
   function resize(){const width=Math.max(1,root.clientWidth),height=Math.max(1,root.clientHeight);renderer.setSize(width,height,false);camera.aspect=width/height;camera.updateProjectionMatrix();render();}
   function hide(){if(document.hidden)settle();}
   const observer=new ResizeObserver(resize);
@@ -95,13 +119,13 @@ export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:S
     const origin=start;start=null;if(!origin||Math.hypot(e.clientX-origin.x,e.clientY-origin.y)>5)return;
     const rect=canvas.getBoundingClientRect();if(rect.width===0||rect.height===0)return;
     point.set((e.clientX-rect.left)/rect.width*2-1,-(e.clientY-rect.top)/rect.height*2+1);raycaster.setFromCamera(point,camera);
-    const hit=raycaster.intersectObjects([...items.values()],false).find(h=>typeof h.object.userData.entity==='string'&&(highlighted===null||highlighted.includes(h.object.userData.entity)));
+    const hit=raycaster.intersectObjects(pickable.filter(o=>o.visible),false).find(h=>(desired.mode!=='section'||cutPlane.distanceToPoint(h.point)>=0)&&typeof h.object.userData.entity==='string'&&(highlighted===null||highlighted.includes(h.object.userData.entity)));
     if(hit)options.onSelect(hit.object.userData.entity);
   };
   const cancelled=()=>{start=null;};
   const lost=(e:Event)=>{e.preventDefault();stop();options.onUnavailable('The WebGL context was lost. Retry 3D or keep using the outline and documents.');};
   // Direct manipulation always owns the camera until another explicit target is selected.
-  const interaction=()=>{stop();cameraTransition.cancel();};
+  const interaction=()=>{stop();cameraTransition.cancel();displayed={...desired};displayedOffsets=desiredOffsets;place(displayed);render();};
   controls.addEventListener('change',render);controls.addEventListener('start',interaction);
   canvas.addEventListener('pointerdown',down);canvas.addEventListener('pointerup',up);canvas.addEventListener('pointercancel',cancelled);canvas.addEventListener('webglcontextlost',lost);
   document.addEventListener('visibilitychange',hide);
@@ -123,10 +147,10 @@ export function createSceneRenderer(root:HTMLElement, scene:SceneSpec, initial:S
         render();if(raw<1||cameraTransition.active)frame=requestAnimationFrame(draw);else canvas.dataset.animating='false';
       };draw(began);
     },
-    resetCamera:settle,
+    resetCamera:()=>settle(true),
     capture(){render();return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('PNG capture failed')),'image/png'));},
     dispose(){if(!alive)return;alive=false;stop();observer.disconnect();document.removeEventListener('visibilitychange',hide);controls.removeEventListener('change',render);controls.removeEventListener('start',interaction);controls.dispose();
       canvas.removeEventListener('pointerdown',down);canvas.removeEventListener('pointerup',up);canvas.removeEventListener('pointercancel',cancelled);canvas.removeEventListener('webglcontextlost',lost);
-      geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());renderer.dispose();renderer.forceContextLoss();canvas.remove();}
+      if(supplied)supplied.dispose();else {geometries.forEach(g=>g.dispose());materials.forEach(m=>m.dispose());}renderer.dispose();renderer.forceContextLoss();canvas.remove();}
   };
 }

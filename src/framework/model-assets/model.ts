@@ -57,7 +57,7 @@ export function validateModel(input: unknown): ModelSpec {
   // Share existing camera validation rather than introducing a competing camera contract.
   validateScene({format:'datapass.scene3d',version:1,title:input.title,note:input.note,cameras:input.cameras,
     ...{entities:[{id:'validation',label:'Validation',description:'Camera contract'}],parts:[{id:'validation',entity:'validation',parent:null,shape:'group',size:[1,1,1],position:[0,0,0],rotation:[0,0,0],explode:[0,0,0],color:'#ffffff'}]}});
-  return freezeValue({...structuredClone(input),sources} as ModelSpec;
+  return freezeValue({...structuredClone(input),sources} as ModelSpec);
 }
 export function modelFields(spec: ModelSpec, prefix='model'): Field[] {
   identifier(prefix,'model prefix');
