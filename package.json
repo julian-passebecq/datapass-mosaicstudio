@@ -1,6 +1,6 @@
 {
   "name": "datapass-mosaicstudio",
-  "version": "0.6.0-alpha.1",
+  "version": "0.7.0-alpha.1",
   "private": true,
   "type": "module",
   "engines": {
@@ -8,11 +8,11 @@
   },
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "predev": "npm run bootstrap && node scripts/prepare-assets.mjs",
+    "predev": "npm run bootstrap && node --experimental-strip-types scripts/prepare-assets.mjs",
     "bootstrap": "node scripts/bootstrap-upstreams.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node --experimental-strip-types --test tests/*.test.mjs",
-    "build": "npm run bootstrap && node scripts/prepare-assets.mjs && npm run typecheck && vite build",
+    "build": "npm run bootstrap && node --experimental-strip-types scripts/prepare-assets.mjs && npm run typecheck && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test:browser": "playwright test",
     "test:fixtures": "python scripts/make-test-fixtures.py",
@@ -24,7 +24,8 @@
     "build:client": "node --experimental-strip-types scripts/build-client.mjs",
     "test:client-builds": "node --experimental-strip-types scripts/test-client-builds.mjs",
     "client:context": "node --experimental-strip-types scripts/client-context.mjs",
-    "client:families": "node --experimental-strip-types scripts/client-context.mjs --families"
+    "client:families": "node --experimental-strip-types scripts/client-context.mjs --families",
+    "model:inspect": "node --experimental-strip-types scripts/inspect-model.mjs"
   },
   "overrides": {
     "@duckdb/duckdb-wasm": "1.32.0"

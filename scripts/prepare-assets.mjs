@@ -1,3 +1,5 @@
+import {prepareReferenceModels} from './model-assets.mjs';
+await prepareReferenceModels();
 import './prepare-fluent-icons.mjs';
 import './prepare-parser.mjs';
 import './prepare-extensions.mjs';

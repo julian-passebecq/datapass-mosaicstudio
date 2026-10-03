@@ -32,3 +32,6 @@ clients/acceptance-replay/
 clients/acceptance-motion/
 
 clients/acceptance-foundation/
+
+public/models/
+clients/acceptance-model/
