@@ -1,4 +1,4 @@
-import type {MotionProjection, MotionEntity, Point3} from './model.ts';
+import type {MotionProjection, MotionEntity, MotionAnnotation, Point3} from './model.ts';
 import {stationAnchor, settledDisplay, type CompiledMotion, type MotionDisplay, type MotionFrame} from './compile.ts';
 
 export type Point2 = [number, number];
@@ -6,9 +6,11 @@ export type MotionObject = {
   id: string; label: string; kind: MotionEntity['kind']; status: string; alpha: number; color: string;
   faces: Point2[][]; labelPosition: Point2; labelLines: string[]; center: Point2; depth: number; leader: Point2[];
 };
+export type AnnotationDrawing = {id: string; entity: string; text: string; lines: string[]; box: Bounds; anchor: Point2; alpha: number};
 export type MotionDrawing = {
   objects: MotionObject[];
   links: {id: string; path: Point2[]; label: string; active: boolean}[];
+  annotations: AnnotationDrawing[];
 };
 export type Bounds = {x: number; y: number; width: number; height: number};
 
@@ -43,7 +45,7 @@ function faces(position: Point3, size: Point3, mode: MotionProjection): Point2[]
   const a = p(-w / 2, -d / 2, h), b = p(w / 2, -d / 2, h), c = p(w / 2, d / 2, h), e = p(-w / 2, d / 2, h);
   return mode === 'diagram' ? [[a, b, c, e]] : [[e, c, p(w / 2, d / 2, 0), p(-w / 2, d / 2, 0)], [b, p(w / 2, -d / 2, 0), p(w / 2, d / 2, 0), c], [a, b, c, e]];
 }
-export function drawing(compiled: CompiledMotion, frame: MotionFrame, mode: MotionProjection, display: MotionDisplay = settledDisplay(frame)): MotionDrawing {
+function baseDrawing(compiled: CompiledMotion, frame: MotionFrame, mode: MotionProjection, display: MotionDisplay): Omit<MotionDrawing, 'annotations'> {
   const entities = new Map(compiled.spec.entities.map(e => [e.id, e]));
   const objects: MotionObject[] = compiled.spec.entities.map(entity => {
     const pose = display[entity.id], size: Point3 = entity.kind === 'station' ? entity.size : [entity.size, entity.size, entity.size];
@@ -61,6 +63,50 @@ export function drawing(compiled: CompiledMotion, frame: MotionFrame, mode: Moti
   }));
   positionLabels(objects);
   return {objects, links};
+}
+type AnnotationLayout = Omit<AnnotationDrawing, 'anchor' | 'alpha'>;
+const annotationCache = new WeakMap<CompiledMotion, Map<string, AnnotationLayout[]>>();
+function annotationLines(text: string): string[] {
+  // Split long words too; all authored text remains available, without ellipses.
+  const words = text.trim().split(/\s+/).flatMap(word => word.match(/.{1,28}/g) || []), result = [''];
+  for (const word of words) {
+    const last = result.length - 1;
+    if (result[last] && result[last].length + word.length + 1 > 28) result.push(word);
+    else result[last] += (result[last] ? ' ' : '') + word;
+  }
+  return result;
+}
+function annotationLayout(annotations: MotionAnnotation[], objects: MotionObject[]): AnnotationLayout[] {
+  const occupied = objects.filter(o => o.alpha > 0).flatMap(o => {
+    const points = o.faces.flat(), xs = points.map(p => p[0]), ys = points.map(p => p[1]);
+    return [labelBounds(o), {x: Math.min(...xs), y: Math.min(...ys), width: Math.max(...xs) - Math.min(...xs), height: Math.max(...ys) - Math.min(...ys)}];
+  });
+  return annotations.map(a => {
+    const object = objects.find(o => o.id === a.entity)!;
+    const lines = annotationLines(a.text), width = Math.max(120, ...lines.map(line => line.length * 7 + 22)), height = 20 + lines.length * 15;
+    const box = {x: object.center[0] + a.offset[0] - width / 2, y: object.center[1] + a.offset[1] - height / 2, width, height};
+    // Resolve away from the anchor, respecting the authored vertical side.
+    // Always moving up can send a below-object note across the whole diagram.
+    const direction = a.offset[1] < 0 ? -1 : 1;
+    let tries = 0;
+    while (occupied.some(b => overlaps(box, b, 10)) && tries++ < 16) box.y += direction * 26;
+    if (occupied.some(b => overlaps(box, b, 10))) box.y = direction < 0
+      ? Math.min(box.y, ...occupied.map(b => b.y)) - height - 14
+      : Math.max(box.y, ...occupied.map(b => b.y + b.height)) + 14;
+    occupied.push(box);
+    return {id: a.id, entity: a.entity, text: a.text, lines, box};
+  });
+}
+/** Callout boxes are laid out once against the target; only their semantic leaders move. */
+export function drawing(compiled: CompiledMotion, frame: MotionFrame, mode: MotionProjection, display: MotionDisplay = settledDisplay(frame)): MotionDrawing {
+  const scene = baseDrawing(compiled, frame, mode, display), annotations = compiled.spec.steps[frame.index]?.annotations || [];
+  if (!annotations.length) return {...scene, annotations: []};
+  let cache = annotationCache.get(compiled);
+  if (!cache) {cache = new Map(); annotationCache.set(compiled, cache);}
+  const key = frame.index + ':' + mode;
+  let layout = cache.get(key);
+  if (!layout) {layout = annotationLayout(annotations, baseDrawing(compiled, frame, mode, settledDisplay(frame)).objects); cache.set(key, layout);}
+  return {...scene, annotations: layout.map(a => ({...a, box: {...a.box}, lines: [...a.lines], anchor: project(display[a.entity].position, mode), alpha: display[a.entity].alpha}))};
 }
 /** Conservative text boxes shared by live and exported geometry. No DOM measurement. */
 export function labelBounds(object: MotionObject): Bounds {
@@ -106,6 +152,7 @@ export function drawingPoints(scene: MotionDrawing): Point2[] {
   return [
     ...scene.objects.flatMap(o => [...o.faces.flat(), [o.labelPosition[0] - 95, o.labelPosition[1] - 14] as Point2, [o.labelPosition[0] + 95, o.labelPosition[1] + o.labelLines.length * 16] as Point2]),
     ...scene.links.flatMap(l => l.path),
+    ...scene.annotations.flatMap(a => [[a.box.x, a.box.y] as Point2, [a.box.x + a.box.width, a.box.y + a.box.height] as Point2, a.anchor]),
   ];
 }
 /** Stable extents across all frames avoid camera jumps and clipping a future transfer route. */

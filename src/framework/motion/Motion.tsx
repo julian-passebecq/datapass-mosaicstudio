@@ -3,13 +3,17 @@ import {useRuntime, useSiteState, useReducedMotion} from '../hooks';
 import {WorkspaceShell} from '../workspace/WorkspaceShell';
 import {SourceReader} from '../evidence/SourceReader';
 import type {EvidenceRef} from '../evidence/model';
-import {readMotionState, type MotionBlock} from './model';
+import {readMotionState, motionStepEvidence, type MotionBlock, type MotionStep, type MotionSpec} from './model';
 import {useMotionController} from './Scope';
 import MotionViewport from './Viewport';
 import {motionSvg, motionReport} from './export';
 import {createBrowserHost} from '../../core/host';
 import './motion.css';
 
+function AnnotationText({step, spec}: {step: MotionStep; spec: MotionSpec}) {
+  if (!step.annotations?.length) return null;
+  return <div className="motion-callout-text" aria-label="Step annotations">{step.annotations.map(a => <p key={a.id}><strong>{spec.entities.find(e => e.id === a.entity)!.label}:</strong> {a.text}</p>)}</div>;
+}
 export default function Motion({block}: {block: MotionBlock}) {
   const runtime = useRuntime(), snapshot = useSiteState(), reduced = useReducedMotion();
   const controller = useMotionController(block.resource), {compiled, player} = controller;
@@ -18,7 +22,7 @@ export default function Motion({block}: {block: MotionBlock}) {
   const selected = spec.entities.find(e => e.id === state.selection), root = useRef<HTMLElement>(null);
   const [includeSource, setIncludeSource] = useState(false);
   const refs = useMemo(() => {
-    const all = [...(selected?.evidence || []), ...step.evidence];
+    const all = [...(selected?.evidence || []), ...motionStepEvidence(step)];
     return [...new Map(all.map(ref => [ref.artifact + ':' + ref.start + ':' + ref.end, ref])).values()];
   }, [selected, step]);
   function select(id: string) {player.pause(); runtime.set(block.selection, id);}
@@ -50,10 +54,10 @@ export default function Motion({block}: {block: MotionBlock}) {
       {state.panel === 'scene' ? <>
         <div className="motion-transport" role="group" aria-label="Motion playback"><button type="button" disabled={state.step === 0} onClick={() => player.previous()} aria-label="Previous motion step">Previous</button><button type="button" disabled={reduced || !playback.playing && state.step === spec.steps.length - 1} onClick={() => playback.playing ? player.pause() : controller.play()}>{playback.playing ? 'Pause motion' : 'Play motion'}</button><button type="button" disabled={state.step === spec.steps.length - 1} onClick={() => player.next()} aria-label="Next motion step">Next</button><span>{state.step + 1} / {spec.steps.length}</span><label>Step<select aria-label="Motion step" value={state.step} onChange={e => player.seek(Number(e.target.value))}>{spec.steps.map((s, index) => <option key={s.id} value={index}>{index + 1}. {s.title}</option>)}</select></label></div>
         <MotionViewport compiled={compiled} view={{index: state.step, selection: state.selection, projection: state.projection, reduced, advance: playback.index === state.step && ['next', 'tick'].includes(playback.reason)}} onSelect={select}/>
-        <div className="motion-caption" aria-live={playback.playing ? 'off' : 'polite'}><span className="motion-eyebrow">Step {String(state.step + 1).padStart(2, '0')}</span><h3>{step.title}</h3><p>{step.caption}</p></div>
+        <div className="motion-caption" aria-live={playback.playing ? 'off' : 'polite'}><span className="motion-eyebrow">Step {String(state.step + 1).padStart(2, '0')}</span><h3>{step.title}</h3><p>{step.caption}</p><AnnotationText step={step} spec={spec}/></div>
         {reduced && <p className="motion-notice">Reduced motion: automatic playback is disabled. Steps and both projections remain available.</p>}
         <p className="motion-note">{spec.note}</p>
-      </> : state.panel === 'source' ? <SourceReader sources={spec.sources} selected={state.source} onSelect={id => runtime.set(block.source, id)} highlights={refs}/> : <div className="motion-transcript"><h3>The complete explanation</h3><p>These are authored steps, not a log of executed code. Choosing a step opens its exact snapshot.</p><ol>{spec.steps.map((s, index) => <li key={s.id}><button type="button" onClick={() => {player.seek(index); runtime.set(block.panel, 'scene');}}>{s.title}</button><p>{s.caption}</p>{s.evidence.map(ref => <button type="button" className="motion-inline-source" key={ref.artifact + ref.start} onClick={() => openEvidence(ref)}>{ref.label}</button>)}</li>)}</ol></div>}
+      </> : state.panel === 'source' ? <SourceReader sources={spec.sources} selected={state.source} onSelect={id => runtime.set(block.source, id)} highlights={refs}/> : <div className="motion-transcript"><h3>The complete explanation</h3><p>These are authored steps, not a log of executed code. Choosing a step opens its exact snapshot.</p><ol>{spec.steps.map((s, index) => <li key={s.id}><button type="button" onClick={() => {player.seek(index); runtime.set(block.panel, 'scene');}}>{s.title}</button><p>{s.caption}</p><AnnotationText step={s} spec={spec}/>{motionStepEvidence(s).map(ref => <button type="button" className="motion-inline-source" key={ref.artifact + ':' + ref.start + ':' + ref.end} onClick={() => openEvidence(ref)}>{ref.label}</button>)}</li>)}</ol></div>}
     </WorkspaceShell>
   </section>;
 }
