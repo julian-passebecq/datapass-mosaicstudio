@@ -1,6 +1,7 @@
 import {Component,Suspense,useEffect,useMemo,useRef,useState,type CSSProperties,type ReactNode} from 'react';
 import type {AppDefinition,SavedState} from './types';
 import {SiteRuntime} from './runtime';
+import {updateSiteMetadata} from './site-metadata';
 import {RuntimeContext,NavigationContext} from './hooks';
 import {RenderBlock,SharedStoryScope,SharedReplayScope,SharedMotionScope,SharedRunScope} from './registry';
 import {createBrowserHost} from '../core/host';
@@ -27,7 +28,7 @@ export function StudioSite({definition}:{definition:AppDefinition}){
   const page=manifest.pages.find(p=>p.id===pageId)||manifest.pages[0];
   const stories=[...new Set(page.sections.flatMap(s=>s.blocks).filter(b=>b.type==='story-controls'||b.type==='story-figure').map(b=>(b as {resource:string}).resource))];
   useEffect(()=>()=>runtime.cancelAll(),[runtime]);
-  useEffect(()=>{document.title=page.title+' | '+manifest.title;const meta=document.querySelector('meta[name="description"]')||document.head.appendChild(document.createElement('meta'));meta.setAttribute('name','description');meta.setAttribute('content',manifest.description);},[page.title,manifest]);
+  useEffect(()=>{updateSiteMetadata(document,manifest,page.title);},[page.title,manifest]);
   useEffect(()=>{const pop=()=>{const id=new URLSearchParams(location.search).get('page');setPageId(manifest.pages.some(p=>p.id===id)?id!:manifest.pages[0].id);};window.addEventListener('popstate',pop);return()=>window.removeEventListener('popstate',pop);},[manifest]);
   function navigate(id:string){if(!manifest.pages.some(p=>p.id===id))throw new Error('Unknown site page');const url=new URL(location.href);url.searchParams.set('page',id);history.pushState(null,'',url);setPageId(id);requestAnimationFrame(()=>heading.current?.focus());}
   function save(){createBrowserHost().saveDownload(manifest.id+'-inputs.json',new Blob([JSON.stringify(runtime.save(page.id),null,2)],{type:'application/json'}));}

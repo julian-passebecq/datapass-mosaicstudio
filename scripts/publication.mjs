@@ -36,8 +36,8 @@ export async function readPublication(clientRoot,defaults){
   return profile;
 }
 export function publicationHead(profile){
-  const p=validatePublication(profile,profile),tag=(name,value)=>`<meta ${name.startsWith('og:')?'property':'name'}="${name}" content="${escape(value)}">`;
-  return `<title>${escape(p.title)}</title>`+tag('description',p.description)+tag('robots',p.visibility==='public'?'index,follow':'noindex,nofollow')+tag('og:type','website')+tag('og:title',p.title)+tag('og:description',p.description)+tag('og:locale',p.language.replaceAll('-','_'))+tag('twitter:card',p.image?'summary_large_image':'summary')+(p.canonicalUrl?`<link rel="canonical" href="${escape(p.canonicalUrl)}">`+tag('og:url',p.canonicalUrl):'')+(p.image?tag('og:image',new URL(p.image,p.canonicalUrl).href):'');
+  const p=validatePublication(profile,profile),tag=(name,value)=>`<meta ${name.startsWith('og:')?'property':'name'}="${name}" ${name==='description'?'data-studio-publication-description="true" ':''}content="${escape(value)}">`;
+  return `<title data-studio-publication-title="${escape(p.title)}">${escape(p.title)}</title>`+tag('description',p.description)+tag('robots',p.visibility==='public'?'index,follow':'noindex,nofollow')+tag('og:type','website')+tag('og:title',p.title)+tag('og:description',p.description)+tag('og:locale',p.language.replaceAll('-','_'))+tag('twitter:card',p.image?'summary_large_image':'summary')+(p.canonicalUrl?`<link rel="canonical" href="${escape(p.canonicalUrl)}">`+tag('og:url',p.canonicalUrl):'')+(p.image?tag('og:image',new URL(p.image,p.canonicalUrl).href):'');
 }
 export function publicationFiles(profile){
   const p=validatePublication(profile,profile);
