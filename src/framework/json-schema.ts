@@ -18,6 +18,7 @@ const blocks={oneOf:[
   block('chart',{dataset:id,x:id,y:id,kind:{enum:['bar','line','scatter']},unit:text(30)},['dataset','x','y','kind']),
   block('task',{task:id},['task']),block('catalog',{},[]),block('code',{text:text(20000),language:{...text(40),minLength:1}},['text','language']),
   block('scene3d',{resource:id,explode:id,phase:id,camera:id,selection:id},['resource','explode','phase','camera','selection']),
+  block('model3d',{resource:id,selection:id,camera:id,mode:id,explode:id,section:id,view:id,annotations:id,source:id},['resource','selection','camera','mode','explode','section','view','annotations','source']),
   block('motion',{resource:id,step:id,selection:id,projection:id,panel:id,source:id},['resource','step','selection','projection','panel','source']),
   block('replay',{resource:id,frame:id,selection:id,channel:id,view:id,speed:id},['resource','frame','selection','channel','view','speed']),
   block('explorer',{resource:id,focus:id,facet:id,view:id,level:id,group:id,document:id,scroll:{type:'boolean'}},['resource','focus','facet','view','level','group','document']),

@@ -11,3 +11,5 @@ declare const __STUDIO_REPLAY__:boolean;
 declare const __STUDIO_MOTION__:boolean;
 
 declare const __STUDIO_RUNS__:boolean;
+
+declare const __STUDIO_MODELS__:boolean;

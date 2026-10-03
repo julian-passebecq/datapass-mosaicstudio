@@ -89,6 +89,22 @@ jobs:
           NODE
             npm run contracts
           fi
+      - name: Generate additive model contracts once without changing dependencies
+        if: github.ref == 'refs/heads/feat/studio2-model-assets'
+        run: |
+          if ! test -f qa/MODEL_ASSET_CONTRACTS_RECORDED.md; then
+            node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          const pkg=JSON.parse(readFileSync('package.json','utf8'));
+          const lock=JSON.parse(readFileSync('package-lock.json','utf8'));
+          assert.deepEqual(lock.packages[''].dependencies,pkg.dependencies);
+          assert.deepEqual(lock.packages[''].devDependencies,pkg.devDependencies);
+          lock.version=pkg.version;lock.packages[''].version=pkg.version;
+          writeFileSync('package-lock.json',JSON.stringify(lock,null,2)+'\n');
+          NODE
+            npm run contracts
+          fi
       - name: Frozen dependency installation without peer bypasses
         run: npm ci --no-audit --no-fund
       - name: Generate first contract artifacts or enforce drift check
@@ -124,7 +140,7 @@ jobs:
           fi
       - name: Real HTTP workbench and framework browser tests
         run: npm run test:browser
-      - name: Isolated clients and seven fresh family/scaffold checks
+      - name: Isolated clients and eight fresh family/scaffold checks
         run: npm run test:client-builds
       - name: Record genuinely generated contract and dependency artifacts once
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/feat/studio2-framework-kit'
@@ -179,6 +195,17 @@ jobs:
             git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
             git add package-lock.json docs/contracts qa/FOUNDATION_CONTRACTS_RECORDED.md
             git commit -m 'build: record qualified foundation contracts and version metadata [skip ci]'
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
+      - name: Record qualified model asset contracts once
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/feat/studio2-model-assets'
+        run: |
+          if ! test -f qa/MODEL_ASSET_CONTRACTS_RECORDED.md; then
+            printf '# Model asset contract qualification\n\nGenerated and tested in workflow %s from source %s.\n\nDependency versions, integrity hashes and upstream pins were unchanged. Only root version metadata was synchronized. Future runs enforce frozen lockfiles and schema drift checks.\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > qa/MODEL_ASSET_CONTRACTS_RECORDED.md
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add package-lock.json docs/contracts qa/MODEL_ASSET_CONTRACTS_RECORDED.md
+            git commit -m 'build: record qualified model asset contracts and version metadata [skip ci]'
             git push origin "HEAD:$GITHUB_REF_NAME"
           fi
       - name: Package source, workbench and isolated client outputs

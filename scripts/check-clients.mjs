@@ -1,3 +1,4 @@
+import {checkModelAssets} from './model-assets.mjs';
 import {readdir,mkdir,writeFile,lstat} from 'node:fs/promises';
 import path from 'node:path';
 import {loadClient} from './load-client.mjs';
@@ -8,6 +9,7 @@ await mkdir('qa/client-manifests',{recursive:true});
 for(const id of ids){
   const dir=path.resolve('clients',id);if((await lstat(dir)).isSymbolicLink())throw new Error('Symbolic client directory refused');
   const definition=await loadClient(id);
+  await checkModelAssets(definition,dir);
   const runtime=new SiteRuntime(definition);if(runtime.manifest.id!==id)throw new Error('Folder and app id differ: '+id);
   for(const d of runtime.manifest.datasets)if(d.source!=='task')runtime.dataset(d.id);
   for(const scene of Object.values(definition.resources?.scenes||{}))validateScene(scene);

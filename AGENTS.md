@@ -18,7 +18,7 @@ Start small: read `docs/recipes/START.md`, choose `client:families`, then run `c
 14. Run unit tests, TypeScript, source/client contracts, production build and actual browser checks. Configured CI is not completed CI. Report actual counts and failures.
 15. Public website builds are not access control. Client data, documentation and public assets must be approved before publication.
 16. No automatic merge, deployment, package publication or branch replacement without explicit authorization. Work on an isolated branch and preserve prior checkpoints.
-17. Public reference clients are `wind-reference`, `operations-reference`, `architecture-reference`, `experience-reference`, `energy-replay-reference`, `motion-reference`, and `foundation-reference`. The default production workbench must not include arbitrary new clients.
+17. Public reference clients are `wind-reference`, `operations-reference`, `architecture-reference`, `experience-reference`, `energy-replay-reference`, `motion-reference`, `foundation-reference`, and `model-reference`. The default production workbench must not include arbitrary new clients.
 18. Read `docs/recipes/START.md` and the client-focused generated guide first. Use the longer AI/experience guides only for the capabilities actually needed.
 19. An explorer has one selected identity across Spatial, Map and Library. Context facets, camera targets and an explicit open-project action must remain separate concepts; do not duplicate content or selection state per renderer.
 20. Native scroll tours are optional. Do not intercept wheel input or remove accessible direct controls. Pause tour following for direct interaction, restored state, hidden pages and reduced motion.
@@ -43,3 +43,8 @@ Start small: read `docs/recipes/START.md`, choose `client:families`, then run `c
 35. Semantic navigation uses existing view fields with source-only joint validation. Projection/facet changes preserve identity; hidden selection is not erased. Real Galaxy data must come from its canonical registry.
 36. Publication metadata defaults to preview/noindex. Public mode requires an explicit canonical URL and approved source-owned assets. Robots directives are not authentication, and metadata generation is not deployment or full SSR.
 37. The compact portfolio does not require spatial navigation, a journal, SQLRooms or 3D. Foil'o geometry/physics cannot be inferred from a conventional turbine reference. The five clients are pressure tests, not five products completed by a framework pass.
+
+38. Imported model geometry uses the bounded static GLB profile only. Verify exact bytes and semantic node ownership before the pinned GLTFLoader decodes them. Do not weaken the profile to make an arbitrary asset load.
+39. A model part ID is a semantic contract tied to the approved hashed file, not a node name guess. Every rendered mesh has one non-overlapping semantic owner. Asset integrity is not license, scientific or engineering validation.
+40. Model selection, camera, exploded amount, wireframe/isolate/cutaway and annotations are view state. They must not rerun domain calculations. Reuse the shared Three viewport and original StoryPlayer rather than creating a model-specific render/playback loop.
+41. `model3d` is optional. Do not add it, Three.js or GLTFLoader to a compact portfolio or ordinary analytical client without an actual spatial requirement. Unsupported textures, codecs, animations or CAD behavior require a separate measured extension.

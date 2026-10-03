@@ -1,0 +1,1 @@
+Keep geometry and content synthetic. Do not infer a real engineering mechanism from the example. Use semantic node bindings and approved asset identity; do not bypass the bounded asset validator or add a second renderer/scheduler. See docs/recipes/models.md.

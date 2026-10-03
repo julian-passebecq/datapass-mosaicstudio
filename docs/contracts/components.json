@@ -210,6 +210,25 @@
     "limits": "In-memory opt-in history; no backend persistence, resume engine or automatic execution"
   },
   {
+    "type": "model3d",
+    "purpose": "Approved static GLB geometry, semantic parts, modes and source context",
+    "required": [
+      "id",
+      "type",
+      "resource",
+      "selection",
+      "camera",
+      "mode",
+      "explode",
+      "section",
+      "view",
+      "annotations",
+      "source"
+    ],
+    "engine": "Shared Three.js viewport / GLTFLoader",
+    "limits": "16 MiB static GLB, 128 nodes, 64 parts, 250k vertices/triangles; no textures, external resources, extensions or animation; no physics"
+  },
+  {
     "type": "custom",
     "purpose": "Client-owned React component registered in trusted source",
     "required": [

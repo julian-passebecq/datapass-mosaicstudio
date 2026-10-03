@@ -1,4 +1,4 @@
-# AI client authoring: v0.6 source SDK
+# AI client authoring: v0.7 source SDK
 
 ## Start with the task, not the libraries
 
@@ -34,6 +34,7 @@ An ordinary client must not modify framework internals. A real requirement may j
 | Documents, search, context and architecture | `docs/recipes/knowledge.md` |
 | Filters, typed data, charts and indicators | `docs/recipes/analytics.md` |
 | Optional geometry, cameras and spatial exploration | `docs/recipes/spatial.md` |
+| Approved static GLB, semantic parts and product teardown | `docs/recipes/models.md` |
 | Supplied samples, signals and engineering replay | `docs/recipes/replay.md` |
 | Authored process motion and source context | `docs/recipes/motion.md` |
 | Captured tasks, results and comparison | `docs/recipes/runs.md` |
@@ -67,7 +68,7 @@ The repository still installs the full pinned development dependencies. Isolatio
 
 The replay family starts in 2D. One original VizForge player schedules supplied timestamps; the plan, current values, chart cursor, events and optional scene share the sample index. Do not add another autoplay timer. Missing values and time gaps remain explicit. The original chart data table must stay accessible.
 
-Current replay limits: 200 samples, 24 entities, eight channels and 1 MiB. This is not a high-frequency live telemetry platform. The 3D viewport uses bounded primitives and validated pose offsets, not a GLTF/CAD loader or physical model. Visual interpolation never creates a measured observation.
+Current replay limits: 200 samples, 24 entities, eight channels and 1 MiB. This is not a high-frequency live telemetry platform. Replay continues to use bounded primitives and validated pose offsets by default. A separate opt-in `model3d` capability can load an approved static GLB for product/part exploration; this does not turn replay into CAD, physics or a universal glTF runtime. Visual interpolation never creates a measured observation.
 
 The energy reference contains generic oscillating plates and invented signals, not approved Foil'o design or performance. Real geometry, model assumptions, numerical tests and data remain client-owned. Its local framing/free-orbit preferences are not serialized; sample, installation, signal, presentation and speed are saved input state.
 
@@ -81,7 +82,7 @@ Saved input JSON excludes recording data, dataset bytes, task results and source
 
 For each real client, run source validation, relevant model/unit tests, strict TypeScript, selected production build and actual browser acceptance. Test missing/error states, navigation, restore/export, keyboard, mobile and reduced motion. Inspect rendered screenshots and verify optional 3D has a useful 2D/data fallback. Obtain explicit deployment/security approval.
 
-The current framework is a qualified alpha source SDK, not general v1. Exact results and limitations are recorded in `docs/FOUNDATION_V0_6_QUALIFICATION.md`. Broader browser/device qualification and stable API/migration policy remain release work.
+The current framework is a qualified alpha source SDK, not general v1. Foundation results are recorded in `docs/FOUNDATION_V0_6_QUALIFICATION.md`; the optional model profile is qualified separately in `docs/MODEL_ASSET_V0_7_QUALIFICATION.md`. Broader browser/device qualification and stable API/migration policy remain release work.
 
 ## Optional authored motion and evidence workspace
 
@@ -96,4 +97,10 @@ Use immutable authored steps rather than executable animation strings. The origi
 
 Pure result/run/navigation/knowledge contracts are in `src/framework/foundation/index.ts`. UI components are explicit imports. Knowledge/search/context and generic ContextInspector can be used by a custom client without the runs workbench. Register a source-only `validateViewState` invariant for coherent combined navigation state; no callbacks belong in imported manifests.
 
-For a compact public portfolio start with content, not the foundation workbench. `publication.json` supplies explicit static metadata without forcing any data/3D engines. See `docs/CLIENT_READINESS_V0_6.md`; richer model assets and general overlays remain separate extensions, not assumptions the client agent should make.
+For a compact public portfolio start with content, not the foundation workbench. `publication.json` supplies explicit static metadata without forcing any data/3D engines. See `docs/CLIENT_READINESS_V0_7.md`. Approved static models are a separate opt-in capability; general overlays and richer glTF/CAD behavior remain separate extensions.
+
+## Optional approved static models
+
+Use `--family spatial --model` only when an imported part/whole assembly materially helps the client. Start from the generated outline and `docs/recipes/models.md`. Run `model:inspect` on the approved GLB and author explicit node-index bindings against its SHA-256; do not infer engineering semantics from file names or geometry.
+
+The browser requests the file only after the visitor selects 3D. Existing camera, picking, ContextInspector, SourceReader and StoryPlayer infrastructure is reused. Assembled/exploded/wireframe/isolate/cutaway are view modes only. A cutaway is uncapped visual clipping, not a CAD section. Unsupported textures, external dependencies, extensions, animation tracks, skins and morphs should fail at the boundary rather than cause an AI to bypass validation.

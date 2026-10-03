@@ -33,6 +33,7 @@ export type Block = {id: string; span?: number; title?: string} & (
   | {type: 'explanation'; resource: string}
   | {type: 'replay'; resource: string; frame: string; selection: string; channel: string; view: string; speed: string}
   | {type: 'motion'; resource: string; step: string; selection: string; projection: string; panel: string; source: string}
+  | {type: 'model3d'; resource: string; selection: string; camera: string; mode: string; explode: string; section: string; view: string; annotations: string; source: string}
   | {type: 'runs'; resource: string}
   | {type: 'custom'; resource: string}
 );
@@ -54,7 +55,7 @@ export type Bindings = {
 };
 /** StorySpec is validated by the pinned VizForge parser in the adapter, not by a clone. */
 export type StoryResource = {indexField: string; spec: unknown; cues: Record<string, Record<string, Scalar>>};
-export type Resources = {scenes?: Record<string, unknown>; stories?: Record<string, StoryResource>; architectures?: Record<string, unknown>; explorers?: Record<string, unknown>; explanations?: Record<string, unknown>; replays?: Record<string, unknown>; motions?: Record<string, unknown>; runs?: Record<string, unknown>};
+export type Resources = {scenes?: Record<string, unknown>; stories?: Record<string, StoryResource>; architectures?: Record<string, unknown>; explorers?: Record<string, unknown>; explanations?: Record<string, unknown>; replays?: Record<string, unknown>; motions?: Record<string, unknown>; runs?: Record<string, unknown>; models?: Record<string, unknown>};
 export type AppDefinition = {manifest: Manifest; bindings: Bindings; resources?: Resources; components?: Record<string, unknown>; customCapabilities?: Record<string, import('./capabilities.ts').CapabilityId[]>};
 export type TaskState = {status: 'idle' | 'running' | 'ready' | 'stale' | 'cancelled' | 'error'; progress: number; message: string};
 export type Snapshot = {values: Values; revision: number; restoreEpoch: number; tasks: Readonly<Record<string, TaskState>>};
