@@ -41,3 +41,12 @@ Neither the complete general Scenario Engine nor the full GLTF/part/section pipe
 ## Verification and changes
 
 Use `client:context`, `client:check`, `build:client` and actual production browser tests. Existing source SDK clients remain regression targets. Record completed test outcomes and inspect actual screenshots before marking this pass qualified. No merge, deployment, source-code execution from imported documents or toolchain rewrite is authorized by this kit.
+
+
+## Static publishing metadata
+
+A selected client build can read an optional source-owned publication.json for explicit canonical/social metadata, language and indexing intent. Defaults are preview/noindex. The output includes robots.txt and studio-publication.json. No image is invented or fetched; an optional relative social asset must exist within the client public folder and fit its budget. Read docs/recipes/public-site.md. This is not access control, deployment, domain ownership verification or full prerendering.
+
+## Source version and migration boundary
+
+This is a source SDK alpha, not a separately published semver-stable package. Existing app/saved-state formats remain version 1. New optional artifact/run/navigation/context formats are independently versioned at 1. Saved UI state still requires exact app identity/version; no automatic migration or import of executable source is introduced. Application authors decide when to change their app version as field meaning or domain assumptions change. Validate externally imported records without attaching execution callbacks.

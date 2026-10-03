@@ -1,16 +1,16 @@
 # DataPass MosaicStudio
 
-**v0.5 alpha source SDK for AI-built technical websites.** Build client content under `clients/<id>/`, discover only the necessary capabilities, and keep reusable contracts/rendering under `src/framework/`.
+**v0.6 alpha source SDK for AI-built technical websites.** Client content, approved data, domain calculations and page composition live under `clients/<id>/`; reusable state, contracts and rendering live under `src/framework/`.
 
-Current branch: `feat/studio2-motion-evidence`, draft PR #6. This extends the qualified v0.4 without merging, deploying, publishing a package or modifying pinned donor repositories.
+Working branch: `feat/studio2-foundation-runs-context`, draft PR #7. This extends qualified v0.5. No merge, deployment, package publication, dependency upgrade or donor-repository modification is implied.
 
-## Start with a small client
+## Start with the smallest useful client
 
 ```sh
 npm ci
 npm run bootstrap
 npm run client:families
-npm run client:new -- my-project --family analytics --title "Client project"
+npm run client:new -- my-project --family content --title "Client project"
 npm run client:context -- my-project
 npm run dev
 # Open the printed address with ?app=my-project
@@ -18,55 +18,60 @@ npm run client:check -- my-project
 npm run build:client -- my-project
 ```
 
-Read `docs/recipes/START.md` and the generated `.generated/client-context/<id>/GUIDE.md`. Families are starter compositions, not restrictions: content, knowledge, analytics, spatial and replay. The actual build plan follows used blocks/resources and optional source-owned capability declarations.
+Read `docs/recipes/START.md`, then the generated `.generated/client-context/<id>/GUIDE.md`. Five families remain: content, knowledge, analytics, spatial and replay. Families are compositions, not appearance restrictions. Actual blocks/resources determine optional capabilities.
 
-A simple content/data site does not need Three.js. The root development repository still installs its pinned dependencies; context and production-bundle isolation are not yet separate minimal npm packages.
+A compact portfolio can stay content-only. It does not need a database, task journal, 3D or knowledge service. The repository still installs its pinned development dependency set; capability planning isolates delivered code and author context, not separate npm installation packages.
 
-## New: authored motion without WebGL
+## New: calculate once, inspect several representations
 
 ```sh
-npm run client:new -- process-demo --family content --motion
-npm run client:context -- process-demo
-npm run build:client -- process-demo
+npm run client:new -- experiment --family analytics --foundation
+npm run client:context -- experiment
+npm run build:client -- experiment
 ```
 
-One small MotionSpec describes stations, tokens, links and authored steps. The same object IDs appear in a flat 2D diagram, an isometric SVG projection, a context inspector and public source excerpts. The compiler builds immutable target snapshots; seeking does not replay code or require a particular UI history.
+An immutable Artifact owns a bounded typed table or text payload, provenance and table/chart/metric/text/JSON representations. Existing renderers display the result; changing representation does not repeat the calculation. A ViewProfile selects representations, not permissions or data redaction.
 
-The original VizForge StoryPlayer owns progression. D3 performs finite adjacent-step transitions rather than adding another autoplay or physics clock. Isometric SVG does not load Three.js or create a WebGL context. Source excerpts are inert, with exact line references; state/timing labels are authored explanations, not runtime measurements.
+The opt-in `runs` block observes existing SiteRuntime tasks. RunSpec supplies declared model/provider metadata. RunJournal captures actual parameters and outcomes, cancellation/supersession/timeout, bounded retention and version-compatible comparison. It does not add another scheduler. History survives page navigation within an app, but **not reload/closing**. Run/artifact exports contain result data and are separate from saved UI inputs.
 
-The new compositional WorkspaceShell and SourceReader are reusable separately from the motion block: optional rail/outline, tabs, main view, inspector and status without a filesystem, editor or notebook. SVG target snapshots and script-free HTML reports are explicit exports. Source code is omitted from reports by default.
+Model/provider identities are client declarations. Upstream revisions are local cache versions, not content hashes or verified cloud receipts. A successful task whose output cannot be retained is not mislabeled as a failed calculation or a fabricated empty result.
 
-Read `docs/MOTION_KIT.md`, the short `docs/recipes/motion.md` and the exact `docs/MOTION_V0_5_QUALIFICATION.md` record.
+Read `docs/recipes/runs.md` and `docs/FOUNDATION_KIT.md`.
 
-## Existing capabilities remain
+## New: shared context and approved static sources
 
-Six public reference clients are included in the integrated review build:
+ContextInspector displays a bounded semantic context: selected entity, facts, source references, related IDs and provenance. NavigationSpec keeps selection/facet/projection/depth in existing view fields, with atomic validation and ID-only view links. This is not a new graph layout engine or the completed Galaxy product.
+
+StaticKnowledgeProvider reads approved source excerpts, searches literal text, returns exact line references and prepares full/summary/excerpt/excluded context with an exact UTF-8 byte budget. Summaries are authored; no LLM, vector search, ingestion or network service is added. Context omission is not access control over files bundled in a static site.
+
+## Public-site metadata, without a rewrite
+
+Selected builds support optional `publication.json`: title, description, language, explicit HTTPS canonical address and an approved local social image. Metadata is emitted in HTML before JavaScript. Default builds are preview/noindex; public mode is explicit. Robots rules are not authentication or privacy.
+
+Read `docs/recipes/public-site.md`. There is no domain verification, deployment, translation or full page prerendering in this feature. The compact portfolio remains a separate lightweight design task, not a copy of the technical workbench.
+
+## Existing experiences remain available
+
+The root route is still the separate SQLRooms/DuckDB workbench. `?sites=1` lists synthetic reference applications. The integrated review build includes only these seven approved references:
 
 | Route | Purpose |
 | --- | --- |
-| `?app=motion-reference` | Two authored process explanations, 2D/isometric SVG and exact source context |
-| `?app=energy-replay-reference` | Supplied-sample engineering replay with optional 3D |
-| `?app=experience-reference` | One selected context across 3D, map and documents |
-| `?app=operations-reference` | Typed rows, filters, metrics, D3 and CSV |
-| `?app=architecture-reference` | Artifact-backed architecture/schema review and presentation |
-| `?app=wind-reference` | Original illustrative assembly, shared story and explicit computation tasks |
+| `?app=foundation-reference` | Captured results/runs, shared semantic navigation and local source context |
+| `?app=motion-reference` | Authored 2D/isometric D3 scenes and read-only evidence |
+| `?app=energy-replay-reference` | Supplied-sample replay with optional 3D |
+| `?app=experience-reference` | Shared context across spatial, map and document views |
+| `?app=operations-reference` | Typed rows, filters, metrics, charts and CSV |
+| `?app=architecture-reference` | Artifact-backed architecture/schema review |
+| `?app=wind-reference` | Original illustrative assembly, shared story and explicit tasks |
 
-These are synthetic/author-owned acceptance examples, not final client websites, actual Foil'o engineering, live infrastructure or measured performance claims.
+Reference values, geometry and relationships are illustrative acceptance fixtures, not real Foil'o engineering or a canonical Galaxy registry. New client folders are not silently added to the public workbench list. Selected outputs are in `dist-clients/<id>/`; no deployment occurs.
 
-The root route remains the separate SQLRooms/DuckDB analytical workbench; `?sites=1` opens the reference gallery. Client builds have their own host/public directory and do not initialize the database by default. New client folders are not automatically published in that reference list.
+There are now **18 block types**, nine optional capabilities and still five families. Existing VizForge, ConceptMotion, Three.js, React Flow and SQLRooms/Mosaic retain their roles.
 
-The catalog now has **17 block types**. The motion capability is optional and does not add a new compulsory app family. Existing VizForge, ConceptMotion, Three.js and React Flow engines retain their roles rather than being replaced.
+## Qualification and release boundaries
 
-## Build and privacy boundaries
+See `docs/FOUNDATION_V0_6_QUALIFICATION.md` for exact qualified implementation, completed workflow, actual counts, artifacts and limits. A documentation-only head is distinguished from the tested implementation. Review `docs/CLIENT_READINESS_V0_6.md` for the five future clients.
 
-A selected output is `dist-clients/<id>/`. Its build checks actual rendered module inclusion and emits `studio-build.json`; undeclared Three.js or accidental workbench imports fail. Custom source components can declare their minimum `customCapabilities`; legacy undeclared components retain all engines with a warning.
+This remains an alpha source SDK. It does not implement a general Scenario Engine, full SemanticOverlay renderer, GLTF/GLB ModelAsset pipeline, persistent cloud history, notebook execution, DuckLake or PDF/PPTX/video exports. Real client data/assets, scientific tests, final design, deployment security and broader browser/device acceptance remain necessary.
 
-This is not a sandbox for arbitrary repository code. Static sites expose their embedded content. Approve source excerpts, data and public assets before publishing. Domain filters, evidence tabs and view links are not access control. Saved input JSON may contain sensitive values even though source bodies and result data are excluded.
-
-No deployment happens in a client build. Read `docs/AI_SITE_AUTHORING.md` for advanced state/task/export rules and `docs/FIRST_ENERGY_CLIENT.md` for the boundary between synthetic fixtures and a real energy client.
-
-## Verification and release status
-
-The final v0.5 implementation and completed workflow are recorded in `docs/MOTION_V0_5_QUALIFICATION.md`. Read that source-backed record rather than treating a pending PR or configured test suite as a successful gate. Existing clients remain regression targets; actual captures and independent generated-client outputs are inspected.
-
-The project remains an alpha source SDK. A general v1 requires approved real-client acceptance, stable API/version/migration policy and broader browser/device/accessibility/performance qualification. This pass does not supply a general Scenario Engine, notebook/Python execution, GLTF/CAD import, live backend, PDF/PPTX/video encoder, DuckLake or a rewrite of AtlasNote/Cloud Diagram.
+No Rust rewrite or speculative toolchain upgrade was used to deliver these features.
