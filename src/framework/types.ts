@@ -45,6 +45,8 @@ export type Manifest = {
 export type DeriveContext = {values: Values; datasets: Readonly<Record<string, Rows>>};
 export type TaskContext = DeriveContext & {signal: AbortSignal; report(progress: number): void};
 export type Bindings = {
+  /** Trusted source-only invariant. Never serialized in an imported manifest. */
+  validateViewState?: (values: Values) => void;
   inline?: Record<string, Rows>;
   derive?: Record<string, (context: DeriveContext) => Rows>;
   tasks?: Record<string, (context: TaskContext) => Promise<Rows>>;
