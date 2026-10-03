@@ -22,7 +22,8 @@
     "client:check": "node --experimental-strip-types scripts/check-clients.mjs",
     "test:visual-contracts": "node scripts/check-visuals.mjs",
     "build:client": "node --experimental-strip-types scripts/build-client.mjs",
-    "test:client-builds": "node --experimental-strip-types scripts/test-client-builds.mjs",
+    "test:client-builds": "node --experimental-strip-types scripts/test-client-builds.mjs && node scripts/check-client-performance.mjs",
+    "test:client-performance": "node scripts/check-client-performance.mjs",
     "client:context": "node --experimental-strip-types scripts/client-context.mjs",
     "client:families": "node --experimental-strip-types scripts/client-context.mjs --families",
     "model:inspect": "node --experimental-strip-types scripts/inspect-model.mjs"
