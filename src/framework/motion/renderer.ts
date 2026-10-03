@@ -1,6 +1,6 @@
-import {select, easeCubicInOut} from 'd3';
+import {select, easeCubicInOut, easeLinear} from 'd3';
 import {interpolateFrame, motionFrame, settledDisplay, type CompiledMotion, type MotionDisplay, type MotionFrame} from './compile';
-import {drawing, motionBounds, boundsText, pathData, polygonData, shade, statusColor, type MotionObject} from './geometry';
+import {drawing, motionBounds, boundsText, pathData, polygonData, shade, statusColor, type MotionObject, type AnnotationDrawing} from './geometry';
 import type {MotionProjection} from './model';
 
 export type MotionView = {index: number; selection: string; projection: MotionProjection; advance: boolean; reduced: boolean};
@@ -10,12 +10,13 @@ export type MotionRenderer = {update(view: MotionView): void; settle(): void; di
 export function createMotionRenderer(svg: SVGSVGElement, compiled: CompiledMotion, onSelect: (id: string) => void): MotionRenderer {
   const root = select(svg), uid = 'motion-arrow-' + (++sequence);
   const sizes={diagram:motionBounds(compiled,'diagram'),isometric:motionBounds(compiled,'isometric')};
-  root.attr('role', 'group').attr('aria-label', compiled.spec.title);
+  root.attr('tabindex', -1).attr('role', 'group').attr('aria-label', compiled.spec.title);
   root.append('title').text(compiled.spec.title);
   root.append('desc').text('Authored motion scene. The adjacent object list and transcript expose the same information without animation.');
   root.append('defs').append('marker').attr('id', uid).attr('viewBox', '0 0 10 10').attr('refX', 9).attr('refY', 5).attr('markerWidth', 6).attr('markerHeight', 6).attr('orient', 'auto-start-reverse').append('path').attr('d', 'M0 0 L10 5 L0 10z').attr('fill', '#578ba4');
   const connections = root.append('g').attr('class', 'motion-links');
   const objects = root.append('g').attr('class', 'motion-objects');
+  const notes = root.append('g').attr('class', 'motion-annotations').attr('pointer-events', 'none');
   let alive = true, animating = false, target: MotionFrame | null = null, display: MotionDisplay = {};
   let projection: MotionProjection = 'diagram', selection = 'none';
   function draw() {
@@ -37,6 +38,7 @@ export function createMotionRenderer(svg: SVGSVGElement, compiled: CompiledMotio
       });
     nodes.each(function(object) {
       const node = select(this); node.select('title').text(object.label + ' / ' + object.status);
+      if (object.alpha === 0 && document.activeElement === this) svg.focus({preventScroll: true});
       node.select('.motion-faces').selectAll<SVGPolygonElement, number[][]>('polygon').data(object.faces).join('polygon')
         .attr('points', face => polygonData(face as [number, number][]))
         .attr('fill', (_, i) => shade(object.color, i === 0 && projection === 'isometric' ? -.24 : i === 1 ? -.12 : .6))
@@ -48,8 +50,23 @@ export function createMotionRenderer(svg: SVGSVGElement, compiled: CompiledMotio
         .attr('x', object.labelPosition[0]).attr('y', (_, i) => object.labelPosition[1] + i * 15).attr('text-anchor', 'middle')
         .attr('fill', '#21384a').attr('font-family', 'system-ui,sans-serif').attr('font-size', object.kind === 'station' ? 12 : 10);
     });
+    const callouts = notes.selectAll<SVGGElement, AnnotationDrawing>('g.motion-annotation').data(scene.annotations, d => d.id).join(enter => {
+      const node = enter.append('g').attr('class', 'motion-annotation').attr('role', 'note');
+      node.append('title'); node.append('path'); node.append('rect'); node.append('g').attr('class', 'motion-annotation-text'); return node;
+    });
+    callouts.attr('data-annotation', d => d.id).attr('data-anchor', d => d.entity).attr('opacity', d => d.alpha)
+      .attr('aria-hidden', d => d.alpha === 0 ? 'true' : null).attr('aria-label', d => d.text);
+    callouts.each(function(a) {
+      const node = select(this), {x, y, width, height} = a.box;
+      node.select('title').text(a.text);
+      node.select('path').attr('d', pathData([a.anchor, [x + width / 2, y + height]])).attr('fill', 'none').attr('stroke', '#657f90').attr('stroke-width', 1).attr('stroke-dasharray', '3 3');
+      node.select('rect').attr('x', x).attr('y', y).attr('width', width).attr('height', height).attr('rx', 5).attr('fill', '#ffffff').attr('stroke', '#819aaa');
+      node.select('.motion-annotation-text').selectAll<SVGTextElement, string>('text').data(a.lines).join('text').text(d => d)
+        .attr('x', x + 11).attr('y', (_, i) => y + 21 + i * 15).attr('fill', '#21384a').attr('font-family', 'system-ui,sans-serif').attr('font-size', 11);
+    });
   }
   function settle() {
+    if (!alive) return;
     root.interrupt('motion'); animating = false;
     if (target) {display = settledDisplay(target); draw();}
     root.attr('data-animating', 'false');
@@ -66,7 +83,7 @@ export function createMotionRenderer(svg: SVGSVGElement, compiled: CompiledMotio
       root.interrupt('motion'); projection = view.projection; target = next;
       if (!animate || !compiled.spec.steps[next.index].transitionMs) {settle(); return;}
       animating = true; root.attr('data-animating', 'true'); display = settledDisplay(previous!); draw();
-      root.transition('motion').duration(compiled.spec.steps[next.index].transitionMs).ease(easeCubicInOut)
+      root.transition('motion').duration(compiled.spec.steps[next.index].transitionMs).ease(compiled.spec.version === 2 ? easeLinear : easeCubicInOut)
         .tween('scene', () => fraction => {display = interpolateFrame(previous!, next, fraction); draw();})
         .on('end.motion', () => {animating = false; display = settledDisplay(next); draw(); root.attr('data-animating', 'false');});
     },

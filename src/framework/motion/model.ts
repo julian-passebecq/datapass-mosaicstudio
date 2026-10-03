@@ -10,21 +10,25 @@ export type MotionEntity = {
   id: string; label: string; description: string; color: string; evidence: EvidenceRef[];
 } & ({kind: 'station'; position: Point3; size: Point3} | {kind: 'token'; at: string; size: number});
 export type MotionLink = {id: string; from: string; to: string; label: string; via: Point3[]};
-export type MotionCommand =
+/** Presentation timing in the containing step, never a second clock or a measurement. */
+export type MotionEasing = 'linear' | 'cubic-in-out';
+export type MotionTiming = {startMs: number; endMs: number; easing: MotionEasing};
+export type MotionAnnotation = {id: string; entity: string; text: string; offset: [number, number]; evidence: EvidenceRef[]};
+export type MotionCommand = (
   | {type: 'move'; entity: string; position: Point3}
   | {type: 'transfer'; entity: string; link: string}
   | {type: 'state'; entity: string; value: MotionStatus}
-  | {type: 'visibility'; entity: string; visible: boolean};
+  | {type: 'visibility'; entity: string; visible: boolean}) & {timing?: MotionTiming};
 export type MotionStep = {
   id: string; title: string; caption: string; focus: string; holdMs: number; transitionMs: number;
-  commands: MotionCommand[]; activeLinks: string[]; evidence: EvidenceRef[];
+  commands: MotionCommand[]; activeLinks: string[]; evidence: EvidenceRef[]; annotations?: MotionAnnotation[];
 };
 export type MotionSpec = {
-  format: 'datapass.motion'; version: 1; title: string; description: string;
+  format: 'datapass.motion'; version: 1 | 2; title: string; description: string;
   provenance: 'synthetic' | 'authored'; note: string;
   entities: MotionEntity[]; links: MotionLink[]; steps: MotionStep[]; sources: SourceArtifact[];
 };
-export const MOTION_LIMITS = Object.freeze({entities: 40, links: 64, steps: 64, commands: 80, bytes: 512000});
+export const MOTION_LIMITS = Object.freeze({entities: 40, links: 64, steps: 64, commands: 80, annotations: 6, bytes: 512000});
 export const MOTION_KEYS = ['step', 'selection', 'projection', 'panel', 'source'] as const;
 export type MotionState = {step: number; selection: string; projection: MotionProjection; panel: 'scene' | 'source' | 'transcript'; source: string};
 export type MotionBlock = Extract<Block, {type: 'motion'}>;
@@ -48,7 +52,7 @@ function uniqueId(value: unknown, set: Set<string>, label: string): asserts valu
 /** Only source-owned declarations enter. No HTML, event handlers, expressions or arbitrary URLs. */
 export function validateMotion(input: unknown): MotionSpec {
   strict(input, ['format', 'version', 'title', 'description', 'provenance', 'note', 'entities', 'links', 'steps', 'sources'], 'motion');
-  if (input.format !== 'datapass.motion' || input.version !== 1) throw new Error('Unsupported motion document');
+  if (input.format !== 'datapass.motion' || input.version !== 1 && input.version !== 2) throw new Error('Unsupported motion document');
   text(input.title, 'motion.title', 160); text(input.description, 'motion.description', 2000);
   text(input.note, 'motion.note', 2000);
   if (input.provenance !== 'synthetic' && input.provenance !== 'authored') throw new Error('Motion is authored, not a live trace');
@@ -80,7 +84,7 @@ export function validateMotion(input: unknown): MotionSpec {
   }
   array(input.steps, 'steps', MOTION_LIMITS.steps, 1); const steps = new Set<string>();
   for (const step of input.steps) {
-    strict(step, ['id', 'title', 'caption', 'focus', 'holdMs', 'transitionMs', 'commands', 'activeLinks', 'evidence'], 'motion step');
+    strict(step, ['id', 'title', 'caption', 'focus', 'holdMs', 'transitionMs', 'commands', 'activeLinks', 'evidence', ...(input.version === 2 ? ['annotations'] : [])], 'motion step');
     uniqueId(step.id, steps, 'step id'); text(step.title, 'step title', 160); text(step.caption, 'step caption', 3000);
     if (typeof step.focus !== 'string' || step.focus !== 'none' && !entities.has(step.focus)) throw new Error('Unknown step focus');
     integer(step.holdMs, 'hold', 800, 15000); integer(step.transitionMs, 'transition', 0, 1800);
@@ -88,12 +92,31 @@ export function validateMotion(input: unknown): MotionSpec {
     array(step.activeLinks, 'active links', MOTION_LIMITS.links);
     if (step.activeLinks.some(l => typeof l !== 'string' || !links.has(l)) || new Set(step.activeLinks).size !== step.activeLinks.length) throw new Error('Invalid active motion links');
     validateEvidence(step.evidence, sources);
+    if (step.annotations !== undefined) {
+      array(step.annotations, 'annotations', MOTION_LIMITS.annotations);
+      const annotationIds = new Set<string>();
+      for (const annotation of step.annotations) {
+        strict(annotation, ['id', 'entity', 'text', 'offset', 'evidence'], 'motion annotation');
+        uniqueId(annotation.id, annotationIds, 'annotation id');
+        if (typeof annotation.entity !== 'string' || !entities.has(annotation.entity)) throw new Error('Unknown annotation entity');
+        text(annotation.text, 'annotation text', 160);
+        if (!Array.isArray(annotation.offset) || annotation.offset.length !== 2 || annotation.offset.some(n => typeof n !== 'number' || !Number.isFinite(n) || Math.abs(n) > 280)) throw new Error('Invalid annotation offset');
+        validateEvidence(annotation.evidence, sources);
+      }
+    }
     array(step.commands, 'commands', MOTION_LIMITS.commands); const writes = new Set<string>();
     for (const c of step.commands) {
       if (!c || typeof c !== 'object') throw new Error('Invalid motion command');
       const type = (c as Record<string, unknown>).type;
       const keys = type === 'move' ? ['position'] : type === 'transfer' ? ['link'] : type === 'state' ? ['value'] : type === 'visibility' ? ['visible'] : [];
-      strict(c, ['type', 'entity', ...keys], 'motion command');
+      strict(c, ['type', 'entity', ...keys, ...(input.version === 2 ? ['timing'] : [])], 'motion command');
+      if (c.timing !== undefined) {
+        strict(c.timing, ['startMs', 'endMs', 'easing'], 'motion timing');
+        integer(c.timing.startMs, 'timing start', 0, step.transitionMs);
+        integer(c.timing.endMs, 'timing end', 0, step.transitionMs);
+        if (c.timing.endMs < c.timing.startMs) throw new Error('Motion timing end precedes start');
+        if (c.timing.easing !== 'linear' && c.timing.easing !== 'cubic-in-out') throw new Error('Unknown motion easing');
+      }
       if (typeof c.entity !== 'string' || !entities.has(c.entity)) throw new Error('Unknown command entity');
       const write = c.entity + ':' + (type === 'move' || type === 'transfer' ? 'position' : String(type));
       if (writes.has(write)) throw new Error('Multiple writes to a motion property in one step'); writes.add(write);
@@ -162,4 +185,9 @@ export function validateMotionControllers(definition: AppDefinition): void {
   for (const story of Object.values(definition.resources?.stories || {})) for (const cue of Object.values(story.cues)) {
     for (const field of Object.keys(cue)) if (clocks.get(field)?.startsWith('motion:')) throw new Error('A narrative cannot drive an independently controlled motion step');
   }
+}
+
+/** Source identity, not display label, determines duplicate references. */
+export function motionStepEvidence(step: MotionStep): EvidenceRef[] {
+  return [...new Map([...step.evidence, ...(step.annotations || []).flatMap(a => a.evidence)].map(ref => [ref.artifact + ':' + ref.start + ':' + ref.end, ref])).values()];
 }

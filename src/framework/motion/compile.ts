@@ -1,4 +1,5 @@
-import {validateMotion, type MotionSpec, type Point3, type MotionStatus, type MotionEntity} from './model.ts';
+import {timingProgress} from './timing.ts';
+import {validateMotion, type MotionSpec, type Point3, type MotionStatus, type MotionEntity, type MotionTiming} from './model.ts';
 
 export type EntityPose = {position: Point3; visible: boolean; status: MotionStatus};
 export type MotionFrame = {
@@ -6,6 +7,8 @@ export type MotionFrame = {
   poses: Record<string, EntityPose>;
   activeLinks: string[];
   routes: Record<string, Point3[]>;
+  version: 1 | 2; transitionMs: number;
+  timings: Record<string, Partial<Record<'position' | 'state' | 'visibility', MotionTiming>>>;
 };
 export type CompiledMotion = {spec: MotionSpec; initial: MotionFrame; frames: MotionFrame[]};
 const distance = (a: Point3, b: Point3) => Math.hypot(...a.map((n, i) => n - b[i]));
@@ -26,14 +29,18 @@ export function compileMotion(input: unknown): CompiledMotion {
   const poses: Record<string, EntityPose> = {};
   for (const e of spec.entities) if (e.kind === 'station') poses[e.id] = {position: [...e.position], visible: true, status: 'idle'};
   for (const e of spec.entities) if (e.kind === 'token') poses[e.id] = {position: stationAnchor(entities.get(e.at)!, poses[e.at]), visible: true, status: 'idle'};
-  const initial: MotionFrame = {index: -1, id: 'initial', focus: 'none', poses: structuredClone(poses), activeLinks: [], routes: {}};
+  const initial: MotionFrame = {index: -1, id: 'initial', focus: 'none', poses: structuredClone(poses), activeLinks: [], routes: {}, version: spec.version, transitionMs: 0, timings: {}};
   const frames: MotionFrame[] = [];
   for (const [index, step] of spec.steps.entries()) {
-    const routes: Record<string, Point3[]> = {};
+    const routes: Record<string, Point3[]> = {}, timings: MotionFrame['timings'] = {};
     // A transfer endpoint cannot be moved in the same authored step: its route would be ambiguous.
     const moved = new Set(step.commands.filter(c => c.type === 'move').map(c => c.entity));
     for (const command of step.commands) {
       const pose = poses[command.entity];
+      if (spec.version === 2) {
+        const property = command.type === 'move' || command.type === 'transfer' ? 'position' : command.type;
+        (timings[command.entity] ||= {})[property] = command.timing ? {...command.timing} : {startMs: 0, endMs: step.transitionMs, easing: 'cubic-in-out'};
+      }
       switch (command.type) {
         case 'move': routes[command.entity] = [[...pose.position], [...command.position]]; pose.position = [...command.position]; break;
         case 'state': pose.status = command.value; break;
@@ -50,7 +57,7 @@ export function compileMotion(input: unknown): CompiledMotion {
         }
       }
     }
-    frames.push({index, id: step.id, focus: step.focus, poses: structuredClone(poses), activeLinks: [...step.activeLinks], routes});
+    frames.push({index, id: step.id, focus: step.focus, poses: structuredClone(poses), activeLinks: [...step.activeLinks], routes, version: spec.version, transitionMs: step.transitionMs, timings});
   }
   return freeze({spec, initial, frames});
 }
@@ -85,11 +92,16 @@ export function interpolateFrame(from: MotionFrame, to: MotionFrame, fraction: n
   return Object.fromEntries(Object.entries(to.poses).map(([id, pose]) => {
     const start = from.poses[id]; if (!start) throw new Error('Motion identity changed between steps');
     const route = to.routes[id] || [start.position, pose.position];
+    // V1 retains its historical eased progress; V2 receives wall-progress from D3
+    // and samples each authored property window without timers or callbacks.
+    const progress = (property: 'position' | 'state' | 'visibility') => to.version === 2 && to.timings[id]?.[property]
+      ? timingProgress(to.timings[id][property]!, fraction * to.transitionMs) : fraction;
+    const positionProgress = progress('position'), visibilityProgress = progress('visibility'), stateProgress = progress('state');
     return [id, {
-      position: pointAlong(route, fraction),
-      visible: fraction === 1 ? pose.visible : start.visible || pose.visible,
-      alpha: Number(start.visible) + (Number(pose.visible) - Number(start.visible)) * fraction,
-      status: fraction === 1 ? pose.status : start.status,
+      position: pointAlong(route, positionProgress),
+      visible: visibilityProgress === 1 ? pose.visible : start.visible || pose.visible,
+      alpha: Number(start.visible) + (Number(pose.visible) - Number(start.visible)) * visibilityProgress,
+      status: stateProgress === 1 ? pose.status : start.status,
     }];
   }));
 }
