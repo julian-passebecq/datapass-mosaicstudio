@@ -85,9 +85,14 @@ function annotationLayout(annotations: MotionAnnotation[], objects: MotionObject
     const object = objects.find(o => o.id === a.entity)!;
     const lines = annotationLines(a.text), width = Math.max(120, ...lines.map(line => line.length * 7 + 22)), height = 20 + lines.length * 15;
     const box = {x: object.center[0] + a.offset[0] - width / 2, y: object.center[1] + a.offset[1] - height / 2, width, height};
+    // Resolve away from the anchor, respecting the authored vertical side.
+    // Always moving up can send a below-object note across the whole diagram.
+    const direction = a.offset[1] < 0 ? -1 : 1;
     let tries = 0;
-    while (occupied.some(b => overlaps(box, b, 10)) && tries++ < 16) box.y -= 26;
-    if (occupied.some(b => overlaps(box, b, 10))) box.y = Math.min(box.y, ...occupied.map(b => b.y)) - height - 14;
+    while (occupied.some(b => overlaps(box, b, 10)) && tries++ < 16) box.y += direction * 26;
+    if (occupied.some(b => overlaps(box, b, 10))) box.y = direction < 0
+      ? Math.min(box.y, ...occupied.map(b => b.y)) - height - 14
+      : Math.max(box.y, ...occupied.map(b => b.y + b.height)) + 14;
     occupied.push(box);
     return {id: a.id, entity: a.entity, text: a.text, lines, box};
   });
