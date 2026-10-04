@@ -117,3 +117,32 @@ The stable acceptance/limits map is `ENGINE_QUALIFICATION.md`. The final draft
 PR #10 and delivery receipt carry the exact final source, full gate results,
 reviewed screenshots and artifact hashes, rather than a self-referential SHA
 inside a committed document.
+
+### Visual review found and repaired a lazy-capture readiness race
+
+Source `f0f2511d219e0116f9f56de216fdfa9bd6a54ed6` passed the 32 engine assertions
+in run `37182212848` / job `111376886759`, but its actual taller model screenshot
+still showed `Loading optional model viewer...`. The artifact bytes
+`11294919478` matched SHA-256
+`2e0a17ffcda1ec2334fa5eaddf967cc05602ba70dadb558b57d2c27821384b86`.
+That intermediate source is NOT the visually qualified delivery: requesting a
+GLB and exporting the intended view state did not prove a rendered model.
+
+**CODE FAILURE / TEST EVIDENCE GAP:** the nested model Suspense fallback used
+`model-note`, not either loading selector, and lacked the existing capture busy
+marker. An empty set of mounted renderer statuses could therefore satisfy the
+capture predicate while the selected model's lazy module was pending.
+
+A red-then-green regression now renders the real ModelBlock with React's static
+renderer and checks that its actual Suspense fallback declares
+`data-capture-state="busy"`. That one attribute is the only ModelAssets code
+change in this recovery; geometry/profile validation, loading, cameras and the
+Three renderer remain unchanged. Capture now also requires a mounted model
+canvas whenever model view is selected, rechecks readiness after UI state export,
+and records observed model status/selection/camera/canvas state. The browser
+acceptance requires `3D ready`, a settled nonzero canvas and complete canvas
+framing inside the explicit viewport. Inspect the resulting pixels again.
+
+Do not promote any earlier green assertion report over this visual finding.
+The subsequent exact source must pass the full web and engine gates plus visual
+review. No test count, schema limit or payload budget was lowered.

@@ -101,6 +101,9 @@ unrequested heavy modules and network isolation; they are not a universal benchm
 
 Capture uses explicit saved state, fixed viewport, reduced motion, font/image and
 renderer readiness, actual UI state export, and screenshot/state/build hashes.
+The lazy model boundary declares capture-busy before its module mounts. Capture
+requires a ready, settled canvas for selected model views and records the observed
+renderer state; the model acceptance also checks that its canvas is in the frame.
 A viewport capture does not imply every offscreen block is visible. It is not
 full-page video or cross-browser/OS/GPU pixel identity. Custom asynchronous work
 must signal busy/ready/error and own cancellation. Imported data/inputs must be

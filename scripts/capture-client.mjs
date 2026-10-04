@@ -68,15 +68,19 @@ export async function captureBuiltClient(options){
     await page.locator(`[data-app-id="${options.id}"]`).waitFor();
     await page.getByLabel('Restore saved site inputs',{exact:true}).setInputFiles({name:'capture-state.json',mimeType:'application/json',buffer:Buffer.from(stateText)});
     await page.getByRole('button',{name:'Apply saved inputs',exact:true}).click();
-    await page.evaluate(()=>document.fonts.ready);
-    await page.waitForFunction(()=>!!document.querySelector('[data-capture-state=error]')||
-      [...document.querySelectorAll('.site-render-status')].some(node=>node.textContent==='3D unavailable')||
-      !document.querySelector('.site-loading,.model-loading')&&
-      [...document.querySelectorAll('[data-capture-state]')].every(node=>node.getAttribute('data-capture-state')==='ready')&&
-      [...document.querySelectorAll('[data-animating]')].every(node=>node.getAttribute('data-animating')!=='true')&&
-      [...document.querySelectorAll('.site-render-status')].every(node=>node.textContent==='3D ready')&&
-      [...document.images].every(image=>image.complete),{},{timeout:20000});
-    await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    const waitForReady=async()=>{
+      await page.evaluate(()=>document.fonts.ready);
+      await page.waitForFunction(()=>!!document.querySelector('[data-capture-state=error]')||
+        [...document.querySelectorAll('.site-render-status')].some(node=>node.textContent==='3D unavailable')||
+        !document.querySelector('.site-loading,.model-loading')&&
+        [...document.querySelectorAll('[data-capture-state]')].every(node=>node.getAttribute('data-capture-state')==='ready')&&
+        [...document.querySelectorAll('[data-animating]')].every(node=>node.getAttribute('data-animating')!=='true')&&
+        [...document.querySelectorAll('.site-render-status')].every(node=>node.textContent==='3D ready')&&
+        [...document.querySelectorAll('.site-model[data-view=model]')].every(node=>node.querySelector('canvas[data-renderer=three-webgl2]'))&&
+        [...document.images].every(image=>image.complete),{},{timeout:20000});
+      await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    };
+    await waitForReady();
     if(await page.locator('.site-notice.error,[data-capture-state=error]').count()||await page.locator('.site-render-status').filter({hasText:'3D unavailable'}).count()||await page.getByRole('heading',{name:'Site component unavailable',exact:true}).count())throw new Error('The client has a visible failure; no successful capture receipt will be emitted.');
     const brokenImages=await page.evaluate(()=>[...document.images].filter(image=>image.src&&image.naturalWidth===0).map(image=>image.src));
     if(brokenImages.length||errors.length||external.length)throw new Error('Capture did not settle cleanly: '+JSON.stringify({brokenImages,errors,external}));
@@ -86,12 +90,21 @@ export async function captureBuiltClient(options){
     const actual=runtime.review(await readFile(await (await download).path(),'utf8'));
     if(!isDeepStrictEqual(JSON.parse(JSON.stringify(actual)),JSON.parse(JSON.stringify(state))))throw new Error('Rendered client state differs from the requested saved state');
     await page.locator('.site-session summary').click();await page.locator('.site-page-heading h1').focus();
+    // UI export/focus may expose late lazy work; observe renderer state again at capture.
+    await waitForReady();
+    const renderers=await page.evaluate(()=>({models:[...document.querySelectorAll('.site-model[data-view=model]')].map(node=>{
+      const viewport=node.querySelector('.studio-scene-viewport'),canvas=node.querySelector('canvas[data-renderer=three-webgl2]'),rect=canvas?.getBoundingClientRect();
+      return {selection:node.getAttribute('data-selection'),camera:viewport?.getAttribute('data-camera'),status:node.querySelector('.site-render-status')?.textContent,
+        canvas:canvas?{width:canvas.width,height:canvas.height,animating:canvas.getAttribute('data-animating'),inViewport:!!rect&&rect.width>0&&rect.height>0&&rect.top>=0&&rect.left>=0&&rect.bottom<=innerHeight&&rect.right<=innerWidth}:null};
+    })}));
+    if(renderers.models.some(model=>model.status!=='3D ready'||!model.canvas||model.canvas.animating!=='false'))throw new Error('The selected model renderer is not ready for capture');
+    if(await page.locator('.site-notice.error,[data-capture-state=error]').count())throw new Error('The client became unavailable before capture');
     const screenshot=await page.screenshot({path:path.join(out,'capture.png'),animations:'disabled',caret:'hide',fullPage:false});
     if(errors.length||external.length)throw new Error('Capture produced a late browser or external-request failure: '+JSON.stringify({errors,external}));
     const metadata={format:'datapass.visual-capture',version:1,status:'captured',clientId:options.id,appVersion:runtime.manifest.version,page:state.page,
       source,build:{...build,files,sha256:sha256(JSON.stringify(files))},state:{file:'state.json',sha256:sha256(stateText),roundTripVerified:true},
       viewport:{width:options.width,height:options.height,deviceScaleFactor:1},browser:browser.version(),node:process.version,
-      reducedMotion:true,locale:'en-US',timezone:'UTC',fontsReady:true,requests,external,errors,
+      reducedMotion:true,locale:'en-US',timezone:'UTC',fontsReady:true,renderers,requests,external,errors,
       screenshot:{file:'capture.png',bytes:screenshot.length,sha256:sha256(screenshot)},
       limits:['Fixed target-state viewport, not full-page/video capture.','No claim of pixel identity across browsers, OS fonts or GPUs.','Custom asynchronous visuals must publish data-capture-state=busy/ready/error.','Capture does not press task/run controls; trusted custom source still owns its effects.','Embedded data and saved input values must be reviewed before sharing.']};
     await writeFile(path.join(out,'metadata.json'),JSON.stringify(metadata,null,2)+'\n');
