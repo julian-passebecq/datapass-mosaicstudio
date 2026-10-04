@@ -43,9 +43,12 @@ export async function startClientDev(options){
     child.once('error',reject);child.once('exit',(code,signal)=>code===0?resolve():reject(new Error(`${args[0]} failed (${signal||code}); inspect the diagnostic above.`)));
   });
   async function environment(){
-    const [{loadClient},{planCapabilities},{readPublication}]=await Promise.all([
-      import('./load-client.mjs'),import('../src/framework/capabilities.ts'),import('./publication.mjs')]);
+    const [{loadClient},{planCapabilities},{readPublication},{SiteRuntime},{checkModelAssets}]=await Promise.all([
+      import('./load-client.mjs'),import('../src/framework/capabilities.ts'),import('./publication.mjs'),import('../src/framework/runtime.ts'),import('./model-assets.mjs')]);
     const definition=await loadClient(id);
+    // Exporting a plain source object must not bypass semantic or asset validation on HMR.
+    const runtime=new SiteRuntime(definition);runtime.review(JSON.stringify(runtime.save(runtime.manifest.pages[0].id)));
+    await checkModelAssets(definition,root);
     if(definition.manifest.id!==id)throw new Error(`clients/${id}/app.ts: manifest.id must equal the folder name`);
     const publication=await readPublication(root,{title:definition.manifest.title,description:definition.manifest.description||'A DataPass client application.'});
     lastPlan=planCapabilities(definition);
