@@ -4,7 +4,7 @@ import {bricks,brickIds,fabricSources,SOURCE_STATUS} from '../clients/fabric-bri
 import {fabricScene} from '../clients/fabric-bricks/scene.ts';
 import {validateScene} from '../src/framework/scene.ts';
 import {validateEvidence,validateSources} from '../src/framework/evidence/model.ts';
-import {kits,kitScenes,getBOM,kitCost,stepOffsets} from '../clients/fabric-bricks/kits.ts';
+import {kits,kitScenes,getBOM,kitCost,stepOffsets,pieceIds,collectionScene} from '../clients/fabric-bricks/kits.ts';
 import {pose,validatePoseOffsets} from '../src/framework/scene.ts';
 import {loadClient} from '../scripts/load-client.mjs';
 import {SiteRuntime} from '../src/framework/runtime.ts';
@@ -19,6 +19,7 @@ test('fabric bricks fixture is explicit synthetic provenance with stable semanti
 });
 
 test('reference kits retain semantic ownership, bounded scenes and reconciled synthetic part costs',()=>{
+  assert.equal(kits.length,6);assert.ok(pieceIds.length<100);assert.equal(validateScene(collectionScene).entities.length,6);
   for(const kit of kits){
     const scene=validateScene(kitScenes[kit.id]),bom=getBOM(kit.id);
     assert.equal(bom.reduce((n,l)=>n+l.quantity,0),kit.parts.length);
@@ -27,6 +28,16 @@ test('reference kits retain semantic ownership, bounded scenes and reconciled sy
     assert.equal(new Set(scene.parts.map(p=>p.id)).size,kit.parts.length);
     assert.ok(scene.parts.every(p=>p.explode[0]===0&&p.explode[2]===0));
   }
+});
+test('individual piece identity belongs jointly to its kit and type; invalid restoration stays atomic',async()=>{
+  const runtime=new SiteRuntime(await loadClient('fabric-bricks'));
+  runtime.applyCue({'fabric-selection':'roof','fabric-piece':'roof-0-0','fabric-level':'detail','fabric-camera':'focus-a'});
+  const before=runtime.getSnapshot();
+  assert.throws(()=>runtime.set('fabric-kit','notebook'),/current kit/);assert.strictEqual(runtime.getSnapshot(),before);
+  assert.throws(()=>runtime.set('fabric-piece','water-0-0'),/current kit/);assert.strictEqual(runtime.getSnapshot(),before);
+  runtime.set('fabric-representation','3d');assert.equal(runtime.getSnapshot().values['fabric-piece'],'roof-0-0');
+  runtime.set('fabric-explode',1);assert.equal(runtime.getSnapshot().values['fabric-piece'],'roof-0-0');
+  assert.equal(Object.keys(runtime.getSnapshot().tasks).length,0);
 });
 
 test('kit progression and explosion are deterministic presentation offsets, with final assembly reversible',()=>{

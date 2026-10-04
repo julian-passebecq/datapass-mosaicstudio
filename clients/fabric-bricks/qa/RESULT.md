@@ -85,3 +85,13 @@ To target production, set `$env:FABRIC_URL='http://127.0.0.1:5180'` first. To re
 Captures: `gallery.png`, `lakehouse-assembled.png`, `lakehouse-exploded.png`, `lakehouse-isolated.png`, `lakehouse-mobile.png` under `captures/`.
 
 No merge, deployment, package publication, Mongo write or remote Git push was performed. Commits are local and recoverable on the existing client branch.
+
+## Follow-up: six objects, collection plan and individual pieces
+
+Starting checkpoint: `792ca63434fc62e039b7c5b31294c211a2a8b738`.
+
+Delivered Lakehouse, OneLake, Power BI, Warehouse, Pipeline and Notebook; optional interactive 3D collection plan; direct kit picking; per-component raycasting and keyboard selection; Types/Pieces inspector; selected-piece semantic ID and dimensions; zoom buttons, orbit/scroll, focus on the selected exploded component; reversible isolation and assembly; kit-specific six-step labels. Default gallery remains 2D and requests no 3D module. The models and costs remain synthetic/provisional.
+
+Latest checks: client check PASS; TypeScript PASS; production build PASS; dedicated semantic tests 6/6 PASS; production browser tests 4/4 PASS. Browser coverage includes all six detail scenes, actual collection raycast, exact individual selection retained between 2D/3D, focus on exploded roof height, zoom buttons, reset, keyboard, mobile and reduced motion. Actual screenshots inspected. Shared contracts PASS in the existing normalized temporary fixture. Full suite: 461 tests, 456 PASS, 5 FAIL, 0 skipped; same five pre-existing Windows symlink/CRLF failures documented above.
+
+Updated captures include `collection-3d.png` and `piece-selected.png`. The recorded MP4 now includes the six-object plan and individual Boardwalk piece selection/focus. App changes remain entirely client-owned plus the dedicated Fabric test file. Pre-existing `Synthetic/provional` spelling edit stays unstaged. No merge, push or deployment.

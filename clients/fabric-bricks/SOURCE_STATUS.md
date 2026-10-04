@@ -19,3 +19,9 @@ The supplied 25-second Brickworks video is a visual reference. Inspected moments
 The new Lakehouse (58 procedural components in 10 semantic groups), OneLake and Power BI models, build order, dimensions and estimated costs are SYNTHETIC / PROVISIONAL. They are authored visual approximations, not reproductions of a source-approved physical BOM. Gallery artwork is GENERATED / SYNTHETIC; see `assets/PROVENANCE.md` for the exact imagegen prompt.
 
 The initial four-brick fixture and its semantic tests are retained as the prior interaction checkpoint. The editorial experience uses additional stable semantic component groups owned by this client, and one shared selection field across its 2D/3D views.
+
+## Six-kit collection and individual pieces — 2026-10-04
+
+Warehouse, Pipeline and Notebook are additional authored SYNTHETIC / PROVISIONAL concepts. Their shapes, colors, sequence, component names, dimensions and costs are illustrative. No approved model or physical assembly specification is implied.
+
+The collection uses the same shared SceneViewport, with one kit entity per object. Detail scenes use one semantic entity per component. Canonical identity is the pair `fabric-kit` + `fabric-piece`; `fabric-selection` retains its separate component-type facet. Both representations use the same runtime values. IDs can recur between kits where the same named component concept is reused; they are unique within each kit. Individual identity, type membership and kit membership are jointly validated before a state update. No generated raster assets were added for these three kits: gallery illustrations and 3D parts derive from the same authored geometry.

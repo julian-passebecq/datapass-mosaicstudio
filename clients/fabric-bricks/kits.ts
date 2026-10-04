@@ -1,6 +1,6 @@
 import type {SceneSpec,ScenePart,Vec3} from '../../src/framework/scene.ts';
 
-export type KitId='lakehouse'|'onelake'|'powerbi';
+export type KitId='lakehouse'|'onelake'|'powerbi'|'warehouse'|'pipeline'|'notebook';
 export type BrickPart={id:string;lot:string;name:string;color:string;size:Vec3;position:Vec3;step:number;studs?:[number,number];shape?:'box'|'cylinder'|'leaf'};
 export const lots=[
   {id:'display-base',name:'Display plate',code:'8 × 10',color:'#17191a',price:1.12},
@@ -15,6 +15,7 @@ export const lots=[
   {id:'flowers',name:'Flower stud',code:'1 × 1',color:'#f5f1e2',price:.04},
 ] as const;
 export const buildSteps=['Foundation','Water & landscape','Ground floor','Walls & windows','Roof & terrace','Trees & details'];
+export function getBuildSteps(id:string){return ({onelake:['Foundation','Lake & banks','Shared store','Lake tower','Covers','Landscape details'],powerbi:['Foundation','First column','Second column','Third column','Review structure','Front details'],warehouse:['Foundation','Floor & loading dock','Warehouse walls','Storage crates','Roof panels','Accent tile'],pipeline:['Foundation','Source station','Transform station','Destination station','Connections & caps','Status indicators'],notebook:['Foundation','Covers & spine','Open pages','First code lines','Second code lines','Final code lines']} as Record<string,string[]>)[id]??buildSteps;}
 const make=(id:string,lot:string,size:Vec3,position:Vec3,step:number,studs?:[number,number],color?:string,shape?:BrickPart['shape']):BrickPart=>({id,lot,name:lots.find(l=>l.id===lot)!.name,color:color??lots.find(l=>l.id===lot)!.color,size,position,step,studs,shape});
 const lakehouse:BrickPart[]=[
   make('base','display-base',[8,.32,7],[0,.16,0],1),
@@ -51,21 +52,43 @@ const onelake:BrickPart[]=[...lakehouse.filter(p=>['display-base','landscape','w
 const powerbi:BrickPart[]=[make('bi-base','display-base',[5,.3,3.6],[0,.15,0],1),
   ...[1.2,2,3.3].map((h,i)=>make(`bi-bar-${i}`,'accent',[.9,h,1.3],[-1.1+i*1.1,h/2+.3,0],i+2,[1,2],['#f6d454','#efc431','#e8b519'][i])),
   ...[-1,0,1].map((x,i)=>make(`bi-stud-${i}`,'flowers',[.2,.2,.12],[x,.39,1.27],6,undefined,'#efc431','cylinder'))];
+const warehouse:BrickPart[]=[make('base','display-base',[8,.32,7],[0,.16,0],1),make('floor','walls',[6,.18,4],[0,.55,-.5],2,[8,5]),
+  ...[0,1,2].flatMap(y=>[0,1,2,3].map(x=>make(`wall-back-${y}-${x}`,'walls',[1.45,.6,.5],[-2.25+x*1.5,.95+y*.62,-2.3],3,[2,1]))),
+  ...[0,1,2].flatMap(y=>[0,1].map(z=>make(`wall-side-${y}-${z}`,'walls',[.5,.6,1.8],[-2.9,.95+y*.62,-1.1+z*1.85],3,[1,2]))),
+  ...[0,1,2].flatMap(x=>[0,1].map(z=>make(`roof-${x}-${z}`,'roof',[2.05,.25,2.1],[-2.05+x*2.08,2.82,-1.35+z*2.13],5))),
+  ...[0,1,2].map(i=>make(`crate-${i}`,'boardwalk',[.9,.8,.9],[-1.6+i*1.4,1.02,.4],4,[2,2])),
+  make('roof-cyan','accent',[1.8,.1,1.5],[1.8,3.02,.6],6,undefined,'#9062d5'),make('walk-horizontal','boardwalk',[5.6,.2,.7],[0,.54,2.1],2)];
+const pipeline:BrickPart[]=[make('base','display-base',[8,.32,5],[0,.16,0],1),
+  ...[0,1,2].flatMap(i=>[make(`station-${i}`,'walls',[1.65,.7,1.8],[-2.5+i*2.5,.78,0],i+2,[2,2]),make(`station-top-${i}`,'accent',[1.45,.3,1.6],[-2.5+i*2.5,1.34,0],i+3,[2,2],['#37b9d2','#976de2','#f1b344'][i])]),
+  ...[0,1].map(i=>make(`connector-${i}`,'water',[.85,.22,.42],[-1.25+i*2.5,.84,0],5)),
+  ...[0,1,2].map(i=>make(`flower-${i}`,'flowers',[.19,.19,.14],[-2.5+i*2.5,.43,1.75],6,undefined,'#22ba87','cylinder'))];
+const notebook:BrickPart[]=[make('base','display-base',[7,.32,5],[0,.16,0],1),make('book-spine','accent',[.35,.35,3.6],[0,.64,0],2,undefined,'#9b69d6'),
+  ...[-1,1].flatMap((side,i)=>[make(`book-cover-${i}`,'accent',[2.65,.18,3.6],[side*1.5,.51,0],2,undefined,'#9062d5'),make(`book-page-${i}`,'walls',[2.5,.24,3.3],[side*1.48,.75,0],3),
+    ...[0,1,2].map(n=>make(`code-${i}-${n}`,'water',[1.45-n*.3,.08,.2],[side*1.48,.91,-.85+n*.65],n+4,undefined,i===0?'#646b73':'#22b8b2'))])];
 export const kits=[
   {id:'lakehouse' as KitId,title:'Lakehouse',category:'Data engineering',subtitle:'A little architecture. A whole world of data.',description:'A home for structured and unstructured data, built one brick at a time.',parts:lakehouse,number:'01'},
   {id:'onelake' as KitId,title:'OneLake',category:'Data foundation',subtitle:'One place. Endless possibilities.',description:'A shared lake for every team. Explore a small, connected landscape of data.',parts:onelake,number:'02'},
   {id:'powerbi' as KitId,title:'Power BI',category:'Business intelligence',subtitle:'Make the bigger picture tangible.',description:'Three bright columns turn a familiar report into a playful little sculpture.',parts:powerbi,number:'03'},
+  {id:'warehouse' as KitId,title:'Warehouse',category:'Data warehousing',subtitle:'Organize the essentials.',description:'A compact warehouse with stacked walls, removable roof panels and individual storage crates.',parts:warehouse,number:'04'},
+  {id:'pipeline' as KitId,title:'Pipeline',category:'Data integration',subtitle:'Connect the pieces.',description:'Three connected stations make a small, colorful route from source to destination.',parts:pipeline,number:'05'},
+  {id:'notebook' as KitId,title:'Notebook',category:'Data science',subtitle:'Open a new chapter.',description:'An open notebook built from covers, pages and tiny lines of code. Select each layer to look inside.',parts:notebook,number:'06'},
 ];
+export const pieceIds=[...new Set(kits.flatMap(k=>k.parts.map(p=>p.id)))];
 export const getKit=(id:string)=>kits.find(k=>k.id===id)??kits[0];
-export function getBOM(id:string){const kit=getKit(id);return lots.map(l=>({...l,quantity:kit.parts.filter(p=>p.lot===l.id).length})).filter(l=>l.quantity>0);}
+export function getBOM(id:string){const kit=getKit(id);return lots.map(l=>({...l,color:kit.parts.find(p=>p.lot===l.id)?.color??l.color,quantity:kit.parts.filter(p=>p.lot===l.id).length})).filter(l=>l.quantity>0);}
 export function kitCost(id:string){return getBOM(id).reduce((s,l)=>s+l.price*l.quantity,0);}
 export function makeKitScene(id:string):SceneSpec{
-  const kit=getKit(id),bom=getBOM(id);
-  const parts:ScenePart[]=kit.parts.map(p=>({id:p.id,parent:null,entity:p.lot,shape:'group',size:p.size,position:p.position,rotation:[0,0,0],explode:[0,(p.step-1)*.72,0],color:p.color}));
+  const kit=getKit(id);
+  const parts:ScenePart[]=kit.parts.map(p=>({id:p.id,parent:null,entity:p.id,shape:'group',size:p.size,position:p.position,rotation:[0,0,0],explode:[0,(p.step-1)*.72,0],color:p.color}));
   return {format:'datapass.scene3d',version:1,title:kit.title+' synthetic brick kit',note:'Synthetic procedural geometry only. Reference-inspired visual study; dimensions, parts and costs are illustrative.',parts,
-    entities:bom.map(l=>({id:l.id,label:l.name,description:'Synthetic '+l.code+' '+l.name})),
-    cameras:[{id:'overview',label:'Complete kit',position:[11.3,9.2,13.9],target:[0,1.05,0]},{id:'exploded',label:'Layered kit',position:[13,12,16],target:[0,2.75,0]},...bom.map(l=>{const ps=kit.parts.filter(p=>p.lot===l.id);const t=ps.reduce((a,p)=>a.map((v,i)=>v+p.position[i]/ps.length) as Vec3,[0,0,0] as Vec3);return {id:l.id,label:l.name,position:[t[0]+8,t[1]+6,t[2]+10] as Vec3,target:t};})]};
+    entities:kit.parts.map(p=>({id:p.id,label:p.name+' · '+p.id,description:'Synthetic component in '+p.lot})),
+    cameras:[{id:'overview',label:'Complete kit',position:[11.3,9.2,13.9],target:[0,1.05,0]},{id:'exploded',label:'Layered kit',position:[13,12,16],target:[0,2.75,0]},
+      {id:'near',label:'Zoom in',position:[7,6,8.5],target:[0,1.5,0]}, {id:'far',label:'Zoom out',position:[17,14,21],target:[0,2,0]},
+      {id:'focus-a',label:'Selected piece',position:[6,5,8],target:[0,1,0]}, {id:'focus-b',label:'Selected piece',position:[6,5,8],target:[0,1,0]}]};
 }
+export const collectionScene:SceneSpec={format:'datapass.scene3d',version:1,title:'Six synthetic Fabric kits',note:'Synthetic procedural geometry only.',
+  parts:kits.map((k,i)=>({id:k.id,parent:null,entity:k.id,shape:'group',size:[8,5,7],position:[(i%3-1)*11,0,(Math.floor(i/3)-.5)*10],rotation:[0,0,0],explode:[0,0,0],color:'#ffffff'})),
+  entities:kits.map(k=>({id:k.id,label:k.title,description:k.description})),cameras:[{id:'overview',label:'Collection plan',position:[24,28,34],target:[0,0,0]}]};
 export const kitScenes=Object.fromEntries(kits.map(k=>[k.id,makeKitScene(k.id)])) as Record<KitId,SceneSpec>;
 /** Build progression hides future pieces below the stage; the shared renderer interpolates these offsets. */
 export function stepOffsets(id:string,step:number){return Object.fromEntries(getKit(id).parts.filter(p=>p.step>step).map(p=>[p.id,{position:[0,-80,0] as Vec3}]));}

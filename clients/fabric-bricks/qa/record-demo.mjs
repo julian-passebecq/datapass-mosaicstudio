@@ -6,9 +6,11 @@ const context=await browser.newContext({viewport:{width:1280,height:800},recordV
 const page=await context.newPage(),video=page.video();
 await page.goto((process.env.FABRIC_URL??'http://127.0.0.1:5178')+'/?app=fabric-bricks');
 await page.getByRole('button',{name:'Open Lakehouse',exact:true}).waitFor();await page.waitForTimeout(1500);
+await page.getByRole('button',{name:'3D collection',exact:true}).click();await page.locator('canvas').waitFor();await page.waitForTimeout(2200);
+await page.getByRole('button',{name:'Gallery',exact:true}).click();
 await page.getByRole('button',{name:'Open Lakehouse',exact:true}).click();await page.locator('canvas').waitFor();await page.waitForTimeout(2400);
 await page.locator('.fb-explode-toggle').click();await page.waitForTimeout(1800);
-await page.locator('.fb-part-row').filter({hasText:'Boardwalk tile'}).click();await page.locator('.fb-inspector-tools>button').click();await page.waitForTimeout(2200);
+await page.getByRole('button',{name:'Pieces (58)',exact:true}).click();await page.getByRole('button',{name:'Select piece walk-horizontal',exact:true}).click();await page.locator('.fb-inspector-tools>button').click();await page.getByRole('button',{name:'Focus selected part',exact:true}).click();await page.waitForTimeout(2200);
 await page.getByRole('button',{name:'Reset model view',exact:true}).click();await page.getByRole('button',{name:'Build step 1: Foundation',exact:true}).click();await page.waitForTimeout(700);
 for(let n=2;n<=6;n++){await page.locator('.fb-step-track button').nth(n-1).click();await page.waitForTimeout(650);}
 await page.getByRole('button',{name:'Back to all kits',exact:true}).click();await page.waitForTimeout(1200);
