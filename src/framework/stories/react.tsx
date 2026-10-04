@@ -18,9 +18,20 @@ export function StoryScope({ids,children}:{ids:string[];children:ReactNode}){
   useEffect(()=>{
     const cleanup=[...controllers.values()].map(controller=>{
       const {player,story,resource}=controller;
-      let last=player.getState().index;
-      const off=player.subscribe(()=>{const index=player.getState().index;if(index===last)return;last=index;if(controller.synchronizing)return;runtime.applyCue({...resource.cues[story.scenes[index].id],[resource.indexField]:index});});
-      return ()=>{off();player.pause();};
+      let last=player.getState().index,applyingCue=false,previous=runtime.getSnapshot();
+      const fields=new Set(Object.values(resource.cues).flatMap(cue=>Object.keys(cue)));
+      const off=player.subscribe(()=>{
+        const index=player.getState().index;if(index===last)return;last=index;if(controller.synchronizing)return;
+        applyingCue=true;
+        try{runtime.applyCue({...resource.cues[story.scenes[index].id],[resource.indexField]:index});}finally{applyingCue=false;}
+      });
+      // A manual change to a cue-owned field yields to exploration. The original player
+      // remains the only clock; its own atomic cue must never pause itself.
+      const offView=runtime.subscribe(()=>{
+        const next=runtime.getSnapshot(),changed=[...fields].some(field=>next.values[field]!==previous.values[field]);
+        previous=next;if(changed&&!applyingCue)player.pause();
+      });
+      return ()=>{off();offView();player.pause();};
     });
     const hidden=()=>{if(document.hidden)controllers.forEach(c=>c.player.pause());};
     document.addEventListener('visibilitychange',hidden);

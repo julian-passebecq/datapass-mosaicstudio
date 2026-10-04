@@ -69,13 +69,15 @@ export async function captureBuiltClient(options){
     await page.getByLabel('Restore saved site inputs',{exact:true}).setInputFiles({name:'capture-state.json',mimeType:'application/json',buffer:Buffer.from(stateText)});
     await page.getByRole('button',{name:'Apply saved inputs',exact:true}).click();
     await page.evaluate(()=>document.fonts.ready);
-    await page.waitForFunction(()=>!document.querySelector('.site-loading,.model-loading')&&
+    await page.waitForFunction(()=>!!document.querySelector('[data-capture-state=error]')||
+      [...document.querySelectorAll('.site-render-status')].some(node=>node.textContent==='3D unavailable')||
+      !document.querySelector('.site-loading,.model-loading')&&
       [...document.querySelectorAll('[data-capture-state]')].every(node=>node.getAttribute('data-capture-state')==='ready')&&
       [...document.querySelectorAll('[data-animating]')].every(node=>node.getAttribute('data-animating')!=='true')&&
       [...document.querySelectorAll('.site-render-status')].every(node=>node.textContent==='3D ready')&&
       [...document.images].every(image=>image.complete),{},{timeout:20000});
     await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
-    if(await page.locator('.site-notice.error').count()||await page.getByRole('heading',{name:'Site component unavailable',exact:true}).count())throw new Error('The client has a visible failure; no successful capture receipt will be emitted.');
+    if(await page.locator('.site-notice.error,[data-capture-state=error]').count()||await page.locator('.site-render-status').filter({hasText:'3D unavailable'}).count()||await page.getByRole('heading',{name:'Site component unavailable',exact:true}).count())throw new Error('The client has a visible failure; no successful capture receipt will be emitted.');
     const brokenImages=await page.evaluate(()=>[...document.images].filter(image=>image.src&&image.naturalWidth===0).map(image=>image.src));
     if(brokenImages.length||errors.length||external.length)throw new Error('Capture did not settle cleanly: '+JSON.stringify({brokenImages,errors,external}));
     // Verify the ACTUAL UI state, not only the requested state. Export goes through the normal host port.
@@ -85,6 +87,7 @@ export async function captureBuiltClient(options){
     if(!isDeepStrictEqual(JSON.parse(JSON.stringify(actual)),JSON.parse(JSON.stringify(state))))throw new Error('Rendered client state differs from the requested saved state');
     await page.locator('.site-session summary').click();await page.locator('.site-page-heading h1').focus();
     const screenshot=await page.screenshot({path:path.join(out,'capture.png'),animations:'disabled',caret:'hide',fullPage:false});
+    if(errors.length||external.length)throw new Error('Capture produced a late browser or external-request failure: '+JSON.stringify({errors,external}));
     const metadata={format:'datapass.visual-capture',version:1,status:'captured',clientId:options.id,appVersion:runtime.manifest.version,page:state.page,
       source,build:{...build,files,sha256:sha256(JSON.stringify(files))},state:{file:'state.json',sha256:sha256(stateText),roundTripVerified:true},
       viewport:{width:options.width,height:options.height,deviceScaleFactor:1},browser:browser.version(),node:process.version,
