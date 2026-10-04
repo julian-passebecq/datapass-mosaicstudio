@@ -89,6 +89,31 @@ is not established. The changed-file count does not establish a root cause.
 Targeted parser/CSS regressions passed; local core tests passed 448/448 and the
 eight generated compositions passed strict typing and original visual contracts.
 These are pre-commit local checks, not final exact-SHA browser qualification.
-Keep `LAST_QUALIFIED_SHA=a6c42abaf111cd317d06501211f70bcc116875f8` until the
-complete web and engine gates pass for the resulting exact source. Mongo was
+At this pre-qualification checkpoint,
+`LAST_QUALIFIED_SHA=a6c42abaf111cd317d06501211f70bcc116875f8` remains unchanged
+until complete web and engine gates pass for the resulting exact source. Mongo was
 not modified. See the final qualification receipt for the eventual disposition.
+
+### Engine repair verification and visual evidence correction
+
+Repair source `b6f78e7f961592b1d708152ade2408d0400c92b2` passed all 32 engine
+checks in run `37181789415`, job `111375663299`, using Node 22.16.0 and Chrome
+154.0.8037.57. The clean source tree stayed unchanged; eight generated fixture
+compositions and their inventory were preserved. Artifact `11296035008` was
+downloaded and matched SHA-256
+`cbbedbce8b2205b3c4cfd43d46001c4fe3be10ecc54eb90f09e9f523c5ae86db`.
+This engine-only receipt does not stand in for the complete web gate.
+
+**VISUAL EVIDENCE GAP:** reviewing the actual model capture showed that its
+1,000px viewport framed the guide and semantic plan, leaving the loaded GLB
+surface below the image. The full-page cross-view screenshot already showed the
+model correctly. The capture test now explicitly requests the supported 2,160px
+viewport and asserts that exact height; the capture engine and limits are
+unchanged. A separate reduced-motion model/guide screenshot is also preserved.
+Requalify this final test/documentation checkpoint at its own SHA; do not relabel
+the earlier screenshot or infer its pixels from a successful GLB request.
+
+The stable acceptance/limits map is `ENGINE_QUALIFICATION.md`. The final draft
+PR #10 and delivery receipt carry the exact final source, full gate results,
+reviewed screenshots and artifact hashes, rather than a self-referential SHA
+inside a committed document.
