@@ -37,6 +37,15 @@ another authoritative selection store. Local drag positions are presentation
 state, not business results. General graph layout, streaming and large-density
 performance remain optional client-specific work, not implied by this helper.
 
+A mount-time `fitView` does not keep nodes framed after a container resize. Choose
+that presentation policy explicitly: the synthetic replay/graph consumer uses
+`useElementSize`, the existing React Flow instance's finite `fitView({duration:0})`,
+and a busy/ready capture marker until the requested fit settles. It refits on size
+changes, not selection or sample changes, and ignores late completion on unmount.
+This is client-owned viewport policy, not another graph engine or global clock.
+Test node bounds and actual node selection after resize; page overflow alone can
+pass while every node is clipped outside the graph's own canvas.
+
 ModelAssets/Scene3D retain their bounded own field domains. A common selection
 field works when the views share that semantic universe. For a wider ecosystem,
 an explicit source-owned projection can show an unavailable/no-highlight state;

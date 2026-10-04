@@ -77,12 +77,26 @@ import {ReplayGraph} from './ReplayGraph.tsx';
 const definition:AppDefinition={...base,manifest:{...base.manifest,fields:[...base.manifest.fields,{id:'engine-graph',label:'Extra replay representation',role:'view',type:'toggle',default:true}],pages:base.manifest.pages.map((page,index)=>index?page:{...page,sections:[{id:'engine-consumer',columns:1,blocks:[{id:'replay-graph',type:'custom',resource:'replayGraph'}]},...page.sections]})},components:{...base.components,replayGraph:ReplayGraph},customCapabilities:{...base.customCapabilities,replayGraph:['replay','architecture']}};
 export default defineApp(definition);
 `);
-  await writeFile(root+'/ReplayGraph.tsx',`import {ReactFlow,type Node} from '@xyflow/react';
+  await writeFile(root+'/ReplayGraph.tsx',`import {useEffect,useState} from 'react';
+import {ReactFlow,type Node,type Edge,type ReactFlowInstance} from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import {useRuntime,useSiteState} from '../../src/framework/ui';
-import {useSelection} from '../../src/framework/visual';
+import {useSelection,useElementSize} from '../../src/framework/visual';
 import {useReplayTime} from '../../src/framework/replay/react';
 import {ContextInspector} from '../../src/framework/foundation/ContextInspector';
+function ReplayGraphSurface({nodes,edges,onSelect}:{nodes:Node[];edges:Edge[];onSelect(id:string):void}){
+  const size=useElementSize(),[flow,setFlow]=useState<ReactFlowInstance|null>(null),[fitted,setFitted]=useState('');
+  const target=size.width+'x'+size.height;
+  // fitView's mount prop is not a resize policy. Keep the native viewport owner;
+  // request a finite, non-animated fit only when this owned surface changes size.
+  useEffect(()=>{if(!flow||!size.ready)return;let alive=true;
+    void flow.fitView({maxZoom:1,padding:0.2,duration:0}).then(ok=>{if(alive&&ok)setFitted(target);});
+    return()=>{alive=false;};
+  },[flow,size.ready,target]);
+  return <div ref={size.ref} data-testid="replay-graph-surface" data-capture-state={size.ready&&fitted===target?'ready':'busy'} style={{height:260}}>
+    <ReactFlow nodes={nodes} edges={edges} onInit={setFlow} nodesDraggable={false} nodesConnectable={false} onNodeClick={(_,node)=>onSelect(node.id)} fitView fitViewOptions={{maxZoom:1}} zoomOnScroll={false} preventScrolling={false}/>
+  </div>;
+}
 export function ReplayGraph(){
   const runtime=useRuntime(),snapshot=useSiteState(),time=useReplayTime('recording'),{selected,select}=useSelection('replay-selection',time.controller.pause);
   const visible=Boolean(snapshot.values['engine-graph']),value=time.sample(selected);
@@ -90,7 +104,7 @@ export function ReplayGraph(){
   return <section data-testid="replay-consumer" data-frame={time.frame} data-time={time.timeSeconds} data-selection={selected} data-value={value??'missing'} data-playing={String(time.playing)} data-capture-state="ready">
     <h2>Client-owned graph and readout</h2><p>Supplied sample {time.frame+1}, {time.timeSeconds} seconds. {value===null?'Unavailable':value+' '+time.spec.channels.find(channel=>channel.id===time.channel)!.unit}. No interpolation.</p>
     <button type="button" onClick={()=>runtime.applyCue({'engine-graph':!visible})}>{visible?'Use readout only':'Show controlled graph'}</button>
-    {visible&&<div style={{height:260}}><ReactFlow nodes={nodes} edges={[{id:'a-b',source:time.spec.entities[0].id,target:time.spec.entities[1].id}]} nodesDraggable={false} nodesConnectable={false} onNodeClick={(_,node)=>select(node.id)} fitView fitViewOptions={{maxZoom:1}} zoomOnScroll={false} preventScrolling={false}/></div>}
+    {visible&&<ReplayGraphSurface nodes={nodes} edges={[{id:'a-b',source:time.spec.entities[0].id,target:time.spec.entities[1].id}]} onSelect={select}/>}
     <div role="group" aria-label="Replay graph entities">{time.spec.entities.map(entity=><button type="button" key={entity.id} aria-pressed={selected===entity.id} onClick={()=>select(entity.id)}>{'Graph select '+entity.label}</button>)}</div>
     <ContextInspector model={{id:selected,kind:'Supplied synthetic sample',summary:'A graph projection of the existing sampled replay.',title:time.spec.entities.find(entity=>entity.id===selected)!.label,facts:[{label:'Sample index',value:String(time.frame)},{label:'Time',value:String(time.timeSeconds)+' seconds'},{label:'Value',value:value===null?'Unavailable':String(value)}],references:[],related:time.spec.entities.filter(entity=>entity.id!==selected).map(entity=>({id:entity.id,label:entity.label})),note:'The graph consumes the original replay controller.'}} onRelated={select}/>
   </section>;
