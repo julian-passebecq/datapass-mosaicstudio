@@ -18,7 +18,7 @@ test('motion is a capability on a content starter, not another forced app family
 test('ambiguous addon flags fail before creating client files', async() => {
   const root = await mkdtemp(path.join(tmpdir(), 'studio-motion-bad-'));
   try {
-    await assert.rejects(() => scaffoldClient({root, id: 'bad', motion: true, custom: true}));
+    await assert.rejects(() => scaffoldClient({root, id: 'bad', motion: true, custom: 'invalid'}));
     await assert.rejects(() => scaffoldClient({root, id: 'bad', motion: true, family: 'spatial'}));
     assert.deepEqual(await readdir(root), []);
   } finally {await rm(root, {recursive: true, force: true});}

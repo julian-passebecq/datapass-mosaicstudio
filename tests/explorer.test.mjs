@@ -58,7 +58,7 @@ test('fresh knowledge and spatial scaffolds are isolated client files',async()=>
 });
 test('bad template options fail before leaving partially scaffolded clients',async()=>{
   const {scaffoldClient}=await import('../scripts/scaffold-client.mjs');const {mkdtemp,rm,readdir}=await import('node:fs/promises');const {tmpdir}=await import('node:os');const path=await import('node:path');
-  const root=await mkdtemp(path.join(tmpdir(),'studio-bad-template-'));try{await assert.rejects(()=>scaffoldClient({root,id:'test',template:'unknown'}));await assert.rejects(()=>scaffoldClient({root,id:'test',template:'spatial',custom:true}));assert.deepEqual(await readdir(root),[]);}finally{await rm(root,{recursive:true,force:true});}
+  const root=await mkdtemp(path.join(tmpdir(),'studio-bad-template-'));try{await assert.rejects(()=>scaffoldClient({root,id:'test',template:'unknown'}));await assert.rejects(()=>scaffoldClient({root,id:'test',template:'spatial',custom:'invalid'}));assert.deepEqual(await readdir(root),[]);}finally{await rm(root,{recursive:true,force:true});}
 });
 
 test('explanation pointer references cannot coerce arrays into valid item IDs',()=>{const d=structuredClone(stableOrder);d.spec.frames[0].pointerItemId=['a'];assert.throws(()=>validateExplanation(d),/pointer item/);});

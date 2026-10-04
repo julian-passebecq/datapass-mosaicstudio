@@ -22,3 +22,10 @@ For a pedagogical process, add the optional motion capability with `--family con
 For explicit calculation history and multiple result views, use `--family analytics --foundation`, then read `docs/recipes/runs.md`. This does not add a family or an execution engine. For the compact portfolio, prefer content and `docs/recipes/public-site.md`; do not load runs or 3D without a requirement.
 
 For an approved static product/part model, use `npm run client:new -- product-demo --family spatial --model` and then read `docs/recipes/models.md`. This is an optional bounded capability, not a new family and not a requirement for the compact portfolio.
+
+## Selected local authoring
+
+Use `npm run client:dev -- <id>` for the validated selected-client Vite URL and HMR.
+Use `--custom` with any family for a client-owned SVG/Canvas/selection example.
+Read docs/ENGINE_AUTHORING.md for host lifecycle and target-state capture; read
+docs/recipes/custom-visuals.md only when authoring custom components.

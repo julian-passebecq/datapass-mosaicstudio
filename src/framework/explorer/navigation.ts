@@ -63,10 +63,7 @@ export function explorerCamera(spec: ExplorerSpec, state: ExplorerState): string
 export function journeyStops(spec: ExplorerSpec, group = 'all'): string[] {
   return ['overview', ...spec.journey.filter(id => group === 'all' || spec.items.find(i => i.id === id)!.group === group)];
 }
-export function chapterAt(progress: number, count: number): number {
-  if (!Number.isFinite(progress) || !Number.isInteger(count) || count < 1) throw new Error('Invalid scroll chapter input');
-  return Math.min(count - 1, Math.max(0, Math.round(Math.max(0, Math.min(1, progress)) * (count - 1))));
-}
+export {chapterAt} from '../scroll-model.ts';
 const normalized = (value: string) => value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 export type ExplorerHit = {kind:'item'|'document'; id:string; item:string; label:string; detail:string; score:number};
 /** Local bounded search. No regex from users, index service, embedding model or remote fetch. */
