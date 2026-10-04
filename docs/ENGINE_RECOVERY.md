@@ -43,3 +43,52 @@ Its artifact is temporary, not a claim of permanent archival storage.
 
 Keep LATEST_WRITTEN_SHA separate from LAST_QUALIFIED_SHA. A new source must pass its
 own complete qualification. Do not merge or deploy from a partial receipt.
+
+## Resume diagnosis (2026-10-04, PR #10)
+
+Recovered the four existing commits through
+`dfb592109efdf94d2f46c4105a5cbc839258d4e4`, tree
+`0a2c6deb267a0f0e264cc85110930c970ca12605`, from the CI Git bundle.
+The feature branch and `backup/studio2-engine-consolidation-recovery-20261004`
+agreed on that exact source. No previous local checkout was available; no
+local-only implementation is claimed recovered. Nothing was reconstructed from
+chat prose and the preserved implementation was not restarted.
+
+The supplied claim that this SHA had no workflow runs is superseded by live
+GitHub evidence: web run `37179770201` succeeded, while engine authoring run
+`37179770219` / job `111369791775` failed. The failed engine artifact recorded
+20 passing checks and two failures; later checks in those failed scopes did not
+run. A successful web gate alone does not qualify this engine increment.
+
+Verified original artifact bytes:
+
+- Web `11294927834`:
+  `b5396f05c741417d366851169214f3dc19a2ecc60a6269612028ae44b7908452`.
+- Engine `11294477937`:
+  `bb1e590f8f91ddad31c63d236422a20dab37f8f617a23f127aa43c33c3f9d021`.
+
+**TEST FAILURE / validation gap:** the generated model/custom story specified
+800 ms, below the pinned original StoryPlayer schema's 2,500 ms minimum. Its
+render error prevented the plan and deterministic model capture from mounting.
+The original parser/player reproduces this failure in `engine-story.test.mjs`.
+Use a legal fixture interval; retain the upstream constraint. The manual-pause
+browser assertion must wait longer than a whole legal interval, not its previous
+1,100 ms. Generated engine compositions now also run through the existing
+original-engine contract gate before browser work. Both Node validators resolve
+client CSS imports without executing styles, and still reject missing CSS.
+
+**ENVIRONMENT FAILURE:** local Git DNS was unavailable. The verified offline kit
+restored only dependencies and pinned upstream sources; its dependency locks
+match this source. Local Chromium blocks loopback navigation with
+`ERR_BLOCKED_BY_ADMINISTRATOR`; no browser policy was bypassed and no application
+assertion was weakened. Run full browser qualification in GitHub Actions.
+
+**SESSION FAILURE / UNKNOWN:** the previous conversation stopped, but its cause
+is not established. The changed-file count does not establish a root cause.
+
+Targeted parser/CSS regressions passed; local core tests passed 448/448 and the
+eight generated compositions passed strict typing and original visual contracts.
+These are pre-commit local checks, not final exact-SHA browser qualification.
+Keep `LAST_QUALIFIED_SHA=a6c42abaf111cd317d06501211f70bcc116875f8` until the
+complete web and engine gates pass for the resulting exact source. Mongo was
+not modified. See the final qualification receipt for the eventual disposition.

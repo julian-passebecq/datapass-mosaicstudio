@@ -67,6 +67,7 @@ try{
     for(const name of ['model','replay'])await loadClient(id(name));
   });
   await step('strict typecheck includes the real generated custom consumers',()=>command(['node_modules/typescript/bin/tsc','--noEmit'],'generated-typecheck'));
+  await step('generated compositions satisfy the original visual engine contracts',()=>command(['scripts/check-visuals.mjs'],'generated-visual-contracts'));
   if(!sourceOnly){
     browser=await chromium.launch({...(process.env.CI_BROWSER_PATH?{executablePath:process.env.CI_BROWSER_PATH}:{}),args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});report.browser=browser.version();
     await testDev({step,expect,id,snapshot,output,report,startDev,eventually,pageContext});

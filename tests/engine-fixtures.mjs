@@ -1,6 +1,9 @@
 /** Qualification-only client compositions. Never part of the public reference registry. */
 import {readFile,writeFile,rename} from 'node:fs/promises';
 
+// Keep synthetic stories inside the pinned VizForge schema; never relax its limits.
+export const engineStoryIntervalMs=2500;
+
 export async function addD3Geometry(id){
   const file=`clients/${id}/ClientNote.tsx`,source=await readFile(file,'utf8');
   await writeFile(file,"import {scaleLinear} from 'd3';\n"+source.replace("const objects=[{id:'alpha',label:'Alpha',x:180},{id:'beta',label:'Beta',x:420}];","const x=scaleLinear().domain([0,1]).range([180,420]);\nconst objects=[{id:'alpha',label:'Alpha',x:x(0)},{id:'beta',label:'Beta',x:x(1)}];"));
@@ -21,7 +24,7 @@ export async function addModelStoryConsumer(id){
 import {defineApp,type AppDefinition} from '../../src/framework/authoring.ts';
 import type {StoryResource} from '../../src/framework/types.ts';
 import {ModelPlan,Witness} from './ModelPlan.tsx';
-const story:StoryResource={indexField:'engine-step',spec:{id:'engine-story',version:'1.0',title:'Shared representation story',description:'Synthetic qualification steps, not a physical simulation.',intervalMs:800,
+const story:StoryResource={indexField:'engine-step',spec:{id:'engine-story',version:'1.0',title:'Shared representation story',description:'Synthetic qualification steps, not a physical simulation.',intervalMs:${engineStoryIntervalMs},
   visuals:[{id:'parts',version:'1.0',type:'ranking',title:'Illustrative parts',subtitle:'Synthetic labels',takeaway:'One semantic identity across representations.',source:'Qualification fixture',note:'No measured values.',accessibility:{summary:'Two illustrative parts'},data:[{id:'plate',label:'Plate',time:0,value:1},{id:'module',label:'Module',time:0,value:2}],encodings:{id:'id',label:'label',time:'time',value:'value'},topN:2}],
   scenes:[{id:'whole',visualId:'parts',title:'Whole assembly',caption:'Inspect first without loading 3D.'},{id:'plate',visualId:'parts',title:'Plate concept',caption:'A shared semantic ID, not an engineering claim.'},{id:'module',visualId:'parts',title:'Conversion concept',caption:'View changes do not run the task.'}]},
   cues:{whole:{'model-selection':'none','model-camera':'overview','model-mode':'assembled'},plate:{'model-selection':'plate','model-camera':'plate','model-mode':'assembled'},module:{'model-selection':'module','model-camera':'side','model-mode':'exploded'}}};
