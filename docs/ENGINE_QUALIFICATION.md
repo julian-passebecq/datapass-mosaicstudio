@@ -36,7 +36,7 @@ See `ENGINE_AUTHORING.md` for lifecycle, saved-state capture and diagnostics.
 | Tier | Engine surface | What the evidence establishes / boundary |
 | --- | --- | --- |
 | A | Content, analytics, knowledge/graph, Motion, bounded spatial/ModelAssets, replay, context and evidence | Existing reference/client gates remain mandatory. Optional engines are still selected by actual capabilities. No domain client or production publication is implied. |
-| A | Selected authoring, focused context and additive scaffolds | Eight generated family/addon compositions, typechecking, original visual contracts, dev/HMR/capability restart/invalid-source recovery and owned-process shutdown. |
+| A | Selected authoring, focused context and additive scaffolds | Eight generated family/addon compositions, typechecking, original visual contracts, dev/HMR/capability restart/invalid-source recovery, immediate-edit watch readiness and owned-process shutdown. |
 | B | Client-owned SVG/D3/Canvas, controlled graph and hybrid representations | Common semantic view fields, inspector, measured container lifecycle and existing story/replay accessors. The client owns geometry, renderer-specific effects and any unusual adapter. |
 | B | Native scroll-driven authored stops and target-state capture | Existing progression owners, explicit direct controls/reduced motion, reviewed state round-trip, asset readiness and hashes. These are not video production or continuous simulation. |
 | C | Dense/instanced 3D, large animated/textured GLTF, CAD, GIS, massive/high-frequency telemetry | Deferred specialized adapters/producers. Retain semantic IDs, view state and provenance; supply separate limits, lifecycle and performance evidence before adoption. |
@@ -79,7 +79,8 @@ build, original visual contracts, real HTTP browser scenarios, the complete
 
 The engine gate creates eight synthetic compositions without modifying framework
 source, validates their original engine specs before the browser, and checks:
-selected dev/HMR and recovery; SVG/Canvas selection and keyboard alternatives;
+selected dev/HMR and recovery; real-host immediate edits across three restarts;
+SVG/Canvas selection and keyboard alternatives;
 320px layout and observer cleanup; shared model/story/scroll selection without
 implicit task reruns; graph/replay sample ownership and missing values; selected
 build isolation; repeat target-state captures; GLB/replay saved-state round trips;

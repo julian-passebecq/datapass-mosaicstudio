@@ -3,6 +3,7 @@ import {spawn} from 'node:child_process';
 import {lstat,mkdir,writeFile,rename} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {clientWatchFiles,waitForWatchedFiles} from './client-watch-ready.mjs';
 // WHATWG Fetch 2.9, non-privileged bad ports (checked 2026-10-04). Never bypass browser blocking.
 const badPorts=new Set([1719,1720,1723,2049,3659,4045,4190,5060,5061,6000,6566,6665,6666,6667,6668,6669,6679,6697,10080]);
 
@@ -56,6 +57,7 @@ export async function startClientDev(options){
     Object.assign(process.env,{STUDIO_CLIENT:id,STUDIO_CAPABILITIES:JSON.stringify(lastPlan.capabilities),STUDIO_PUBLICATION:JSON.stringify(publication)});
     return next;
   }
+  async function watchReady(active){await waitForWatchedFiles(active.watcher,await clientWatchFiles(root),{signal:abort.signal});}
   function recordStop(){if(stopped)return writes;stopped=true;return report('stopped');}
   async function stop(){
     if(closing)return;closing=true;abort.abort();
@@ -92,12 +94,12 @@ export async function startClientDev(options){
         if(restart&&!closing){
           if(!restartQueued){restartQueued=true;setImmediate(()=>{
             if(closing){restartQueued=false;return;}
-            restarting=true;restartTask=(async()=>{try{await context.server.restart();if(!closing)await report('ready');}catch(error){if(!closing)await report('invalid',{message:String(error.message||error)});}finally{restarting=false;restartQueued=false;}})();
+            restarting=true;restartTask=(async()=>{try{await context.server.restart();await watchReady(context.server);restarting=false;restartQueued=false;if(!closing)await report('ready');}catch(error){if(!closing)await report('invalid',{message:String(error.message||error)});}finally{restarting=false;restartQueued=false;}})();
           });}return [];
         }
         if(invalid)return; // Let Vite show its normal source error overlay; a later save can recover.
       }}]});
-    abort.signal.throwIfAborted();await server.listen();abort.signal.throwIfAborted();
+    abort.signal.throwIfAborted();await server.listen();await watchReady(server);abort.signal.throwIfAborted();
     if(!json)console.error(`Client ${id}: http://127.0.0.1:${port}/?app=${id}\nEdit clients/${id}/; stop with Ctrl+C. Local trusted source only, not a security boundary.`);
     await report('ready');
     return {server,stop,getStatus:()=>descriptor};
