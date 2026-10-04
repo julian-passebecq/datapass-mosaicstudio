@@ -70,7 +70,7 @@ try{
   await step('generated compositions satisfy the original visual engine contracts',()=>command(['scripts/check-visuals.mjs'],'generated-visual-contracts'));
   if(!sourceOnly){
     browser=await chromium.launch({...(process.env.CI_BROWSER_PATH?{executablePath:process.env.CI_BROWSER_PATH}:{}),args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});report.browser=browser.version();
-    await testDev({step,expect,id,snapshot,output,report,startDev,eventually,pageContext});
+    try{await testDev({step,expect,id,snapshot,output,report,startDev,eventually,pageContext});}catch(error){(report.scopeFailures??=[]).push({name:'dev',error:String(error.stack||error)});console.error('dev scope: '+String(error.message||error));}
     activePage=null;
     await step('eight selected builds retain explicit optional-engine boundaries',async()=>{
       for(const target of targets){const clientId=id(target.name);await command(['--experimental-strip-types','scripts/build-client.mjs',clientId],target.name+'-build');const files=await inventory('dist-clients/'+clientId),build=JSON.parse(await readFile('dist-clients/'+clientId+'/studio-build.json','utf8'));assert.equal(build.client,clientId);assert.ok(!files.some(file=>/\.wasm$|duckdb|sql-parser/.test(file.path)));if(!['spatial','model'].includes(target.name))assert.equal(build.containsThree,false);

@@ -4,7 +4,8 @@ import {readFile,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 
 export async function testDev({step,expect,id,snapshot,output,report,startDev,eventually,pageContext}){
-  let dev;
+  let dev;const browserEvents=[];let connected=false;
+  const record=(kind,detail)=>{if(browserEvents.length<1000)browserEvents.push({at:new Date().toISOString(),kind,detail});};
   try{
     await step('selected dev host exposes exact loopback URL and owns only its process',async()=>{
       dev=await startDev(id('content'));await eventually(()=>dev.events.some(event=>event.status==='ready'),'Dev did not become ready: '+dev.stderr);
@@ -15,8 +16,16 @@ export async function testDev({step,expect,id,snapshot,output,report,startDev,ev
     const originalCustom=await readFile(customFile,'utf8'),originalStarter=await readFile(starterFile,'utf8'),originalPublication=await readFile(publicationFile,'utf8');
     try{
       const scope=await pageContext();try{
+        scope.page.on('console',message=>record('console',{type:message.type(),text:message.text()}));
+        scope.page.on('requestfailed',request=>record('requestfailed',{url:request.url(),failure:request.failure()}));
+        scope.page.on('websocket',socket=>{
+          record('websocket',socket.url());
+          socket.on('framereceived',event=>{try{const message=JSON.parse(String(event.payload));record('frame',message);if(message.type==='connected')connected=true;}catch{}});
+          socket.on('close',()=>{connected=false;record('websocket-closed',socket.url());});
+          socket.on('socketerror',error=>record('websocket-error',String(error)));
+        });
         await scope.page.goto('http://127.0.0.1:5178/?app='+id('content'));await expect(scope.page.getByRole('heading',{name:'Client-owned component',exact:true})).toBeVisible();
-        await step('custom TSX edits use genuine Vite HMR without a second server',async()=>{await writeFile(customFile,originalCustom.replace('Client-owned component','HMR verified component'));await expect(scope.page.getByRole('heading',{name:'HMR verified component',exact:true})).toBeVisible();assert.deepEqual(scope.errors,[]);await snapshot(scope.page,'dev-hmr');});
+        await step('custom TSX edits use genuine Vite HMR without a second server',async()=>{await eventually(()=>connected,'The browser did not complete Vite HMR connection before editing');record('edit','ClientNote.tsx heading');await writeFile(customFile,originalCustom.replace('Client-owned component','HMR verified component'));await expect(scope.page.getByRole('heading',{name:'HMR verified component',exact:true})).toBeVisible();assert.deepEqual(scope.errors,[]);await snapshot(scope.page,'dev-hmr');});
         await step('capability changes restart the same selected Vite host',async()=>{const start=dev.events.length;await writeFile(starterFile,originalStarter.replace('clientNote:[]',"clientNote:['charts']"));await eventually(()=>dev.events.slice(start).some(event=>event.status==='ready'&&event.capabilities.includes('charts')),'Capability restart did not settle');await expect(scope.page.getByRole('heading',{name:'HMR verified component',exact:true})).toBeVisible();});
         await step('publication changes refresh build-time metadata in the same browser',async()=>{const start=dev.events.length;await writeFile(publicationFile,originalPublication.replace('Engine preview metadata','Updated preview metadata'));await eventually(()=>dev.events.slice(start).some(event=>event.status==='ready'),'Publication refresh did not settle');await expect(scope.page.locator('meta[property="og:title"]')).toHaveAttribute('content','Updated preview metadata');});
         await step('invalid source produces an invalid receipt and a subsequent save recovers',async()=>{const start=dev.events.length;await writeFile(customFile,originalCustom+'\nexport const invalid = ;\n');await eventually(()=>dev.events.slice(start).some(event=>event.status==='invalid'),'Invalid source was not reported');await writeFile(customFile,originalCustom);await expect(scope.page.getByRole('heading',{name:'Client-owned component',exact:true})).toBeVisible();await expect(scope.page.locator('vite-error-overlay')).toHaveCount(0);report.expectedInvalidSourceDiagnostics=scope.errors.slice();});
@@ -24,5 +33,5 @@ export async function testDev({step,expect,id,snapshot,output,report,startDev,ev
       }finally{await scope.context.close();}
     }finally{await writeFile(customFile,originalCustom);await writeFile(starterFile,originalStarter);await writeFile(publicationFile,originalPublication);}
     await step('SIGTERM publishes stopped and leaves no listening dev process',async()=>{const result=await dev.close();assert.ok(result.code===0||result.code===143||result.signal==='SIGTERM');assert.equal(dev.events.at(-1).status,'stopped');const descriptor=JSON.parse(await readFile(dev.events.at(-1).descriptor,'utf8'));assert.equal(descriptor.status,'stopped');await assert.rejects(()=>fetch('http://127.0.0.1:5178'));dev=null;});
-  }finally{await dev?.close();}
+  }finally{try{await dev?.close();}finally{await writeFile(path.join(output,'dev-browser-events.json'),JSON.stringify(browserEvents,null,2)+'\n');}}
 }
