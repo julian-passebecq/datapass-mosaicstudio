@@ -1,0 +1,38 @@
+name: Offline recovery kit
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/studio2-engine-consolidation']
+    paths: ['.github/workflows/recovery-kit.yml']
+permissions:
+  contents: read
+jobs:
+  kit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+      - run: npm ci --no-audit --no-fund
+      - run: npm run bootstrap
+      - name: Package pinned Linux development dependencies and full history
+        run: |
+          git bundle create repository.bundle --all
+          node --version > recovery-environment.txt
+          npm --version >> recovery-environment.txt
+          git rev-parse HEAD >> recovery-environment.txt
+          sha256sum package-lock.json upstreams.lock.json >> recovery-environment.txt
+          tar -czf studio-offline-kit.tar.gz node_modules .upstream repository.bundle recovery-environment.txt
+          sha256sum studio-offline-kit.tar.gz > studio-offline-kit.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: studio-offline-kit
+          path: |
+            studio-offline-kit.tar.gz
+            studio-offline-kit.sha256
+          retention-days: 3
