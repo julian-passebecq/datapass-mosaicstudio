@@ -138,5 +138,52 @@ class WatchWriteTests(unittest.TestCase):
             self.assertEqual(sorted(p.name for p in Path(d).iterdir()), ["demo.json"])
 
 
+class LineageTests(unittest.TestCase):
+    INPUTS = [{"id": "k", "label": "Shape", "value": 2.0, "evidence": [{"path": "py/m.py", "start": 3, "end": 5, "label": "pdf"}]}]
+
+    def test_old_artifacts_stay_valid_and_lineage_is_additive(self):
+        self.assertNotIn("producer", make()["provenance"])
+        a = make(producer={"kind": "notebook", "name": "nb.ipynb"}, inputs=self.INPUTS, depends_on=["upstream"],
+                 representations=[{"id": "table", "title": "Rows", "kind": "table", "inputs": ["k"]}])
+        prov = a["provenance"]
+        self.assertEqual(prov["inputHash"], da.input_hash(self.INPUTS))
+        self.assertEqual(prov["dependsOn"], ["upstream"])
+        self.assertEqual(da.input_hash([{"id": "b", "value": 1}, {"id": "a", "value": 2}]),
+                         da.input_hash([{"id": "a", "value": 2}, {"id": "b", "value": 1}]))
+
+    def test_invalid_lineage_rejected(self):
+        bad = [
+            dict(producer={"kind": "robot", "name": "x"}),
+            dict(producer={"kind": "script", "name": "x", "extra": 1}),
+            dict(inputs=self.INPUTS, input_hash_value="ABC"),
+            dict(inputs=[{**self.INPUTS[0], "evidence": [{"path": "../x.py", "start": 1, "end": 1, "label": "l"}]}]),
+            dict(inputs=[{**self.INPUTS[0], "evidence": [{"path": "C:/x.py", "start": 1, "end": 1, "label": "l"}]}]),
+            dict(inputs=[{**self.INPUTS[0], "evidence": [{"path": "x.py", "start": 5, "end": 2, "label": "l"}]}]),
+            dict(inputs=[{**self.INPUTS[0], "value": float("inf")}]),
+            dict(inputs=self.INPUTS * 2),
+            dict(depends_on=["demo"]),
+            dict(representations=[{"id": "table", "title": "Rows", "kind": "table", "inputs": ["k"]}]),
+        ]
+        for kw in bad:
+            with self.assertRaises(da.ArtifactError, msg=str(kw)):
+                make(**kw)
+
+    def test_citations_point_at_exact_lines(self):
+        root = Path(__file__).resolve().parents[1]
+        ref = da.cite(wind.annual_energy_mwh, "AEP", root)
+        lines = (root / ref["path"]).read_text(encoding="utf-8").splitlines()
+        self.assertEqual(ref["path"], "py/wind_reference_model.py")
+        self.assertTrue(lines[ref["start"] - 1].startswith("def annual_energy_mwh"))
+        self.assertTrue(lines[ref["end"] - 1].strip().startswith("return"))
+        one = da.cite_lines("py/wind_reference_model.py", r"^HOURS =", "h", root)
+        self.assertTrue(lines[one["start"] - 1].startswith("HOURS ="))
+        with tempfile.TemporaryDirectory() as d:
+            a = wind.build_artifact(wind.table(), out_dir=Path(d), sources_dir=Path(d) / "sources")
+            copy = Path(d) / "sources" / "py" / "wind_reference_model.py.txt"
+            self.assertEqual(copy.read_text(encoding="utf-8").splitlines(), lines)
+            self.assertEqual(json.loads((Path(d) / "manifest.json").read_text(encoding="utf-8"))["artifacts"][0]["provenance"]["producer"]["kind"], "script")
+            self.assertEqual(a["representations"][0]["inputs"], ["k", "ratedPower", "speeds", "hours"])
+
+
 if __name__ == "__main__":
     unittest.main()

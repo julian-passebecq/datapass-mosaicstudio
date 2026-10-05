@@ -18,7 +18,7 @@ test('committed Python-written artifact passes the TypeScript validator and adap
   const artifact=validateArtifact(JSON.parse(await readFile(committed,'utf8')));
   assert.equal(artifact.provenance.kind,'computed');assert.match(artifact.provenance.source,/ILLUSTRATIVE/);
   const runtime=new SiteRuntime(artifactDefinition(artifact));
-  assert.deepEqual(runtime.manifest.pages[0].sections[0].blocks.map(b=>b.type),['metric','table','chart','code']);
+  assert.deepEqual(runtime.manifest.pages[0].sections[0].blocks.map(b=>b.type),['metric','metric','table','chart','code']);
   assert.ok(runtime.resolve({dataset:'artifact-data',row:'mean-8-0',column:'aep'})>0);
 });
 
