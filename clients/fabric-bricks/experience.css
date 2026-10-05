@@ -28,3 +28,5 @@
 .fb-collection-controls{left:auto;right:32px;top:38px}.studio-site .fb-collection-controls button{background:#fff}.fb-collection-stage{min-height:730px}
 @media(max-width:760px){.fb-collection-controls{top:225px;left:24px;right:auto}.fb-collection-stage{padding-top:205px;min-height:760px}}
 .studio-site .fb-experience .fb-collection-controls button,.studio-site .fb-experience .fb-parts-tabs button{border:1px solid #e2e6de;border-radius:18px;padding:6px 11px;font-size:9px;background:#fff}.studio-site .fb-experience .fb-collection-controls button[aria-pressed=true],.studio-site .fb-experience .fb-parts-tabs button[aria-pressed=true]{background:#263229;color:#fff}
+.studio-site .fb-experience .fb-watch-film{display:flex;align-items:center;gap:8px;width:100%;border:1px solid #e1e4de;border-radius:25px;padding:11px 16px;margin-bottom:8px;font-size:10px}.fb-watch-film span{margin-left:auto;color:#8d9488;font-size:9px}
+.fb-film-loading{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:#fff;font-size:11px;letter-spacing:1.4px;color:#8a9088}

@@ -73,3 +73,24 @@ test('fabric 3D scene projects exactly the same semantic brick universe',()=>{
   assert.ok(scene.parts.some(part=>part.explode.some(value=>value!==0)),'explode must remain an authored presentation offset');
   assert.match(scene.note,/Synthetic procedural geometry only/);
 });
+
+test('autoplay film is a pure, bounded function of time with reduced-motion end states',async()=>{
+  const {filmFrame,chapters,settledTime,frameTime,parseFilmParams,FILM_DURATION,FILM_FPS}=await import('../clients/fabric-bricks/timeline.ts');
+  assert.equal(FILM_DURATION,25);assert.equal(FILM_FPS,30);
+  for(const t of [0,2.5,5,7,10,15,20,25])assert.deepEqual(filmFrame(t),filmFrame(t),'same t must give the same frame');
+  assert.deepEqual(filmFrame(-3),filmFrame(0));assert.deepEqual(filmFrame(99),filmFrame(25));
+  const lake=kits.find(k=>k.id==='lakehouse');
+  // Lakehouse is fully assembled at 5 s, exploded with ghosting at 7 s, and every kit stands in the collection at 10 s.
+  const at5=filmFrame(5).kits.lakehouse.parts;assert.ok(lake.parts.every(p=>at5[p.id].visible&&Math.abs(at5[p.id].offset[1])<1e-6&&at5[p.id].ghost===0));
+  const at7=filmFrame(7).kits.lakehouse.parts;assert.ok(at7['roof-0-0'].offset[1]>2.5);assert.ok(at7['roof-0-0'].ghost>.9);assert.equal(at7['walk-horizontal'].ghost,0);assert.equal(filmFrame(7).panel.lot,'boardwalk');
+  const at10=filmFrame(10);assert.equal(at10.chapter,'collection');assert.ok(kits.every(k=>k.parts.every(p=>at10.kits[k.id].parts[p.id].visible)));
+  assert.equal(filmFrame(15).chapter,'onelake');assert.equal(filmFrame(15).caption.title,'OneLake');
+  // Build order follows the authored steps.
+  const early=filmFrame(1.2).kits.lakehouse.parts;assert.ok(lake.parts.filter(p=>p.step===6).every(p=>early[p.id].ghost===1&&early[p.id].offset[1]===0));assert.equal(filmFrame(1.2).panel.step,2);
+  assert.ok(chapters.every((c,i)=>c.start<c.rest&&c.rest<=c.end&&(i===0||chapters[i-1].end===c.start)));
+  assert.equal(settledTime(6.1,true),7.4);assert.equal(settledTime(6.1,false),6.1);
+  assert.equal(frameTime(7.01),7);assert.deepEqual(parseFilmParams('?app=fabric-bricks&film=1&t=7&paused=1&chrome=0'),{open:true,t:7,paused:true,chrome:false});
+  assert.equal(parseFilmParams('?t=abc').open,false);
+  // Captions only reuse existing kit copy.
+  assert.equal(filmFrame(2).caption.body,lake.description);assert.equal(filmFrame(10).panel.mode,'gallery');
+});

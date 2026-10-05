@@ -77,3 +77,23 @@ test('narrow responsive layout and reduced motion',async({page})=>{
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await expect(page.getByRole('button',{name:'Back to all kits',exact:true})).toBeVisible();await page.screenshot({path:out+'/lakehouse-mobile.png',fullPage:true});
 });
+test('autoplay build film is lazy, frame-addressable, deterministic and respects reduced motion',async({page})=>{
+  const requests:string[]=[],errors:string[]=[];page.on('request',r=>requests.push(r.url()));page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('/?app=fabric-bricks');await expect(page.getByTestId('fabric-experience')).toHaveAttribute('data-screen','gallery');
+  expect(requests.some(u=>u.includes('KitFilm'))).toBe(false);
+  await page.getByRole('button',{name:'Watch the build film'}).click();
+  const film=page.getByTestId('kit-film');await expect(film).toBeVisible();await expect(page.locator('canvas[data-renderer=fabric-film-webgl2]')).toBeVisible();
+  expect(requests.some(u=>u.includes('KitFilm'))).toBe(true);
+  await expect(film).toHaveAttribute('data-playing','true');
+  const frame=async(t:number)=>{await page.evaluate(t=>(window as unknown as {__fabricFilm:{seek(t:number):Promise<number>}}).__fabricFilm.seek(t),t);return page.evaluate(()=>(document.querySelector('canvas[data-renderer=fabric-film-webgl2]') as HTMLCanvasElement).toDataURL('image/png'));};
+  const a=await frame(7),b=await frame(12),c=await frame(7);
+  expect(c===a,'same t must render identical pixels').toBe(true);expect(b===a).toBe(false);
+  await expect(film).toHaveAttribute('data-playing','false');await expect(film).toHaveAttribute('data-chapter','layers');
+  await page.getByRole('button',{name:'Jump to OneLake'}).click();await expect(film).toHaveAttribute('data-film-t','12.6000');
+  await page.getByRole('slider',{name:'Film time'}).fill('5');await expect(film).toHaveAttribute('data-film-t','5.0000');
+  await page.getByRole('button',{name:'Close film'}).click();await expect(film).toHaveCount(0);
+  await page.emulateMedia({reducedMotion:'reduce'});await page.goto('/?app=fabric-bricks&film=1&t=6.1');
+  await expect(page.getByTestId('kit-film')).toHaveAttribute('data-film-t','7.4000');await expect(page.getByTestId('kit-film')).toHaveAttribute('data-playing','false');
+  await expect(page.getByRole('button',{name:'Play film'})).toBeDisabled();
+  expect(errors).toEqual([]);
+});

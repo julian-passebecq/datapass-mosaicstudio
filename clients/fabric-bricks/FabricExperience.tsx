@@ -1,11 +1,13 @@
-import {lazy,Suspense,useState,type CSSProperties} from 'react';
-import {ArrowLeft,ArrowRight,Box,Check,ChevronLeft,ChevronRight,Expand,Layers,MousePointer2,RotateCcw,X,Plus,Minus} from 'lucide-react';
+import {lazy,Suspense,useState,useCallback,type CSSProperties} from 'react';
+import {ArrowLeft,ArrowRight,Box,Check,ChevronLeft,ChevronRight,Expand,Layers,MousePointer2,RotateCcw,X,Plus,Minus,Play} from 'lucide-react';
 import {useRuntime,useSiteState,useReducedMotion} from '../../src/framework/ui';
 import {kits,getKit,getBOM,kitCost,getBuildSteps,type KitId} from './kits';
 import {KitIllustration} from './KitIllustration';
+import {parseFilmParams,chapters} from './timeline';
 import './experience.css';
 
 const KitModel=lazy(()=>import('./KitModel'));
+const KitFilm=lazy(()=>import('./KitFilm'));
 const KitCollection=lazy(()=>import('./KitModel').then(m=>({default:m.KitCollection})));
 const money=(v:number)=>'$'+v.toFixed(2);
 export function FabricExperience(){
@@ -17,6 +19,10 @@ export function FabricExperience(){
   const piece=String(values['fabric-piece']),selectedPiece=kit.parts.find(p=>p.id===piece);
   const [about,setAbout]=useState(false),[saved,setSaved]=useState(false);
   const [partsMode,setPartsMode]=useState<'types'|'pieces'>('types');
+  // Autoplay film: ?film=1&t=<seconds>&paused=1&chrome=0 opens it at an exact frame (deterministic captures).
+  const [film,setFilm]=useState(()=>{const p=parseFilmParams(typeof location==='undefined'?'':location.search);return p.open?{start:p.t,autoplay:!p.paused,chrome:p.chrome}:null;});
+  const playFilm=(id:string)=>setFilm({start:id==='onelake'?chapters.find(c=>c.id==='onelake')!.start:id==='lakehouse'?0:chapters.find(c=>c.id==='collection')!.start,autoplay:true,chrome:true});
+  const closeFilm=useCallback(()=>{setFilm(null);const q=new URLSearchParams(location.search);if(q.has('film')){['film','t','paused','chrome'].forEach(k=>q.delete(k));history.replaceState(history.state,'',location.pathname+'?'+q.toString());}},[]);
   const open=(id:KitId)=>runtime.applyCue({'fabric-kit':id,'fabric-screen':'detail','fabric-representation':'3d','fabric-selection':'none','fabric-piece':'none','fabric-camera':'overview','fabric-level':'overview','fabric-step':6,'fabric-explode':0,'fabric-isolate':false});
   const back=()=>runtime.applyCue({'fabric-screen':'gallery','fabric-representation':'2d','fabric-selection':'none','fabric-piece':'none','fabric-camera':'overview','fabric-level':'overview','fabric-explode':0,'fabric-isolate':false,'fabric-step':6});
   const select=(id:string)=>runtime.applyCue({'fabric-selection':selection===id?'none':id,'fabric-piece':'none','fabric-camera':'overview','fabric-level':selection===id?'overview':'detail'});
@@ -35,7 +41,7 @@ export function FabricExperience(){
           <span className="fb-eyebrow">{gallery?'A SMALL WORLD OF DATA':'MICROSOFT FABRIC · '+kit.category.toUpperCase()}</span>
           <h1>{gallery?<>Big ideas.<br/>Small bricks.</>:kit.title}</h1>
           <p>{gallery?'Explore the architecture of data, one playful little kit at a time. Pick a model. Take it apart. See how it all fits.':kit.description}</p>
-          {!gallery&&<div className="fb-intro-actions"><button onClick={()=>setSaved(!saved)} aria-pressed={saved}>{saved?<Check size={12}/>:<Box size={12}/>} {saved?'On your build list':'Add to build list'}</button><span>Concept kit · {kit.number}</span></div>}
+          {!gallery&&<div className="fb-intro-actions"><button className="fb-play-film" onClick={()=>playFilm(kitId)}><Play size={11}/> Play build</button><button onClick={()=>setSaved(!saved)} aria-pressed={saved}>{saved?<Check size={12}/>:<Box size={12}/>} {saved?'On your build list':'Add to build list'}</button><span>Concept kit · {kit.number}</span></div>}
           {!gallery&&selectedLot&&<div className="fb-selection-chip"><span style={{background:selectedPiece?.color??selectedLot.color}}/>{selectedPiece?selectedPiece.id:selectedLot.quantity+'× '+selectedLot.name}<button onClick={showAll} aria-label="Clear selection"><X size={12}/></button></div>}
         </div>
         {gallery?<><div className="fb-collection-controls" role="group" aria-label="Collection view"><button aria-pressed={representation==='2d'} onClick={()=>runtime.set('fabric-representation','2d')}>Gallery</button><button aria-pressed={representation==='3d'} onClick={()=>runtime.set('fabric-representation','3d')}>3D collection</button></div>{representation==='3d'?<div className="fb-stage fb-collection-stage"><Suspense fallback={<div className="fb-loading">Preparing the collection…</div>}><KitCollection onSelect={open}/></Suspense><p className="fb-collection-hint">Drag to orbit · Scroll to zoom · Select a kit</p></div>:<div className="fb-gallery" aria-label="Choose a kit">
@@ -71,6 +77,7 @@ export function FabricExperience(){
           <div className="fb-inspector-title"><span className="fb-eyebrow">THE COLLECTION</span><h2>Choose a kit.</h2><p>Small builds, big connections.<br/>Find your starting point.</p></div>
           <div className="fb-kit-list">{kits.map(k=><button key={k.id} onClick={()=>open(k.id)}><span className="fb-list-number">{k.number}</span><span><strong>{k.title}</strong><small>{k.category}</small></span><ArrowRight size={14}/></button>)}</div>
           <div className="fb-editorial-note"><span className="fb-eyebrow">FROM DATA TO SOMETHING TANGIBLE</span><p>Look closer.<br/>There’s a story<br/>in every piece.</p><small>Six concept kits.<br/>One shared architecture.</small></div>
+          <button className="fb-watch-film" onClick={()=>playFilm('lakehouse')}><Play size={12}/> Watch the build film <span>0:25</span></button>
           <button className="fb-primary" onClick={()=>open('lakehouse')}>Explore Lakehouse <ArrowRight size={14}/></button>
         </>:<>
           <div className="fb-metrics"><div><span>PIECES</span><strong>{kit.parts.length}</strong></div><div><span>LOTS</span><strong>{bom.length}</strong></div><div><span>PARTS COST*</span><strong>≈ {money(kitCost(kitId))}</strong></div></div>
@@ -86,6 +93,7 @@ export function FabricExperience(){
         </>}
       </aside>
     </div>
+    {film&&<Suspense fallback={<div className="fb-film-loading" role="status">Preparing the film…</div>}><KitFilm start={film.start} autoplay={film.autoplay} chrome={film.chrome} reduced={reduced} onClose={closeFilm}/></Suspense>}
     <span className="fb-sr" aria-live="polite">{gallery?'Kit gallery':`${kit.title}. Step ${step}: ${buildSteps[step-1]}. ${selectedPiece?selectedPiece.id+' selected.':selectedLot?selectedLot.name+' selected.':'All parts shown.'} ${explode>0?'Exploded.':'Assembled.'} ${isolate?'Isolated.':''}`}</span>
   </section>;
 }
