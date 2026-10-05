@@ -6,7 +6,7 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {validateArtifact} from '../src/framework/foundation/artifact.ts';
 import {compileMotion} from '../src/framework/motion/compile.ts';
-import {parseTrace, stepView, labMotion, lineSteps, nextStepAtLine, writtenNames, loopExhausted, SPEEDS} from '../clients/animated-coding-lab/trace.ts';
+import {parseTrace, stepView, labMotion, lineSteps, nextStepAtLine, writtenNames, loopExhausted} from '../clients/animated-coding-lab/trace.ts';
 
 const dir = 'clients/animated-coding-lab/public';
 const SNIPPET = 'py/examples/normalize_rows.py';
@@ -49,17 +49,15 @@ test('step -> state is pure: any visiting order gives identical views and motion
   const forward = trace.steps.map((_, i) => JSON.stringify(stepView(trace, i)));
   const order = trace.steps.map((_, i) => i).reverse().concat([13, 2, 27, 13]);
   for (const i of order) assert.equal(JSON.stringify(stepView(trace, i)), forward[i]);
-  const a = compileMotion(labMotion(trace, '1')), b = compileMotion(labMotion(trace, '1'));
+  const a = compileMotion(labMotion(trace)), b = compileMotion(labMotion(trace));
   assert.deepEqual(a.frames, b.frames);
-  for (const speed of SPEEDS) {
-    const c = compileMotion(labMotion(trace, speed));
-    assert.equal(c.frames.length, trace.steps.length);
-    assert.deepEqual(c.frames.map(f => f.poses), a.frames.map(f => f.poses), 'speed changes timing only, never the snapshot at ' + speed);
-  }
-  // Semantic objects: rows[i] enters normalize and is replaced by its returned value, then lands in results.
-  const end = a.frames.at(-1).poses;
-  for (let i = 0; i < 4; i++) {assert.equal(end['in-' + i].visible, false); assert.equal(end['out-' + i].visible, true);}
-  assert.deepEqual(a.spec.entities.filter(e => e.id.startsWith('out-')).map(e => e.label), ['0.0', '0.5', '0.25', '1.0']);
+  assert.equal(a.frames.length, trace.steps.length);
+  assert.equal(a.spec.provenance, 'recorded');
+  // Semantic objects: rows[i] is ONE token; it enters normalize, its label becomes the returned value, it lands in results.
+  const end = a.frames.at(-1).poses, tokens = a.spec.entities.filter(e => e.kind === 'token');
+  assert.deepEqual(tokens.map(e => e.id), ['row-0', 'row-1', 'row-2', 'row-3']);
+  assert.deepEqual(tokens.map(e => end[e.id].label), ['0.0', '0.5', '0.25', '1.0']);
+  for (const e of tokens) {assert.equal(end[e.id].visible, true); assert.ok(Math.abs(end[e.id].position[0] - 6.4) < 1.01, e.id + ' rests on results');}
   const kpi = stepView(trace, 22).kpi;
   assert.deepEqual([kpi.processed, kpi.rows, kpi.total], [3, 4, .75]);
   assert.equal(stepView(trace, 29).title, 'Loop finished');

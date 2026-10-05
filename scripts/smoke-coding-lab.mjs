@@ -59,7 +59,7 @@ try {
   for (const row of trace) {
     await scrub(page, row.step);
     assert.equal(await lab.getAttribute('data-line'), String(row.line), 'lab line at step ' + row.step);
-    const active = page.locator('[data-testid=lab-code] li[data-active=true]');
+    const active = page.locator('[data-testid=lab-code] li[data-current=true]');
     assert.equal(await active.count(), 1); assert.equal(await active.getAttribute('data-line'), String(row.line));
     assert.equal((await active.locator('code').innerText()).trim(), row.code, 'code text at step ' + row.step);
     assert.equal((await page.getByTestId('lab-source-line').innerText()).replace(/^\d+/, '').trim(), row.code);

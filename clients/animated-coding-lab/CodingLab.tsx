@@ -3,8 +3,8 @@ import {useRuntime, useSiteState, useReducedMotion, useNavigatePage} from '../..
 import {useArtifactSource} from '../../src/framework/foundation/ArtifactSource.tsx';
 import {loadEvidenceSources} from '../../src/framework/foundation/lineage/sources.ts';
 import type {Artifact} from '../../src/framework/foundation/artifact.ts';
-import {MotionViewport} from '../../src/framework/motion/react.ts';
-import {createMotionController, type MotionController} from '../../src/framework/motion/controller.ts';
+import {MotionViewport, createMotionController, type MotionController} from '../../src/framework/motion/react.ts';
+import {SourceReader} from '../../src/framework/evidence/react.ts';
 import {parseTrace, labMotion, stepView, lineSteps, nextStepAtLine, formatValue, SPEEDS, type LabTrace, type Speed, type TraceValue} from './trace.ts';
 import './lab.css';
 
@@ -60,7 +60,8 @@ function Lab({trace, artifact}: {trace: LabTrace; artifact: Artifact}) {
   const speed = (SPEEDS.includes(values[FIELDS.speed] as Speed) ? values[FIELDS.speed] : '1') as Speed;
   const projection = values[FIELDS.projection] === 'isometric' ? 'isometric' : 'diagram';
   const reduced = systemReduced || values[FIELDS.reduced] === true;
-  const controller = useMemo<MotionController>(() => createMotionController(labMotion(trace, speed), reduced), [trace, speed]);
+  // One controller per trace; speed is a playback rate on the same clock, not a recompiled spec.
+  const controller = useMemo<MotionController>(() => createMotionController(labMotion(trace), reduced, undefined, {speed: Number(speed)}), [trace]);
   const playback = useSyncExternalStore(controller.player.subscribe, controller.player.getState, controller.player.getState);
   const syncing = useRef(false), root = useRef<HTMLElement>(null);
   const view = stepView(trace, index), step = view.step, hits = useMemo(() => lineSteps(trace), [trace]);
@@ -81,6 +82,7 @@ function Lab({trace, artifact}: {trace: LabTrace; artifact: Artifact}) {
   useEffect(() => {
     if (controller.player.getState().index !== index) {syncing.current = true; try {controller.player.seek(index);} finally {syncing.current = false;}}
   }, [controller, index]);
+  useEffect(() => {controller.setSpeed(Number(speed));}, [controller, speed]);
   useEffect(() => {controller.player.setReducedMotion(reduced); if (reduced) controller.player.pause();}, [controller, reduced]);
   useEffect(() => {controller.player.pause();}, [controller, snapshot.restoreEpoch]);
   useEffect(() => {
@@ -116,14 +118,10 @@ function Lab({trace, artifact}: {trace: LabTrace; artifact: Artifact}) {
     <div className="lab-grid">
       <section className="lab-pane lab-code" aria-label="Code">
         <header><span className="lab-eyebrow">Code</span><code>{trace.sourcePath}</code></header>
-        <ol className="lab-lines" data-testid="lab-code">{trace.lines.map((text, i) => {
-          const line = i + 1, ran = hits.get(line), active = line === step.line;
-          return <li key={line} data-line={line} data-active={active} data-ran={!!ran}>
-            <button type="button" className="lab-line" disabled={!ran} aria-current={active ? 'step' : undefined} aria-label={ran ? `Focus line ${line}: ${text.trim() || 'blank'} (ran ${ran.length} times)` : `Line ${line} did not run`} onClick={() => focusLine(line)}>
-              <span className="lab-gutter" aria-hidden="true">{line}</span><code>{text ? highlight(text) : ' '}</code>{ran && <span className="lab-hits" aria-hidden="true">{ran.length}x</span>}
-            </button>
-          </li>;
-        })}</ol>
+        <div className="lab-lines" data-testid="lab-code">
+          <SourceReader compact sources={controller.compiled.spec.sources} selected="snippet" onSelect={() => {}} currentLine={step.line} renderLine={highlight} onLineClick={focusLine}
+            lineInfo={line => {const ran = hits.get(line), text = trace.lines[line - 1] || ''; return ran ? {badge: ran.length + 'x', label: `Focus line ${line}: ${text.trim() || 'blank'} (ran ${ran.length} times)`} : {disabled: true, label: `Line ${line} did not run`};}}/>
+        </div>
         <p className="lab-hint">Select a line to jump to the next time it ran.</p>
       </section>
 
@@ -134,7 +132,7 @@ function Lab({trace, artifact}: {trace: LabTrace; artifact: Artifact}) {
           <div><span>total</span><strong data-testid="kpi-total">{formatValue(view.kpi.total)}</strong></div>
           <div><span>mean</span><strong data-testid="kpi-mean">{formatValue(view.kpi.mean)}</strong></div>
         </div>
-        <MotionViewport compiled={controller.compiled} view={{index, selection: 'none', projection, reduced, advance}} onSelect={() => {}}/>
+        <MotionViewport compiled={controller.compiled} view={{index, selection: 'none', projection, reduced, advance, speed: Number(speed)}} onSelect={() => {}}/>
       </section>
 
       <section className="lab-pane lab-explain" aria-label="Explanation" aria-live={playing ? 'off' : 'polite'}>

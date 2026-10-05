@@ -52,11 +52,26 @@ function baseDrawing(compiled: CompiledMotion, frame: MotionFrame, mode: MotionP
     const polygons = faces(pose.position, size, mode), center = project(pose.position, mode);
     const bottom = Math.max(...polygons.flat().map(p => p[1]));
     return {
-      id: entity.id, label: entity.label, kind: entity.kind, color: entity.color, status: pose.status, alpha: pose.alpha,
+      id: entity.id, label: pose.label ?? entity.label, kind: entity.kind, color: entity.color, status: pose.status, alpha: pose.alpha,
       faces: polygons, center, labelPosition: [center[0], entity.kind === 'station' ? bottom + 20 : Math.min(...polygons.flat().map(p => p[1])) - 24] as Point2,
-      labelLines: lines(entity.label), leader: [], depth: pose.position[0] + pose.position[1] + pose.position[2] * .001 + (entity.kind === 'token' ? .1 : 0),
+      labelLines: lines(pose.label ?? entity.label), leader: [], depth: pose.position[0] + pose.position[1] + pose.position[2] * .001 + (entity.kind === 'token' ? .1 : 0),
     };
-  }).sort((a, b) => a.depth - b.depth || a.id.localeCompare(b.id, 'en'));
+  });
+  // A token resting on a station's top face is drawn above that station even when the
+  // station's centre is deeper than the token (x+y alone would paint the token underneath).
+  for (const object of objects) {
+    if (object.kind !== 'token') continue;
+    const [tx, ty, tz] = display[object.id].position;
+    for (const entity of compiled.spec.entities) {
+      if (entity.kind !== 'station') continue;
+      const [sx, sy, sz] = display[entity.id].position, [w, d, h] = entity.size;
+      if (Math.abs(tx - sx) <= w / 2 + 1e-6 && Math.abs(ty - sy) <= d / 2 + 1e-6 && tz >= sz + h - 1e-6) {
+        const below = objects.find(o => o.id === entity.id)!;
+        object.depth = Math.max(object.depth, below.depth + .05);
+      }
+    }
+  }
+  objects.sort((a, b) => a.depth - b.depth || a.id.localeCompare(b.id, 'en'));
   const links = compiled.spec.links.map(link => ({
     id: link.id, label: link.label, active: frame.activeLinks.includes(link.id),
     path: [stationAnchor(entities.get(link.from)!, display[link.from]), ...link.via, stationAnchor(entities.get(link.to)!, display[link.to])].map(p => project(p, mode)),

@@ -11,6 +11,7 @@ export type TraceStep = {
   changed: string[]; vars: Record<string, TraceValue>; returned?: TraceValue;
 };
 export type LabTrace = {artifactId: string; runId: string; sourcePath: string; source: string; lines: string[]; steps: TraceStep[]};
+/** Playback rates for the controller (createMotionController speed); the spec itself has one authored timing. */
 export type Speed = '0.5' | '1' | '2';
 export const SPEEDS: readonly Speed[] = ['0.5', '1', '2'];
 export const MAX_TRACE_STEPS = 64;
@@ -151,17 +152,21 @@ export function nextStepAtLine(trace: LabTrace, line: number, from: number): num
   return hits.find(i => i > from) ?? hits[0];
 }
 
-const TIMING: Record<Speed, {holdMs: number; transitionMs: number}> = {'0.5': {holdMs: 3200, transitionMs: 1200}, '1': {holdMs: 1600, transitionMs: 700}, '2': {holdMs: 800, transitionMs: 400}};
-/** Token slots sit below their station: the renderer orders by x+y depth, so a token placed ON a deeper container would be painted under it. */
-const slot = (x: number, i: number, n: number, z: number): [number, number, number] => [x, .35 + (n <= 1 ? 0 : i * (2.1 / (n - 1))), z];
+/** Authored 1x timing; playback speed is applied by the controller and the viewport, never by recompiling. */
+const TIMING = {holdMs: 1600, transitionMs: 700};
+const TOKEN = .42, GAP = .5;
+/** Container width that holds `n` value tokens side by side on its top face. */
+const shelf = (n: number) => Math.max(1.3, n * GAP + .2);
+/** Token slot ON a container's top face (the renderer draws a resting token above its container). */
+const slot = (x: number, i: number, n: number, z: number): [number, number, number] => [x + (i - (n - 1) / 2) * GAP, -.9, z];
 
 /**
- * Compose the recorded trace into the existing ConceptMotion v2 grammar (move / state / visibility only).
- * Each row value is one stable semantic identity: `in-i` enters normalize and `out-i` leaves with the returned value.
- * Speed changes authored dwell/transition only; it never changes which snapshot a step selects.
+ * Compose the recorded trace into the ConceptMotion v2 grammar (move / state / visibility / label).
+ * Each row value is one stable semantic identity `row-i`: it enters normalize(), its label becomes the
+ * returned value, and it lands in results. Playback speed is not part of the spec (see createMotionController).
  */
-export function labMotion(trace: LabTrace, speed: Speed = '1'): MotionSpec {
-  const timing = TIMING[speed] || fail('unknown speed');
+export function labMotion(trace: LabTrace): MotionSpec {
+  const timing = TIMING;
   const first = trace.steps.find(s => Array.isArray(s.vars.rows));
   const values = first ? first.vars.rows as TraceScalar[] : [];
   const calls = trace.steps.filter(s => s.event === 'call'), returns = trace.steps.filter(s => s.event === 'return');
@@ -169,12 +174,11 @@ export function labMotion(trace: LabTrace, speed: Speed = '1'): MotionSpec {
   const fn = calls[0].scope, n = values.length;
   const ref = (line: number, label: string) => ({artifact: 'snippet', start: line, end: line, label});
   const entities: MotionEntity[] = [
-    {id: 'input', kind: 'station', label: 'rows', description: 'The input list, as recorded in the trace.', position: [0, -.9, 0], size: [1.3, .8, .2], color: '#9fbccc', evidence: [ref(first!.line, 'Input list')]},
+    {id: 'input', kind: 'station', label: 'rows', description: 'The input list, as recorded in the trace.', position: [0, -.9, 0], size: [shelf(n), .8, .2], color: '#9fbccc', evidence: [ref(first!.line, 'Input list')]},
     {id: 'fn', kind: 'station', label: fn + '()', description: 'The traced function. Each call has its own frame.', position: [3.2, -.9, 0], size: [1.6, .8, .4], color: '#8fb6a8', evidence: [ref(calls[0].line, 'Function definition')]},
-    {id: 'output', kind: 'station', label: 'results', description: 'Values appended by the loop.', position: [6.4, -.9, 0], size: [1.3, .8, .2], color: '#b9b0d3', evidence: []},
+    {id: 'output', kind: 'station', label: 'results', description: 'Values appended by the loop.', position: [6.4, -.9, 0], size: [shelf(n), .8, .2], color: '#b9b0d3', evidence: []},
     {id: 'kpi', kind: 'station', label: 'total / mean', description: 'Running aggregate read from the recorded variables.', position: [9.2, -.9, 0], size: [1.6, .8, .4], color: '#d4bd8f', evidence: []},
-    ...values.map((v, i): MotionEntity => ({id: 'in-' + i, kind: 'token', label: formatValue(v), description: `rows[${i}] as recorded.`, at: 'input', size: .42, color: '#3d7d9c', evidence: []})),
-    ...returns.map((r, i): MotionEntity => ({id: 'out-' + i, kind: 'token', label: formatValue(r.returned), description: `${fn}(rows[${i}]) as returned in the trace.`, at: 'fn', size: .42, color: '#3f8a63', evidence: []})),
+    ...values.map((v, i): MotionEntity => ({id: 'row-' + i, kind: 'token', label: formatValue(v), description: `rows[${i}] as recorded; after its call it shows ${fn}(rows[${i}]) as returned in the trace.`, at: 'input', size: TOKEN, color: '#3d7d9c', evidence: []})),
   ];
   const links = [
     {id: 'feed', from: 'input', to: 'fn', label: 'item', via: []},
@@ -187,26 +191,26 @@ export function labMotion(trace: LabTrace, speed: Speed = '1'): MotionSpec {
     let focus = 'none';
     const note = (entity: string, text: string, offset: [number, number]) => annotations.push({id: 'note-' + annotations.length, entity, text: text.slice(0, 160), offset, evidence: [ref(step.line, 'Line ' + step.line)]});
     const written = writtenNames(step.code);
-    if (index === 0) values.forEach((_, i) => commands.push({type: 'move', entity: 'in-' + i, position: slot(0, i, n, .48)}, {type: 'visibility', entity: 'in-' + i, visible: step.vars.rows !== undefined}, {type: 'visibility', entity: 'out-' + i, visible: false}));
+    if (index === 0) values.forEach((_, i) => commands.push({type: 'move', entity: 'row-' + i, position: slot(0, i, n, .48)}, {type: 'visibility', entity: 'row-' + i, visible: step.vars.rows !== undefined}));
     if (step.event === 'call') {
       focus = 'fn'; commands.push({type: 'state', entity: 'fn', value: 'active'}); note('fn', view.title, [0, -88]);
     } else if (step.event === 'return') {
-      focus = 'fn'; commands.push({type: 'visibility', entity: 'in-' + iteration, visible: false}, {type: 'visibility', entity: 'out-' + iteration, visible: true}, {type: 'state', entity: 'fn', value: 'complete'});
+      focus = 'fn'; commands.push({type: 'label', entity: 'row-' + iteration, text: formatValue(step.returned)}, {type: 'state', entity: 'fn', value: 'complete'});
       note('fn', 'returns ' + formatValue(step.returned), [0, -88]);
     } else if (/^for\s/.test(step.code)) {
       if (loopExhausted(trace, index)) {
         commands.push({type: 'state', entity: 'input', value: 'complete'}, {type: 'state', entity: 'fn', value: 'idle'});
       } else {
         iteration += 1; focus = 'fn'; activeLinks.push('feed');
-        commands.push({type: 'move', entity: 'in-' + iteration, position: [3.2, -.9, .68]}, {type: 'state', entity: 'input', value: 'active'}, {type: 'state', entity: 'fn', value: 'idle'});
+        commands.push({type: 'move', entity: 'row-' + iteration, position: [3.2, -.9, .68]}, {type: 'state', entity: 'input', value: 'active'}, {type: 'state', entity: 'fn', value: 'idle'});
         note('input', view.title, [0, -96]);
       }
     } else if (index > 0) {
-      if (written.includes('rows')) {focus = 'input'; values.forEach((_, i) => commands.push({type: 'visibility', entity: 'in-' + i, visible: true})); commands.push({type: 'state', entity: 'input', value: 'active'});}
+      if (written.includes('rows')) {focus = 'input'; values.forEach((_, i) => commands.push({type: 'visibility', entity: 'row-' + i, visible: true})); commands.push({type: 'state', entity: 'input', value: 'active'});}
       else if (written.includes('lo') || written.includes('hi')) {focus = 'input'; note('input', view.outputs.map(([k, v]) => k + ' = ' + formatValue(v)).join(' · '), [0, -96]);}
       else if (written.includes('results') && step.code.includes('.append(')) {
         focus = 'output'; activeLinks.push('emit');
-        commands.push({type: 'move', entity: 'out-' + iteration, position: slot(6.4, iteration, n, .48)}, {type: 'state', entity: 'output', value: 'active'});
+        commands.push({type: 'move', entity: 'row-' + iteration, position: slot(6.4, iteration, n, .48)}, {type: 'state', entity: 'output', value: 'active'});
       } else if (written.includes('results')) {focus = 'output'; commands.push({type: 'state', entity: 'output', value: 'idle'});}
       else if (written.includes('total')) {focus = 'kpi'; activeLinks.push('sum'); commands.push({type: 'state', entity: 'kpi', value: 'active'}); note('kpi', 'total = ' + formatValue(step.vars.total), [0, -88]);}
       else if (written.includes('mean')) {focus = 'kpi'; activeLinks.push('sum'); commands.push({type: 'state', entity: 'kpi', value: 'complete'}, {type: 'state', entity: 'output', value: 'complete'}); note('kpi', 'mean = ' + formatValue(step.vars.mean), [0, -88]);}
@@ -218,6 +222,6 @@ export function labMotion(trace: LabTrace, speed: Speed = '1'): MotionSpec {
   const sources: SourceArtifact[] = [{id: 'snippet', path: trace.sourcePath, language: 'python', title: trace.sourcePath, text: trace.source, provenance: 'provided'}];
   return {format: 'datapass.motion', version: 2, title: 'Recorded execution of ' + trace.sourcePath,
     description: `${trace.steps.length} steps recorded by sys.settrace in artifact ${trace.artifactId}${trace.runId ? ' (run ' + trace.runId + ')' : ''}.`,
-    provenance: 'authored', note: 'Positions and timings are presentation. Every value, line and step order comes from the recorded trace artifact; Studio does not run Python.',
+    provenance: 'recorded', note: 'Positions and timings are presentation. Every value, line and step order comes from the recorded trace artifact; Studio does not run Python.',
     entities, links, steps, sources};
 }

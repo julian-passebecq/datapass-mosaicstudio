@@ -18,14 +18,19 @@ export type MotionCommand = (
   | {type: 'move'; entity: string; position: Point3}
   | {type: 'transfer'; entity: string; link: string}
   | {type: 'state'; entity: string; value: MotionStatus}
-  | {type: 'visibility'; entity: string; visible: boolean}) & {timing?: MotionTiming};
+  | {type: 'visibility'; entity: string; visible: boolean}
+  /** V2 only: the displayed label of an entity changes, its identity does not (e.g. a value replaced in place). */
+  | {type: 'label'; entity: string; text: string}) & {timing?: MotionTiming};
 export type MotionStep = {
   id: string; title: string; caption: string; focus: string; holdMs: number; transitionMs: number;
   commands: MotionCommand[]; activeLinks: string[]; evidence: EvidenceRef[]; annotations?: MotionAnnotation[];
 };
+export type MotionProvenance = 'synthetic' | 'authored' | 'recorded';
+export const MOTION_PROVENANCE: readonly MotionProvenance[] = ['synthetic', 'authored', 'recorded'];
 export type MotionSpec = {
   format: 'datapass.motion'; version: 1 | 2; title: string; description: string;
-  provenance: 'synthetic' | 'authored'; note: string;
+  /** `recorded` (v2 only): step order and values come from a recorded trace; geometry and timing stay presentation. */
+  provenance: MotionProvenance; note: string;
   entities: MotionEntity[]; links: MotionLink[]; steps: MotionStep[]; sources: SourceArtifact[];
 };
 export const MOTION_LIMITS = Object.freeze({entities: 40, links: 64, steps: 64, commands: 80, annotations: 6, bytes: 512000});
@@ -55,7 +60,7 @@ export function validateMotion(input: unknown): MotionSpec {
   if (input.format !== 'datapass.motion' || input.version !== 1 && input.version !== 2) throw new Error('Unsupported motion document');
   text(input.title, 'motion.title', 160); text(input.description, 'motion.description', 2000);
   text(input.note, 'motion.note', 2000);
-  if (input.provenance !== 'synthetic' && input.provenance !== 'authored') throw new Error('Motion is authored, not a live trace');
+  if (input.provenance !== 'synthetic' && input.provenance !== 'authored' && !(input.provenance === 'recorded' && input.version === 2)) throw new Error('Motion is authored or recorded, not a live trace');
   const sources = validateSources(input.sources);
   array(input.entities, 'entities', MOTION_LIMITS.entities, 1);
   const entities = new Set<string>(), stations = new Set<string>(), tokens = new Set<string>();
@@ -108,7 +113,7 @@ export function validateMotion(input: unknown): MotionSpec {
     for (const c of step.commands) {
       if (!c || typeof c !== 'object') throw new Error('Invalid motion command');
       const type = (c as Record<string, unknown>).type;
-      const keys = type === 'move' ? ['position'] : type === 'transfer' ? ['link'] : type === 'state' ? ['value'] : type === 'visibility' ? ['visible'] : [];
+      const keys = type === 'move' ? ['position'] : type === 'transfer' ? ['link'] : type === 'state' ? ['value'] : type === 'visibility' ? ['visible'] : type === 'label' && input.version === 2 ? ['text'] : [];
       strict(c, ['type', 'entity', ...keys, ...(input.version === 2 ? ['timing'] : [])], 'motion command');
       if (c.timing !== undefined) {
         strict(c.timing, ['startMs', 'endMs', 'easing'], 'motion timing');
@@ -125,6 +130,7 @@ export function validateMotion(input: unknown): MotionSpec {
         case 'transfer': if (!tokens.has(c.entity) || typeof c.link !== 'string' || !links.has(c.link)) throw new Error('Transfer needs a token and an existing link'); break;
         case 'state': if (typeof c.value !== 'string' || !MOTION_STATUSES.includes(c.value as MotionStatus)) throw new Error('Unknown authored motion status'); break;
         case 'visibility': if (typeof c.visible !== 'boolean') throw new Error('Visibility must be boolean'); break;
+        case 'label': if (input.version !== 2) throw new Error('Unsupported motion command'); text(c.text, 'label text', 80); break;
         default: throw new Error('Unsupported motion command');
       }
     }

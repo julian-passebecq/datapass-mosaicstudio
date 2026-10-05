@@ -13,6 +13,6 @@ export default function MotionViewport({compiled, view, onSelect}: {compiled: Co
     const observer = new IntersectionObserver(entries => {if (entries.every(e => !e.isIntersecting)) api.settle();}); observer.observe(host.current!);
     return () => {observer.disconnect(); document.removeEventListener('visibilitychange', hidden); renderer.current = null; api.dispose();};
   }, [compiled]);
-  useEffect(() => {renderer.current?.update(view);}, [view.index, view.selection, view.projection, view.advance, view.reduced]);
+  useEffect(() => {renderer.current?.update(view);}, [view.index, view.selection, view.projection, view.advance, view.reduced, view.speed]);
   return <div className="motion-viewport"><svg ref={host} data-testid="motion-svg"/></div>;
 }

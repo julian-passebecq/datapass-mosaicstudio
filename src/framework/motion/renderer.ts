@@ -3,7 +3,8 @@ import {interpolateFrame, motionFrame, settledDisplay, type CompiledMotion, type
 import {drawing, motionBounds, boundsText, pathData, polygonData, shade, statusColor, type MotionObject, type AnnotationDrawing} from './geometry';
 import type {MotionProjection} from './model';
 
-export type MotionView = {index: number; selection: string; projection: MotionProjection; advance: boolean; reduced: boolean};
+/** `speed` (default 1) divides transition durations; pass the controller's playback rate. */
+export type MotionView = {index: number; selection: string; projection: MotionProjection; advance: boolean; reduced: boolean; speed?: number};
 export type MotionRenderer = {update(view: MotionView): void; settle(): void; dispose(): void};
 
 /** A finite D3 transition, not a playback clock. Keeps entity DOM identities across projections. */
@@ -83,7 +84,7 @@ export function createMotionRenderer(svg: SVGSVGElement, compiled: CompiledMotio
       root.interrupt('motion'); projection = view.projection; target = next;
       if (!animate || !compiled.spec.steps[next.index].transitionMs) {settle(); return;}
       animating = true; root.attr('data-animating', 'true'); display = settledDisplay(previous!); draw();
-      root.transition('motion').duration(compiled.spec.steps[next.index].transitionMs).ease(compiled.spec.version === 2 ? easeLinear : easeCubicInOut)
+      root.transition('motion').duration(compiled.spec.steps[next.index].transitionMs / (view.speed && Number.isFinite(view.speed) && view.speed > 0 ? view.speed : 1)).ease(compiled.spec.version === 2 ? easeLinear : easeCubicInOut)
         .tween('scene', () => fraction => {display = interpolateFrame(previous!, next, fraction); draw();})
         .on('end.motion', () => {animating = false; display = settledDisplay(next); draw(); root.attr('data-animating', 'false');});
     },

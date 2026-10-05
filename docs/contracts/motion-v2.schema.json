@@ -58,7 +58,11 @@
       "$ref": "./motion.schema.json#/properties/description"
     },
     "provenance": {
-      "$ref": "./motion.schema.json#/properties/provenance"
+      "enum": [
+        "synthetic",
+        "authored",
+        "recorded"
+      ]
     },
     "note": {
       "$ref": "./motion.schema.json#/properties/note"
@@ -197,6 +201,31 @@
                     },
                     "visible": {
                       "$ref": "./motion.schema.json#/properties/steps/items/properties/commands/items/oneOf/3/properties/visible"
+                    },
+                    "timing": {
+                      "$ref": "#/$defs/timing"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "type",
+                    "entity",
+                    "text"
+                  ],
+                  "properties": {
+                    "type": {
+                      "const": "label"
+                    },
+                    "entity": {
+                      "$ref": "./motion.schema.json#/properties/steps/items/properties/commands/items/oneOf/0/properties/entity"
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
                     },
                     "timing": {
                       "$ref": "#/$defs/timing"

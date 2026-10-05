@@ -1,14 +1,14 @@
 import {timingProgress} from './timing.ts';
 import {validateMotion, type MotionSpec, type Point3, type MotionStatus, type MotionEntity, type MotionTiming} from './model.ts';
 
-export type EntityPose = {position: Point3; visible: boolean; status: MotionStatus};
+export type EntityPose = {position: Point3; visible: boolean; status: MotionStatus; label: string};
 export type MotionFrame = {
   index: number; id: string; focus: string;
   poses: Record<string, EntityPose>;
   activeLinks: string[];
   routes: Record<string, Point3[]>;
   version: 1 | 2; transitionMs: number;
-  timings: Record<string, Partial<Record<'position' | 'state' | 'visibility', MotionTiming>>>;
+  timings: Record<string, Partial<Record<'position' | 'state' | 'visibility' | 'label', MotionTiming>>>;
 };
 export type CompiledMotion = {spec: MotionSpec; initial: MotionFrame; frames: MotionFrame[]};
 const distance = (a: Point3, b: Point3) => Math.hypot(...a.map((n, i) => n - b[i]));
@@ -27,8 +27,8 @@ function freeze<T>(value: T): T {
 export function compileMotion(input: unknown): CompiledMotion {
   const spec = validateMotion(input), entities = new Map(spec.entities.map(e => [e.id, e]));
   const poses: Record<string, EntityPose> = {};
-  for (const e of spec.entities) if (e.kind === 'station') poses[e.id] = {position: [...e.position], visible: true, status: 'idle'};
-  for (const e of spec.entities) if (e.kind === 'token') poses[e.id] = {position: stationAnchor(entities.get(e.at)!, poses[e.at]), visible: true, status: 'idle'};
+  for (const e of spec.entities) if (e.kind === 'station') poses[e.id] = {position: [...e.position], visible: true, status: 'idle', label: e.label};
+  for (const e of spec.entities) if (e.kind === 'token') poses[e.id] = {position: stationAnchor(entities.get(e.at)!, poses[e.at]), visible: true, status: 'idle', label: e.label};
   const initial: MotionFrame = {index: -1, id: 'initial', focus: 'none', poses: structuredClone(poses), activeLinks: [], routes: {}, version: spec.version, transitionMs: 0, timings: {}};
   const frames: MotionFrame[] = [];
   for (const [index, step] of spec.steps.entries()) {
@@ -45,6 +45,7 @@ export function compileMotion(input: unknown): CompiledMotion {
         case 'move': routes[command.entity] = [[...pose.position], [...command.position]]; pose.position = [...command.position]; break;
         case 'state': pose.status = command.value; break;
         case 'visibility': pose.visible = command.visible; break;
+        case 'label': pose.label = command.text; break;
         case 'transfer': {
           const link = spec.links.find(l => l.id === command.link)!;
           if (moved.has(link.from) || moved.has(link.to)) throw new Error('Moving a transfer endpoint in the same step is ambiguous');
@@ -94,14 +95,15 @@ export function interpolateFrame(from: MotionFrame, to: MotionFrame, fraction: n
     const route = to.routes[id] || [start.position, pose.position];
     // V1 retains its historical eased progress; V2 receives wall-progress from D3
     // and samples each authored property window without timers or callbacks.
-    const progress = (property: 'position' | 'state' | 'visibility') => to.version === 2 && to.timings[id]?.[property]
+    const progress = (property: 'position' | 'state' | 'visibility' | 'label') => to.version === 2 && to.timings[id]?.[property]
       ? timingProgress(to.timings[id][property]!, fraction * to.transitionMs) : fraction;
-    const positionProgress = progress('position'), visibilityProgress = progress('visibility'), stateProgress = progress('state');
+    const positionProgress = progress('position'), visibilityProgress = progress('visibility'), stateProgress = progress('state'), labelProgress = progress('label');
     return [id, {
       position: pointAlong(route, positionProgress),
       visible: visibilityProgress === 1 ? pose.visible : start.visible || pose.visible,
       alpha: Number(start.visible) + (Number(pose.visible) - Number(start.visible)) * visibilityProgress,
       status: stateProgress === 1 ? pose.status : start.status,
+      label: labelProgress === 1 ? pose.label : start.label,
     }];
   }));
 }

@@ -1,1 +1,2 @@
-export {SourceReader} from './SourceReader';
+export {SourceReader, scrollToSourceLine} from './SourceReader';
+export type {SourceReaderProps, SourceLineInfo} from './SourceReader';
