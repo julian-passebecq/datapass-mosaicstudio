@@ -1,5 +1,5 @@
 import {strict, text, identifier} from '../guards.ts';
-import {validateScene, type SceneSpec} from '../scene.ts';
+import {validateScene, scenePartLimit, type SceneSpec} from '../scene.ts';
 import type {AppDefinition, Block, Field, Manifest, Values} from '../types.ts';
 
 export type ExplorerMode = 'spatial' | 'map' | 'library';
@@ -149,7 +149,7 @@ export function validateExplorerBinding(spec: ExplorerSpec, block: ExplorerBlock
   for (const item of spec.items) if (item.open && !manifest.pages.some(p => p.id === item.open!.page)) throw new Error('Unknown explorer destination page');
   let scene: SceneSpec | null = null;
   if (spec.scene) {
-    scene = validateScene(definition.resources?.scenes?.[spec.scene]);
+    scene = validateScene(definition.resources?.scenes?.[spec.scene], {maxParts: scenePartLimit(definition)});
     const cameras = new Set(scene.cameras.map(c => c.id)),entities=new Set<string>();
     if (!cameras.has(spec.overviewCamera!)) throw new Error('Unknown overview camera');
     for (const item of spec.items) {

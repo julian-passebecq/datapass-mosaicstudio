@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {readFile,mkdtemp,mkdir,writeFile,rm,symlink} from 'node:fs/promises';
+import {readFile,mkdtemp,mkdir,writeFile,rm} from 'node:fs/promises';
+import {symbolicFilePath} from './portable-links.mjs';
 import path from 'node:path';import {tmpdir} from 'node:os';
 import {syntheticModel,encodeGlb,modelTemplate,modelFixture} from '../scripts/templates/model.mjs';
 import {validateModel,validateModelAsset,modelFields,modelBlock,readModelState,MODEL_LIMITS} from '../src/framework/model-assets/model.ts';
@@ -96,7 +97,7 @@ test('client asset check verifies bytes and rejects symbolic paths',async()=>{
     const files=modelTemplate({id:'test',title:'Test'});for(const [name,content] of Object.entries(files)){await mkdir(path.dirname(path.join(root,name)),{recursive:true});await writeFile(path.join(root,name),content);}
     const spec=modelFixture('test','Test').model,definition={manifest:{pages:[{sections:[{blocks:[{type:'model3d',resource:'test'}]}]}]},resources:{models:{test:spec}}};
     const result=await checkModelAssets(definition,root);assert.equal(result[0].vertices,324);
-    const file=path.join(root,'public',spec.asset.path);await rm(file);await symlink('/dev/null',file);await assert.rejects(()=>checkModelAssets(definition,root),/Symbolic/);
+    const file=path.join(root,'public',spec.asset.path);await symbolicFilePath('/dev/null',file);await assert.rejects(()=>checkModelAssets(definition,root),/Symbolic/);
   }finally{await rm(root,{recursive:true,force:true});}
 });
 test('fresh model scaffold is source-owned and refuses overwrite/ambiguous flags',async()=>{

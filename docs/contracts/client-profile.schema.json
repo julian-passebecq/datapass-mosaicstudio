@@ -18,6 +18,28 @@
         "spatial",
         "replay"
       ]
+    },
+    "csp": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "wasm": {
+          "type": "boolean",
+          "description": "Adds 'wasm-unsafe-eval' to script-src for this client only."
+        },
+        "connect": {
+          "type": "array",
+          "maxItems": 8,
+          "uniqueItems": true,
+          "description": "Extra connect-src origins: https or http loopback (127.0.0.1, localhost, [::1]) only.",
+          "items": {
+            "type": "string",
+            "pattern": "^(https://[^/*\\s]+|http://(127\\.0\\.0\\.1|localhost|\\[::1\\])(:[0-9]{1,5})?)$"
+          }
+        }
+      },
+      "required": [],
+      "description": "Optional per-client CSP opt-ins; omitted means the default policy."
     }
   },
   "required": [
