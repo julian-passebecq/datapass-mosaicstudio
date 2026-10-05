@@ -130,7 +130,7 @@ test('annotation text remains inert in SVG and reports', () => {
   for (const result of [motionSvg(c, 1, 'diagram'), motionReport(c, 1, 'diagram')]) {assert.ok(!result.includes('<script>')); assert.ok(result.includes('&lt;script&gt;'));}
 });
 test('new generated schema matches source and keeps v1 closed and unchanged', async() => {
-  assert.equal(await readFile('docs/contracts/motion-v2.schema.json', 'utf8'), JSON.stringify(motionV2Schema, null, 2) + '\n');
+  assert.equal((await readFile('docs/contracts/motion-v2.schema.json', 'utf8')).replace(/\r\n/g, '\n'), JSON.stringify(motionV2Schema, null, 2) + '\n');
   assert.equal(motionSchema.properties.version.const, 1); assert.ok(!('annotations' in motionSchema.properties.steps.items.properties));
   assert.ok(!motionV2Schema.properties.steps.items.required.includes('annotations'));
   const visit = value => {

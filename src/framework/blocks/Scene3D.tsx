@@ -1,13 +1,13 @@
 import {useMemo} from 'react';
 import type {Block} from '../types';
-import {validateScene} from '../scene';
+import {validateScene,scenePartLimit} from '../scene';
 import {useRuntime,useSiteState} from '../hooks';
 import SceneViewport from '../scene-renderer/SceneViewport';
 import type {SceneView} from '../scene-renderer/renderer';
 /** State binding only. The shared viewport owns GPU resources and demand rendering. */
 export default function Scene3D({block}:{block:Extract<Block,{type:'scene3d'}>}){
   const runtime=useRuntime(),snapshot=useSiteState();
-  const scene=useMemo(()=>validateScene(runtime.definition.resources!.scenes![block.resource]),[runtime,block.resource]);
+  const scene=useMemo(()=>validateScene(runtime.definition.resources!.scenes![block.resource],{maxParts:scenePartLimit(runtime.definition)}),[runtime,block.resource]);
   const view:SceneView={explode:Number(snapshot.values[block.explode]),phase:Number(snapshot.values[block.phase]),camera:String(snapshot.values[block.camera]),selection:String(snapshot.values[block.selection])};
   const selected=scene.entities.find(e=>e.id===view.selection);
   function field(id:string){return runtime.manifest.fields.find(f=>f.id===id)!;}

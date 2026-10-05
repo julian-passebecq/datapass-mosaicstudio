@@ -44,6 +44,17 @@ An ordinary client must not modify framework internals. A real requirement may j
 
 The preferred family in `client.config.json` is advisory. The build plan follows actual blocks and referenced resources. Unused scene resources do not force 3D. A client can combine families without changing its basic ownership model.
 
+`client.config.json` may also carry per-client Content-Security-Policy opt-ins. Omit `csp` to keep the default policy (`script-src 'self'; connect-src 'self'`).
+
+```json
+{"format":"datapass.client-profile","version":1,"family":"analytics","csp":{"wasm":true,"connect":["http://127.0.0.1:8000"]}}
+```
+
+- `wasm: true` adds `'wasm-unsafe-eval'` to `script-src` for that client only (WebAssembly compilation; never `'unsafe-eval'`).
+- `connect` adds at most 8 exact origins to `connect-src`: `https://host[:port]`, or `http://` on loopback only (`127.0.0.1`, `localhost`, `[::1]`). Paths, wildcards and other schemes are refused.
+
+The opt-ins apply to `build:client` (emitted `_headers`) and the client preview server. They are declared configuration, not access control: the browser still talks only to the listed origins.
+
 For extended context/navigation behavior read `docs/EXPERIENCE_KIT.md`; for replay and capability planning read `docs/FAMILIES_REPLAY.md`. For the first real energy client read `docs/FIRST_ENERGY_CLIENT.md`. The generated component and JSON Schema files are under `docs/contracts/`; semantic runtime validators remain authoritative.
 
 ## State, data and execution boundaries

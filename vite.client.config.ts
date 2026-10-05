@@ -1,4 +1,5 @@
 import {publicationHead,publicationFiles} from './scripts/publication.mjs';
+import {clientCspFor} from './scripts/client-csp.mjs';
 import {capabilityDefines,CAPABILITY_IDS,type CapabilityId} from './src/framework/capabilities';
 import {defineConfig} from 'vite';
 import react from '@vitejs/plugin-react';
@@ -10,7 +11,7 @@ const root=clientDirectory(id),publicPath=path.join(root,'public');
 if(existsSync(publicPath)&&lstatSync(publicPath).isSymbolicLink())throw new Error('A client public directory may not be symbolic');
 const publication=process.env.STUDIO_PUBLICATION?JSON.parse(process.env.STUDIO_PUBLICATION):null;
 const capabilities:CapabilityId[]=JSON.parse(process.env.STUDIO_CAPABILITIES||'[]');
-const csp="default-src 'self'; script-src 'self'; connect-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'";
+const csp=clientCspFor(root);
 export default defineConfig({base:'./',define:capabilityDefines(capabilities),publicDir:existsSync(publicPath)?publicPath:false,
   plugins:[react(),clientRegistryPlugin(id),{name:'single-client-entry',transformIndexHtml:{order:'pre',handler(html){if(!publication)throw new Error('Build with build:client to validate publication metadata');return html.replace('/src/main.tsx','/src/client-main.tsx').replace(/<html lang="[^"]*"/,`<html lang="${publication.language}"`).replace(/<title>[^<]*<\/title>/,publicationHead(publication));}},generateBundle(_options,bundle){
 if(publication)for(const [fileName,source] of Object.entries(publicationFiles(publication)))this.emitFile({type:'asset',fileName,source});

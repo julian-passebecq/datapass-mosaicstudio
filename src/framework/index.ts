@@ -2,7 +2,7 @@
 export type * from './types.ts';
 export {SiteRuntime} from './runtime.ts';
 export {validateManifest,validateDefinition,validateRows,parseSavedState,LIMITS} from './validate.ts';
-export {validateScene,pose} from './scene.ts';
+export {validateScene,pose,scenePartLimit,SCENE_PART_LIMIT,SCENE_PART_CEILING} from './scene.ts';
 export type {SceneSpec,ScenePart,Vec3} from './scene.ts';
 export {componentCatalog} from './catalog.ts';
 import type {AppDefinition} from './types.ts';

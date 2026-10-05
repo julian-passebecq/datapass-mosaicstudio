@@ -3,7 +3,7 @@ import {Search,ChevronRight,Layers,BookOpen,Box,Waypoints,ArrowUpRight,ArrowLeft
 import {useRuntime,useSiteState,useReducedMotion,useNavigatePage} from '../hooks';
 import {validateExplorer,readExplorerState,explorerStatePatch,type ExplorerBlock,type ExplorerItem,type ExplorerDocument} from './model';
 import {navigateExplorer,ancestors,contextDocuments,isInBranch,explorerCamera,journeyStops,searchExplorer,explorerLink,readExplorerLink,type ExplorerAction} from './navigation';
-import {validateScene} from '../scene';
+import {validateScene,scenePartLimit} from '../scene';
 import {useJourney} from './useJourney';
 import './explorer.css';
 import '../blocks/scene3d.css';
@@ -17,7 +17,7 @@ function DocumentView({doc}:{doc:ExplorerDocument}){
 export default function Explorer({block}:{block:ExplorerBlock}){
   const runtime=useRuntime(),snapshot=useSiteState(),reduced=useReducedMotion(),navigate=useNavigatePage();
   const spec=useMemo(()=>validateExplorer(runtime.definition.resources!.explorers![block.resource]),[runtime,block.resource]);
-  const scene=useMemo(()=>spec.scene?validateScene(runtime.definition.resources!.scenes![spec.scene]):null,[runtime,spec]);
+  const scene=useMemo(()=>spec.scene?validateScene(runtime.definition.resources!.scenes![spec.scene],{maxParts:scenePartLimit(runtime.definition)}):null,[runtime,spec]);
   const state=readExplorerState(block,snapshot.values),stateRef=useRef(state);stateRef.current=state;
   const [query,setQuery]=useState(''),[error,setError]=useState(''),[link,setLink]=useState(''),[outline,setOutline]=useState(true),[wide,setWide]=useState(()=>matchMedia('(min-width: 1100px) and (min-height: 720px)').matches);
   const search=useRef<HTMLInputElement>(null),root=useRef<HTMLElement>(null),track=useRef<HTMLDivElement>(null),stage=useRef<HTMLDivElement>(null),readLink=useRef(false);

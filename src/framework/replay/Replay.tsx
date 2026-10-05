@@ -6,7 +6,7 @@ import {useReplay} from './Scope';
 import {readReplayState,sampleValue,nearestSample,replayOffsets,type ReplayBlock} from './model';
 import {replayChartInput} from './visual';
 import {withSiteChartTheme} from '../visual-theme';
-import {validateScene} from '../scene';
+import {validateScene,scenePartLimit} from '../scene';
 import './replay.css';
 import './camera-controls.css';
 import '../blocks/scene3d.css';
@@ -18,7 +18,7 @@ export default function Replay({block}:{block:ReplayBlock}){
   const {controller}=useReplay(block.resource),clock=useSyncExternalStore(controller.subscribe,controller.getSnapshot,controller.getSnapshot),spec=controller.spec;
   const view=readReplayState(block,state.values),entity=spec.entities.find(e=>e.id===view.selection)!,channel=spec.channels.find(c=>c.id===view.channel)!,time=spec.time[view.frame];
   const chart=useMemo(()=>{const input=replayChartInput(spec,view.selection,view.channel);return input?parseVisualization(withSiteChartTheme(input,runtime.manifest.theme)):null;},[spec,view.selection,view.channel,runtime]);
-  const scene=useMemo(()=>spec.scene?validateScene(runtime.definition.resources!.scenes![spec.scene]):null,[runtime,spec]);
+  const scene=useMemo(()=>spec.scene?validateScene(runtime.definition.resources!.scenes![spec.scene],{maxParts:scenePartLimit(runtime.definition)}):null,[runtime,spec]);
   const offsets=useMemo(()=>replayOffsets(spec,view.frame),[spec,view.frame]);
   const eventList=spec.events.filter(e=>e.entity===null||e.entity===view.selection).slice().sort((a,b)=>a.time-b.time);
   const missing=spec.channels.filter(c=>sampleValue(spec,entity.id,c.id,view.frame)===null).length;

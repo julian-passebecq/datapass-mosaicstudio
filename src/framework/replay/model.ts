@@ -1,6 +1,6 @@
 /** Read-only, bounded sampled telemetry. Rendering is not a physical simulation. */
 import {strict,text,identifier,object} from '../guards.ts';
-import {validateScene,type SceneSpec} from '../scene.ts';
+import {validateScene,scenePartLimit,type SceneSpec} from '../scene.ts';
 import type {AppDefinition,Manifest,Field,Block,Values} from '../types.ts';
 export const REPLAY_LIMITS=Object.freeze({frames:200,entities:24,channels:8,events:100,bytes:1024*1024});
 export const REPLAY_SPEEDS=['0.5','1','2','4'] as const;
@@ -66,7 +66,7 @@ export function validateReplayBinding(spec:ReplaySpec,block:ReplayBlock,manifest
     else if(f.options!.length!==e.options!.length||f.options!.some(o=>!e.options!.some(x=>x.value===o.value)))throw new Error('Replay field choices mismatch: '+key);
   });
   if(!spec.scene)return null;
-  const scene=validateScene(definition.resources?.scenes?.[spec.scene]),cameras=new Set(scene.cameras.map(c=>c.id));
+  const scene=validateScene(definition.resources?.scenes?.[spec.scene],{maxParts:scenePartLimit(definition)}),cameras=new Set(scene.cameras.map(c=>c.id));
   if(!cameras.has(spec.overviewCamera!))throw new Error('Unknown replay overview camera');
   for(const entity of spec.entities){if(!scene.entities.some(e=>e.id===entity.id)||entity.camera&&!cameras.has(entity.camera))throw new Error('Replay entity/scene mismatch');}
   for(const m of spec.motion||[]){let part=scene.parts.find(p=>p.id===m.part);if(!part)throw new Error('Unknown replay motion part');while(part&&!part.entity&&part.parent)part=scene.parts.find(p=>p.id===part!.parent);

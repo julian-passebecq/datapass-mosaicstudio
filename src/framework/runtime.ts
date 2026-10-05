@@ -1,5 +1,6 @@
 import type {TaskRunEvent} from './task-events.ts';
 import {validateExplorerValues} from './explorer/model.ts';
+import {scenePartLimit} from './scene.ts';
 import type {AppDefinition, Manifest, Values, Rows, Scalar, ValueRef, Snapshot, TaskState, SavedState, DeriveContext} from './types.ts';
 import {validateDefinition, validateRows, validateValue, object, parseSavedState} from './validate.ts';
 function freeze<T>(value: T): T {if (value && typeof value==='object' && !Object.isFrozen(value)) {Object.freeze(value); Object.values(value).forEach(freeze);} return value;}
@@ -22,10 +23,11 @@ export class SiteRuntime {
   private tickets=0;
   private derivations=new Map<string,number>();
   constructor(definition: AppDefinition) {
+    scenePartLimit(definition);
     this.manifest=freeze(validateDefinition(definition));
     if(definition.bindings.validateViewState!==undefined&&typeof definition.bindings.validateViewState!=='function')throw new Error('View invariant must be a trusted function');
     // Source functions are not cloned or serialized. Inline data and resources are copied.
-    this.definition=freeze({manifest:this.manifest,components:{...definition.components},customCapabilities:structuredClone(definition.customCapabilities),bindings:{inline:freeze(structuredClone(definition.bindings.inline||{})),derive:{...definition.bindings.derive},tasks:{...definition.bindings.tasks},validateViewState:definition.bindings.validateViewState},resources:freeze(structuredClone(definition.resources||{}))});
+    this.definition=freeze({manifest:this.manifest,components:{...definition.components},customCapabilities:structuredClone(definition.customCapabilities),limits:freeze(structuredClone(definition.limits)),bindings:{inline:freeze(structuredClone(definition.bindings.inline||{})),derive:{...definition.bindings.derive},tasks:{...definition.bindings.tasks},validateViewState:definition.bindings.validateViewState},resources:freeze(structuredClone(definition.resources||{}))});
     this.snapshot=freeze({values:Object.fromEntries(this.manifest.fields.map(f=>[f.id,f.default])),revision:0,restoreEpoch:0,tasks:Object.fromEntries(this.manifest.tasks.map(t=>[t.id,{status:'idle',progress:0,message:''} satisfies TaskState]))});
     this.definition.bindings.validateViewState?.(this.snapshot.values);
   }
