@@ -1,0 +1,19 @@
+{
+  "spec": "fabric-platform",
+  "duration": 28,
+  "fps": 30,
+  "size": "1280x720",
+  "frames": 840,
+  "seconds": 110,
+  "stills": [
+    "clients/arch-atlas/qa/film/still-01.0s.png",
+    "clients/arch-atlas/qa/film/still-07.0s.png",
+    "clients/arch-atlas/qa/film/still-15.0s.png",
+    "clients/arch-atlas/qa/film/still-21.5s.png",
+    "clients/arch-atlas/qa/film/still-24.5s.png",
+    "clients/arch-atlas/qa/film/still-27.0s.png"
+  ],
+  "video": "clients/arch-atlas/qa/film/arch-atlas-film.mp4",
+  "errors": [],
+  "bytes": 3555416
+}
