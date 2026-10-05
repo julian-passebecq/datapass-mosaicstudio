@@ -18,7 +18,8 @@ if(process.argv[2]!=='--owned'){
   const {scaffoldClient}=await import('../scripts/scaffold-client.mjs');
   const {startClientDev}=await import('../scripts/client-dev.mjs');
   const id='engine-watch-'+process.pid,root=path.resolve('clients',id);let host,owned=false;
-  const until=async predicate=>{const start=Date.now();while(Date.now()-start<10000){if(predicate())return;await delay(2);}throw new Error('Immediate edit was lost: '+JSON.stringify(host.getStatus()));};
+  // The restart runs in this process and can starve the poll; always re-check after the last wait.
+  const until=async predicate=>{const start=Date.now();while(Date.now()-start<30000){if(predicate())return;await delay(2);}if(predicate())return;throw new Error('Immediate edit was lost: '+JSON.stringify(host.getStatus()));};
   const publication=title=>JSON.stringify({format:'datapass.publication',version:1,visibility:'preview',language:'en',title});
   const assertArmed=()=>{const files=host.server.watcher.getWatched()[root]??[];assert.ok(files.includes('app.ts')&&files.includes('publication.json'),'ready must cover the selected source and metadata');};
   try{
