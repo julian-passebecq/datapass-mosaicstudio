@@ -37,3 +37,4 @@ public/models/
 __pycache__/
 clients/acceptance-model/
 docs/media/viz-gallery/.frames/
+.venv/

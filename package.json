@@ -33,6 +33,8 @@
     "record:gallery": "node tools/record_gallery.mjs",
     "test:python": "python -m unittest discover -s py -p \"test_*.py\"",
     "test:python-bridge": "node scripts/smoke-python-bridge.mjs",
+    "service:python": "python py/service/app.py",
+    "test:python-service": "node scripts/smoke-python-service.mjs",
     "test:engine": "node --experimental-strip-types scripts/test-engine-consolidation.mjs"
   },
   "overrides": {
