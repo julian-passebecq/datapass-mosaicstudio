@@ -36,3 +36,5 @@ clients/acceptance-foundation/
 public/models/
 __pycache__/
 clients/acceptance-model/
+
+.venv/
