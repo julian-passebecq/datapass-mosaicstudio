@@ -10,8 +10,8 @@ if(process.argv[2]!=='--owned'){
   // Keep the owned CLI's stdin open until completion, as a terminal host does.
   const child=spawn(process.execPath,['--experimental-strip-types',fileURLToPath(import.meta.url),'--owned'],{stdio:['pipe','inherit','inherit'],env:{...process.env,CI:'true'}});
   let timedOut=false;
-  // Budget: preparation plus three cycles of three Vite restarts; Windows under load needs ~75 s.
-  const timer=setTimeout(()=>{timedOut=true;console.error('engine-host-watch: timed out after 150 s');child.kill('SIGTERM');},150000);
+  // Budget: preparation plus three cycles of three Vite restarts; a loaded Windows host spends up to ~20 s per Vite config re-resolution.
+  const timer=setTimeout(()=>{timedOut=true;console.error('engine-host-watch: timed out after 300 s');child.kill('SIGTERM');},300000);
   child.on('exit',(code)=>{clearTimeout(timer);child.stdin.destroy();process.exitCode=timedOut?1:code??1;});
   child.on('error',error=>{clearTimeout(timer);console.error(error);process.exitCode=1;});
 }else{
@@ -19,7 +19,7 @@ if(process.argv[2]!=='--owned'){
   const {startClientDev}=await import('../scripts/client-dev.mjs');
   const id='engine-watch-'+process.pid,root=path.resolve('clients',id);let host,owned=false;
   // The restart runs in this process and can starve the poll; always re-check after the last wait.
-  const until=async predicate=>{const start=Date.now();while(Date.now()-start<30000){if(predicate())return;await delay(2);}if(predicate())return;throw new Error('Immediate edit was lost: '+JSON.stringify(host.getStatus()));};
+  const until=async predicate=>{const start=Date.now();while(Date.now()-start<60000){if(predicate())return;await delay(2);}if(predicate())return;throw new Error('Immediate edit was lost: '+JSON.stringify(host.getStatus()));};
   const publication=title=>JSON.stringify({format:'datapass.publication',version:1,visibility:'preview',language:'en',title});
   const assertArmed=()=>{const files=host.server.watcher.getWatched()[root]??[];assert.ok(files.includes('app.ts')&&files.includes('publication.json'),'ready must cover the selected source and metadata');};
   try{
