@@ -122,3 +122,42 @@ Its test and smoke now expect these changes. The stills were regenerated.
 
 ## Proposed tag (not created)
 `studio-v0.8.0-rc.2` on the merge commit of this branch once it is accepted, after deciding on `fix/app-definition-hmr` for `test:engine`.
+
+---
+
+# rc.3: `release/studio-0.8-rc3` (2026-10-06)
+
+Built on `release/studio-0.8-rc2` @ `35777cc`. It fixes the Windows dev host so that `test:engine` passes, the last open item of rc.2. Nothing is tagged, and nothing is merged to `main` or to the rc.1/rc.2 branches.
+
+## `fix/app-definition-hmr` was not the fix
+Its commits (2e59ca0, and 1cf6dcc on its origin) are already ancestors of rc.1 (`050731b`) and of rc.2. Merging it changes nothing, so the failure had another cause.
+
+## Root causes (Windows only; CI runs on Ubuntu, which hid them)
+1. **Client edits were ignored by the dev host.** Vite hands `handleHotUpdate` a POSIX-style id (`D:/…/app.ts`), while `client-dev.mjs` compared it with the native root (`D:\…\clients\<id>\`). `startsWith` never matched, so a capability or publication edit never revalidated. That is the "Immediate edit was lost" failure. It is fixed by `isClientFile()`, which compares resolved paths, with a unit test for both separator styles (`tests/engine-authoring.test.mjs`).
+2. **The host could not stop gracefully.** The CLI listened for stdin `end` but never resumed stdin, so the event never fired, and on Windows SIGTERM is TerminateProcess. The CLI now follows a piped stdin (never a TTY or an ignored stdin) once it is ready, then publishes `stopped` and exits 0. `test:engine` closes stdin instead of sending SIGTERM on Windows. A second host on a busy port still exits 1 with its own error.
+3. **Qualification budgets were sized for an idle Linux runner.** Traced Vite restarts on this host: config re-resolution takes about 1 s when idle and up to 18 s under load, and arming takes 1 to 5 s. `engine-host-watch` now waits up to 60 s per edit, re-checks after its last wait (the in-process restart can starve the poll), and has a 300 s budget. Its timeout is reported by name.
+
+`ENGINE_EVIDENCE_DIR` already gives each run its own output folder. The script refuses an existing folder on purpose, to keep earlier evidence, so it was left unchanged.
+
+## Commits
+`8da02ee` POSIX id fix · `ffe39d8` stdin stop · `87b5067` follow stdin only once ready, plus budgets · `5051d0a` and `52c91d1` restart-watch budgets · `09f44e6` portfolio stats (524 tests).
+
+## Test matrix (Windows 11, Node 26.9.0; Node 22.23.3 via `npx node@22`; SHA 09f44e6 plus this doc)
+| Check | rc.2 | rc.3 |
+|---|---|---|
+| `npm test` Node 26 | 523/523 | **524/524** |
+| `npm test` Node 22 | 523/523 | **524/524** |
+| `typecheck` | clean | **clean** |
+| `contracts:check` | OK | **OK** |
+| `client:check` | 14 clients | **14 clients OK** |
+| portfolio `stats.mjs --check` | OK | **OK** (regenerated) |
+| `test:client-builds` + budgets | 18/18 | **18/18** |
+| `test:artifact-watch` (client:dev with piped stdin) | OK | **OK** (rewrite shown in 115 ms) |
+| param-lab smoke (client:dev with ignored stdin) | OK | **OK** |
+| `build` + Playwright `tests/browser` (includes Motion Pro) | 87/87 | **87/87**. Another session's preview held port 4173 all night, so the suite ran on a private port (4187) with Chromium mapping `127.0.0.1:4173` to it, and pages kept their origin. First pass: 84 passed. `studio.spec` Parquet needed `npm run test:fixtures` on the new worktree (7/7 after that). The two `public-metadata` tests call `route.fetch()` from Node, which reached the foreign server. A throwaway copy that fetched from 4187 passed 3/3. Nothing in the repo was changed for this. |
+| `test:engine` × 3 (separate `ENGINE_EVIDENCE_DIR` each) | FAIL | **3/3 passed, 34 checks each** (SHA 52c91d1; `09f44e6` only regenerates portfolio stats) |
+
+Not rerun, because rc.3 does not touch them: `test:viz-gallery`, Python tests, `test:artifact-lineage`, `test:visual-contracts`, `test:coding-lab`, portfolio smoke, Fabric Bricks Playwright.
+
+## Proposed tag (not created)
+**Ready to tag `studio-v0.8.0-rc.3` (not tagged)** on the merge commit of this branch once it is accepted.
