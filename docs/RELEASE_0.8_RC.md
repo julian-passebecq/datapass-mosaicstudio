@@ -58,3 +58,67 @@ Setup notes for a fresh clone: `npm ci`, then `npm run bootstrap` (otherwise `ts
 
 ## Proposed tag (not created)
 `studio-v0.8.0-rc.1` on the merge commit of this branch once it is accepted. `package.json` still reads `0.7.0-alpha.1`, and the bump is left to the release decision.
+
+---
+
+# rc.2: `release/studio-0.8-rc2` (2026-10-05)
+
+Built on `release/studio-0.8-rc` @ `050731b`. It adds the client branches left out of rc.1 and closes the framework gaps the Animated Coding Lab found. Nothing is tagged, and nothing is merged to `main` or to the rc.1 branch.
+
+## Merged branches (`--no-ff` merge commits, in this order)
+| # | Branch | Head | Notes |
+|---|---|---|---|
+| 14 | feat/fabric-bricks-autoplay | e91dde8 | Also carries the 3 commits of `client/fabric-bricks-v1` that are not on its origin (f267eb4, 792ca63, 9203dc7) on top of 8ef760e/ac4281e. All 5 are included with their history. |
+| 18 | feat/fabric-bricks-detail | 7b296d2 | Stacked on #14. |
+| 21 | proto/portfolio-showcase | 0f2aa49 | |
+| 22 | proto/animated-coding-lab | c8675ff | |
+
+**Conflicts:** only `package.json` scripts (#22). `test:coding-lab` was added next to the existing `test:engine` line, and the union was kept. The other merges applied automatically.
+
+## Framework gaps from #22, now fixed (all backwards compatible; tests in `tests/motion-rc2-gaps.test.mjs`, one per gap)
+1. **Runtime-built specs:** `motion/react.ts` exports `createMotionController` (plus the `MotionController` and `MotionControllerOptions` types and `MOTION_SPEED`).
+2. **Provenance `recorded`:** accepted on v2 only. v1 documents and unknown kinds still fail closed. The SVG and HTML exports describe it as a recorded trace with authored presentation. The `motion-v2.schema.json` contract was regenerated.
+3. **Changing labels:** a new v2 `label` command (`{type:'label', entity, text}`, at most 80 characters, optional timing window) changes the displayed label in place while the identity stays the same. There is one write per property per step, and v1 rejects it. Existing scenes are unchanged, because every pose label equals the entity label.
+4. **Z-order:** a token resting on a container's top face is drawn after that container, even when the container's centre is deeper. Tokens that are not on top keep the plain x+y order.
+5. **Playback speed:** `createMotionController(spec, reduced, scheduler, {speed})` and `setSpeed()` divide each authored hold before it reaches the scheduler, so a fake scheduler sees exactly `holdMs / speed`. `MotionView.speed` divides the D3 transition. Speed never changes which snapshot a step selects. Allowed range: 0.25 to 4. A new speed applies from the next hold, so no second timer is created.
+6. **SourceReader:** new props `onLineClick(line, artifact)`, `currentLine` (marked `aria-current` and kept in view inside the reader, never by scrolling the page), `lineInfo` (badge, label, disabled), `renderLine` and `compact`. A new `scrollToSourceLine(container, line)` API is exported. The default rendering is unchanged.
+7. **motion.css:** the viewport SVG `min-width:440px` is now `min(440px,100%)`, so there is no horizontal scroll on a phone.
+
+**Animated Coding Lab, workarounds removed:**
+- It imports from `motion/react.ts` and declares `provenance: 'recorded'`.
+- Each row is one `row-i` token whose label becomes the returned value (the second `out-i` token is gone).
+- Tokens rest on their containers.
+- Speed is a controller rate: one compiled spec, no recompile.
+- The code pane is the framework `SourceReader`.
+- The lab's `min-width` override is gone.
+
+Its test and smoke now expect these changes. The stills were regenerated.
+
+## Step 3
+- The shared client budget file (`scripts/check-client-performance.mjs`) gains `portfolio-showcase` (137,517 B / 160 KiB) and `animated-coding-lab` (158,683 B / 185 KiB), and `test:client-builds` builds and smokes both. The matrix is now **18 targets**.
+- The portfolio stats (`stats.generated.ts`) were regenerated: 14 clients, 523 tests. Its `--check` drift guard failed until this was done.
+- **Fabric Bricks and `defineApp({limits:{sceneParts}})` (#19): not adopted, because it would not simplify anything.** The grouping in `kits.ts` (scene entities are part types) comes from the **64-entity** cap. `sceneParts` raises only the 128-part cap, and the largest kit has 126 parts, which already fits.
+
+## Test matrix (Windows 11, Node 26.9.0; Node 22.23.3 via `npx node@22`; SHA a618ddb plus this doc)
+| Check | rc.1 | rc.2 |
+|---|---|---|
+| `npm test` Node 26 | 504/504 | **523/523** |
+| `npm test` Node 22 | 504/504 | **523/523** |
+| `typecheck` | clean | **clean** |
+| `contracts:check` | OK | **OK** (motion-v2 schema regenerated) |
+| `client:check` | 11 clients | **14 clients OK** |
+| `build:client` × all | 11/11 | **14/14** |
+| `test:client-builds` + budgets | 16/16 | **18/18** (first run: one `acceptance-analytics` preview start timed out under load; the rerun passed) |
+| `test:viz-gallery` | OK | **OK** (core 40,106 B gz) |
+| `test:python`, `test:python-bridge`, `test:python-service` | OK | **OK** |
+| `test:artifact-watch`, `test:artifact-lineage` | OK | **OK** (rewrite shown in 106 ms) |
+| param-lab smoke | OK | **OK** |
+| `test:visual-contracts` | OK | **OK** |
+| `test:coding-lab` (built client, 390 px, captures) | – | **OK**: 31 steps line-matched, JS 158,683 B ≤ 185 KiB, captures stable |
+| portfolio smoke | – | **OK**: JS 137,311 B gz, 390 px light and dark, reduced motion, captures stable |
+| Fabric Bricks Playwright (`qa/visual.spec.ts`, dev client, swiftshader) | – | **5/5** (first cold run: 1 timeout waiting for the lazy WebGL canvas; warm rerun 5/5) |
+| `build` + Playwright `tests/browser` (includes Motion Pro) | 87/87 | **87/87** |
+| `test:engine` | not run | **FAIL, already on rc.1**: `immediate-restart-watch` reports "Immediate edit was lost". It fails the same way on `050731b` (checked in a throwaway worktree), and RC2 changes no dev-host code. The candidate fix is the open `fix/app-definition-hmr` (2e59ca0), which is outside this RC's branch list. |
+
+## Proposed tag (not created)
+`studio-v0.8.0-rc.2` on the merge commit of this branch once it is accepted, after deciding on `fix/app-definition-hmr` for `test:engine`.
