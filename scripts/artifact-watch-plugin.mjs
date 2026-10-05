@@ -4,6 +4,7 @@
  */
 import {createHash} from 'node:crypto';
 import {readFile,readdir} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
 import path from 'node:path';
 
 export const ARTIFACT_CHANGED_EVENT='datapass:artifact-changed';
@@ -53,7 +54,9 @@ export function artifactWatchPlugin(dir,{debounceMs=60}={}){
         const id=artifactIdForFile(path.join(folder,name),folder);
         if(id)try{notifier.seed(id,sha256(await readFile(path.join(folder,name))));}catch{/* raced with a writer */}
       }
-      server.watcher.add(folder);
+      // Adding a missing folder to the shared chokidar watcher stalls its initial scan on Windows,
+      // so clients without public/artifacts never reach the client:dev "armed" barrier.
+      if(existsSync(folder))server.watcher.add(folder);
       const onFile=file=>{const id=artifactIdForFile(file,folder);if(id)notifier.notify(id,file);};
       server.watcher.on('add',onFile);server.watcher.on('change',onFile);
       server.httpServer?.once('close',()=>notifier.close());
