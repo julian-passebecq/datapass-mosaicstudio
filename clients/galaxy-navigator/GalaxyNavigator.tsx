@@ -8,13 +8,12 @@ import {useRuntime,useSiteState} from '../../src/framework/ui';
 import {VizRoot,Kpi,BarChart,useMotion,cat,v,lerp} from '../../src/framework/viz/index.ts';
 import {FIELDS} from './fields.ts';
 import {REGISTRY} from './registry.generated.ts';
-import {GROUPS,OTHER_GROUP,STATUS_DASH,STATUS_FILTERS,STATUS_LABEL,STATUS_ORDER,contractsOf,curve,labelSpot,focusBox,layout,neighbours,search,type Graph,type Placed,type StatusFilter} from './registry.ts';
+import {GROUPS,OTHER_GROUP,STATUS_DASH,STATUS_FILTERS,STATUS_LABEL,STATUS_ORDER,contractsOf,curve,clusterLabelFits,labelSpot,shortName,LABEL,focusBox,layout,neighbours,search,type Graph,type Placed,type StatusFilter} from './registry.ts';
 import {exportPng,exportSvg} from './export.ts';
 import './galaxy.css';
 
 const GROUP_INDEX=new Map([...GROUPS,OTHER_GROUP].map((g,i)=>[g.id,i]));
 const groupColor=(id:string)=>cat(GROUP_INDEX.get(id)??7);
-const shortName=(name:string)=>name.replace(/\s*\(.*\)\s*$/,'');
 const asView=(x:unknown)=>x==='list'?'list':'graph';
 const asFilter=(x:unknown):StatusFilter=>x==='live'||x==='pending'?x:'all';
 
@@ -107,7 +106,7 @@ function GraphView({graph,focus,matched,contract,onSelect,svgRef}:{graph:Graph;f
     <g className="gn-clusters" aria-hidden="true">
       {graph.clusters.map(c=><g key={c.group.id}>
         <circle cx={c.x} cy={c.y} r={c.r} fill={groupColor(c.group.id)} fillOpacity={0.06} stroke={groupColor(c.group.id)} strokeOpacity={0.35} strokeDasharray="3 5"/>
-        <text x={c.x} y={c.labelBelow?c.y+c.r+18:c.y-c.r-8} textAnchor="middle" className="gn-cluster-label" fill={v('inkSecondary')}>{c.group.label}</text>
+        {clusterLabelFits(c,target)&&<text x={c.x} y={c.labelBelow?c.y+c.r+18:c.y-c.r-8} textAnchor="middle" className="gn-cluster-label" fill={v('inkSecondary')} stroke={v('surface')} strokeWidth={LABEL.halo} strokeLinejoin="round" paintOrder="stroke">{c.group.label}</text>}
       </g>)}
     </g>
     <g className="gn-edges" data-testid="gn-edges">
@@ -134,7 +133,7 @@ function GraphView({graph,focus,matched,contract,onSelect,svgRef}:{graph:Graph;f
             ?<circle r={n.r} fill={groupColor(n.group.id)} stroke={v('surface')} strokeWidth={1.5}/>
             :<rect x={-n.r} y={-n.r} width={n.r*2} height={n.r*2} rx={3} fill={v('surface')} stroke={groupColor(n.group.id)} strokeWidth={2}/>}
           {n.hub&&<circle r={n.r*0.38} fill={v('surface')}/>}
-          <text {...(l=>({x:l.x,y:l.y,textAnchor:l.anchor}))(labelSpot(n))} className="gn-label" fill={v('ink')} stroke={v('surface')} strokeWidth={3} paintOrder="stroke">{shortName(n.name)}</text>
+          <text {...(l=>({x:l.x,y:l.y,textAnchor:l.anchor}))(labelSpot(n))} className="gn-label" fill={v('ink')} stroke={v('surface')} strokeWidth={LABEL.halo} strokeLinejoin="round" strokeOpacity={0.92} paintOrder="stroke">{shortName(n.name)}</text>
         </g>;
       })}
     </g>

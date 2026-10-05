@@ -38,6 +38,20 @@ async function open({width=1440,height=960,query='?capture=1'}={}){
   await page.goto(url+query);await page.getByTestId('galaxy-navigator').waitFor({timeout:30000});
   return {page,context,errors,external};
 }
+/** Every label is wholly inside the SVG viewport (or, for nodes outside a focus frame, wholly outside it). */
+async function labelsInside(page,{allInside}){
+  const bad=await page.evaluate(all=>{
+    const svg=document.querySelector('[data-testid=gn-graph]').getBoundingClientRect(),out=[];
+    for(const t of document.querySelectorAll('[data-testid=gn-graph] .gn-label,[data-testid=gn-graph] .gn-cluster-label')){
+      const r=t.getBoundingClientRect(),inside=r.left>=svg.left-0.5&&r.right<=svg.right+0.5&&r.top>=svg.top-0.5&&r.bottom<=svg.bottom+0.5;
+      const outside=r.right<=svg.left||r.left>=svg.right||r.bottom<=svg.top||r.top>=svg.bottom;
+      const near=t.closest('.gn-node')?.getAttribute('data-dimmed')!=='true';
+      if(!inside&&(all||near||!outside))out.push(t.textContent);
+    }
+    return out;
+  },allInside);
+  assert.deepEqual(bad,[],'labels cut by the SVG frame');
+}
 const settled=page=>page.waitForFunction(()=>document.querySelector('[data-testid=gn-graph]')?.getAttribute('data-viz-settled')==='true');
 try{
   let ready=false;for(let i=0;i<150&&!ready;i++){try{ready=(await fetch(url)).ok;}catch{}if(!ready)await new Promise(r=>setTimeout(r,100));}
@@ -48,25 +62,27 @@ try{
     assert.equal(await page.locator('.gn-node').count(),REGISTRY.nodes.length);
     const allEdges=await page.locator('[data-testid=gn-edges] path').count();assert.ok(allEdges>10,'edges drawn');
     const full=await page.getByTestId('gn-graph').getAttribute('viewBox');
+    await labelsInside(page,{allInside:true});
     // Search -> Enter focuses the first hit.
-    await page.getByTestId('gn-search').fill('mongo');
+    await page.getByTestId('gn-search').fill('diagram');
     assert.ok(await page.getByTestId('gn-hits').locator('button').count()>=1);
     await page.getByTestId('gn-search').press('Enter');
-    await page.waitForSelector('[data-testid=galaxy-navigator][data-focus=mongoku]');
-    assert.match(await page.getByTestId('gn-inspector-title').textContent(),/Mongoku/);
+    await page.waitForSelector('[data-testid=galaxy-navigator][data-focus=diagramcloud]');
+    assert.match(await page.getByTestId('gn-inspector-title').textContent(),/DiagramCloud/);
     await settled(page);
     assert.notEqual(await page.getByTestId('gn-graph').getAttribute('viewBox'),full,'focus frames the neighbourhood');
     assert.ok(await page.locator('.gn-node[data-dimmed=true]').count()>0,'non-neighbours dimmed');
-    report.checks.search={query:'mongo',focused:'mongoku'};
+    await labelsInside(page,{allInside:false});
+    report.checks.search={query:'diagram',focused:'diagramcloud'};
     // Projection switch keeps selection.
     await page.getByTestId('gn-search').fill('');
     await page.getByTestId('gn-view-list').click();
-    assert.equal(await page.locator('[data-testid=gn-list] tr[data-node=mongoku]').getAttribute('aria-selected'),'true');
-    await page.locator('[data-testid=gn-list] tr[data-node=diagramcloud] button').click();
+    assert.equal(await page.locator('[data-testid=gn-list] tr[data-node=diagramcloud]').getAttribute('aria-selected'),'true');
+    await page.locator('[data-testid=gn-list] tr[data-node=mongoku] button').click();
     await page.getByTestId('gn-view-graph').click();
-    await page.waitForSelector('[data-testid=galaxy-navigator][data-focus=diagramcloud][data-view=graph]');
-    assert.equal(await page.locator('.gn-node[data-node=diagramcloud]').getAttribute('aria-pressed'),'true');
-    report.checks.projections={retained:'diagramcloud'};
+    await page.waitForSelector('[data-testid=galaxy-navigator][data-focus=mongoku][data-view=graph]');
+    assert.equal(await page.locator('.gn-node[data-node=mongoku]').getAttribute('aria-pressed'),'true');
+    report.checks.projections={retained:'mongoku'};
     // Keyboard focus on a node.
     await page.locator('.gn-node[data-node=atlasnote]').focus();await page.keyboard.press('Enter');
     await page.waitForSelector('[data-testid=galaxy-navigator][data-focus=atlasnote]');
@@ -90,6 +106,7 @@ try{
     await page.getByRole('button',{name:'Clear focus'}).click();await settled(page);
     await page.locator('.gn-node[data-node=datapass-vscode] .gn-hit').click();
     await page.waitForSelector('[data-testid=galaxy-navigator][data-focus=datapass-vscode]');await settled(page);
+    await labelsInside(page,{allInside:false});
     const capture=path.join(out,'galaxy-navigator.png');
     await page.screenshot({path:capture,fullPage:true});
     report.checks.capture=path.relative(process.cwd(),capture);
@@ -100,6 +117,7 @@ try{
     // Narrow viewport, real motion: no horizontal overflow, focus still settles.
     const {page,context,errors}=await open({width:390,height:844,query:''});
     await page.locator('.gn-node[data-node=claude-control] .gn-hit').click();await settled(page);
+    await labelsInside(page,{allInside:false});
     const wide=await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth);
     assert.ok(wide<=1,'horizontal overflow at 390px: '+wide);
     assert.deepEqual(errors,[]);

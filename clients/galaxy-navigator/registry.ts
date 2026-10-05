@@ -127,14 +127,42 @@ export function search(registry:Registry,query:string,limit=8):Hit[]{
   return hits.slice(0,limit);
 }
 
-/** Viewport that frames a node and its neighbours (padding in user units), clamped to the canvas aspect. */
-export function focusBox(graph:Graph,ids:readonly string[],pad=70){
+export const shortName=(name:string)=>name.replace(/\s*\(.*\)\s*$/,'');
+/** Label metrics shared by the renderer and the framing (user units; 11px label font). */
+export const LABEL={size:11,charWidth:6.4,halo:5,margin:10};
+type Rect={x0:number;y0:number;x1:number;y1:number};
+/** Estimated extent of a node: its circle plus its label (with halo), in user units. */
+export function nodeExtent(n:Placed):Rect{
+  const l=labelSpot(n),w=shortName(n.name).length*LABEL.charWidth+LABEL.halo,lx=n.x+l.x,ly=n.y+l.y;
+  const x0=l.anchor==='start'?lx:l.anchor==='end'?lx-w:lx-w/2,y0=ly-LABEL.size-2,y1=ly+4;
+  return {x0:Math.min(n.x-n.r,x0),y0:Math.min(n.y-n.r,y0),x1:Math.max(n.x+n.r,x0+w),y1:Math.max(n.y+n.r,y1)};
+}
+/** Estimated extent of a cluster title (13px semibold) and whether it fits wholly inside a viewport. */
+export function clusterLabelFits(c:Graph['clusters'][number],box:{x:number;y:number;w:number;h:number}){
+  const w=c.group.label.length*7.8+LABEL.halo,y=c.labelBelow?c.y+c.r+18:c.y-c.r-8;
+  return c.x-w/2>=box.x&&c.x+w/2<=box.x+box.w&&y-14>=box.y&&y+4<=box.y+box.h;
+}
+/** Viewport that frames a node and its neighbours (circles and labels), clamped to the canvas aspect.
+ * Any other node whose circle or label would be cut by the frame is pulled fully inside, so no label is
+ * ever clipped: a node is either wholly in view or wholly out of it. Wide neighbourhoods use the full canvas. */
+export function focusBox(graph:Graph,ids:readonly string[],pad=40){
+  const full={x:0,y:0,w:graph.width,h:graph.height};
   const pts=ids.map(id=>graph.byId.get(id)).filter((n):n is Placed=>!!n);
-  if(!pts.length)return {x:0,y:0,w:graph.width,h:graph.height};
-  let x0=Math.min(...pts.map(p=>p.x-p.r))-pad,x1=Math.max(...pts.map(p=>p.x+p.r))+pad,y0=Math.min(...pts.map(p=>p.y-p.r))-pad,y1=Math.max(...pts.map(p=>p.y+p.r))+pad;
-  const aspect=graph.width/graph.height;let w=x1-x0,h=y1-y0;
-  if(w/h<aspect){const nw=h*aspect;x0-=(nw-w)/2;w=nw;}else{const nh=w/aspect;y0-=(nh-h)/2;h=nh;}
-  if(w>graph.width*0.85)return {x:0,y:0,w:graph.width,h:graph.height};
+  if(!pts.length)return full;
+  const ext=pts.map(nodeExtent);
+  let b:Rect={x0:Math.min(...ext.map(e=>e.x0))-pad,y0:Math.min(...ext.map(e=>e.y0))-pad,x1:Math.max(...ext.map(e=>e.x1))+pad,y1:Math.max(...ext.map(e=>e.y1))+pad};
+  const aspect=graph.width/graph.height;
+  const fit=(r:Rect):Rect=>{let w=r.x1-r.x0,h=r.y1-r.y0;const o={...r};if(w/h<aspect){const nw=h*aspect;o.x0-=(nw-w)/2;o.x1=o.x0+nw;}else{const nh=w/aspect;o.y0-=(nh-h)/2;o.y1=o.y0+nh;}return o;};
+  b=fit(b);
+  for(let pass=0;pass<6;pass++){
+    let grown=false;
+    for(const n of graph.nodes){
+      const e=nodeExtent(n),cuts=e.x1>b.x0&&e.x0<b.x1&&e.y1>b.y0&&e.y0<b.y1,inside=e.x0>=b.x0&&e.x1<=b.x1&&e.y0>=b.y0&&e.y1<=b.y1;
+      if(cuts&&!inside){b=fit({x0:Math.min(b.x0,e.x0-8),y0:Math.min(b.y0,e.y0-8),x1:Math.max(b.x1,e.x1+8),y1:Math.max(b.y1,e.y1+8)});grown=true;}
+    }
+    if(!grown)break;
+  }
+  if(b.x1-b.x0>graph.width*0.85)return full;
   const r=(v:number)=>Math.round(v*10)/10;
-  return {x:r(x0),y:r(y0),w:r(w),h:r(h)};
+  return {x:r(b.x0),y:r(b.y0),w:r(b.x1-b.x0),h:r(b.y1-b.y0)};
 }
