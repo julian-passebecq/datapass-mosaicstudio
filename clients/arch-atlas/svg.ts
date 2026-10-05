@@ -6,7 +6,9 @@ import {INK,MUTED,PAPER,LINE,LAYER_TINT,KIND_COLOR} from './palette.ts';
 import type {MotionSpec} from '../../src/framework/motion/model.ts';
 import {compileMotion} from '../../src/framework/motion/compile.ts';
 import {motionSvg} from '../../src/framework/motion/export.ts';
-import {project} from '../../src/framework/motion/geometry.ts';
+import {project,drawing} from '../../src/framework/motion/geometry.ts';
+import {KIND_GLYPH} from './isoGlyphs.ts';
+import {isoRoutes,type IsoFrame} from './routing.ts';
 
 const esc=(v:unknown)=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]!));
 const n=(v:number)=>(Math.round(v*10)/10).toString();
@@ -119,40 +121,47 @@ function wrap(label:string,max:number):string[]{
 }
 
 /* ---------- isometric: rendered by the framework Motion v2 SVG exporter ---------- */
-const ISO={column:2.3,group:2.9,rise:2.6,size:[1.3,1.3,.45] as [number,number,number]};
-/** The atlas spec as a one-step Motion v2 scene (stations = nodes, links = edges routed through layer channels). */
+/** World units of the isometric scene: x = column inside a domain, y = domain row, z = layer height. */
+export const ISO={column:2.7,group:3.5,rise:3.1,size:[1.45,1.45,1.0] as [number,number,number],lakeDepth:.1};
+type V3=[number,number,number];
+function isoFrame(spec:ArchSpec,g:Grid):IsoFrame{
+  const position=(id:string):V3=>{
+    const s=g.slots.get(id)!;
+    if(s.node.kind==='lake')return [0,(spec.groups.length-1)*ISO.group/2,0];
+    return [(s.column-g.groupStart[s.group]-g.groupColumns[s.group]/2)*ISO.column,(spec.groups.length-1-s.group)*ISO.group,s.layer*ISO.rise];
+  };
+  return {position,layer:id=>g.slots.get(id)!.layer,rise:ISO.rise,height:ISO.size[2],depth:ISO.size[1],column:ISO.column,lakeTop:ISO.lakeDepth,project:p=>project(p,'isometric')};
+}
+/**
+ * The atlas spec as a one-step Motion v2 scene: layers become framework layer planes, each (layer, domain)
+ * cell becomes an outlined domain, every node is a station drawn with its kind glyph, the lake is one wide
+ * flat station, and edges carry bundled orthogonal routes (data solid, control dashed).
+ */
 export function toMotion(spec:ArchSpec):MotionSpec{
-  const g=grid(spec),p=(id:string):[number,number,number]=>{const s=g.slots.get(id)!;return [(s.column-g.groupStart[s.group]-g.groupColumns[s.group]/2)*ISO.column,(spec.groups.length-1-s.group)*ISO.group,s.layer*ISO.rise];};
-  const nodes=spec.nodes.filter(node=>node.kind!=='lake');
+  const g=grid(spec),f=isoFrame(spec,g),routes=isoRoutes(spec,f);
+  const nodes=spec.nodes.filter(node=>node.kind!=='lake'),xs=nodes.map(node=>f.position(node.id)[0]);
+  const lakeSize:V3=[Math.max(...xs)-Math.min(...xs)+ISO.size[0]+1.2,(spec.groups.length-1)*ISO.group+ISO.size[1]+2.4,ISO.lakeDepth];
+  const station=(node:ArchSpec['nodes'][number])=>({id:node.id,kind:'station' as const,label:node.label,description:node.purpose,color:KIND_COLOR[node.kind],evidence:[],
+    position:node.kind==='lake'?[(Math.max(...xs)+Math.min(...xs))/2,f.position(node.id)[1],0] as V3:f.position(node.id),size:node.kind==='lake'?lakeSize:ISO.size,glyph:KIND_GLYPH[node.kind]});
+  const lakeLayer=spec.nodes.find(node=>node.kind==='lake')?.layer;
+  const cells=spec.layers.flatMap(layer=>spec.groups.map(group=>({layer,group,members:nodes.filter(node=>node.layer===layer.id&&node.group===group.id).map(node=>node.id)}))).filter(c=>c.members.length);
   return {
     format:'datapass.motion',version:2,title:spec.title,description:spec.subtitle,provenance:spec.provenance==='documented'?'authored':'synthetic',note:spec.note,sources:[],
-    entities:nodes.map(node=>({id:node.id,kind:'station' as const,label:node.label,description:node.purpose,color:KIND_COLOR[node.kind],evidence:[],position:p(node.id),size:ISO.size})),
-    links:spec.edges.filter(e=>nodes.some(x=>x.id===e.from)&&nodes.some(x=>x.id===e.to)).map(e=>{
-      const a=p(e.from),b=p(e.to),zc=a[2]===b[2]?a[2]+ISO.size[2]+.5:Math.max(a[2],b[2])-ISO.rise/2+.2;
-      return {id:e.id,from:e.from,to:e.to,label:e.label,via:a[0]===b[0]&&a[1]===b[1]?[]:[[a[0],a[1],zc],[b[0],a[1],zc],[b[0],b[1],zc]] as [number,number,number][]};
-    }),
-    steps:[{id:'overview',title:'Overview',caption:spec.subtitle,focus:'none',holdMs:2000,transitionMs:0,commands:[],activeLinks:spec.edges.filter(e=>e.kind==='data').map(e=>e.id).filter(id=>spec.edges.some(x=>x.id===id&&nodes.some(y=>y.id===x.from)&&nodes.some(y=>y.id===x.to))),evidence:[],annotations:[]}]
+    scene:{stationSize:64,positionRange:80,labels:'attached',linkCasing:true,linkCorner:7,header:true,background:PAPER,legend:{solid:'data flow',dashed:'control / trigger'}},
+    layers:spec.layers.map((layer,i)=>({id:layer.id,label:layer.label,z:i*ISO.rise,color:layer.id===lakeLayer?KIND_COLOR.lake:LAYER_TINT[layer.role],texture:layer.id===lakeLayer?'water' as const:'plain' as const})),
+    groups:cells.map(c=>({id:c.layer.id+'--'+c.group.id,...(c===cells.filter(x=>x.group===c.group).at(-1)?{label:c.group.label}:{}),layer:c.layer.id,members:c.members,color:LAYER_TINT[c.layer.role]})),
+    entities:spec.nodes.map(station),
+    links:spec.edges.map(e=>{const r=routes.get(e.id)!;return {id:e.id,from:e.from,to:e.to,label:e.label,via:r.via,attach:r.attach,style:e.kind==='control'?'dashed' as const:'solid' as const};}),
+    steps:[{id:'overview',title:'Overview',caption:spec.subtitle,focus:'none',holdMs:2000,transitionMs:0,commands:[],activeLinks:spec.edges.map(e=>e.id),evidence:[],annotations:[]}]
   };
 }
-/** Motion's isometric export plus the client-owned layer planes (Motion has no layer or ground concept). */
+/** Exactly the framework export; the client only tags the root element with its atlas ids. */
 export function isometricSvg(spec:ArchSpec,selection='none'):string{
-  const g=grid(spec),motion=toMotion(spec),svg=motionSvg(compileMotion(motion),0,'isometric',selection);
-  const xs=motion.entities.map(e=>(e as {position:[number,number,number]}).position[0]),x0=Math.min(...xs)-1.5,x1=Math.max(...xs)+1.5,y0=-1.5,y1=(spec.groups.length-1)*ISO.group+1.5;
-  const planes=spec.layers.map((layer,i)=>{
-    const z=i*ISO.rise-.04,c=[[x0,y0,z],[x1,y0,z],[x1,y1,z],[x0,y1,z]].map(q=>project(q as [number,number,number],'isometric'));
-    const lake=spec.nodes.find(node=>node.kind==='lake'&&node.layer===layer.id),tint=lake?KIND_COLOR.lake:LAYER_TINT[layer.role];
-    const label=project([x0,y1,z],'isometric');
-    return `<g data-layer="${esc(layer.id)}"${lake?` data-node="${esc(lake.id)}"`:''}><polygon points="${pts(c as P2[])}" fill="${tint}" fill-opacity="${lake?'.55':'.16'}" stroke="${tint}" stroke-opacity=".7"/><text x="${n(label[0]-14)}" y="${n(label[1]+4)}" text-anchor="end" ${FONT} font-size="12" font-weight="600" fill="${INK}">${esc(lake?lake.label:layer.label)}</text></g>`;
-  });
-  const corners=spec.layers.flatMap((_,i)=>[[x0,y0,i*ISO.rise],[x1,y1,i*ISO.rise],[x0,y1,i*ISO.rise],[x1,y0,i*ISO.rise]].map(q=>project(q as [number,number,number],'isometric')));
-  const m=/viewBox="([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)"/.exec(svg)!;
-  let [vx,vy,vw,vh]=m.slice(1).map(Number);
-  const minX=Math.min(vx,...corners.map(c=>c[0]))-170,minY=Math.min(vy,...corners.map(c=>c[1]))-60,maxX=Math.max(vx+vw,...corners.map(c=>c[0]))+40,maxY=Math.max(vy+vh,...corners.map(c=>c[1]))+30;
-  [vx,vy,vw,vh]=[minX,minY,maxX-minX,maxY-minY];
-  const box=`${n(vx)} ${n(vy)} ${n(vw)} ${n(vh)}`;
-  return svg
-    .replace(m[0],`viewBox="${box}" data-atlas="${esc(spec.id)}" data-representation="isometric" data-renderer="framework-motion-v2"`)
-    .replace(/<rect x="[^"]+" y="[^"]+" width="[^"]+" height="[^"]+" fill="#f7fafc"\/>/,`<rect x="${n(vx)}" y="${n(vy)}" width="${n(vw)}" height="${n(vh)}" fill="${PAPER}"/><text x="${n(vx+28)}" y="${n(vy+40)}" ${FONT} font-size="20" font-weight="650" fill="${INK}">${esc(spec.title)}</text><text x="${n(vx+28)}" y="${n(vy+60)}" ${FONT} font-size="11" fill="${MUTED}">Isometric · rendered by MosaicStudio Motion v2 · layer planes added by the atlas client</text>`)
-    .replace(/<text x="[^"]+" y="[^"]+"( font-size="10" font-family="system-ui,sans-serif" fill="#647889">[^<]*target snapshot<\/text>)/,`<text x="${n(vx+28)}" y="${n(vy+vh-16)}"$1`)
-    .replace('</defs>','</defs>'+planes.join(''))+'\n';
+  const svg=motionSvg(compileMotion(toMotion(spec)),0,'isometric',selection);
+  return svg.replace('<svg ',`<svg data-atlas="${esc(spec.id)}" data-representation="isometric" data-renderer="framework-motion-v2" `)+'\n';
+}
+/** Screen paths of the isometric links (for crossing metrics and tests). */
+export function isoScreenPaths(spec:ArchSpec):P2[][]{
+  const c=compileMotion(toMotion(spec));
+  return drawing(c,c.frames[0],'isometric').links.map(l=>l.path as P2[]);
 }

@@ -16,6 +16,8 @@ test('3D atlas: layers by keyboard, domains, node focus and properties',async({p
   await expect(atlas).toHaveAttribute('data-layer','1');
   await page.keyboard.press('ArrowRight');
   await expect(atlas).toHaveAttribute('data-group','0');
+  await page.keyboard.press('ArrowUp');await page.keyboard.press('ArrowUp');
+  await expect(atlas).toHaveAttribute('data-layer','3');
   await page.locator('.aa-label[data-node=sales-model]').click();
   await expect(atlas).toHaveAttribute('data-selection','sales-model');
   const details=page.getByTestId('atlas-details');

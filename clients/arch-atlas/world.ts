@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import {RoomEnvironment} from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type {ArchSpec} from './spec.ts';
 import {KIND_LABELS} from './spec.ts';
-import {grid,nodePosition,route3d,layerY,worldWidth,WORLD,type Vec3} from './layout.ts';
+import {grid,nodePosition,layerY,worldWidth,WORLD,type Vec3} from './layout.ts';
+import {routes3d} from './routing.ts';
 import {buildIcon,matte,disposeIconMaterials,type Icon} from './icons.ts';
 import {LAYER_TINT,KIND_COLOR} from './palette.ts';
 import {cameraPosition,type Pose} from './navigation.ts';
@@ -110,8 +111,9 @@ export function createStage(host:HTMLElement,overlay:HTMLElement,spec:ArchSpec):
   /* ---------- edges: pipes with flowing particles (data) or dashed tethers (control) ---------- */
   type Flow={id:string;from:string;to:string;curve:THREE.CurvePath<THREE.Vector3>;length:number;material:THREE.MeshStandardMaterial;beads:THREE.InstancedMesh|null;count:number;kind:string};
   const flows:Flow[]=[],m4=new THREE.Matrix4(),v=new THREE.Vector3();
-  spec.edges.forEach((edge,i)=>{
-    const curve=roundedCurve(route3d(spec,g,edge,i)),length=curve.getLength();
+  const pipeRoutes=routes3d(spec,g);
+  spec.edges.forEach(edge=>{
+    const curve=roundedCurve(pipeRoutes.get(edge.id)!),length=curve.getLength();
     const control=edge.kind==='control';
     const material=track(new THREE.MeshStandardMaterial({color:control?'#c4a77c':'#8fa9b2',roughness:.7,transparent:true,opacity:1}));
     if(!control){

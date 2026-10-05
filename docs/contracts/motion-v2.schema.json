@@ -68,10 +68,148 @@
       "$ref": "./motion.schema.json#/properties/note"
     },
     "entities": {
-      "$ref": "./motion.schema.json#/properties/entities"
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 40,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "label",
+              "description",
+              "color",
+              "evidence",
+              "kind",
+              "position",
+              "size"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "./motion.schema.json#/properties/entities/items/oneOf/0/properties/id"
+              },
+              "label": {
+                "$ref": "./motion.schema.json#/properties/entities/items/oneOf/0/properties/label"
+              },
+              "description": {
+                "$ref": "./motion.schema.json#/properties/entities/items/oneOf/0/properties/description"
+              },
+              "color": {
+                "$ref": "./motion.schema.json#/properties/entities/items/oneOf/0/properties/color"
+              },
+              "evidence": {
+                "$ref": "./motion.schema.json#/properties/entities/items/oneOf/0/properties/evidence"
+              },
+              "kind": {
+                "$ref": "./motion.schema.json#/properties/entities/items/oneOf/0/properties/kind"
+              },
+              "position": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": {
+                  "type": "number",
+                  "minimum": -400,
+                  "maximum": 400
+                }
+              },
+              "size": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 64
+                }
+              },
+              "glyph": {
+                "$ref": "./motion.schema.json#/properties/steps/items/properties/id"
+              }
+            }
+          },
+          {
+            "$ref": "./motion.schema.json#/properties/entities/items/oneOf/1"
+          }
+        ]
+      }
     },
     "links": {
-      "$ref": "./motion.schema.json#/properties/links"
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "from",
+          "to",
+          "label",
+          "via"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "./motion.schema.json#/properties/links/items/properties/id"
+          },
+          "from": {
+            "$ref": "./motion.schema.json#/properties/links/items/properties/from"
+          },
+          "to": {
+            "$ref": "./motion.schema.json#/properties/links/items/properties/to"
+          },
+          "label": {
+            "$ref": "./motion.schema.json#/properties/links/items/properties/label"
+          },
+          "via": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "number",
+                "minimum": -400,
+                "maximum": 400
+              }
+            }
+          },
+          "style": {
+            "enum": [
+              "solid",
+              "dashed"
+            ]
+          },
+          "attach": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "from",
+              "to"
+            ],
+            "properties": {
+              "from": {
+                "enum": [
+                  "top",
+                  "base",
+                  "surface",
+                  "side"
+                ]
+              },
+              "to": {
+                "enum": [
+                  "top",
+                  "base",
+                  "surface",
+                  "side"
+                ]
+              }
+            }
+          }
+        }
+      }
     },
     "steps": {
       "type": "array",
@@ -287,6 +425,153 @@
     },
     "sources": {
       "$ref": "./motion.schema.json#/properties/sources"
+    },
+    "layers": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "z",
+          "color"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "./motion.schema.json#/properties/steps/items/properties/id"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "z": {
+            "type": "number",
+            "minimum": -400,
+            "maximum": 400
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[a-fA-F0-9]{6}$"
+          },
+          "texture": {
+            "enum": [
+              "plain",
+              "water"
+            ]
+          },
+          "extent": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "type": "number",
+              "minimum": -400,
+              "maximum": 400
+            }
+          }
+        }
+      }
+    },
+    "groups": {
+      "type": "array",
+      "maxItems": 24,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "layer",
+          "members",
+          "color"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "./motion.schema.json#/properties/steps/items/properties/id"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "layer": {
+            "$ref": "./motion.schema.json#/properties/steps/items/properties/id"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[a-fA-F0-9]{6}$"
+          },
+          "members": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 40,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "./motion.schema.json#/properties/steps/items/properties/id"
+            }
+          }
+        }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stationSize": {
+          "type": "number",
+          "minimum": 8,
+          "maximum": 64
+        },
+        "positionRange": {
+          "type": "number",
+          "minimum": 30,
+          "maximum": 400
+        },
+        "labels": {
+          "enum": [
+            "auto",
+            "attached"
+          ]
+        },
+        "linkCasing": {
+          "type": "boolean"
+        },
+        "linkCorner": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 40
+        },
+        "header": {
+          "type": "boolean"
+        },
+        "background": {
+          "type": "string",
+          "pattern": "^#[a-fA-F0-9]{6}$"
+        },
+        "legend": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "solid",
+            "dashed"
+          ],
+          "properties": {
+            "solid": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "dashed": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            }
+          }
+        }
+      }
     }
   }
 }

@@ -40,9 +40,9 @@ export const layerY=(layer:number)=>layer*WORLD.layerGap;
 export function nodePosition(g:Grid,id:string):Vec3{const s=g.slots.get(id)!;return [s.node.kind==='lake'?0:worldX(g,s.column),layerY(s.layer),0];}
 export function groupCenterX(g:Grid,group:number):number{return worldX(g,g.groupStart[group]+g.groupColumns[group]/2);}
 
-/** Orthogonal 3D route: rise out of the source, travel in a channel between layers, drop into the target.
- * Multi-layer runs move to a riser plane behind the icons so pipes never pierce another node. */
-export function route3d(spec:ArchSpec,g:Grid,edge:ArchEdge,index:number):Vec3[]{
+/** N1 3D route, kept only as the baseline of the crossing metric (the stage uses `routes3d` in routing.ts):
+ * rise out of the source, travel in a channel between layers, drop into the target. */
+export function route3dDirect(spec:ArchSpec,g:Grid,edge:ArchEdge,index:number):Vec3[]{
   const a=nodePosition(g,edge.from),b=nodePosition(g,edge.to),la=g.slots.get(edge.from)!.layer,lb=g.slots.get(edge.to)!.layer;
   const lane=((index%5)-2)*.18,top=WORLD.iconHeight+.15;
   if(la===lb){

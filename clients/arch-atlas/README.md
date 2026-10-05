@@ -2,9 +2,9 @@
 
 One architecture spec, three representations with the same ids:
 
-1. **3D atlas** — vertical layers float at their own height (storage/lake at the bottom → engines → serving → apps → people at the top). Each node is drawn as the thing it is, not as a generic block: the lake is real water with a shoreline under everything (items above it stand on piles), a warehouse is a shelved building, a pipeline is pipes with a valve, a notebook is an open book with code lines, a stream is a flowing ribbon, a report is a screen with a live bar chart, an API is a gateway arch, a queue is a conveyor, identity is a key and a gate, CI is meshing gears, a static host is a rack, people are figures. Data flows are pipes with moving beads; control flows are dashed tethers. Pipes route vertically between layers and use a riser plane behind the icons for multi-layer jumps.
+1. **3D atlas** — vertical layers float at their own height (storage/lake at the bottom → engines → serving → apps → people at the top). Each node is drawn as the thing it is, not as a generic block: the lake is real water with a shoreline under everything (items above it stand on piles), a warehouse is a shelved building, a pipeline is pipes with a valve, a notebook is an open book with code lines, a stream is a flowing ribbon, a report is a screen with a live bar chart, an API is a gateway arch, a queue is a conveyor, identity is a key and a gate, CI is meshing gears, a static host is a rack, people are figures. Data flows are pipes with moving beads; control flows are dashed tethers. Pipes are bundled in a service plane behind the icons (`routing.ts` `routes3d`): each pipe climbs its lower node's column, runs on one trunk in a layer gap and climbs the upper node's column; pipes through one column share it, every trunk has its own lane ordered by channel routing, and the gap of each pipe is chosen by a deterministic local search on crossings.
 2. **Layered 2D SVG** — rows are layers (users on top, storage at the bottom), columns are domains/workspaces; orthogonal routes with ports spread along the cards and one lane per edge in each row gap; same glyph metaphors as the 3D icons.
-3. **Isometric 2D SVG** — rendered by the framework **Motion v2** exporter (`motionSvg(compileMotion(spec), 0, 'isometric')`), plus client-owned layer planes.
+3. **Isometric 2D SVG**: exactly the framework **Motion v2** export (`motionSvg(compileMotion(toMotion(spec)), 0, 'isometric')`); the client only tags the root element. `toMotion` uses the framework layer planes (the lake layer gets the water texture), per-kind glyphs (`isoGlyphs.ts`: framework built-ins plus atlas extensions registered with `registerMotionGlyphs`), one outlined domain per (layer, domain) cell (labelled once per domain), attached labels, dashed control links, and street routing (`routing.ts` `isoRoutes`): pipes leave a node from the front, run along the street in front of their row (one lane each), change row through a side street on the source or target plane, climb in front of the target and enter it from the front so every arrowhead stays visible.
 
 Both SVGs are exported from the app (header buttons) and saved in `qa/diagrams/` by `tools/export-svg.mjs`; the unit test fails if the committed files differ from what the spec produces.
 
@@ -35,13 +35,15 @@ Writes `qa/film/arch-atlas-film.mp4` (git-ignored when > 5 MB), stills and `film
 - `node --experimental-strip-types --test tests/arch-atlas.test.mjs` — spec validation, deterministic SVG hashes vs committed files, shared ids across 2D/3D, Motion v2 validation of the isometric scene, pure navigation/film, runtime view-state rules.
 - `npx playwright test -c clients/arch-atlas/qa/playwright.config.ts` (client served on 5193) — keyboard layers/domains, label click → properties, 2D click selection, SVG download, film seek.
 
-## What the framework Motion v2 isometric lacked (kept client-side, no framework edits)
+## N2: framework features used (Motion v2, generic and tested)
 
-- No layer/ground concept: the atlas injects its layer planes (and the lake as the bottom plane) into the exported SVG and widens the viewBox.
-- Stations are boxes only, capped at 8 units per side and ±30 units of position, so there is no per-kind glyph and no lake spanning the whole width.
-- No groups/domains and no edge-kind styling (control vs data); link labels are not drawn in the SVG.
-- Label placement is automatic and can stack labels of vertically aligned nodes.
+- **Layer planes** (`layers`): horizontal planes at given heights, labelled, optional water texture; layered scenes are painted stratum by stratum (plane, domain outlines, its links, its stations, domain labels).
+- **Kind glyphs** (`entity.glyph`): an isometric glyph registry (lake, warehouse, lakehouse, pipeline, notebook, stream, semantic-model, report, api, queue, identity, database, users, box) that clients extend with `registerMotionGlyphs`; unknown names fall back to the box.
+- **Domains** (`groups`): dashed outlined regions on a layer around their member stations, label optional.
+- **Label placement** (`scene.labels: 'attached'`): beside the station (right, left, below, above, corners), never on another station or label, off links when possible, leader fallback.
+- **Caps lifted by option** (`scene.stationSize` ≤ 64, `scene.positionRange` ≤ 400), link anchors (`attach`: top, base, surface, side), dashed links, link casing and rounded corners, header and legend.
+- Specs without these options export byte for byte as before (`tests/motion-iso-layers.test.mjs` pins the hashes).
 
-A generic "layer planes + glyph per station" option in Motion would remove the string post-processing in `svg.ts`.
+Crossings (front view of the 3D pipes, `tests/arch-atlas.test.mjs`): fabric platform 11 → 10, DataPass stack 0 → 0, and no pipe runs through the icon plane any more (N1: every adjacent-layer pipe did). Before/after: `qa/before-after-n2.png`.
 
 No AI features. Prototype only: not a qualified client.
