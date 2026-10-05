@@ -12,6 +12,8 @@ test('gallery lazy-load, kit build, explode, semantic selection and keyboard',as
   await page.getByRole('button',{name:'Open Lakehouse',exact:true}).press('Enter');
   const canvas=page.locator('canvas[data-renderer=three-webgl2]');await expect(canvas).toBeVisible();
   await expect(canvas).toHaveAttribute('data-animating','false');
+  // Parts list rows show rendered 3D thumbnails (offscreen render, cached data URLs), not flat swatches.
+  await expect(page.locator('.fb-parts-list img.fb-part-thumb').first()).toHaveAttribute('src',/^data:image\/png/);
   expect(requests.some(u=>u.includes('KitModel'))).toBe(true);
   await page.screenshot({path:out+'/lakehouse-assembled.png',fullPage:true});
   // A real raycast on the roof must update the same identity as the inspector.
@@ -38,8 +40,8 @@ test('gallery lazy-load, kit build, explode, semantic selection and keyboard',as
   expect(errors).toEqual([]);
 });
 test('secondary concept kits open in the shared viewport and return to the gallery',async({page})=>{
-  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/?app=fabric-bricks');
-  for(const title of ['OneLake','Power BI','Warehouse','Pipeline','Notebook']){
+  test.setTimeout(240000);const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/?app=fabric-bricks');
+  for(const title of ['Power BI report','OneLake','Warehouse','Eventhouse','SQL database','Medallion architecture','Pipeline','Notebook','Real-Time Intelligence','Data Warehouse','Microsoft Fabric']){
     await page.getByRole('button',{name:'Open '+title,exact:true}).click();await expect(page.locator('canvas[data-renderer=three-webgl2]')).toHaveCount(1);
     await expect(page.getByRole('heading',{name:title,exact:true})).toBeVisible();await page.getByRole('button',{name:'Back to all kits',exact:true}).click();
     await expect(page.locator('canvas')).toHaveCount(0);
@@ -50,13 +52,13 @@ test('3D collection, individual piece identity, focus, zoom and reversible isola
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('/?app=fabric-bricks');await page.getByRole('button',{name:'3D collection',exact:true}).click();
   const canvas=page.locator('canvas[data-renderer=three-webgl2]');await expect(canvas).toBeVisible();await expect(canvas).toHaveAttribute('data-animating','false');
-  const collection=JSON.parse((await canvas.getAttribute('data-part-positions'))!);expect(Object.keys(collection)).toHaveLength(6);
+  const collection=JSON.parse((await canvas.getAttribute('data-part-positions'))!);expect(Object.keys(collection)).toHaveLength(12);
   await page.screenshot({path:out+'/collection-3d.png',fullPage:true});
   // Pick a visible kit through actual shared renderer raycasting, not a UI-state injection.
   const box=(await canvas.boundingBox())!;await page.mouse.click(box.x+box.width*.38,box.y+box.height*.35);
   await expect(page.getByTestId('fabric-experience')).toHaveAttribute('data-screen','detail');
   await page.getByRole('button',{name:'Back to all kits',exact:true}).click();await page.getByRole('button',{name:'Open Lakehouse',exact:true}).click();
-  await page.getByRole('button',{name:'Pieces (58)',exact:true}).click();await page.getByRole('button',{name:'Select piece roof-0-0',exact:true}).press('Enter');
+  await page.getByRole('button',{name:'Pieces (126)',exact:true}).click();await page.getByRole('button',{name:'Select piece roof-0-0',exact:true}).press('Enter');
   await expect(page.getByTestId('kit-model')).toHaveAttribute('data-piece','roof-0-0');await expect(page.getByTestId('selected-piece')).toContainText('lakehouse/roof-0-0');
   await page.locator('.fb-explode-toggle').click();await page.getByRole('button',{name:'Focus selected part',exact:true}).click();await expect(canvas).toHaveAttribute('data-animating','false');
   const focused=(await canvas.getAttribute('data-camera-position'))!.split(',').map(Number);expect(focused[1]).toBeGreaterThan(8);

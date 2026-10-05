@@ -38,7 +38,7 @@ const add=(a:Vec3,b:Vec3):Vec3=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]];
 
 /* ---------- camera (orbit keys, interpolated in spherical space) ---------- */
 export type OrbitKey={t:number;target:Vec3;distance:number;azimuth:number;elevation:number;fov:number;/** horizontal framing shift, fraction of width (positive moves subject right) */shift:number};
-const L=kitOrigin('lakehouse'),O=kitOrigin('onelake');
+const L=kitOrigin('lakehouse'),O=kitOrigin('onelake'),SHELF:Vec3=[1,1.6,-3];
 const cameraKeys:OrbitKey[]=[
   {t:0,target:add(L,[0,.6,0]),distance:27.7,azimuth:14,elevation:36,fov:30,shift:.07},
   {t:4.8,target:add(L,[0,.95,0]),distance:24.0,azimuth:38,elevation:29,fov:30,shift:.07},
@@ -46,14 +46,14 @@ const cameraKeys:OrbitKey[]=[
   {t:6.8,target:add(L,[0,2.6,0]),distance:29.7,azimuth:47,elevation:27,fov:30,shift:.07},
   {t:8.4,target:add(L,[0,2.65,0]),distance:29.0,azimuth:53,elevation:28,fov:30,shift:.07},
   {t:9.2,target:add(L,[0,1.2,0]),distance:25.1,azimuth:52,elevation:31,fov:30,shift:.07},
-  {t:10.2,target:[0,5.5,0],distance:60,azimuth:34,elevation:38,fov:30,shift:.1},
-  {t:12.5,target:[0,5.5,0],distance:58,azimuth:28,elevation:37,fov:30,shift:.1},
+  {t:10.2,target:SHELF,distance:96,azimuth:9,elevation:40,fov:30,shift:.06},
+  {t:12.5,target:SHELF,distance:93,azimuth:5,elevation:39,fov:30,shift:.06},
   {t:13.8,target:add(O,[0,1,0]),distance:23.8,azimuth:24,elevation:30,fov:30,shift:.07},
   {t:16,target:add(O,[0,1.4,0]),distance:24.4,azimuth:58,elevation:27,fov:30,shift:.07},
   {t:17.2,target:add(O,[0,2.4,0]),distance:28.4,azimuth:72,elevation:27,fov:30,shift:.07},
   {t:18.6,target:add(O,[0,1.2,0]),distance:25.1,azimuth:86,elevation:29,fov:30,shift:.07},
-  {t:20.2,target:[0,5.5,0],distance:58,azimuth:38,elevation:34,fov:30,shift:.1},
-  {t:FILM_DURATION,target:[0,5.5,0],distance:56,azimuth:31,elevation:31,fov:30,shift:.1},
+  {t:20.2,target:SHELF,distance:95,azimuth:10,elevation:38,fov:30,shift:.06},
+  {t:FILM_DURATION,target:SHELF,distance:92,azimuth:5,elevation:37,fov:30,shift:.06},
 ];
 export type FilmCamera={position:Vec3;target:Vec3;fov:number;shift:number;distance:number};
 export function filmCamera(t:number):FilmCamera{
@@ -72,10 +72,8 @@ export function filmCamera(t:number):FilmCamera{
 export type PartPose={visible:boolean;/** additive world offset */offset:Vec3;/** 0 = solid, 1 = fully ghosted */ghost:number;opacity:number};
 type BuildWindow={start:number;end:number};
 /** When each kit (re)builds. Lakehouse builds on camera; the other kits snap in for the collection reveal. */
-const builds:Record<KitId,BuildWindow>={
-  lakehouse:{start:.35,end:4.55},
-  onelake:{start:8.75,end:9.5},powerbi:{start:8.9,end:9.6},pipeline:{start:9.3,end:9.9},notebook:{start:9.4,end:9.95},warehouse:{start:9.5,end:10},
-};
+const builds=Object.fromEntries(kits.map((k,i)=>{const n=i<2?i:i-1;// the other eleven kits snap in left to right, in catalogue order
+  return [k.id,k.id==='lakehouse'?{start:.35,end:4.55}:{start:8.62+n*.08,end:9.17+n*.08}];})) as Record<KitId,BuildWindow>;
 /** Exploded-view beats: amount of layer separation and the lot that stays solid while the rest is ghosted. */
 const layered:Record<string,{explode:[number,number,number,number];ghost:[number,number,number,number];lot:string}>={
   lakehouse:{explode:[5.7,6.6,8.2,9.05],ghost:[6.45,6.95,7.95,8.5],lot:'boardwalk'},
@@ -129,7 +127,7 @@ export function filmCaption(t:number):FilmCaption{
   if(t<9.1)return kitCaption(lake.id,-1,9.1);
   if(t<12.8)return {key:'collection',eyebrow:'A SMALL WORLD OF DATA',title:'Big ideas. Small bricks.',body:'Explore the architecture of data, one playful little kit at a time.',opacity:fade(9.1,12.8)};
   if(t<18.9)return kitCaption(one.id,12.8,18.9);
-  return {key:'finale',eyebrow:'FROM DATA TO SOMETHING TANGIBLE',title:'Six concept kits.',body:'One shared architecture. Pick a model. Take it apart. See how it all fits.',opacity:fade(18.9,FILM_DURATION+1)};
+  return {key:'finale',eyebrow:'FROM DATA TO SOMETHING TANGIBLE',title:'Twelve concept kits.',body:'One shared architecture. Pick a model. Take it apart. See how it all fits.',opacity:fade(18.9,FILM_DURATION+1)};
 }
 /** Right-hand page panel and transport bar state: parts list for a kit, or the kit chooser. */
 export type FilmPanel={mode:'kit';kit:KitId;step:number;stepName:string;stepParts:number;exploded:boolean;lot?:string}|{mode:'gallery'};
