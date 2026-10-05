@@ -19,7 +19,7 @@ RATED_KW = 3000.0
 CUT_IN, RATED, CUT_OUT = 3.0, 12.0, 25.0
 HOURS = 8760.0
 DEFAULT_OUT = Path(__file__).resolve().parents[1] / "clients" / "python-wind-reference" / "public" / "artifacts"
-SOURCE = ("py/notebooks/wind_reference.py (via py/wind_reference_model.py). ILLUSTRATIVE: generic 3 MW-class "
+SOURCE = ("py/wind_reference_model.py (run as a script, from Jupyter or from marimo). ILLUSTRATIVE: generic 3 MW-class "
           "power curve, Rayleigh-like Weibull k=2, no losses. Not FOIL data, not a site assessment.")
 
 

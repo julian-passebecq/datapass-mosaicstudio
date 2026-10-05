@@ -6,11 +6,11 @@
       "id": "wind-aep-weibull",
       "title": "ILLUSTRATIVE annual energy vs mean wind speed (Weibull k=2)",
       "file": "wind-aep-weibull.json",
-      "bytes": 3386,
-      "sha256": "e9f740fca010e6d3aba6e0ce52d7e7877716d3f42f0758c20d666e280cac82b4",
+      "bytes": 3396,
+      "sha256": "455e3b70770aa431ffc90807456ca6d2692fe65d9c755234d7979dc5be84c53b",
       "provenance": {
         "kind": "computed",
-        "source": "py/notebooks/wind_reference.py (via py/wind_reference_model.py). ILLUSTRATIVE: generic 3 MW-class power curve, Rayleigh-like Weibull k=2, no losses. Not FOIL data, not a site assessment."
+        "source": "py/wind_reference_model.py (run as a script, from Jupyter or from marimo). ILLUSTRATIVE: generic 3 MW-class power curve, Rayleigh-like Weibull k=2, no losses. Not FOIL data, not a site assessment."
       }
     }
   ]
