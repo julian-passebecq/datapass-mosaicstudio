@@ -29,6 +29,7 @@
     "client:context": "node --experimental-strip-types scripts/client-context.mjs",
     "client:families": "node --experimental-strip-types scripts/client-context.mjs --families",
     "model:inspect": "node --experimental-strip-types scripts/inspect-model.mjs",
+    "test:viz-gallery": "node --experimental-strip-types scripts/test-viz-gallery.mjs",
     "test:engine": "node --experimental-strip-types scripts/test-engine-consolidation.mjs"
   },
   "overrides": {

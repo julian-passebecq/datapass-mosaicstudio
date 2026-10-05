@@ -4,7 +4,7 @@ export type Values = Readonly<Record<string, Scalar>>;
 export type Row = Readonly<Record<string, Scalar>>;
 export type Rows = readonly Row[];
 export type Field = {
-  id: string; label: string; type: 'number' | 'select' | 'toggle'; role: 'input' | 'view';
+  id: string; label: string; type: 'number' | 'select' | 'toggle' | 'multi' | 'interval'; role: 'input' | 'view';
   default: Scalar; min?: number; max?: number; step?: number; unit?: string;
   options?: {value: string; label: string}[];
 };

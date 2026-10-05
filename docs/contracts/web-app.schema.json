@@ -252,6 +252,134 @@
               "type",
               "default"
             ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 160,
+                "minLength": 1
+              },
+              "role": {
+                "const": "view"
+              },
+              "unit": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "type": {
+                "const": "multi"
+              },
+              "default": {
+                "type": "string",
+                "maxLength": 4000
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "value": {
+                      "type": "string",
+                      "maxLength": 160,
+                      "minLength": 1,
+                      "pattern": "^[^|]+$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "maxLength": 160,
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "label"
+                  ]
+                },
+                "maxItems": 100,
+                "minItems": 1
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "role",
+              "type",
+              "default",
+              "options"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 160,
+                "minLength": 1
+              },
+              "role": {
+                "const": "view"
+              },
+              "unit": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "type": {
+                "const": "interval"
+              },
+              "default": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 64
+              },
+              "min": {
+                "type": "number",
+                "minimum": -1000000000000,
+                "maximum": 1000000000000
+              },
+              "max": {
+                "type": "number",
+                "minimum": -1000000000000,
+                "maximum": 1000000000000
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "role",
+              "type",
+              "default",
+              "min",
+              "max"
+            ]
           }
         ]
       },
