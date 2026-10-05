@@ -1,0 +1,354 @@
+{
+  "format": "datapass.viz-gallery-video",
+  "version": 1,
+  "client": "fabric-gallery-reference",
+  "synthetic": true,
+  "video": {
+    "file": "docs/media/viz-gallery/gallery.mp4",
+    "width": 1280,
+    "height": 720,
+    "fps": 30,
+    "frames": 1063,
+    "seconds": 35.43,
+    "codec": "h264 (libx264, crf 22, yuv420p)",
+    "bytes": 2567875,
+    "sha256": "055781fa0599619349f02c185b5d8e571885e193ed57f8a482f4801f283da069",
+    "committed": true
+  },
+  "capture": {
+    "method": "Playwright screenshot per frame at deviceScaleFactor 1.5, downscaled with lanczos; page tweens on one VirtualClock advanced by 1/30 s per frame (?record=1)",
+    "ffmpeg": "ffmpeg version 7.1-essentials_build-www.gyan.dev Copyright (c) 2000-2024 the FFmpeg developers\r"
+  },
+  "frameCheck": {
+    "frames": 1063,
+    "size": "160x90 gray",
+    "maxConsecutiveMeanAbsDiff": 24.01,
+    "blends": [],
+    "flashes": [],
+    "status": "passed",
+    "rule": "blend: |b-(a+c)/2| < 0.18·|a-c| with |a-c| > 6 and b distinct from both; flash: b differs >12 from both neighbours that agree"
+  },
+  "captions": [
+    {
+      "title": "Contoso sales, one viz kit",
+      "sub": "Fluent tokens · SVG + Canvas · 120,000 synthetic orders",
+      "from": 0,
+      "to": 5.03
+    },
+    {
+      "title": "Click to crossfilter",
+      "sub": "Every visual re-aggregates 120,000 orders",
+      "from": 5.33,
+      "to": 8.8
+    },
+    {
+      "title": "Brush 120,000 points on Canvas",
+      "sub": "The interval is a saved, shareable view field",
+      "from": 9.1,
+      "to": 13.07
+    },
+    {
+      "title": "Switch to 3D: same filters, same tokens",
+      "sub": "three.js loads lazily, only on this page",
+      "from": 13.37,
+      "to": 15.4
+    },
+    {
+      "title": "Camera keyframes on the motion clock",
+      "sub": "Deterministic capture · reduced motion respected",
+      "from": 15.7,
+      "to": 22.37
+    },
+    {
+      "title": "Surface z = f(x, y)",
+      "sub": "Order density over margin × discount · brush highlighted",
+      "from": 22.67,
+      "to": 26.03
+    },
+    {
+      "title": "120,000 points in WebGL",
+      "sub": "Coloured by category · drag to orbit",
+      "from": 26.33,
+      "to": 28.63
+    },
+    {
+      "title": "Lasso in screen space",
+      "sub": "The 3D selection becomes the shared brush",
+      "from": 28.93,
+      "to": 33.1
+    },
+    {
+      "title": "Back in 2D, nothing lost",
+      "sub": "DataPass viz kit · one crossfilter for 2D and 3D",
+      "from": 33.4,
+      "to": 34.53
+    }
+  ],
+  "timeline": [
+    {
+      "frame": 0,
+      "t": 0,
+      "note": "overview: KPI count-ups"
+    },
+    {
+      "frame": 42,
+      "t": 1.4,
+      "note": "still:01-overview"
+    },
+    {
+      "frame": 73,
+      "t": 2.433,
+      "note": "scroll to category bars"
+    },
+    {
+      "frame": 100,
+      "t": 3.333,
+      "note": "cursor to Bikes bar"
+    },
+    {
+      "frame": 130,
+      "t": 4.333,
+      "note": "hover tooltip"
+    },
+    {
+      "frame": 151,
+      "t": 5.033,
+      "note": "click Bikes"
+    },
+    {
+      "frame": 170,
+      "t": 5.667,
+      "note": "crossfilter transition"
+    },
+    {
+      "frame": 197,
+      "t": 6.567,
+      "note": "still:02-crossfilter"
+    },
+    {
+      "frame": 216,
+      "t": 7.2,
+      "note": "scroll to scatter"
+    },
+    {
+      "frame": 243,
+      "t": 8.1,
+      "note": "cursor to scatter"
+    },
+    {
+      "frame": 264,
+      "t": 8.8,
+      "note": "brush"
+    },
+    {
+      "frame": 301,
+      "t": 10.033,
+      "note": "brush applied"
+    },
+    {
+      "frame": 334,
+      "t": 11.133,
+      "note": "still:03-brush"
+    },
+    {
+      "frame": 347,
+      "t": 11.567,
+      "note": "scroll to top"
+    },
+    {
+      "frame": 371,
+      "t": 12.367,
+      "note": "cursor to 3D tab"
+    },
+    {
+      "frame": 392,
+      "t": 13.067,
+      "note": "open 3D explorer"
+    },
+    {
+      "frame": 393,
+      "t": 13.1,
+      "note": "3D columns grow"
+    },
+    {
+      "frame": 444,
+      "t": 14.8,
+      "note": "cursor to Tour"
+    },
+    {
+      "frame": 462,
+      "t": 15.4,
+      "note": "start camera tour"
+    },
+    {
+      "frame": 475,
+      "t": 15.833,
+      "note": "tour"
+    },
+    {
+      "frame": 547,
+      "t": 18.233,
+      "note": "still:04-tour"
+    },
+    {
+      "frame": 548,
+      "t": 18.267,
+      "note": "tour end"
+    },
+    {
+      "frame": 650,
+      "t": 21.667,
+      "note": "cursor to wireframe"
+    },
+    {
+      "frame": 671,
+      "t": 22.367,
+      "note": "wireframe on"
+    },
+    {
+      "frame": 672,
+      "t": 22.4,
+      "note": "hover surface"
+    },
+    {
+      "frame": 696,
+      "t": 23.2,
+      "note": "surface hover"
+    },
+    {
+      "frame": 726,
+      "t": 24.2,
+      "note": "still:05-surface"
+    },
+    {
+      "frame": 736,
+      "t": 24.533,
+      "note": "scroll to cloud"
+    },
+    {
+      "frame": 763,
+      "t": 25.433,
+      "note": "cursor to Clear"
+    },
+    {
+      "frame": 781,
+      "t": 26.033,
+      "note": "clear brush"
+    },
+    {
+      "frame": 782,
+      "t": 26.067,
+      "note": "cursor to cloud"
+    },
+    {
+      "frame": 800,
+      "t": 26.667,
+      "note": "orbit drag"
+    },
+    {
+      "frame": 825,
+      "t": 27.5,
+      "note": "cursor to Lasso"
+    },
+    {
+      "frame": 843,
+      "t": 28.1,
+      "note": "lasso mode"
+    },
+    {
+      "frame": 844,
+      "t": 28.133,
+      "note": "cursor to lasso start"
+    },
+    {
+      "frame": 859,
+      "t": 28.633,
+      "note": "lasso"
+    },
+    {
+      "frame": 908,
+      "t": 30.267,
+      "note": "lasso applied"
+    },
+    {
+      "frame": 938,
+      "t": 31.267,
+      "note": "still:06-lasso"
+    },
+    {
+      "frame": 954,
+      "t": 31.8,
+      "note": "scroll to top"
+    },
+    {
+      "frame": 975,
+      "t": 32.5,
+      "note": "cursor to Overview"
+    },
+    {
+      "frame": 993,
+      "t": 33.1,
+      "note": "back to 2D"
+    },
+    {
+      "frame": 994,
+      "t": 33.133,
+      "note": "2D shows the lasso brush"
+    },
+    {
+      "frame": 1036,
+      "t": 34.533,
+      "note": "end"
+    }
+  ],
+  "stills": [
+    {
+      "name": "01-overview",
+      "label": "2D overview, KPIs counted up",
+      "frame": 42,
+      "t": 1.4,
+      "file": "docs/media/viz-gallery/01-overview.png",
+      "sha256": "2a1c9f2f804138ae968cf769811c099a37e6588bfa49d56837d5174c12f31be0"
+    },
+    {
+      "name": "02-crossfilter",
+      "label": "Bikes selected: every visual re-aggregates",
+      "frame": 197,
+      "t": 6.567,
+      "file": "docs/media/viz-gallery/02-crossfilter.png",
+      "sha256": "3030f5e2d79d933469b96f6335cfcd875c55ab15275760ceecea5c7fefe54779"
+    },
+    {
+      "name": "03-brush",
+      "label": "Canvas brush over 120,000 orders",
+      "frame": 334,
+      "t": 11.133,
+      "file": "docs/media/viz-gallery/03-brush.png",
+      "sha256": "30838f1849897e52e9b00d46a7f315ccab5fc48b2088779106b15958df460427"
+    },
+    {
+      "name": "04-tour",
+      "label": "3D columns, camera tour on the virtual clock",
+      "frame": 547,
+      "t": 18.233,
+      "file": "docs/media/viz-gallery/04-tour.png",
+      "sha256": "61216c21482f16b26f52a6ece4a43aac91c7d187c3fbbc01f762c8d00ea3a055"
+    },
+    {
+      "name": "05-surface",
+      "label": "Density surface (wireframe), brush highlighted",
+      "frame": 726,
+      "t": 24.2,
+      "file": "docs/media/viz-gallery/05-surface.png",
+      "sha256": "659ca0996419de9567218875a4bda110c35144cbc14bb9d4fa7317bba8c4545e"
+    },
+    {
+      "name": "06-lasso",
+      "label": "Lasso on the 120,000-point cloud writes the shared brush",
+      "frame": 938,
+      "t": 31.267,
+      "file": "docs/media/viz-gallery/06-lasso.png",
+      "sha256": "f5f722f50e63af68baae8e583aebe5b45d47a4725786eceefad7dbcad72a15d9"
+    }
+  ]
+}

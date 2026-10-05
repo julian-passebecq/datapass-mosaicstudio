@@ -1,0 +1,17 @@
+/* 3D marks: structural styles only. Colours come from --dp-viz-* variables. */
+.dp-viz .viz3d{position:relative}
+.dp-viz .viz3d-host{position:absolute;inset:0;overflow:hidden;border-radius:6px;background:var(--dp-viz-surface);touch-action:none}
+.dp-viz .viz3d-canvas{position:absolute;inset:0;display:block;cursor:grab;outline:none}
+.dp-viz .viz3d-canvas:active{cursor:grabbing}
+.dp-viz .viz3d-host.lasso,.dp-viz .viz3d-host.lasso .viz3d-canvas{cursor:crosshair}
+.dp-viz .viz3d-labels{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.dp-viz .viz3d-label{position:absolute;left:0;top:0;white-space:nowrap;font-size:10.5px;line-height:1;color:var(--dp-viz-ink-muted);will-change:transform;text-shadow:0 0 2px var(--dp-viz-surface),0 0 4px var(--dp-viz-surface),0 0 6px var(--dp-viz-surface)}
+.dp-viz .viz3d-title{font-size:11px;font-weight:600;color:var(--dp-viz-ink-secondary)}
+.dp-viz .viz3d-value{font-size:10px;color:var(--dp-viz-ink-muted)}
+.dp-viz .viz3d-loading{position:absolute;inset:0;pointer-events:none}
+.dp-viz .viz3d-lasso{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.dp-viz .viz3d-lasso polygon{fill:var(--dp-viz-accent);fill-opacity:.12;stroke:var(--dp-viz-accent);stroke-width:1.5px;stroke-dasharray:5 4;stroke-linejoin:round}
+.dp-viz .viz3d-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0;list-style:none}
+.dp-viz .viz3d-fallback{display:flex;flex-direction:column;gap:6px;height:100%;min-height:0}
+.dp-viz .viz3d-fallback-body{flex:1;min-height:0}
+.dp-viz .viz3d-note{margin:0;padding:4px 8px;border-radius:4px;font-size:11px;color:var(--dp-viz-ink-secondary);background:var(--dp-viz-accent-subtle);border-left:3px solid var(--dp-viz-accent)}

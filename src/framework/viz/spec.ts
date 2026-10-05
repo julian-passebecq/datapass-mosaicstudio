@@ -6,21 +6,21 @@ import {z} from 'zod';
 import type {Column,Rows} from '../types.ts';
 
 const id=z.string().regex(/^[a-z][a-zA-Z0-9_-]{0,79}$/,'column id');
-export const MARKS=['bar','line','area','point','arc','rect','kpi'] as const;
+export const MARKS=['bar','line','area','point','arc','rect','kpi','bar3d','surface','point3d'] as const;
 const channel=z.object({field:id,title:z.string().max(120).optional(),format:z.string().max(24).optional()}).strict();
 export const chartSpecSchema=z.object({
   id:id,
   title:z.string().max(200).optional(),
   mark:z.enum(MARKS),
   encoding:z.object({
-    x:channel.optional(),y:channel.optional(),color:channel.optional(),size:channel.optional(),
+    x:channel.optional(),y:channel.optional(),z:channel.optional(),color:channel.optional(),size:channel.optional(),
     series:channel.optional(),theta:channel.optional(),tooltip:z.array(channel).max(8).optional(),
   }).strict(),
   stack:z.enum(['stacked','grouped','normalize']).optional(),
   sort:z.enum(['none','ascending','descending']).optional(),
   format:z.object({unit:z.string().max(30).optional(),digits:z.number().int().min(0).max(6).optional(),compact:z.boolean().optional()}).strict().optional(),
   selection:z.object({field:id,mode:z.enum(['point','multi','interval']),on:id.optional()}).strict().optional(),
-  renderer:z.enum(['auto','svg','canvas']).optional(),
+  renderer:z.enum(['auto','svg','canvas','webgl']).optional(),
 }).strict();
 export type ChartSpec=z.infer<typeof chartSpecSchema>;
 export type ArtifactTable={columns:readonly Column[];rows:Rows};
@@ -34,6 +34,9 @@ const NEEDS:Record<ChartSpec['mark'],{required:(keyof ChartSpec['encoding'])[];n
   arc:{required:['theta','color'],numeric:['theta']},
   rect:{required:['x','y','color'],numeric:['color']},
   kpi:{required:['y'],numeric:['y']},
+  bar3d:{required:['x','y','z'],numeric:['z']},
+  surface:{required:['x','y','z'],numeric:['x','y','z']},
+  point3d:{required:['x','y','z'],numeric:['x','y','z']},
 };
 export class ChartSpecError extends Error {readonly issues:string[];constructor(issues:string[]){super('Invalid chart spec: '+issues.join('; '));this.issues=issues;}}
 
@@ -55,7 +58,8 @@ export function parseChartSpec(input:unknown,table:Pick<ArtifactTable,'columns'>
   if((spec.mark==='line'||spec.mark==='area')&&spec.encoding.x&&columns.get(spec.encoding.x.field)?.type==='boolean')issues.push('line/area x cannot be boolean');
   if(spec.stack&&spec.mark!=='bar'&&spec.mark!=='area')issues.push('stack applies to bar or area only');
   if(spec.stack&&!spec.encoding.color&&!spec.encoding.series)issues.push('stack needs a color or series channel');
-  if(spec.selection?.mode==='interval'&&!['point','line','area','bar'].includes(spec.mark))issues.push('interval selection needs a positional mark');
+  if(spec.selection?.mode==='interval'&&!['point','line','area','bar','point3d','surface'].includes(spec.mark))issues.push('interval selection needs a positional mark');
+  if(spec.renderer==='webgl'&&!spec.mark.endsWith('3d')&&spec.mark!=='surface')issues.push('webgl renderer is for 3D marks');
   if(spec.selection?.on&&!columns.has(spec.selection.on))issues.push(`selection.on: unknown column "${spec.selection.on}"`);
   if(issues.length)throw new ChartSpecError(issues);
   return spec;
@@ -74,6 +78,6 @@ export function specFromTable(table:ArtifactTable,partial:Partial<ChartSpec>&{id
 }
 /** Rows whose encoded values are missing. Missing is reported, never drawn as zero. */
 export function missingEncoded(spec:ChartSpec,rows:Rows):number{
-  const fields=[spec.encoding.x,spec.encoding.y,spec.encoding.theta,spec.encoding.color,spec.encoding.size].filter(Boolean).map(c=>c!.field);
+  const fields=[spec.encoding.x,spec.encoding.y,spec.encoding.z,spec.encoding.theta,spec.encoding.color,spec.encoding.size].filter(Boolean).map(c=>c!.field);
   return rows.reduce((n,r)=>n+(fields.some(f=>r[f]===null||r[f]===undefined)?1:0),0);
 }

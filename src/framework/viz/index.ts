@@ -7,7 +7,7 @@ export {lightTokens,darkTokens,vizTokens,tokenVars,tokenCss,cat,v,resolveVars} f
 export type {VizTokens,VizMode,TokenOverrides} from './tokens.ts';
 export {chartSpecSchema,parseChartSpec,fromLegacyChart,specFromTable,missingEncoded,ChartSpecError,MARKS} from './spec.ts';
 export type {ChartSpec,ArtifactTable} from './spec.ts';
-export {estimateMarks,chooseRenderer,routeSpec,RENDER_LIMITS} from './route.ts';
+export {estimateMarks,chooseRenderer,routeSpec,RENDER_LIMITS,is3D,fallback2D} from './route.ts';
 export type {RendererId} from './route.ts';
 export {formatNumber,tickCount} from './scales.ts';
 export {VizRoot,useMotion,useMarkTransition,useCountUp,settledAttr} from './react.tsx';
