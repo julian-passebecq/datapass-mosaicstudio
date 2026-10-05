@@ -10,7 +10,8 @@ if(process.argv[2]!=='--owned'){
   // Keep the owned CLI's stdin open until completion, as a terminal host does.
   const child=spawn(process.execPath,['--experimental-strip-types',fileURLToPath(import.meta.url),'--owned'],{stdio:['pipe','inherit','inherit'],env:{...process.env,CI:'true'}});
   let timedOut=false;
-  const timer=setTimeout(()=>{timedOut=true;child.kill('SIGTERM');},60000);
+  // Budget: preparation plus three cycles of three Vite restarts; Windows under load needs ~75 s.
+  const timer=setTimeout(()=>{timedOut=true;console.error('engine-host-watch: timed out after 150 s');child.kill('SIGTERM');},150000);
   child.on('exit',(code)=>{clearTimeout(timer);child.stdin.destroy();process.exitCode=timedOut?1:code??1;});
   child.on('error',error=>{clearTimeout(timer);console.error(error);process.exitCode=1;});
 }else{

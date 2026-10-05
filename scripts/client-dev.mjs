@@ -73,8 +73,8 @@ export async function startClientDev(options){
   process.once('SIGINT',stop);process.once('SIGTERM',stop);process.stdin.once('end',stop);
   // A paused stdin never emits 'end'. The CLI follows an owner's pipe so closing it stops the host gracefully:
   // the only graceful stop on Windows, where SIGTERM cannot be caught. Never a TTY or an ignored stdin (that is EOF at once).
+  // Followed only once ready, so a host that cannot start still reports its own error (port in use, invalid source).
   const followStdin=options.followStdin===true&&!process.stdin.isTTY&&process.stdin instanceof net.Socket;
-  if(followStdin)process.stdin.resume();
   try{
     const stat=await lstat(root).catch(()=>null);
     if(!stat?.isDirectory()||stat.isSymbolicLink())throw new Error(`Unknown or symbolic client: clients/${id}. Run client:new first.`);
@@ -114,7 +114,7 @@ export async function startClientDev(options){
       }}]});
     abort.signal.throwIfAborted();await server.listen();await watchReady(server);abort.signal.throwIfAborted();
     if(!json)console.error(`Client ${id}: http://127.0.0.1:${port}/?app=${id}\nEdit clients/${id}/; stop with Ctrl+C. Local trusted source only, not a security boundary.`);
-    await report('ready');
+    await report('ready');if(followStdin)process.stdin.resume();
     return {server,stop,getStatus:()=>descriptor};
   }catch(error){
     await server?.close();process.removeListener('SIGINT',stop);process.removeListener('SIGTERM',stop);process.stdin.removeListener('end',stop);if(followStdin)process.stdin.pause();
