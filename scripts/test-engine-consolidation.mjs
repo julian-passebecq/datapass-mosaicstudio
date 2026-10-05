@@ -43,7 +43,9 @@ async function startDev(clientId){
   const events=[],child=spawn(process.execPath,['--experimental-strip-types','scripts/client-dev.mjs',clientId,'--port','5178','--json'],{stdio:['pipe','pipe','pipe']});
   let stdout='',stderr='',pending='';child.stdout.on('data',data=>{stdout+=data;pending+=data;for(;;){const index=pending.indexOf('\n');if(index<0)break;const line=pending.slice(0,index);pending=pending.slice(index+1);try{const event=JSON.parse(line);if(event.format==='datapass.client-host')events.push(event);}catch{}}});child.stderr.on('data',data=>{stderr+=data;});
   const exit=new Promise(resolve=>child.once('exit',(code,signal)=>resolve({code,signal})));child.once('error',error=>{stderr+=String(error);});
-  return {child,events,exit,get stdout(){return stdout;},get stderr(){return stderr;},async close(){if(child.exitCode===null&&child.signalCode===null)child.kill('SIGTERM');const result=await Promise.race([exit,delay(8000).then(()=>{child.kill('SIGKILL');throw new Error('Owned dev process did not terminate');})]);await writeFile(path.join(output,'dev.stdout.jsonl'),stdout);await writeFile(path.join(output,'dev.stderr.log'),stderr);report.host=events;return result;}};
+  return {child,events,exit,get stdout(){return stdout;},get stderr(){return stderr;},async close(){
+    // Windows has no catchable SIGTERM (kill is TerminateProcess), so ask for the same graceful stop through stdin EOF, as a closing terminal does.
+    if(child.exitCode===null&&child.signalCode===null){if(process.platform==='win32')child.stdin.end();else child.kill('SIGTERM');}const result=await Promise.race([exit,delay(8000).then(()=>{child.kill('SIGKILL');throw new Error('Owned dev process did not terminate');})]);await writeFile(path.join(output,'dev.stdout.jsonl'),stdout);await writeFile(path.join(output,'dev.stderr.log'),stderr);report.host=events;return result;}};
 }
 async function pageContext({reduced='reduce',instrument=false,canvasFailure=false}={}){
   const context=await browser.newContext({viewport:{width:1440,height:1000},deviceScaleFactor:1,reducedMotion:reduced,colorScheme:'light',locale:'en-US',timezoneId:'UTC'});

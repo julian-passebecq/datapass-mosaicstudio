@@ -1,5 +1,6 @@
 /** Trusted local authoring command. Reuses Vite; no IDE daemon, RPC or deployment. */
 import {spawn} from 'node:child_process';
+import net from 'node:net';
 import {lstat,mkdir,writeFile,rename} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
@@ -67,9 +68,13 @@ export async function startClientDev(options){
   function recordStop(){if(stopped)return writes;stopped=true;return report('stopped');}
   async function stop(){
     if(closing)return;closing=true;abort.abort();
-    try{await refresh.catch(()=>{});await restartTask;await server?.close();await recordStop();}finally{process.removeListener('SIGINT',stop);process.removeListener('SIGTERM',stop);process.stdin.removeListener('end',stop);}
+    try{await refresh.catch(()=>{});await restartTask;await server?.close();await recordStop();}finally{process.removeListener('SIGINT',stop);process.removeListener('SIGTERM',stop);process.stdin.removeListener('end',stop);if(followStdin)process.stdin.pause();}
   }
   process.once('SIGINT',stop);process.once('SIGTERM',stop);process.stdin.once('end',stop);
+  // A paused stdin never emits 'end'. The CLI follows an owner's pipe so closing it stops the host gracefully:
+  // the only graceful stop on Windows, where SIGTERM cannot be caught. Never a TTY or an ignored stdin (that is EOF at once).
+  const followStdin=options.followStdin===true&&!process.stdin.isTTY&&process.stdin instanceof net.Socket;
+  if(followStdin)process.stdin.resume();
   try{
     const stat=await lstat(root).catch(()=>null);
     if(!stat?.isDirectory()||stat.isSymbolicLink())throw new Error(`Unknown or symbolic client: clients/${id}. Run client:new first.`);
@@ -112,13 +117,13 @@ export async function startClientDev(options){
     await report('ready');
     return {server,stop,getStatus:()=>descriptor};
   }catch(error){
-    await server?.close();process.removeListener('SIGINT',stop);process.removeListener('SIGTERM',stop);process.stdin.removeListener('end',stop);
+    await server?.close();process.removeListener('SIGINT',stop);process.removeListener('SIGTERM',stop);process.stdin.removeListener('end',stop);if(followStdin)process.stdin.pause();
     if(closing){await writes;return null;}
     await report('error',{message:String(error.message||error)});throw error;
   }
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
   let options;
-  try{options=parseDevArguments(process.argv.slice(2));await startClientDev(options);}
+  try{options=parseDevArguments(process.argv.slice(2));await startClientDev({...options,followStdin:true});}
   catch(error){if(!options)console.log(JSON.stringify({format:'datapass.client-host',version:1,status:'error',message:String(error.message||error)}));console.error('client:dev: '+String(error.message||error));process.exitCode=1;}
 }
