@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {assessClientBudgets, clientBudgets} from '../scripts/check-client-performance.mjs';
 const fixture = () => ({sourceUnchanged: true, clients: Object.entries(clientBudgets).map(([id, [bytes]]) => ({id, javascriptFiles: 2, javascriptGzipBytes: bytes, status: 'passed'}))});
-test('performance gate recognizes the complete 16-target measured matrix', () => {const report = assessClientBudgets(fixture()); assert.equal(report.clients.length, 16); assert.ok(report.clients.every(c => c.deltaBytes === 0)); assert.match(report.limitation, /Not an initial-load/);});
+test('performance gate recognizes the complete 18-target measured matrix', () => {const report = assessClientBudgets(fixture()); assert.equal(report.clients.length, 18); assert.ok(report.clients.every(c => c.deltaBytes === 0)); assert.match(report.limitation, /Not an initial-load/);});
 test('performance gate accepts an exact budget but rejects one excess byte', () => {const report = fixture(), first = report.clients[0]; first.javascriptGzipBytes = clientBudgets[first.id][1]; assessClientBudgets(report); first.javascriptGzipBytes++; assert.throws(() => assessClientBudgets(report), /budget exceeded/);});
 for (const [name, edit] of Object.entries({
   'missing target': r => r.clients.pop(),

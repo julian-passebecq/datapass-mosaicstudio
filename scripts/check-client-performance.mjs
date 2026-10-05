@@ -11,6 +11,9 @@ export const clientBudgets = Object.freeze({
   'motion-reference': [143839, 180 * 1024],
   'foundation-reference': [179739, 225 * 1024],
   'model-reference': [332948, 410 * 1024],
+  // Added in Studio 0.8 RC2 (baseline measured on release/studio-0.8-rc2; budgets match each client's own smoke).
+  'portfolio-showcase': [137517, 160 * 1024],
+  'animated-coding-lab': [158683, 185 * 1024],
   'acceptance-fresh': [98929, 125 * 1024],
   'acceptance-knowledge': [165415, 210 * 1024],
   'acceptance-spatial': [296739, 365 * 1024],

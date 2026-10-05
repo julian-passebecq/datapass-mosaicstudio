@@ -27,14 +27,14 @@ try{
   await scaffoldClient({id:foundation,title:'Fresh foundation acceptance',family:'analytics',foundation:true});
   await scaffoldClient({id:model,title:'Fresh model acceptance',family:'spatial',model:true});
   browser=await chromium.launch({...(process.env.CI_BROWSER_PATH?{executablePath:process.env.CI_BROWSER_PATH}:{}),args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
-  for(const id of ['operations-reference','wind-reference','architecture-reference','experience-reference','energy-replay-reference','motion-reference','foundation-reference','model-reference',fresh,knowledge,spatial,analytics,replay,motion,foundation,model]){
+  for(const id of ['operations-reference','wind-reference','architecture-reference','experience-reference','energy-replay-reference','motion-reference','foundation-reference','model-reference','portfolio-showcase','animated-coding-lab',fresh,knowledge,spatial,analytics,replay,motion,foundation,model]){
     const built=spawnSync(process.execPath,['--experimental-strip-types','scripts/build-client.mjs',id],{encoding:'utf8',timeout:180000,env:process.env});
     await writeFile('qa/client-builds/'+id+'-build.log',(built.stdout||'')+(built.stderr||''));
     if(built.status!==0)throw new Error('Client build failed: '+id+'\n'+built.stderr+'\n'+built.stdout);
     const root=path.join('dist-clients',id),all=await files(root),js=all.filter(f=>f.endsWith('.js'));
     assert.ok(!all.some(f=>/\.wasm$|duckdb|sql-parser/.test(f)),'Client build accidentally includes database assets');
     const evidence=JSON.parse(await readFile(path.join(root,'studio-build.json'),'utf8'));assert.equal(evidence.client,id);
-    if([fresh,knowledge,analytics,replay,motion,foundation,'operations-reference','motion-reference','foundation-reference'].includes(id))assert.equal(evidence.containsThree,false,'Unexpected Three in a non-spatial build');
+    if([fresh,knowledge,analytics,replay,motion,foundation,'operations-reference','motion-reference','foundation-reference','portfolio-showcase','animated-coding-lab'].includes(id))assert.equal(evidence.containsThree,false,'Unexpected Three in a non-spatial build');
     if(!['model-reference',model].includes(id))assert.ok(!all.some(f=>/\.glb$|ModelViewport-/.test(f)),'Unrequested model capability leaked into a client');
     const contents=(await Promise.all(js.map(f=>readFile(f,'utf8')))).join('\n');
     const titles={'model-reference':'Static model / reference app',[model]:'Fresh model acceptance','operations-reference':'Operations / reference app','wind-reference':'Wind / reference app','architecture-reference':'Architecture / reference app','experience-reference':'Experience / reference app',[fresh]:'Fresh scaffold acceptance',[knowledge]:'Fresh knowledge acceptance',[spatial]:'Fresh spatial acceptance',[analytics]:'Fresh analytics acceptance',[replay]:'Fresh replay acceptance','energy-replay-reference':'Energy / replay reference','motion-reference':'Motion / reference app',[motion]:'Fresh motion acceptance','foundation-reference':'Foundation / reference app',[foundation]:'Fresh foundation acceptance'};
@@ -65,6 +65,8 @@ try{
       else if(id==='experience-reference'||id===spatial){await page.getByText('3D ready',{exact:true}).waitFor();await page.getByRole('group',{name:'Explorer views'}).getByRole('button',{name:'Library',exact:true}).click();await page.locator('.explorer-library').waitFor();}
       else if(id===knowledge){await page.getByTestId('explorer').waitFor();assert.equal(await page.getByTestId('explorer').getAttribute('data-view'),'library');assert.equal(await page.locator('canvas').count(),0);await page.locator('.explorer-library-card').first().click();await page.getByRole('article',{name:'Platform overview',exact:true}).waitFor();}
       else if(id==='architecture-reference')await page.locator('.arch-node').first().waitFor();
+      else if(id==='portfolio-showcase'){await page.getByTestId('portfolio').waitFor();assert.equal(await page.locator('.pf-card').count(),8);assert.equal(await page.locator('canvas').count(),0);}
+      else if(id==='animated-coding-lab'){await page.getByTestId('coding-lab').waitFor();await page.getByTestId('lab-next').click();await page.waitForFunction(()=>document.querySelector('[data-testid=coding-lab]')?.getAttribute('data-step')==='1');assert.equal(await page.locator('[data-testid=lab-code] li[data-current=true]').count(),1);assert.equal(await page.locator('canvas').count(),0);assert.deepEqual(evidence.capabilities,['motion']);}
       else if(id===fresh)await page.getByRole('heading',{name:'Client-owned component',exact:true}).waitFor();
       else await page.getByTestId('metric-observation-count').waitFor();
       await page.screenshot({path:'qa/client-builds/'+id+'.png',fullPage:true});
