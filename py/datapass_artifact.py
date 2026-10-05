@@ -21,6 +21,8 @@ import json
 import math
 import os
 import re
+import tempfile
+import time
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -272,13 +274,44 @@ def to_artifact(rows: Any = None, *, id: str, title: str, source: str,
 
 def write_artifact(artifact: Mapping[str, Any], out_dir: str | os.PathLike[str]) -> Path:
     """Write `<id>.json` atomically (pretty-printed; size checked on the compact form)."""
+    return watch_write(Path(out_dir) / f"{artifact['id']}.json", artifact)
+
+
+def watch_write(path: str | os.PathLike[str], artifact: Mapping[str, Any]) -> Path:
+    """Validate, then atomically replace `path` (temp file in the same folder + os.replace).
+
+    Safe for live watchers (bridge level 2.5, `npm run client:dev`): a reader sees the old
+    file or the new one, never a partial write. Any producer may call it in a loop.
+    The file name must be `<artifact id>.json`. On Windows a reader holding the target open
+    can briefly block the rename; it is retried for about one second.
+    """
     validate(artifact)
-    folder = Path(out_dir)
-    folder.mkdir(parents=True, exist_ok=True)
-    target = folder / f"{artifact['id']}.json"
-    temporary = target.with_suffix(".json.tmp")
-    temporary.write_text(json.dumps(artifact, ensure_ascii=False, indent=2, allow_nan=False) + "\n", encoding="utf-8", newline="\n")
-    os.replace(temporary, target)
+    target = Path(path)
+    if target.name != f"{artifact['id']}.json":
+        raise ArtifactError(f"{target.name}: file name must equal the artifact id {artifact['id']}.json")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    data = (json.dumps(artifact, ensure_ascii=False, indent=2, allow_nan=False) + "\n").encode("utf-8")
+    fd, temporary = tempfile.mkstemp(prefix=f".{artifact['id']}.", suffix=".tmp", dir=target.parent)
+    try:
+        with os.fdopen(fd, "wb") as handle:
+            handle.write(data)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.chmod(temporary, 0o644)  # mkstemp creates 0600; served files stay readable
+        for attempt in range(20):
+            try:
+                os.replace(temporary, target)
+                break
+            except PermissionError:
+                if attempt == 19:
+                    raise
+                time.sleep(0.05)
+    except BaseException:
+        try:
+            os.unlink(temporary)
+        except FileNotFoundError:
+            pass
+        raise
     return target
 
 

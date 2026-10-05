@@ -38,3 +38,6 @@ __pycache__/
 clients/acceptance-model/
 
 .venv/
+
+# Bridge level 2.5 demo output (py/examples/live_slider.py)
+clients/python-wind-reference/public/artifacts/wind-aep-live-file.json

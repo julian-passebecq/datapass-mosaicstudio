@@ -51,6 +51,30 @@ components:{aep:artifactSource('wind-aep-weibull',['aep-8','table'])}, customCap
 
 The wind numbers are ILLUSTRATIVE (generic power curve, Weibull k=2, no losses), not FOIL data.
 
+## Level 2.5: live file (dev server follows any producer)
+
+Any producer that rewrites `clients/<client>/public/artifacts/<id>.json` updates an open dev page in under 2 s, without a reload and without losing view state (table sort, chosen mode). Nothing is privileged: a script loop, a Jupyter cell, a marimo slider or a job all just write the file.
+
+```sh
+npm run client:dev -- python-wind-reference      # 1. open the page, choose "Live file" (or add &file=1)
+python py/examples/live_slider.py                # 2. rewrites wind-aep-live-file.json every second (Ctrl+C to stop)
+```
+
+- Write with `watch_write(path, artifact)` from `py/datapass_artifact.py`: it validates, writes a temp file in the same folder and renames it over the target (`os.replace`), so the page never reads a half-written file. `to_artifact(..., out_dir=...)` uses it too.
+- Dev server: `scripts/artifact-watch-plugin.mjs` (Vite, `apply:'serve'`, never in a build) watches the client's `public/artifacts/`, debounces per id (60 ms) and drops rewrites with identical bytes (sha256), then pushes the HMR custom event `datapass:artifact-changed {id, sha256}`. `ArtifactSource` refetches that static artifact (latest wins), re-validates it and re-renders in place; a "Live file" badge shows the last update time.
+- An invalid rewrite never replaces the view: the last valid result stays and a `role="alert"` toast gives the validation error until a valid file arrives.
+- Jupyter or marimo: call it from a cell; with marimo, every slider move re-runs the cell and the page follows.
+
+```python
+import sys; sys.path.insert(0, "py")                  # repo root as working directory
+from datapass_artifact import watch_write
+import wind_reference_model as model
+from examples.live_slider import artifact_for          # or build your own with to_artifact(...)
+watch_write(model.DEFAULT_OUT / "wind-aep-live-file.json", artifact_for(k.value))   # k = mo.ui.slider(1.5, 3.0, step=0.1)
+```
+
+- Tests: `npm run test:python` (atomic write under a concurrent reader) · `node --test tests/artifact-watch.test.mjs` (debounce, sha dedupe, dev-only plugin) · `npm run test:artifact-watch` (Playwright on `client:dev`: rewrite shown in < 2 s with the sort kept; invalid file gives the toast and keeps the data).
+
 ## Level 3: live service (compute on demand, same contract)
 
 A producer can also answer on demand. `py/service/app.py` is one example (FastAPI, prototype): it returns the same `datapass.artifact` v1 document a script would write, so Studio validates and renders it identically. Any other HTTP producer that returns a valid artifact works the same way.
