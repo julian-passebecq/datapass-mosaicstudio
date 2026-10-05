@@ -35,6 +35,7 @@
     "test:python-service": "node scripts/smoke-python-service.mjs",
     "test:artifact-watch": "node scripts/smoke-artifact-watch.mjs",
     "test:artifact-lineage": "node scripts/smoke-artifact-lineage.mjs",
+    "test:coding-lab": "node --experimental-strip-types scripts/smoke-coding-lab.mjs",
     "test:engine":"node --experimental-strip-types scripts/test-engine-consolidation.mjs"
   },
   "overrides": {
