@@ -1,11 +1,11 @@
 import {defineApp,type Field} from '../../src/framework/authoring.ts';
 import {FabricExperience} from './FabricExperience.tsx';
-import {kits,lots,kitScenes,getBOM,getKit,pieceIds,collectionScene} from './kits.ts';
+import {kits,lots,kitScenes,getBOM,pieceAt,MAX_PIECES,collectionScene} from './kits.ts';
 import {bricks} from './fixture.ts';
 import {fabricScene} from './scene.ts';
 
 const fields:Field[]=[
-  {id:'fabric-piece',label:'Individual piece',type:'select',role:'view',default:'none',options:[{value:'none',label:'All pieces of selected type'},...pieceIds.map(id=>({value:id,label:id}))]},
+  {id:'fabric-piece',label:'Individual piece (ordinal in kit, 0 = all pieces of selected type)',type:'number',role:'view',default:0,min:0,max:MAX_PIECES,step:1},
   {id:'fabric-selection',label:'Selected brick',type:'select',role:'view',default:'none',options:[{value:'none',label:'Complete assembly'},...bricks.map(brick=>({value:brick.id,label:brick.label})),...lots.map(l=>({value:l.id,label:l.name}))]},
   {id:'fabric-representation',label:'Representation',type:'select',role:'view',default:'2d',options:[{value:'2d',label:'2D'},{value:'3d',label:'3D'}]},
   {id:'fabric-level',label:'View level',type:'select',role:'view',default:'overview',options:[{value:'overview',label:'Overview'},{value:'detail',label:'Detail'}]},
@@ -31,8 +31,9 @@ export default defineApp({
     if(selection==='none'&&level==='detail')throw new Error('Fabric detail requires a selected semantic brick');
     if(selection!=='none'&&!['overview','near','far','focus-a','focus-b',selection].includes(camera))throw new Error('Fabric focus camera must match the selected semantic brick or use overview');
     if(['focus-a','focus-b'].includes(camera)&&selection==='none')throw new Error('Focus requires a selection');
-    const piece=String(values['fabric-piece']);
-    if(piece!=='none'&&!getKit(String(values['fabric-kit'])).parts.some(p=>p.id===piece&&p.lot===selection))throw new Error('Selected piece must belong to the current kit and selected type');
+    const piece=Number(values['fabric-piece']);
+    if(piece%1!==0)throw new Error('Selected piece must be a whole ordinal in the current kit');
+    if(piece!==0&&pieceAt(String(values['fabric-kit']),piece)?.lot!==selection)throw new Error('Selected piece must belong to the current kit and selected type');
     if(Number(values['fabric-step'])%1!==0)throw new Error('Fabric build step must be an integer');
     if(lots.some(l=>l.id===selection)&&!getBOM(String(values['fabric-kit'])).some(l=>l.id===selection))throw new Error('Selected part must belong to the current kit');
   }},

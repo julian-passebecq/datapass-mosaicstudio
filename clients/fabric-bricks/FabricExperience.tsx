@@ -1,7 +1,8 @@
 import {lazy,Suspense,useState,useCallback,type CSSProperties} from 'react';
 import {ArrowLeft,ArrowRight,Box,Check,ChevronLeft,ChevronRight,Expand,Layers,MousePointer2,RotateCcw,X,Plus,Minus,Play} from 'lucide-react';
 import {useRuntime,useSiteState,useReducedMotion} from '../../src/framework/ui';
-import {kits,getKit,getBOM,kitCost,getBuildSteps,type KitId} from './kits';
+import {kits,getKit,getBOM,kitCost,getBuildSteps,lotPiece,pieceAt,pieceIndex,type KitId} from './kits';
+import {PartThumb} from './PartThumb';
 import {KitIllustration} from './KitIllustration';
 import {parseFilmParams,chapters} from './timeline';
 import './experience.css';
@@ -16,18 +17,18 @@ export function FabricExperience(){
   const representation=String(values['fabric-representation']),explode=Number(values['fabric-explode']),step=Number(values['fabric-step']),isolate=Boolean(values['fabric-isolate']);
   const bom=getBOM(kitId),selectedLot=bom.find(l=>l.id===selection);
   const buildSteps=getBuildSteps(kitId),base=kit.parts[0];
-  const piece=String(values['fabric-piece']),selectedPiece=kit.parts.find(p=>p.id===piece);
+  const selectedPiece=pieceAt(kitId,Number(values['fabric-piece'])),piece=selectedPiece?.id??'none';
   const [about,setAbout]=useState(false),[saved,setSaved]=useState(false);
   const [partsMode,setPartsMode]=useState<'types'|'pieces'>('types');
   // Autoplay film: ?film=1&t=<seconds>&paused=1&chrome=0 opens it at an exact frame (deterministic captures).
   const [film,setFilm]=useState(()=>{const p=parseFilmParams(typeof location==='undefined'?'':location.search);return p.open?{start:p.t,autoplay:!p.paused,chrome:p.chrome}:null;});
   const playFilm=(id:string)=>setFilm({start:id==='onelake'?chapters.find(c=>c.id==='onelake')!.start:id==='lakehouse'?0:chapters.find(c=>c.id==='collection')!.start,autoplay:true,chrome:true});
   const closeFilm=useCallback(()=>{setFilm(null);const q=new URLSearchParams(location.search);if(q.has('film')){['film','t','paused','chrome'].forEach(k=>q.delete(k));history.replaceState(history.state,'',location.pathname+'?'+q.toString());}},[]);
-  const open=(id:KitId)=>runtime.applyCue({'fabric-kit':id,'fabric-screen':'detail','fabric-representation':'3d','fabric-selection':'none','fabric-piece':'none','fabric-camera':'overview','fabric-level':'overview','fabric-step':6,'fabric-explode':0,'fabric-isolate':false});
-  const back=()=>runtime.applyCue({'fabric-screen':'gallery','fabric-representation':'2d','fabric-selection':'none','fabric-piece':'none','fabric-camera':'overview','fabric-level':'overview','fabric-explode':0,'fabric-isolate':false,'fabric-step':6});
-  const select=(id:string)=>runtime.applyCue({'fabric-selection':selection===id?'none':id,'fabric-piece':'none','fabric-camera':'overview','fabric-level':selection===id?'overview':'detail'});
-  const selectPiece=(id:string)=>{const p=kit.parts.find(p=>p.id===id);if(!p)return;runtime.applyCue({'fabric-selection':piece===id?'none':p.lot,'fabric-piece':piece===id?'none':id,'fabric-camera':'overview','fabric-level':piece===id?'overview':'detail','fabric-step':Math.max(step,p.step)});};
-  const showAll=()=>runtime.applyCue({'fabric-selection':'none','fabric-piece':'none','fabric-camera':'overview','fabric-level':'overview','fabric-isolate':false});
+  const open=(id:KitId)=>runtime.applyCue({'fabric-kit':id,'fabric-screen':'detail','fabric-representation':'3d','fabric-selection':'none','fabric-piece':0,'fabric-camera':'overview','fabric-level':'overview','fabric-step':6,'fabric-explode':0,'fabric-isolate':false});
+  const back=()=>runtime.applyCue({'fabric-screen':'gallery','fabric-representation':'2d','fabric-selection':'none','fabric-piece':0,'fabric-camera':'overview','fabric-level':'overview','fabric-explode':0,'fabric-isolate':false,'fabric-step':6});
+  const select=(id:string)=>runtime.applyCue({'fabric-selection':selection===id?'none':id,'fabric-piece':0,'fabric-camera':'overview','fabric-level':selection===id?'overview':'detail'});
+  const selectPiece=(id:string)=>{const p=kit.parts.find(p=>p.id===id);if(!p)return;runtime.applyCue({'fabric-selection':piece===id?'none':p.lot,'fabric-piece':piece===id?0:pieceIndex(kitId,id),'fabric-camera':'overview','fabric-level':piece===id?'overview':'detail','fabric-step':Math.max(step,p.step)});};
+  const showAll=()=>runtime.applyCue({'fabric-selection':'none','fabric-piece':0,'fabric-camera':'overview','fabric-level':'overview','fabric-isolate':false});
   return <section className="fb-experience" data-testid="fabric-experience" data-reduced-motion={reduced} data-source-status="synthetic/provisional" data-screen={gallery?'gallery':'detail'}>
     <header className="fb-header">
       <button className="fb-brand" onClick={back} aria-label="Fabric Bricks gallery"><span className="fb-brand-mark"><i/><i/><i/></span>FABRIC BRICKS<span className="fb-edition">STUDIES / 001</span></button>
@@ -55,7 +56,7 @@ export function FabricExperience(){
           </div>
           <div className="fb-view-controls" role="group" aria-label="Model controls">
             <div className="fb-representation"><button aria-pressed={representation==='2d'} onClick={()=>runtime.set('fabric-representation','2d')}>2D</button><button aria-pressed={representation==='3d'} onClick={()=>runtime.set('fabric-representation','3d')}>3D</button></div>
-            <button title="Reset model view" aria-label="Reset model view" onClick={()=>runtime.applyCue({'fabric-camera':'overview','fabric-explode':0,'fabric-step':6,'fabric-isolate':false,'fabric-selection':'none','fabric-piece':'none','fabric-level':'overview'})}><RotateCcw size={14}/></button>
+            <button title="Reset model view" aria-label="Reset model view" onClick={()=>runtime.applyCue({'fabric-camera':'overview','fabric-explode':0,'fabric-step':6,'fabric-isolate':false,'fabric-selection':'none','fabric-piece':0,'fabric-level':'overview'})}><RotateCcw size={14}/></button>
             <button aria-label="Zoom in" disabled={representation!=='3d'} onClick={()=>runtime.set('fabric-camera','near')}><Plus size={14}/></button>
             <button aria-label="Zoom out" disabled={representation!=='3d'} onClick={()=>runtime.set('fabric-camera','far')}><Minus size={14}/></button>
             <button aria-label="Focus selected part" disabled={!selectedLot||representation!=='3d'} onClick={()=>runtime.set('fabric-camera',values['fabric-camera']==='focus-a'?'focus-b':'focus-a')}><Expand size={14}/></button>
@@ -75,8 +76,8 @@ export function FabricExperience(){
       <aside className="fb-inspector" aria-label={gallery?'Kit collection':'Parts inspector'}>
         {gallery?<>
           <div className="fb-inspector-title"><span className="fb-eyebrow">THE COLLECTION</span><h2>Choose a kit.</h2><p>Small builds, big connections.<br/>Find your starting point.</p></div>
-          <div className="fb-kit-list">{kits.map(k=><button key={k.id} onClick={()=>open(k.id)}><span className="fb-list-number">{k.number}</span><span><strong>{k.title}</strong><small>{k.category}</small></span><ArrowRight size={14}/></button>)}</div>
-          <div className="fb-editorial-note"><span className="fb-eyebrow">FROM DATA TO SOMETHING TANGIBLE</span><p>Look closer.<br/>There’s a story<br/>in every piece.</p><small>Six concept kits.<br/>One shared architecture.</small></div>
+          <div className="fb-kit-list">{kits.map(k=><button key={k.id} onClick={()=>open(k.id)}><span className="fb-list-number">{k.number}</span><span><strong>{k.title}</strong><small>{k.category}</small></span><span className="fb-list-meta"><b>{k.parts.length} pieces</b><small>≈ {money(kitCost(k.id))}*</small></span></button>)}</div>
+          <div className="fb-editorial-note"><span className="fb-eyebrow">FROM DATA TO SOMETHING TANGIBLE</span><p>Look closer.<br/>There’s a story<br/>in every piece.</p><small>Twelve concept kits.<br/>One shared architecture.</small></div>
           <button className="fb-watch-film" onClick={()=>playFilm('lakehouse')}><Play size={12}/> Watch the build film <span>0:25</span></button>
           <button className="fb-primary" onClick={()=>open('lakehouse')}>Explore Lakehouse <ArrowRight size={14}/></button>
         </>:<>
@@ -85,8 +86,8 @@ export function FabricExperience(){
           <div className="fb-parts-heading"><h2>PARTS</h2><button onClick={showAll}>{selectedLot?'Show all':'Pick a row or a part'}</button></div>
           <div className="fb-parts-tabs" role="group" aria-label="Parts listing"><button aria-pressed={partsMode==='types'} onClick={()=>setPartsMode('types')}>Types ({bom.length})</button><button aria-pressed={partsMode==='pieces'} onClick={()=>setPartsMode('pieces')}>Pieces ({kit.parts.length})</button></div>
           {selectedPiece&&<div className="fb-piece-detail" data-testid="selected-piece"><strong>{selectedPiece.name}</strong><span>{kitId}/{selectedPiece.id}</span><small>Step {selectedPiece.step} · {selectedPiece.size.join(' × ')} · synthetic scale</small></div>}
-          <div className="fb-parts-list">{partsMode==='pieces'?kit.parts.map(p=><button key={p.id} className="fb-piece-row fb-part-row" aria-label={'Select piece '+p.id} aria-pressed={piece===p.id} onClick={()=>selectPiece(p.id)}><span className="fb-part-swatch" style={{'--brick-color':p.color} as CSSProperties}><i/><i/></span><span className="fb-part-name"><strong>{p.name}</strong><small>{p.id} · step {p.step}</small></span></button>):bom.map(l=><button key={l.id} className="fb-part-row" aria-pressed={selection===l.id} onClick={()=>select(l.id)} style={{opacity:isolate&&selection!=='none'&&selection!==l.id? .32:1}}>
-            <span className="fb-part-swatch" style={{'--brick-color':l.color} as CSSProperties}><i/><i/></span><span className="fb-part-quantity">{l.quantity}×</span><span className="fb-part-name"><strong>{l.name}</strong><small>{l.code} · {l.id}</small></span><span className="fb-part-price">{money(l.price*l.quantity)}</span>
+          <div className="fb-parts-list">{partsMode==='pieces'?kit.parts.map(p=><button key={p.id} className="fb-piece-row fb-part-row" aria-label={'Select piece '+p.id} aria-pressed={piece===p.id} onClick={()=>selectPiece(p.id)}><PartThumb part={p}/><span className="fb-part-name"><strong>{p.name}</strong><small>{p.id} · step {p.step}</small></span></button>):bom.map(l=><button key={l.id} className="fb-part-row" aria-pressed={selection===l.id} onClick={()=>select(l.id)} style={{opacity:isolate&&selection!=='none'&&selection!==l.id? .32:1}}>
+            <PartThumb part={lotPiece(kitId,l.id)}/><span className="fb-part-quantity">{l.quantity}×</span><span className="fb-part-name"><strong>{l.name}</strong><small>{l.code} · {l.id}</small></span><span className="fb-part-price">{money(l.price*l.quantity)}</span>
           </button>)}</div>
           <div className="fb-inspector-tools"><button aria-pressed={isolate} disabled={!selectedLot} onClick={()=>runtime.set('fabric-isolate',!isolate)}>Isolate selected <span>{isolate?'ON':'OFF'}</span></button><label>Layer separation <output>{Math.round(explode*100)}%</output><input aria-label="Layer separation" type="range" min="0" max="1" step=".01" value={explode} onChange={e=>runtime.applyCue({'fabric-explode':Number(e.target.value),'fabric-camera':'overview'})}/></label></div>
           <div className="fb-inspector-bottom"><p>* Illustrative costs, not live prices. Geometry and parts are synthetic; no purchasable kit is claimed.</p><button className="fb-primary" onClick={back}><ArrowLeft size={14}/>Back to all kits</button></div>

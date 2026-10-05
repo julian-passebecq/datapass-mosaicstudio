@@ -34,3 +34,10 @@ Open `http://127.0.0.1:5178/?app=fabric-bricks`.
 
 - Open: "Watch the build film" (gallery) or "Play build" (kit page), or `?app=fabric-bricks&film=1&t=7&paused=1&chrome=0`.
 - Export: `node clients/fabric-bricks/tools/record.mjs --url http://127.0.0.1:5178 --size 1004x548` (MP4 with ffmpeg on PATH or `FFMPEG=...`; else WebM via the Playwright ffmpeg; PNG frames always kept, git-ignored). Output in `qa/film/`.
+
+## Twelve kits, piece types and part thumbnails (synthetic/provisional)
+
+- `kits.ts` holds twelve concept kits named after Fabric items (Power BI report, OneLake, Lakehouse, Warehouse, Eventhouse, SQL database, Medallion architecture, Pipeline, Notebook, Real-Time Intelligence, Data Warehouse, Microsoft Fabric). Models are abstract studies, not logos; piece counts and prices are illustrative. Lakehouse keeps its original 58 piece ids and grows to 126 pieces.
+- Piece types in `brickContent.ts`: rounded brick/plate/tile, round brick and 1 × 1 round plate, slope, grille tile, cone, arch, window, curved brick, bar, plant and flower. Each distinct piece shape is one cached geometry with its studs merged in; every piece keeps its own material so it can ghost or highlight alone. `rot` turns a moulded piece on an inner holder, so the shared renderer keeps owning the item transform.
+- Parts lists show small rendered thumbnails (`partThumbs.ts`): one shared offscreen WebGL canvas, PNG data URLs cached per piece look. The page loads it lazily (`PartThumb.tsx`, swatch fallback without WebGL); the film renders it synchronously so captured frames always include it.
+- Framework limits respected without framework changes: a select field holds at most 100 options, so `fabric-piece` is a whole ordinal of the piece inside its kit (0 = none); a scene holds at most 64 entities and 128 parts, so kit scene entities are part types while picking still resolves the individual piece id.

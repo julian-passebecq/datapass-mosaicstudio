@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import {useEffect,useRef,useState,useCallback,type CSSProperties} from 'react';
 import {Pause,Play,RotateCcw,X} from 'lucide-react';
-import {kits,getKit,getBOM,kitCost,type KitId} from './kits';
+import {kits,getKit,getBOM,kitCost,lotPiece,type KitId,type BrickPart} from './kits';
+import {partThumbnail} from './partThumbs';
 import {buildKitContent,studioEnvironment,fitShadow,type KitContent} from './brickContent';
 import {filmFrame,FILM_DURATION,FILM_FPS,chapters,chapterAt,settledTime,frameTime} from './timeline';
 import './film.css';
@@ -46,7 +47,7 @@ function createStage(host:HTMLElement):Stage{
         const m=h.material,opacity=pose.opacity*(1-pose.ghost*.5);
         m.color.copy(scratch.copy(h.color).lerp(ghostWhite,pose.ghost));m.emissive.copy(ghostGlow);m.emissiveIntensity=pose.ghost*.45;
         m.opacity=opacity;const transparent=opacity<.999;if(m.transparent!==transparent){m.transparent=transparent;m.needsUpdate=true;}m.depthWrite=opacity>.55;
-        for(const child of h.group.children)child.castShadow=opacity>.5&&pose.ghost<.4;
+        const cast=opacity>.5&&pose.ghost<.4;h.group.traverse(o=>{o.castShadow=cast;});
       }
       c.root.visible=any||c.stage.visible;
     }
@@ -63,6 +64,11 @@ function createStage(host:HTMLElement):Stage{
   return {render,resize,dispose(){observer.disconnect();contents.forEach(c=>c.dispose());environment.dispose();renderer.dispose();renderer.forceContextLoss();canvas.remove();}};
 }
 
+/** Parts-list thumbnail rendered synchronously, so a captured frame always shows it; the swatch is the no-WebGL fallback. */
+function FilmThumb({part}:{part:BrickPart}){
+  let src='';try{src=partThumbnail(part);}catch{/* swatch */}
+  return src?<img className="fb-part-thumb" src={src} alt="" aria-hidden="true" draggable={false}/>:<span className="fb-part-swatch" style={{'--brick-color':part.color} as CSSProperties}><i/><i/></span>;
+}
 const clock=(t:number)=>t.toFixed(1).padStart(4,'0');
 export default function KitFilm({start=0,autoplay=true,chrome=true,reduced,onClose}:{start?:number;autoplay?:boolean;chrome?:boolean;reduced:boolean;onClose():void}){
   const host=useRef<HTMLDivElement>(null),stage=useRef<Stage|null>(null),waiters=useRef<{t:number;resolve:(t:number)=>void}[]>([]);
@@ -108,7 +114,7 @@ export default function KitFilm({start=0,autoplay=true,chrome=true,reduced,onClo
           <div className="fb-film-steps"><span><small>STEP {panel.step} OF 6</small><strong>{panel.stepName}</strong></span><span className="fb-film-track6">{[1,2,3,4,5,6].map(n=><i key={n} className={n<=panel.step?'on':''}/>)}</span></div>
           <small className="fb-film-plus">+{panel.stepParts} parts</small>
           <span className={'fb-film-pill'+(panel.exploded?' fb-film-pill-on':'')}>{panel.exploded?'Exploded':'Assembled'}</span>
-        </>:<div className="fb-film-steps"><span><small>COLLECTION</small><strong>Six concept kits</strong></span><span className="fb-film-track6">{kits.map(k=><i key={k.id} className="on"/>)}</span></div>}
+        </>:<div className="fb-film-steps"><span><small>COLLECTION</small><strong>Twelve concept kits</strong></span><span className="fb-film-track6">{kits.map(k=><i key={k.id} className="on"/>)}</span></div>}
       </div>
       {chrome&&<div className="fb-film-controls" role="group" aria-label="Film controls">
         <div className="fb-film-track">
@@ -125,14 +131,14 @@ export default function KitFilm({start=0,autoplay=true,chrome=true,reduced,onClo
         <div className="fb-film-size">{kit!.parts[0].size[0]} wide × {kit!.parts[0].size[2]} deep · synthetic scale</div>
         <div className="fb-film-parts-head"><b>PARTS</b><small>{panel.lot?'Show all':'Pick a row, or a part on the model'}</small></div>
         <div className="fb-film-rows">{bom.map(l=><div key={l.id} className={'fb-film-row'+(panel.lot===l.id?' on':panel.lot?' dim':'')}>
-          <span className="fb-part-swatch" style={{'--brick-color':l.color} as CSSProperties}><i/><i/></span><span className="fb-film-qty">{l.quantity}×</span>
+          <FilmThumb part={lotPiece(panel.kit,l.id)}/><span className="fb-film-qty">{l.quantity}×</span>
           <span className="fb-film-name"><strong>{l.name} {l.code}</strong><small><i style={{background:l.color}}/>{l.id}</small></span><span className="fb-film-price">${(l.price*l.quantity).toFixed(2)}</span></div>)}</div>
         <div className="fb-film-panel-foot"><p>* Illustrative costs, not live prices. Geometry and parts are synthetic; no purchasable kit is claimed.</p><span className="fb-film-cta">Add to build list</span></div>
       </>:<>
         <span className="fb-eyebrow">THE COLLECTION</span><h3>Choose a kit.</h3><p className="fb-film-sub">Small builds, big connections.</p>
         <div className="fb-film-tabs"><span className="fb-film-pill fb-film-pill-on">All kits</span><span className="fb-film-pill">By category</span></div>
-        <div className="fb-film-rows">{kits.map(k=><div key={k.id} className="fb-film-row fb-film-kitrow"><span className="fb-film-qty">{k.number}</span><span className="fb-film-name"><strong>{k.title}</strong><small>{k.category}</small></span><span className="fb-film-price">{k.parts.length} pieces</span></div>)}</div>
-        <div className="fb-film-panel-foot"><p>Six concept kits. One shared architecture.</p><span className="fb-film-cta">Explore Lakehouse</span></div>
+        <div className="fb-film-rows">{kits.map(k=><div key={k.id} className="fb-film-row fb-film-kitrow"><span className="fb-film-qty">{k.number}</span><span className="fb-film-name"><strong>{k.title}</strong><small>{k.category}</small></span><span className="fb-film-price"><b>{k.parts.length} pieces</b><small>≈ ${kitCost(k.id).toFixed(0)}*</small></span></div>)}</div>
+        <div className="fb-film-panel-foot"><p>Twelve concept kits. One shared architecture. Pieces and costs are illustrative.</p><span className="fb-film-cta">Explore Lakehouse</span></div>
       </>}
     </aside>
     <span className="fb-sr" aria-live="polite">{chapter.label}</span>
