@@ -34,6 +34,8 @@ const xBins=Array.from({length:NX},(_,i)=>({key:String(i),label:(MARGIN_RANGE[0]
 const yBins=Array.from({length:NY},(_,j)=>({key:String(j),label:(DISCOUNT_RANGE[0]+j*YSTEP).toFixed(0)+'%'}));
 const money=(v:number)=>formatNumber(v,{prefix:'$',compact:true});
 const pct=(v:number)=>v.toFixed(0)+'%';
+/** The cloud reads best a little closer and lower than the default view. */
+const CLOUD_POSE={azimuth:0.55,elevation:0.36,distance:16.5};
 
 export function Dashboard3D(){
   const g=useGallery(),{region,filters,base,brush,onBrush,pointState}=g;
@@ -80,7 +82,7 @@ export function Dashboard3D(){
       action={<div className="fg-seg" role="group" aria-label="Pointer mode">{([['orbit','Orbit',Orbit],['lasso','Lasso',Lasso]] as const).map(([m,label,Icon])=><button key={m} type="button" aria-pressed={pointer===m} onClick={()=>setPointer(m)} data-testid={'mode-'+m}><Icon size={12}/>{label}</button>)}<Clear show={!!brush} onClick={()=>onBrush(null)} label="brush"/></div>}>
       <div className="fg-chart fg-3d-tall"><Scatter3D testId="chart-cloud3d" label="Orders by discount, margin and revenue" x={orders.discount} y={orders.margin} z={LOG_REVENUE}
         xDomain={DISCOUNT_RANGE} yDomain={MARGIN_RANGE} zDomain={REVENUE_DOMAIN} xLabel="Discount" yLabel="Margin" zLabel="Revenue (log)" xFormat={pct} yFormat={pct} zFormat={v=>money(10**v)}
-        state={pointState} stateKey={base} colorIndex={colorIndex} mode={pointer} onLasso={onLasso} describe={describe} themeKey={g.mode} resetKey={resetKey}
+        pose={CLOUD_POSE} state={pointState} stateKey={base} colorIndex={colorIndex} mode={pointer} onLasso={onLasso} describe={describe} themeKey={g.mode} resetKey={resetKey}
         fallback={<Scatter testId="chart-cloud3d-2d" cloud={cloud} xDomain={DISCOUNT_RANGE} yDomain={MARGIN_RANGE} state={pointState} stateKey={base} brush={brush} onBrush={onBrush} themeKey={g.mode} xLabel="Discount (%)" yLabel="Margin (%)" xFormat={{compact:false}} yFormat={{compact:false}} label="Order discount versus margin"/>}/></div>
     </Panel>
     <Panel className="fg-w4" title="Selection" subtitle={brush?'Orders inside the brush':'All filtered orders · lasso to select'} testId="panel-selection">

@@ -13,7 +13,8 @@ export function poseAt(keys:readonly Pose[],t:number):Pose{
   if(t>=1)return {...keys[keys.length-1]!};
   const span=t*(keys.length-1),i=Math.floor(span);return mixPose(keys[i]!,keys[i+1]!,span-i);
 }
-/** A slow product orbit: sweep around the chart and dip, then settle back to the default view. */
+/** A product orbit that stays in the front quadrant (axis labels stay readable): swing right
+ * and low, rise to a top-down read, swing back, settle on the default view. */
 export const TOUR:readonly Pose[]=Object.freeze([
-  DEFAULT_POSE,{azimuth:1.35,elevation:0.36,distance:18},{azimuth:2.1,elevation:0.66,distance:20},{azimuth:-0.4,elevation:0.42,distance:18.5},DEFAULT_POSE,
+  DEFAULT_POSE,{azimuth:1.2,elevation:0.28,distance:17.5},{azimuth:0.18,elevation:0.78,distance:20.5},{azimuth:0.95,elevation:0.4,distance:18},DEFAULT_POSE,
 ]);

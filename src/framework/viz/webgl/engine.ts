@@ -61,7 +61,7 @@ export function createEngine(host:HTMLElement,kind:Kind):Engine{
   const labelLayer=document.createElement('div');labelLayer.className='viz3d-labels';labelLayer.setAttribute('aria-hidden','true');
   host.append(canvas,labelLayer);
   const scene=new Scene(),camera=new PerspectiveCamera(30,1,0.1,200),controls=new OrbitControls(camera,canvas);
-  controls.enableDamping=false;controls.enablePan=false;controls.enableZoom=false;controls.target.copy(TARGET);
+  controls.enableDamping=false;controls.rotateSpeed=0.55;controls.enablePan=false;controls.enableZoom=false;controls.target.copy(TARGET);
   controls.minPolarAngle=0.12;controls.maxPolarAngle=Math.PI/2-0.04;
   const hemi=new HemisphereLight('#ffffff','#808080',1.6),sun=new DirectionalLight('#ffffff',1.7),fill=new DirectionalLight('#ffffff',0.55);
   sun.position.set(6,14,9);fill.position.set(-9,6,-4);scene.add(hemi,sun,fill);

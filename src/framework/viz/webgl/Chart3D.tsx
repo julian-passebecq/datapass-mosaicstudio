@@ -36,7 +36,9 @@ type Shared={testId?:string;label:string;themeKey?:string;fallback:ReactNode;
   /** Increment to play the camera tour (keyframes on the motion clock). */
   tourKey?:number;onTourDone?:()=>void;
   /** Increment to tween back to the default view. */
-  resetKey?:number;};
+  resetKey?:number;
+  /** Home camera pose (default view, tour start/end, reset target). */
+  pose?:Pose;};
 
 /** Engine lifecycle: lazy load, size, theme. `error` is set when WebGL is unavailable. */
 function useEngine(kind:Kind,themeKey?:string){
@@ -53,22 +55,24 @@ function useEngine(kind:Kind,themeKey?:string){
   return {ref,host,engine,error,ready,width,height,themed};
 }
 /** Camera: tour / reset tweens on the shared motion clock. Returns whether the camera is moving. */
-function useCamera(engine:Engine|null,tourKey=0,resetKey=0,onTourDone?:()=>void){
+function useCamera(engine:Engine|null,tourKey=0,resetKey=0,onTourDone?:()=>void,home:Pose=DEFAULT_POSE){
   const motion=useMotion(),[moving,setMoving]=useState(false),done=useRef(onTourDone);done.current=onTourDone;
+  const homeRef=useRef(home);homeRef.current=home;
+  useLayoutEffect(()=>{engine?.setPose(homeRef.current);},[engine]);
   useEffect(()=>{
     if(!engine||!tourKey)return;setMoving(true);
-    const legs=TOUR.length-1,ms=motion.duration(1600);let leg=0,tween:{cancel():void}|null=null,alive=true;
+    const keys=[homeRef.current,...TOUR.slice(1,-1),homeRef.current],legs=keys.length-1,ms=motion.duration(1600);let leg=0,tween:{cancel():void}|null=null,alive=true;
     const next=()=>{
       if(!alive)return;if(leg>=legs){setMoving(false);done.current?.();return;}
       const from=leg;leg++;
-      tween=motion.tween({duration:ms,curve:'standard',onFrame:t=>engine.setPose(poseAt(TOUR,(from+t)/legs)),onDone:()=>queueMicrotask(next)});
+      tween=motion.tween({duration:ms,curve:'standard',onFrame:t=>engine.setPose(poseAt(keys,(from+t)/legs)),onDone:()=>queueMicrotask(next)});
     };
     next();
     return()=>{alive=false;tween?.cancel();setMoving(false);};
   },[engine,tourKey,motion]);
   useEffect(()=>{
     if(!engine||!resetKey)return;const from=engine.getPose();setMoving(true);
-    const tween=motion.tween({duration:'slow',curve:'decelerate',onFrame:t=>engine.setPose(poseAt([from,DEFAULT_POSE],t)),onDone:()=>setMoving(false)});
+    const tween=motion.tween({duration:'slow',curve:'decelerate',onFrame:t=>engine.setPose(poseAt([from,homeRef.current],t)),onDone:()=>setMoving(false)});
     return()=>{tween.cancel();setMoving(false);};
   },[engine,resetKey,motion]);
   return moving;
@@ -126,7 +130,7 @@ export function Columns3D(props:Columns3DProps){
   const {ref,host,engine,error,themed}=useEngine('columns',themeKey),tooltip=useTooltip(),hover=useRef(-1);
   const target=useMemo(()=>{const out=new Float64Array(rows.length*cols.length);rows.forEach((r,i)=>cols.forEach((c,j)=>{out[i*cols.length+j]=Math.max(0,value(r.key,c.key));}));return out;},[rows,cols,value]);
   const max=useMemo(()=>niceMax(target.reduce((m,v)=>Math.max(m,v),0)),[target]);
-  const shown=useTweenedArray(target,max),moving=useCamera(engine,tourKey,resetKey,onTourDone);
+  const shown=useTweenedArray(target,max),moving=useCamera(engine,tourKey,resetKey,onTourDone,props.pose);
   const rowColors=useMemo(()=>rows.map(r=>resolveColor(host.current,r.color)),[rows,host,themed,engine]);
   const draw=useCallback(()=>{
     if(!engine)return;
@@ -171,7 +175,7 @@ export function Surface3D(props:Surface3DProps){
   const {nx,ny,values,xDomain,yDomain,xLabel,yLabel,zLabel,format,xFormat=v=>v.toFixed(0),yFormat=v=>v.toFixed(0),highlight,wireframe=false,themeKey,tourKey,resetKey,onTourDone}=props;
   const {ref,host,engine,error,themed}=useEngine('surface',themeKey),tooltip=useTooltip();
   const max=useMemo(()=>niceMax(values.reduce((m,v)=>Math.max(m,v),0)),[values]);
-  const shown=useTweenedArray(values,max),moving=useCamera(engine,tourKey,resetKey,onTourDone);
+  const shown=useTweenedArray(values,max),moving=useCamera(engine,tourKey,resetKey,onTourDone,props.pose);
   const xAt=(i:number)=>xDomain[0]+(xDomain[1]-xDomain[0])*i/(nx-1),yAt=(j:number)=>yDomain[0]+(yDomain[1]-yDomain[0])*j/(ny-1);
   useLayoutEffect(()=>{
     if(!engine||!host.current)return;
@@ -220,7 +224,7 @@ export type Scatter3DProps=Shared&{
 };
 export function Scatter3D(props:Scatter3DProps){
   const {x,y,z,xDomain,yDomain,zDomain,xLabel,yLabel,zLabel,xFormat=v=>v.toFixed(0),yFormat=v=>v.toFixed(0),zFormat=v=>v.toFixed(0),state,stateKey,colorIndex,mode='orbit',onLasso,describe,themeKey,tourKey,resetKey,onTourDone}=props;
-  const {ref,host,engine,error,themed}=useEngine('points',themeKey),tooltip=useTooltip(),moving=useCamera(engine,tourKey,resetKey,onTourDone);
+  const {ref,host,engine,error,themed}=useEngine('points',themeKey),tooltip=useTooltip(),moving=useCamera(engine,tourKey,resetKey,onTourDone,props.pose);
   const n=x.length;
   const norm=useMemo(()=>{
     const nx=new Float32Array(n),ny=new Float32Array(n),nz=new Float32Array(n),f=(v:number,d:readonly [number,number])=>Math.max(0,Math.min(1,(v-d[0])/(d[1]-d[0]||1)));
@@ -235,7 +239,7 @@ export function Scatter3D(props:Scatter3DProps){
     for(let i=0;i<n;i++){
       const s=state(i);bucket[s].push(i);
       const c=s===0?muted:s===2?accent:cats[colorIndex(i)%Math.max(1,cats.length)]||accent;
-      rgba[i*4]=c[0];rgba[i*4+1]=c[1];rgba[i*4+2]=c[2];rgba[i*4+3]=s===0?(dense?0.05:0.15):s===2?0.9:(dense?0.42:0.7);
+      rgba[i*4]=c[0];rgba[i*4+1]=c[1];rgba[i*4+2]=c[2];rgba[i*4+3]=s===0?(dense?0.07:0.15):s===2?0.9:(dense?0.42:0.7);
     }
     const order=new Uint32Array(n);let k=0;for(const b of bucket)for(const i of b)order[k++]=i;
     engine.setPoints({x:norm.x,y:norm.y,z:norm.z,rgba,order,size:dense?1.7:3});
@@ -246,7 +250,7 @@ export function Scatter3D(props:Scatter3DProps){
     if(!engine)return;const labels:Label[]=[];
     for(let k=0;k<=4;k++){const t=k/4;labels.push({id:'x'+k,text:xFormat(xDomain[0]+(xDomain[1]-xDomain[0])*t),at:[t,0,1.07]});labels.push({id:'z'+k,text:zFormat(zDomain[0]+(zDomain[1]-zDomain[0])*t),at:[1.03,0,t],anchor:'start'});}
     // The value axis stands on the front-left edge: the cloud would hide a back edge.
-    for(let k=0;k<=4;k++)labels.push({id:'y'+k,text:yFormat(yDomain[0]+(yDomain[1]-yDomain[0])*k/4),at:[-0.015,k/4,1],anchor:'end',kind:'value'});
+    for(let k=1;k<=4;k++)labels.push({id:'y'+k,text:yFormat(yDomain[0]+(yDomain[1]-yDomain[0])*k/4),at:[-0.015,k/4,1],anchor:'end',kind:'value'});
     labels.push({id:'xt',text:xLabel,at:[0.5,0,1.2],kind:'title'},{id:'zt',text:zLabel,at:[1.1,0,0.5],kind:'title',anchor:'start'},{id:'yt',text:yLabel,at:[0,1.1,1],kind:'title'});
     engine.setLabels(labels);
   // eslint-disable-next-line react-hooks/exhaustive-deps
