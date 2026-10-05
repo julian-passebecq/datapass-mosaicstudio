@@ -1,0 +1,154 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "wind-aep-weibull",
+  "title": "ILLUSTRATIVE annual energy vs mean wind speed (Weibull k=2)",
+  "provenance": {
+    "kind": "computed",
+    "source": "py/wind_reference_model.py (run as a script, from Jupyter or from marimo). ILLUSTRATIVE: generic 3 MW-class power curve, Rayleigh-like Weibull k=2, no losses. Not FOIL data, not a site assessment."
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "id",
+    "columns": [
+      {
+        "id": "id",
+        "label": "Case",
+        "type": "string"
+      },
+      {
+        "id": "meanSpeed",
+        "label": "Mean wind speed",
+        "type": "number",
+        "unit": "m/s"
+      },
+      {
+        "id": "weibullScale",
+        "label": "Weibull scale c",
+        "type": "number",
+        "unit": "m/s"
+      },
+      {
+        "id": "aep",
+        "label": "Annual energy (gross)",
+        "type": "number",
+        "unit": "MWh/yr"
+      },
+      {
+        "id": "capacityFactor",
+        "label": "Capacity factor",
+        "type": "number",
+        "unit": "%"
+      }
+    ],
+    "rows": [
+      {
+        "id": "mean-5-0",
+        "meanSpeed": 5.0,
+        "weibullScale": 5.642,
+        "aep": 3229.6,
+        "capacityFactor": 12.29
+      },
+      {
+        "id": "mean-5-5",
+        "meanSpeed": 5.5,
+        "weibullScale": 6.206,
+        "aep": 4260.5,
+        "capacityFactor": 16.21
+      },
+      {
+        "id": "mean-6-0",
+        "meanSpeed": 6.0,
+        "weibullScale": 6.77,
+        "aep": 5373.6,
+        "capacityFactor": 20.45
+      },
+      {
+        "id": "mean-6-5",
+        "meanSpeed": 6.5,
+        "weibullScale": 7.334,
+        "aep": 6528.9,
+        "capacityFactor": 24.84
+      },
+      {
+        "id": "mean-7-0",
+        "meanSpeed": 7.0,
+        "weibullScale": 7.899,
+        "aep": 7690.9,
+        "capacityFactor": 29.27
+      },
+      {
+        "id": "mean-7-5",
+        "meanSpeed": 7.5,
+        "weibullScale": 8.463,
+        "aep": 8830.5,
+        "capacityFactor": 33.6
+      },
+      {
+        "id": "mean-8-0",
+        "meanSpeed": 8.0,
+        "weibullScale": 9.027,
+        "aep": 9925.5,
+        "capacityFactor": 37.77
+      },
+      {
+        "id": "mean-8-5",
+        "meanSpeed": 8.5,
+        "weibullScale": 9.591,
+        "aep": 10958.6,
+        "capacityFactor": 41.7
+      },
+      {
+        "id": "mean-9-0",
+        "meanSpeed": 9.0,
+        "weibullScale": 10.155,
+        "aep": 11916.8,
+        "capacityFactor": 45.35
+      },
+      {
+        "id": "mean-9-5",
+        "meanSpeed": 9.5,
+        "weibullScale": 10.72,
+        "aep": 12790.7,
+        "capacityFactor": 48.67
+      },
+      {
+        "id": "mean-10-0",
+        "meanSpeed": 10.0,
+        "weibullScale": 11.284,
+        "aep": 13573.4,
+        "capacityFactor": 51.65
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "aep-8",
+      "title": "AEP at 8 m/s mean",
+      "kind": "metric",
+      "row": "mean-8-0",
+      "column": "aep",
+      "unit": "MWh/yr",
+      "digits": 0
+    },
+    {
+      "id": "table",
+      "title": "Weibull AEP table",
+      "kind": "table"
+    },
+    {
+      "id": "curve",
+      "title": "AEP vs mean speed",
+      "kind": "chart",
+      "chart": "line",
+      "x": "meanSpeed",
+      "y": "aep",
+      "unit": "MWh/yr"
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "kind": "json"
+    }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "format": "datapass.artifact-manifest",
+  "version": 1,
+  "artifacts": [
+    {
+      "id": "wind-aep-weibull",
+      "title": "ILLUSTRATIVE annual energy vs mean wind speed (Weibull k=2)",
+      "file": "wind-aep-weibull.json",
+      "bytes": 3396,
+      "sha256": "455e3b70770aa431ffc90807456ca6d2692fe65d9c755234d7979dc5be84c53b",
+      "provenance": {
+        "kind": "computed",
+        "source": "py/wind_reference_model.py (run as a script, from Jupyter or from marimo). ILLUSTRATIVE: generic 3 MW-class power curve, Rayleigh-like Weibull k=2, no losses. Not FOIL data, not a site assessment."
+      }
+    }
+  ]
+}

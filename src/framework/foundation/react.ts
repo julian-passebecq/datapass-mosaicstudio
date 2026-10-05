@@ -2,4 +2,5 @@
 export {RunScope,useRunJournal} from './RunScope';
 export {default as RunWorkbench} from './RunWorkbench';
 export {ArtifactView} from './ArtifactView';
+export {ArtifactSource,artifactSource} from './ArtifactSource';
 export {ContextInspector} from './ContextInspector';
