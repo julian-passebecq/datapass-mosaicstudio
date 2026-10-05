@@ -23,6 +23,12 @@ export function parseDevArguments(args){
   return options;
 }
 
+/** Vite hands plugins POSIX-style ids (`D:/x/app.ts`) while `root` is native (`D:\x`) on Windows. */
+export function isClientFile(file,root){
+  const resolved=path.resolve(file),base=path.resolve(root);
+  return resolved.startsWith(base+path.sep);
+}
+
 export async function startClientDev(options){
   const {id,port,json}=parseDevArguments([options.id,'--port',String(options.port??5173),...(options.json?['--json']:[])]);
   const root=path.resolve('clients',id),abort=new AbortController();
@@ -79,7 +85,7 @@ export async function startClientDev(options){
         // Vite installs its own SIGTERM exit handler. Its close hook must await our final receipt.
         async closeBundle(){if(closing&&!restarting)await recordStop();},
         async handleHotUpdate(context){
-        if(!context.file.startsWith(root+path.sep))return;
+        if(!isClientFile(context.file,root))return;
         // Artifact data files are followed by artifact-watch-plugin (no client re-validation, no reload).
         if(path.dirname(path.resolve(context.file))===path.join(root,'public','artifacts'))return [];
         let restart=false,invalid=false;
