@@ -12,3 +12,6 @@ export type {NavigationSpec,NavigationState,SemanticEntity,SemanticRelation} fro
 export {validateContext,artifactContext,runContext} from './context.ts';
 export type {ContextModel} from './context.ts';
 export type {TaskRunEvent} from '../task-events.ts';
+export {artifactLineage,lineagePath,layoutLineage,artifactEvidence,metricValue} from './lineage/model.ts';
+export {LINEAGE_LIMITS} from './artifact.ts';
+export type {EvidenceLink,ArtifactInput,ArtifactProducer,ArtifactProvenance} from './artifact.ts';

@@ -2,8 +2,15 @@ import type {AppDefinition,Block,Column,Dataset,Rows} from '../types.ts';
 import {identifier,strict,text} from '../guards.ts';
 import {validateManifest,validateRows} from '../validate.ts';
 import {boundedJson,freezeValue} from './safety.ts';
+import {safeRelativePath} from '../../core/host.ts';
 
-export type Representation={id:string;title:string}&(
+/** Optional lineage metadata (additive; artifacts without it stay valid). Declared by the producer, not observed by Studio. */
+export type EvidenceLink={path:string;start:number;end:number;label:string};
+export type ArtifactProducer={kind:'script'|'notebook'|'service';name:string;evidence?:EvidenceLink[]};
+export type ArtifactInput={id:string;label:string;value?:string|number|boolean;unit?:string;evidence?:EvidenceLink[]};
+export type ArtifactProvenance={kind:'synthetic'|'provided'|'computed';source:string;runId?:string;producer?:ArtifactProducer;inputHash?:string;inputs?:ArtifactInput[];dependsOn?:string[]};
+export const LINEAGE_LIMITS=Object.freeze({inputs:24,evidence:8,dependsOn:12,line:100000,path:260});
+export type Representation={id:string;title:string;inputs?:string[]}&(
   |{kind:'table'}
   |{kind:'chart';chart:'bar'|'line'|'scatter';x:string;y:string;unit?:string}
   |{kind:'metric';row:string;column:string;unit?:string;digits?:number}
@@ -12,7 +19,7 @@ export type Representation={id:string;title:string}&(
 );
 export type Artifact={
   format:'datapass.artifact';version:1;id:string;title:string;
-  provenance:{kind:'synthetic'|'provided'|'computed';source:string;runId?:string};
+  provenance:ArtifactProvenance;
   payload:{kind:'table';rowKey:string;columns:Column[];rows:Rows}|{kind:'text';text:string};
   representations:Representation[];
 };
@@ -49,15 +56,17 @@ export function validateArtifact(input:unknown):Artifact{
   strict(input,['format','version','id','title','provenance','payload','representations'],'artifact');
   if(input.format!=='datapass.artifact'||input.version!==1)throw new Error('Unsupported artifact format');
   identifier(input.id,'artifact id');text(input.title,'artifact title',160);
-  strict(input.provenance,['kind','source','runId'],'artifact provenance');
+  strict(input.provenance,['kind','source','runId','producer','inputHash','inputs','dependsOn'],'artifact provenance');
   if(!['synthetic','provided','computed'].includes(String(input.provenance.kind))||typeof input.provenance.kind!=='string')throw new Error('Unknown artifact provenance');
   text(input.provenance.source,'artifact source',2000);
   if(input.provenance.runId!==undefined)identifier(input.provenance.runId,'artifact run');
+  const inputIds=validateLineage(input.provenance,input.id);
   const payload=input.payload;
   if(!payload||typeof payload!=='object')throw new Error('Missing artifact payload');
   if((payload as {kind?:unknown}).kind==='table')strict(payload,['kind','rowKey','columns','rows'],'table payload');
   else {strict(payload,['kind','text'],'text payload');if(payload.kind!=='text')throw new Error('Unknown payload kind');text(payload.text,'text payload',20000,false);}
   validateRepresentationSchema(input.representations);
+  for(const rep of input.representations)for(const used of rep.inputs??[])if(!inputIds.has(used))throw new Error('Representation '+rep.id+' uses an undeclared input '+used);
   const result=structuredClone(input) as Artifact,definition=definitionFor(result);
   validateManifest(definition.manifest);
   if(result.payload.kind==='table')validateRows(datasetFor(result),result.payload.rows);
@@ -83,9 +92,10 @@ function validateRepresentationSchema(representations:unknown):asserts represent
     if(!rep||typeof rep!=='object')throw new Error('Invalid representation');
     const kind=(rep as {kind?:unknown}).kind;
     const extra=kind==='chart'?['chart','x','y','unit']:kind==='metric'?['row','column','unit','digits']:[];
-    strict(rep,['id','title','kind',...extra],'representation');
+    strict(rep,['id','title','kind','inputs',...extra],'representation');
     if(typeof kind!=='string'||!['table','chart','metric','text','json'].includes(kind))throw new Error('Unsupported representation');
     identifier(rep.id,'representation id');text(rep.title,'representation title',160);
+    if(rep.inputs!==undefined)idList(rep.inputs,LINEAGE_LIMITS.inputs,'representation inputs');
   }
 }
 
@@ -95,4 +105,49 @@ export function validateArtifactViews(dataset:Dataset,representations:unknown):R
   const a:Artifact={format:'datapass.artifact',version:1,id:'pending-output',title:dataset.title,provenance:{kind:'computed',source:'Pending validated result.'},payload:{kind:'table',rowKey:dataset.rowKey,columns:dataset.columns,rows:[]},representations};
   validateManifest(definitionFor(a,false).manifest);
   return freezeValue(structuredClone(representations));
+}
+
+function idList(value:unknown,max:number,label:string):asserts value is string[]{
+  if(!Array.isArray(value)||value.length>max)throw new Error(label+': list budget');
+  for(const id of value)identifier(id,label);
+  if(new Set(value).size!==value.length)throw new Error(label+': duplicate id');
+}
+function evidenceLinks(value:unknown,label:string):void{
+  if(value===undefined)return;
+  if(!Array.isArray(value)||value.length>LINEAGE_LIMITS.evidence)throw new Error(label+': evidence budget');
+  const seen=new Set<string>();
+  for(const ref of value){
+    strict(ref,['path','start','end','label'],label+' evidence');
+    if(typeof ref.path!=='string'||ref.path.length>LINEAGE_LIMITS.path||!safeRelativePath(ref.path)||/[\u0000-\u001f\u007f]/.test(ref.path))throw new Error(label+' evidence: path must be a safe relative path');
+    if(!Number.isSafeInteger(ref.start)||!Number.isSafeInteger(ref.end)||(ref.start as number)<1||(ref.end as number)<(ref.start as number)||(ref.end as number)>LINEAGE_LIMITS.line)throw new Error(label+' evidence: invalid line range');
+    text(ref.label,label+' evidence label',160);
+    const key=ref.path+':'+ref.start+':'+ref.end;if(seen.has(key))throw new Error(label+' evidence: duplicate range');seen.add(key);
+  }
+}
+/** Optional provenance lineage: producer, inputs (with evidence), input hash, upstream artifact ids. Returns the declared input ids. */
+function validateLineage(p:Record<string,unknown>,artifactId:string):Set<string>{
+  if(p.producer!==undefined){
+    strict(p.producer,['kind','name','evidence'],'artifact producer');
+    if(!['script','notebook','service'].includes(p.producer.kind as string))throw new Error('Unknown artifact producer kind');
+    text(p.producer.name,'artifact producer name',160);evidenceLinks(p.producer.evidence,'producer');
+  }
+  if(p.inputHash!==undefined&&(typeof p.inputHash!=='string'||!/^[0-9a-f]{64}$/.test(p.inputHash)))throw new Error('artifact inputHash must be 64 lowercase hex characters (sha256)');
+  const ids=new Set<string>();
+  if(p.inputs!==undefined){
+    if(!Array.isArray(p.inputs)||p.inputs.length>LINEAGE_LIMITS.inputs)throw new Error('artifact inputs: list budget');
+    for(const input of p.inputs){
+      strict(input,['id','label','value','unit','evidence'],'artifact input');
+      identifier(input.id,'artifact input id');if(ids.has(input.id))throw new Error('artifact inputs: duplicate id');ids.add(input.id);
+      text(input.label,'artifact input label',160);
+      const v=input.value;
+      if(v!==undefined&&!(typeof v==='boolean'||(typeof v==='number'&&Number.isFinite(v))||(typeof v==='string'&&v.length<=400)))throw new Error('artifact input value must be a finite number, boolean or short string');
+      if(input.unit!==undefined)text(input.unit,'artifact input unit',40,false);
+      evidenceLinks(input.evidence,'input '+input.id);
+    }
+  }
+  if(p.dependsOn!==undefined){
+    idList(p.dependsOn,LINEAGE_LIMITS.dependsOn,'artifact dependsOn');
+    if(p.dependsOn.includes(artifactId))throw new Error('artifact dependsOn: an artifact cannot depend on itself');
+  }
+  return ids;
 }

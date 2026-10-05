@@ -17,6 +17,7 @@ downstream tools, the Studio page never reads it.
 from __future__ import annotations
 
 import hashlib
+import inspect
 import json
 import math
 import os
@@ -35,13 +36,19 @@ MAX_REPRESENTATIONS = 12
 MANIFEST_NAME = "manifest.json"
 _ID = re.compile(r"^[a-z][a-zA-Z0-9_-]{0,79}$")
 _RESERVED = {"constructor", "prototype", "__proto__"}
+_HEX64 = re.compile(r"^[0-9a-f]{64}$")
+_PRODUCERS = {"script", "notebook", "service"}
+MAX_INPUTS = 24
+MAX_EVIDENCE = 8
+MAX_DEPENDS_ON = 12
+MAX_LINE = 100000
 _KINDS = {"table", "chart", "metric", "text", "json"}
 _REP_KEYS = {
-    "table": {"id", "title", "kind"},
-    "text": {"id", "title", "kind"},
-    "json": {"id", "title", "kind"},
-    "chart": {"id", "title", "kind", "chart", "x", "y", "unit"},
-    "metric": {"id", "title", "kind", "row", "column", "unit", "digits"},
+    "table": {"id", "title", "kind", "inputs"},
+    "text": {"id", "title", "kind", "inputs"},
+    "json": {"id", "title", "kind", "inputs"},
+    "chart": {"id", "title", "kind", "chart", "x", "y", "unit", "inputs"},
+    "metric": {"id", "title", "kind", "row", "column", "unit", "digits", "inputs"},
 }
 
 
@@ -158,7 +165,132 @@ def _validate_table(row_key: str, columns: list[dict[str, Any]], rows: list[dict
         keys.add(k)
 
 
-def _validate_representations(reps: Any, payload: dict[str, Any]) -> None:
+def _safe_path(value: Any) -> bool:
+    return (isinstance(value, str) and 0 < len(value) <= 260 and not re.search(r"[\\\0:\x00-\x1f\x7f]", value)
+            and not value.startswith("/") and all(part not in ("", ".", "..") for part in value.split("/")))
+
+
+def _id_list(value: Any, limit: int, label: str) -> list[str]:
+    if not isinstance(value, list) or len(value) > limit:
+        raise ArtifactError(f"{label}: list of at most {limit} ids")
+    for item in value:
+        _identifier(item, label)
+    if len(set(value)) != len(value):
+        raise ArtifactError(f"{label}: duplicate id")
+    return value
+
+
+def _validate_evidence(refs: Any, label: str) -> None:
+    if refs is None:
+        return
+    if not isinstance(refs, list) or len(refs) > MAX_EVIDENCE:
+        raise ArtifactError(f"{label}: at most {MAX_EVIDENCE} evidence links")
+    seen = set()
+    for ref in refs:
+        if not isinstance(ref, Mapping) or set(ref) - {"path", "start", "end", "label"} or not {"path", "start", "end", "label"} <= set(ref):
+            raise ArtifactError(f"{label} evidence: needs exactly path, start, end, label")
+        if not _safe_path(ref["path"]):
+            raise ArtifactError(f"{label} evidence: path must be a safe relative path (forward slashes, no ..)")
+        start, end = ref["start"], ref["end"]
+        if any(not isinstance(n, int) or isinstance(n, bool) for n in (start, end)) or not 1 <= start <= end <= MAX_LINE:
+            raise ArtifactError(f"{label} evidence: invalid line range {start!r}..{end!r}")
+        _text(ref["label"], f"{label} evidence label", 160)
+        key = (ref["path"], start, end)
+        if key in seen:
+            raise ArtifactError(f"{label} evidence: duplicate range")
+        seen.add(key)
+
+
+def _validate_lineage(prov: Mapping[str, Any], artifact_id: str) -> set[str]:
+    """Optional, additive lineage metadata (mirror of validateLineage in artifact.ts)."""
+    if "producer" in prov:
+        producer = prov["producer"]
+        if not isinstance(producer, Mapping) or set(producer) - {"kind", "name", "evidence"}:
+            raise ArtifactError("artifact producer: unexpected fields")
+        if producer.get("kind") not in _PRODUCERS:
+            raise ArtifactError("artifact producer kind must be script, notebook or service")
+        _text(producer.get("name"), "artifact producer name", 160)
+        _validate_evidence(producer.get("evidence"), "producer")
+    if "inputHash" in prov and (not isinstance(prov["inputHash"], str) or not _HEX64.match(prov["inputHash"])):
+        raise ArtifactError("artifact inputHash must be 64 lowercase hex characters (sha256)")
+    ids: set[str] = set()
+    if "inputs" in prov:
+        inputs = prov["inputs"]
+        if not isinstance(inputs, list) or len(inputs) > MAX_INPUTS:
+            raise ArtifactError(f"artifact inputs: at most {MAX_INPUTS}")
+        for item in inputs:
+            if not isinstance(item, Mapping) or set(item) - {"id", "label", "value", "unit", "evidence"}:
+                raise ArtifactError("artifact input: unexpected fields")
+            _identifier(item.get("id"), "artifact input id")
+            if item["id"] in ids:
+                raise ArtifactError("artifact inputs: duplicate id")
+            ids.add(item["id"])
+            _text(item.get("label"), "artifact input label", 160)
+            if "value" in item:
+                v = item["value"]
+                ok = isinstance(v, bool) or (isinstance(v, (int, float)) and math.isfinite(v)) or (isinstance(v, str) and len(v) <= 400)
+                if not ok:
+                    raise ArtifactError("artifact input value must be a finite number, boolean or short string")
+            if "unit" in item:
+                _text(item["unit"], "artifact input unit", 40, False)
+            _validate_evidence(item.get("evidence"), f"input {item['id']}")
+    if "dependsOn" in prov:
+        _id_list(prov["dependsOn"], MAX_DEPENDS_ON, "artifact dependsOn")
+        if artifact_id in prov["dependsOn"]:
+            raise ArtifactError("artifact dependsOn: an artifact cannot depend on itself")
+    return ids
+
+
+def input_hash(inputs: Iterable[Mapping[str, Any]]) -> str:
+    """sha256 of the canonical [{id, value}] list sorted by id (compact UTF-8 JSON)."""
+    canonical = sorted(({"id": i["id"], "value": i.get("value")} for i in inputs), key=lambda i: i["id"])
+    try:
+        data = json.dumps(canonical, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+    except (TypeError, ValueError) as error:
+        raise ArtifactError(f"input values must be JSON scalars: {error}") from error
+    return hashlib.sha256(data.encode("utf-8")).hexdigest()
+
+
+def cite(obj: Any, label: str, root: str | os.PathLike[str]) -> dict[str, Any]:
+    """Evidence link to the exact source lines of a function or class (inspect), relative to `root`."""
+    lines, start = inspect.getsourcelines(obj)
+    path = Path(inspect.getsourcefile(obj) or "").resolve().relative_to(Path(root).resolve()).as_posix()
+    return {"path": path, "start": start, "end": start + len(lines) - 1, "label": label}
+
+
+def cite_lines(path: str | os.PathLike[str], pattern: str, label: str, root: str | os.PathLike[str]) -> dict[str, Any]:
+    """Evidence link to the first line of `path` (relative to root) matching the regex `pattern`."""
+    source = Path(root) / path
+    for number, line in enumerate(source.read_text(encoding="utf-8").splitlines(), start=1):
+        if re.search(pattern, line):
+            return {"path": Path(path).as_posix(), "start": number, "end": number, "label": label}
+    raise ArtifactError(f"{path}: no line matches {pattern!r}")
+
+
+def write_sources(artifact: Mapping[str, Any], root: str | os.PathLike[str], out_dir: str | os.PathLike[str]) -> list[Path]:
+    """Copy every file cited by the artifact's evidence links to `<out_dir>/<path>.txt` (public, inert excerpts).
+
+    Only cite files that are approved for publication. Line ranges are checked against the copied text.
+    """
+    prov = artifact["provenance"]
+    refs = list(prov.get("producer", {}).get("evidence", []))
+    for item in prov.get("inputs", []):
+        refs.extend(item.get("evidence", []))
+    written = []
+    for path in sorted({ref["path"] for ref in refs}):
+        text = (Path(root) / path).read_text(encoding="utf-8")
+        count = len(text.splitlines())
+        for ref in refs:
+            if ref["path"] == path and ref["end"] > count:
+                raise ArtifactError(f"{path}: evidence {ref['start']}..{ref['end']} is beyond its {count} lines")
+        target = Path(out_dir) / (path + ".txt")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(text, encoding="utf-8", newline="\n")
+        written.append(target)
+    return written
+
+
+def _validate_representations(reps: Any, payload: dict[str, Any], input_ids: set[str] | None = None) -> None:
     if not isinstance(reps, list) or not 1 <= len(reps) <= MAX_REPRESENTATIONS:
         raise ArtifactError(f"1..{MAX_REPRESENTATIONS} representations required")
     ids: set[str] = set()
@@ -175,6 +307,10 @@ def _validate_representations(reps: Any, payload: dict[str, Any]) -> None:
         if rep["id"] in ids:
             raise ArtifactError(f"duplicate representation id {rep['id']}")
         ids.add(rep["id"])
+        if "inputs" in rep:
+            for used in _id_list(rep["inputs"], MAX_INPUTS, "representation inputs"):
+                if used not in (input_ids or set()):
+                    raise ArtifactError(f"representation {rep['id']}: uses an undeclared input {used!r}")
         if kind == "text":
             if payload["kind"] != "text":
                 raise ArtifactError("text representation needs a text payload")
@@ -218,13 +354,14 @@ def validate(artifact: Mapping[str, Any]) -> dict[str, Any]:
     _identifier(artifact["id"], "artifact id")
     _text(artifact["title"], "artifact title", 160)
     prov = artifact["provenance"]
-    if not isinstance(prov, Mapping) or set(prov) - {"kind", "source", "runId"}:
+    if not isinstance(prov, Mapping) or set(prov) - {"kind", "source", "runId", "producer", "inputHash", "inputs", "dependsOn"}:
         raise ArtifactError("artifact provenance: unexpected fields")
     if prov.get("kind") not in ("synthetic", "provided", "computed"):
         raise ArtifactError("unknown artifact provenance")
     _text(prov.get("source"), "artifact source", 2000)
     if "runId" in prov:
         _identifier(prov["runId"], "artifact run")
+    input_ids = _validate_lineage(prov, artifact["id"])
     payload = artifact["payload"]
     if payload.get("kind") == "table":
         if set(payload) != {"kind", "rowKey", "columns", "rows"}:
@@ -234,7 +371,7 @@ def validate(artifact: Mapping[str, Any]) -> dict[str, Any]:
         _text(payload["text"], "text payload", 20000, False)
     else:
         raise ArtifactError("unknown payload kind")
-    _validate_representations(artifact["representations"], payload)
+    _validate_representations(artifact["representations"], payload, input_ids)
     size = len(encode(artifact))
     if size > ARTIFACT_BYTES:
         raise ArtifactError(f"artifact is {size} bytes; the browser budget is {ARTIFACT_BYTES}. Aggregate in Python or use parquet_sidecar for the full data")
@@ -246,11 +383,16 @@ def to_artifact(rows: Any = None, *, id: str, title: str, source: str,
                 row_key: str | None = None, columns: list[dict[str, Any]] | None = None,
                 labels: Mapping[str, str] | None = None, units: Mapping[str, str] | None = None,
                 provenance: str = "computed", run_id: str | None = None, text: str | None = None,
+                producer: Mapping[str, Any] | None = None, inputs: Iterable[Mapping[str, Any]] | None = None,
+                depends_on: Iterable[str] | None = None, input_hash_value: str | None = None,
                 out_dir: str | os.PathLike[str] | None = None, parquet_sidecar: bool = False) -> dict[str, Any]:
     """Build (and optionally write `<out_dir>/<id>.json`) one validated artifact.
 
     rows: list of dicts or a DataFrame (table payload); or pass text= for a text payload.
     row_key defaults to the first column. representations default to table + JSON.
+    Optional lineage (additive): producer={"kind": "script"|"notebook"|"service", "name", "evidence"?},
+    inputs=[{"id", "label", "value"?, "unit"?, "evidence"?}] (inputHash is computed from them unless
+    input_hash_value is given), depends_on=[upstream artifact ids]. Evidence: cite() / cite_lines().
     """
     if text is not None:
         payload: dict[str, Any] = {"kind": "text", "text": text}
@@ -263,6 +405,15 @@ def to_artifact(rows: Any = None, *, id: str, title: str, source: str,
     prov: dict[str, Any] = {"kind": provenance, "source": source}
     if run_id is not None:
         prov["runId"] = run_id
+    if producer is not None:
+        prov["producer"] = dict(producer)
+    if inputs is not None:
+        prov["inputs"] = [dict(i) for i in inputs]
+        prov["inputHash"] = input_hash_value or input_hash(prov["inputs"])
+    elif input_hash_value is not None:
+        prov["inputHash"] = input_hash_value
+    if depends_on is not None:
+        prov["dependsOn"] = list(depends_on)
     artifact = validate({"format": FORMAT, "version": VERSION, "id": id, "title": title,
                          "provenance": prov, "payload": payload, "representations": [dict(r) for r in reps]})
     if out_dir is not None:
