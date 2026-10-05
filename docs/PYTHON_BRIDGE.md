@@ -50,3 +50,18 @@ components:{aep:artifactSource('wind-aep-weibull',['aep-8','table'])}, customCap
 `npm run test:python` · `node --experimental-strip-types --test tests/python-artifact.test.mjs` (Python writes, node validates; fails if the committed artifact is stale) · `npm run test:python-bridge` (browser smoke on the built client).
 
 The wind numbers are ILLUSTRATIVE (generic power curve, Weibull k=2, no losses), not FOIL data.
+
+## Level 3: live service (compute on demand, same contract)
+
+A producer can also answer on demand. `py/service/app.py` is one example (FastAPI, prototype): it returns the same `datapass.artifact` v1 document a script would write, so Studio validates and renders it identically. Any other HTTP producer that returns a valid artifact works the same way.
+
+```sh
+python -m venv .venv && .venv/Scripts/python -m pip install -r py/service/requirements.txt   # once (bin/python on Linux/macOS)
+.venv/Scripts/python py/service/app.py                                                       # 1. service on http://127.0.0.1:8765
+npm run client:dev -- python-wind-reference                                                  # 2. open the page, choose "Live (FastAPI)"
+```
+
+- Endpoints: `GET /health`, `GET /artifacts/{id}` (precomputed files from the client public dir), `POST /compute/wind-reference` with `{k: 1..4, c: 3..15 m/s at 100 m, hubHeight: 40..250 m}` (pydantic; unknown fields and non-numbers get 422). The answer is artifact `wind-aep-live` (provenance `computed`, ILLUSTRATIVE) whose `runId` is `run-` + 16 hex of sha256(model version + inputs): same inputs, same run.
+- Studio: `ArtifactSource` takes `source={kind:'http',url,body?,id?}` (POST when `body` is set) and an optional `fallback` source. Each input change aborts the previous request and only the latest answer is shown (debounced 200 ms; the previous result stays visible while recomputing). When the service is down or rejects the inputs, the fallback static artifact is shown under a `role="alert"` banner with the reason. `?service=http://127.0.0.1:<port>` overrides the service URL; `?live=1` opens in live mode.
+- Security (prototype, **no authentication**): binds 127.0.0.1 only, answers only loopback `Host` headers (DNS-rebinding guard), CORS only for the Vite dev origin (`http://127.0.0.1:5173`, `http://localhost:5173`; override with `DATAPASS_SERVICE_ORIGINS`), request bodies ≤ 2 KB with a `Content-Length`, `Cache-Control: no-store`. The browser loader accepts only loopback or same-origin service URLs, never sends cookies and bounds request and response sizes. Built clients keep `connect-src 'self'`, so they show the static fallback unless a deployment adds the service origin to its CSP. Do not expose the service on a network.
+- Tests: `.venv/Scripts/python -m unittest discover -s py/service -p "test_*.py"` (TestClient: valid, 422, deterministic runId, guards) · `tests/python-artifact.test.mjs` (a service response validates in node; skipped without fastapi) · `npm run test:python-service` after `npm run build:client -- python-wind-reference` (Playwright: starts the service; an input change gives a new metric; a stopped service gives the fallback banner).
