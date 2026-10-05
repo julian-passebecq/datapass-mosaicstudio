@@ -80,6 +80,8 @@ export async function startClientDev(options){
         async closeBundle(){if(closing&&!restarting)await recordStop();},
         async handleHotUpdate(context){
         if(!context.file.startsWith(root+path.sep))return;
+        // Artifact data files are followed by artifact-watch-plugin (no client re-validation, no reload).
+        if(path.dirname(path.resolve(context.file))===path.join(root,'public','artifacts'))return [];
         let restart=false,invalid=false;
         refresh=refresh.catch(()=>{}).then(async()=>{
           if(closing)return;

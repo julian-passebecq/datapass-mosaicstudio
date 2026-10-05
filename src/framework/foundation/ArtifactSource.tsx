@@ -5,6 +5,7 @@ import {RenderBlock} from '../registry';
 import {artifactDefinition,type Artifact} from './artifact';
 import {loadArtifactSource,type ArtifactSourceSpec} from './artifact-loader';
 import {ArtifactView} from './ArtifactView';
+import {artifactWatchAvailable,onArtifactChanged} from './artifact-live';
 import './foundation.css';
 
 function Provenance({artifact,url}:{artifact:Artifact;url:string}){
@@ -26,41 +27,52 @@ function AllViews({artifact,show}:{artifact:Artifact;show:readonly string[]}){
   </Suspense></RuntimeContext.Provider>;
 }
 type Loaded={artifact:Artifact;url:string};
-type SourceState={status:'loading'}|{status:'ready';result:Loaded;pending:boolean}|{status:'error';message:string;fallback?:Loaded};
+/** `liveError`: a watched file was rewritten with an invalid artifact; the last valid result stays on screen. */
+type SourceState={status:'loading'}|{status:'ready';result:Loaded;pending:boolean;updatedAt:number;liveError?:string}|{status:'error';message:string;fallback?:Loaded};
 const message=(error:unknown)=>String((error as Error)?.message||error);
 /**
  * Load one artifact source with latest-wins semantics: every change aborts the previous request,
  * and only the newest request may update the state. Live (http) sources are debounced and keep the
  * previous result on screen while recomputing. When the primary source fails and `fallback` is set,
  * the fallback is loaded and the error is kept for the banner.
+ * Dev only (bridge level 2.5): a static source refetches when the dev server reports its file changed;
+ * a failed refresh keeps the last valid result and sets `liveError`.
  */
 export function useArtifactSource(source:ArtifactSourceSpec,fallback?:ArtifactSourceSpec,debounceMs=200):SourceState{
   const key=JSON.stringify(source),fallbackKey=fallback?JSON.stringify(fallback):'';
   const [state,setState]=useState<SourceState>({status:'loading'});
-  const sequence=useRef(0);
+  const sequence=useRef(0),lastKey=useRef('');
+  const [revision,setRevision]=useState(0);
+  const current=useRef(state);current.current=state;
+  const watchedId=artifactWatchAvailable&&source.kind==='static'?source.id:'';
+  useEffect(()=>watchedId?onArtifactChanged(watchedId,()=>setRevision(r=>r+1)):undefined,[watchedId]);
   useEffect(()=>{
+    const refresh=lastKey.current===key+'|'+fallbackKey;lastKey.current=key+'|'+fallbackKey;
     const spec=JSON.parse(key) as ArtifactSourceSpec,backup=fallbackKey?JSON.parse(fallbackKey) as ArtifactSourceSpec:undefined;
     const run=++sequence.current,abort=new AbortController(),latest=()=>run===sequence.current&&!abort.signal.aborted;
     setState(previous=>previous.status==='ready'?{...previous,pending:true}:previous.status==='error'&&previous.fallback?previous:{status:'loading'});
     const options={base:document.baseURI,signal:abort.signal};
     const timer=setTimeout(()=>{
       loadArtifactSource(spec,options).then(
-        result=>{if(latest())setState({status:'ready',result,pending:false});},
+        result=>{if(latest())setState({status:'ready',result,pending:false,updatedAt:Date.now()});},
         async error=>{
           if(!latest()||(error as Error)?.name==='AbortError')return;
           const reason=message(error);
+          if(refresh&&current.current.status==='ready'){setState(previous=>previous.status==='ready'?{...previous,pending:false,liveError:reason}:previous);return;}
           if(!backup){setState({status:'error',message:reason});return;}
           try{const result=await loadArtifactSource(backup,options);if(latest())setState({status:'error',message:reason,fallback:result});}
           catch(second){if(latest())setState({status:'error',message:reason+' / fallback: '+message(second)});}
         });
     },spec.kind==='http'?debounceMs:0);
     return()=>{clearTimeout(timer);abort.abort();};
-  },[key,fallbackKey,debounceMs]);
+  },[key,fallbackKey,debounceMs,revision]);
   return state;
 }
-function Rendered({result,show,pending}:{result:Loaded;show?:readonly string[];pending?:boolean}){
+function Rendered({result,show,pending,liveSince}:{result:Loaded;show?:readonly string[];pending?:boolean;liveSince?:number}){
   const {artifact,url}=result;
   return <section className="foundation-artifact-source" data-testid="artifact-source" data-artifact-id={artifact.id} data-run-id={artifact.provenance.runId??''} aria-busy={pending||undefined}>
+    {liveSince!==undefined?<p className="foundation-artifact-live" data-testid="artifact-live-badge" data-updated-at={liveSince} title="Dev server: this file is watched; any producer that rewrites it updates this view.">
+      <span aria-hidden="true">{'●'}</span> Live file <span>updated {new Date(liveSince).toLocaleTimeString()}</span></p>:null}
     {show?.length?<><header><span className="foundation-kicker">Python result / {artifact.provenance.kind}{pending?' / recomputing...':''}</span><h3>{artifact.title}</h3></header><AllViews artifact={artifact} show={show}/></>:<ArtifactView artifact={artifact}/>}
     <Provenance artifact={artifact} url={url}/>
   </section>;
@@ -83,7 +95,11 @@ export function ArtifactSource({id,source,fallback,show}:{id?:string;source?:Art
     </>;
     return <div role="alert" className="foundation-artifact-error" data-testid="artifact-error" data-artifact-id={label}><strong>Artifact unavailable.</strong> {state.message}</div>;
   }
-  return <Rendered result={state.result} show={show} pending={state.pending}/>;
+  // Same element structure with or without the toast, so view state (table sort, chosen representation) survives updates.
+  return <>
+    {state.liveError?<div role="alert" className="foundation-artifact-toast" data-testid="artifact-live-error"><strong>Rejected file update, keeping the last valid result.</strong> {state.liveError}</div>:null}
+    <Rendered result={state.result} show={show} pending={state.pending} liveSince={artifactWatchAvailable&&spec.kind==='static'?state.updatedAt:undefined}/>
+  </>;
 }
 /** Client helper: `components:{aep:artifactSource('wind-aep-weibull',['aep-8','table'])}`. */
 export function artifactSource(id:string,show?:readonly string[]):ComponentType{

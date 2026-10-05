@@ -95,5 +95,48 @@ class WindModelTests(unittest.TestCase):
         self.assertEqual(a["provenance"]["kind"], "computed")
 
 
+class WatchWriteTests(unittest.TestCase):
+    def test_atomic_replace_never_exposes_partial_json(self):
+        import threading
+        with tempfile.TemporaryDirectory() as d:
+            target = Path(d) / "demo.json"
+            da.watch_write(target, make())
+            stop, seen, errors = threading.Event(), set(), []
+
+            def reader():
+                while not stop.is_set():
+                    try:
+                        seen.add(json.loads(target.read_bytes())["provenance"].get("runId"))
+                    except PermissionError:
+                        continue  # Windows: file briefly locked by the rename, never partial
+                    except Exception as error:  # noqa: BLE001
+                        errors.append(repr(error))
+
+            thread = threading.Thread(target=reader)
+            thread.start()
+            try:
+                for i in range(60):
+                    da.watch_write(target, make(run_id=f"run-{i}", rows=ROWS * 1 + [{"id": f"r{j}", "x": j, "y": 1.0, "ok": True} for j in range(i * 20)]))
+            finally:
+                stop.set()
+                thread.join()
+            self.assertEqual(errors, [])
+            self.assertEqual(json.loads(target.read_text(encoding="utf-8"))["provenance"]["runId"], "run-59")
+            self.assertEqual([p.name for p in Path(d).iterdir()], ["demo.json"])
+
+    def test_invalid_artifact_keeps_previous_file(self):
+        with tempfile.TemporaryDirectory() as d:
+            target = Path(d) / "demo.json"
+            da.watch_write(target, make(run_id="run-good"))
+            bad = dict(make())
+            bad["title"] = ""
+            with self.assertRaises(da.ArtifactError):
+                da.watch_write(target, bad)
+            with self.assertRaises(da.ArtifactError):
+                da.watch_write(Path(d) / "other.json", make())
+            self.assertEqual(json.loads(target.read_text(encoding="utf-8"))["provenance"]["runId"], "run-good")
+            self.assertEqual(sorted(p.name for p in Path(d).iterdir()), ["demo.json"])
+
+
 if __name__ == "__main__":
     unittest.main()
