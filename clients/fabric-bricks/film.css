@@ -1,0 +1,52 @@
+/* Autoplay build film: the kit page itself in motion (title left, model centre, parts panel right, transport bottom). Lazy loaded with KitFilm. */
+.fb-film{position:fixed;inset:0;z-index:60;display:grid;grid-template-columns:minmax(0,1fr) clamp(240px,23.5vw,320px);background:#fff;color:#242726;font-family:Arial,Helvetica,sans-serif;overflow:hidden}
+.fb-film-stage{position:relative;min-width:0}
+.fb-film-canvas{position:absolute;inset:0}.fb-film-canvas canvas{display:block;width:100%;height:100%}
+.fb-film-nav{position:absolute;left:22px;top:16px;display:flex;align-items:center;gap:8px;pointer-events:none}
+.fb-film-brand{display:flex;align-items:center;gap:9px;font-size:9px;font-weight:700;letter-spacing:1.8px;margin-right:8px}
+.fb-film-pill{display:inline-flex;align-items:center;border:1px solid #e3e5df;border-radius:14px;padding:4px 10px;font-size:9px;color:#3c4440;background:#fff;white-space:nowrap}
+.fb-film-pill-on{background:#1f2421;border-color:#1f2421;color:#fff}
+.fb-film-caption{position:absolute;left:clamp(22px,2.6vw,36px);top:58px;width:min(250px,30%);pointer-events:none;will-change:opacity,transform}
+.fb-film-caption .fb-eyebrow{font-size:8px}
+.fb-film-caption h2{font-size:clamp(28px,3.1vw,42px);font-weight:400;line-height:1.05;letter-spacing:-.035em;margin:10px 0 10px;color:#1f2421}
+.fb-film-caption p{font-size:10px;line-height:1.6;color:#6f756c;margin:0}
+.fb-film-actions{display:flex;align-items:center;gap:10px;margin-top:13px}.fb-film-concept{font-size:8px;color:#8d9488}
+.fb-film-chip{display:inline-flex;align-items:center;gap:7px;margin-top:10px;padding:5px 10px;border:1px solid #e1e4de;border-radius:14px;font-size:9px;color:#2d3430;background:#fff}
+.fb-film-chip i{width:16px;height:5px;border-radius:1px}.fb-film-chip u{text-decoration:underline;color:#596057;margin-left:4px}
+.fb-film-provenance{position:absolute;right:18px;top:22px;font-size:7px;letter-spacing:1.2px;color:#a3a99f;pointer-events:none}
+.fb-film-transport{position:absolute;left:50%;bottom:20px;transform:translateX(-50%);width:min(370px,calc(100% - 32px));display:flex;align-items:center;gap:12px;padding:7px 9px;background:rgba(255,255,255,.96);border:1px solid #eceee9;border-radius:12px;box-shadow:0 6px 22px rgba(30,40,32,.07)}
+.fb-film-steps{flex:1;min-width:0;display:grid;gap:5px}.fb-film-steps>span:first-child{display:flex;gap:10px;align-items:baseline}
+.fb-film-steps small{font-size:7px;letter-spacing:1.2px;color:#8d9488}.fb-film-steps strong{font-size:9px;font-weight:700}
+.fb-film-track6{display:flex;gap:3px}.fb-film-track6 i{flex:1;height:2px;background:#e4e6e0;border-radius:2px}.fb-film-track6 i.on{background:#2a312c}
+.fb-film-plus{font-size:8px;color:#8d9488;white-space:nowrap}
+.fb-film-transport .fb-film-pill{font-size:8px;padding:4px 9px}
+.fb-film-controls{position:absolute;left:50%;top:14px;transform:translateX(-50%);width:min(520px,calc(100% - 300px));display:flex;align-items:center;gap:12px;padding:6px 12px;background:rgba(255,255,255,.92);border:1px solid #eceee9;border-radius:20px}
+.studio-site .fb-film button,.fb-film button{border:0;background:transparent;color:#242726;padding:0;font-family:inherit;cursor:pointer}
+.fb-film .fb-film-play,.fb-film .fb-film-close{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;flex:none}
+.fb-film .fb-film-play{background:#1f2421;color:#fff}.fb-film .fb-film-play:disabled{cursor:default}
+.fb-film button:focus-visible,.fb-film input:focus-visible{outline:2px solid #218b6c;outline-offset:3px}
+.fb-film-track{position:relative;flex:1;min-width:0;padding-bottom:14px}
+.fb-film-track input{width:100%;margin:0;accent-color:#1f2421;height:14px}
+.fb-film-chapters{position:absolute;left:0;right:0;bottom:0;height:12px}
+.fb-film .fb-film-chapters button{position:absolute;top:0;font-size:7px;letter-spacing:.5px;color:#9aa096;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:1px solid #e1e4de;padding-left:4px}
+.fb-film .fb-film-chapters button[aria-current=step]{color:#1f2421;font-weight:700}
+.fb-film-time{font-size:9px;font-variant-numeric:tabular-nums;color:#596057;flex:none}
+.fb-film-panel{border-left:1px solid #ececea;padding:16px 16px 14px;display:flex;flex-direction:column;min-height:0;background:#fff}
+.fb-film-panel h3{font-size:22px;font-weight:400;letter-spacing:-.03em;margin:8px 0 4px}.fb-film-sub{font-size:9px;color:#8d9488;margin:0 0 10px}
+.fb-film-tabs{display:flex;gap:6px;margin-bottom:10px}
+.fb-film-stats{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:8px}.fb-film-stats span{display:block;font-size:7px;letter-spacing:1.2px;color:#8d9488}.fb-film-stats strong{font-size:19px;font-weight:400}
+.fb-film-size{font-size:8px;color:#8d9488;margin:4px 0 12px;padding-bottom:12px;border-bottom:1px solid #ececea}
+.fb-film-parts-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}.fb-film-parts-head b{font-size:8px;letter-spacing:1.3px}.fb-film-parts-head small{font-size:7px;color:#9aa096}
+.fb-film-rows{flex:1;min-height:0;overflow:hidden}
+.fb-film-row{display:flex;align-items:center;gap:8px;padding:5px 4px;border-bottom:1px solid #f0f1ee;transition:none}
+.fb-film-row.on{background:#f3f5ef}.fb-film-row.dim{opacity:.38}
+.fb-film-qty{font-size:9px;color:#596057;min-width:18px}
+.fb-film-name{flex:1;min-width:0;display:grid}.fb-film-name strong{font-size:9px;font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.fb-film-name small{font-size:7px;color:#9aa096;display:flex;align-items:center;gap:4px}.fb-film-name small i{width:6px;height:6px;border-radius:50%}
+.fb-film-price{font-size:8px;color:#596057}
+.fb-film-kitrow{padding:9px 4px}.fb-film-kitrow .fb-film-name strong{font-size:10px}
+.fb-film-panel-foot p{font-size:7px;line-height:1.5;color:#9aa096;margin:10px 0}
+.fb-film-cta{display:block;text-align:center;background:#1f2421;color:#fff;border-radius:18px;padding:10px;font-size:9px}
+.fb-film-error{position:absolute;inset:auto 0 50% 0;text-align:center;font-size:12px;color:#596057}
+.fb-film-loading{position:fixed;inset:0;z-index:60;display:grid;place-items:center;background:#fff;font-size:11px;letter-spacing:1.4px;color:#8a9088}
+@media (max-width:720px){.fb-film{grid-template-columns:1fr}.fb-film-panel{display:none}.fb-film-controls{width:calc(100% - 32px);top:auto;bottom:84px}.fb-film-caption{width:auto;right:20px}.fb-film-time{display:none}}
+.studio-site .fb-experience .fb-film .fb-film-play,.studio-site .fb-experience .fb-film .fb-film-play:hover:not(:disabled){background:#1f2421;color:#fff;border-radius:50%}.studio-site .fb-experience .fb-film .fb-film-close{border-radius:50%}

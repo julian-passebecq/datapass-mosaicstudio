@@ -1,0 +1,6 @@
+browser-results.json
+clients/
+captures/*.webm
+# Film export (tools/record.mjs): PNG frames and the WebM fallback exceed 5 MB. Stills, film-report.json and the ~2 MB MP4 are committed.
+film/frames/
+film/*.webm

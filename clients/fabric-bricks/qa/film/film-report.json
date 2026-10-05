@@ -1,0 +1,19 @@
+{
+  "duration": 25,
+  "fps": 30,
+  "size": "1004x548",
+  "frames": 750,
+  "renderer": "ANGLE (NVIDIA, NVIDIA GeForce RTX 4080 Laptop GPU (0x000027A0) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+  "seconds": 78,
+  "stills": [
+    "clients/fabric-bricks/qa/film/still-05.0s.png",
+    "clients/fabric-bricks/qa/film/still-07.0s.png",
+    "clients/fabric-bricks/qa/film/still-10.0s.png",
+    "clients/fabric-bricks/qa/film/still-15.0s.png",
+    "clients/fabric-bricks/qa/film/still-20.0s.png"
+  ],
+  "video": "clients/fabric-bricks/qa/film/fabric-bricks-film.mp4",
+  "encoder": "ffmpeg-win-x86_64-v7.1.exe libx264",
+  "errors": [],
+  "bytes": 1946075
+}

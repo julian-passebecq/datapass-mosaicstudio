@@ -1,0 +1,7 @@
+# GENERATED / SYNTHETIC
+
+`lakehouse-generated.png` was generated with the built-in imagegen tool on 2026-10-04 for the client gallery. It is concept imagery, not an official Microsoft, LEGO or BrickLink asset, engineering model or purchasable kit. It is not used to replace the interactive procedural model.
+
+Generation prompt:
+
+> Use case: product-mockup. Generate a premium catalog image for a synthetic Fabric Bricks Lakehouse kit gallery. One small toy construction-brick architectural lake house on a thin rectangular BLACK studded display base. Isometric view looking down from front-right: low pale warm-white modern house at the rear, broad flat dark gray tiled roof with a SINGLE turquoise square roof tile on its near right corner. At the front is a rectangular vivid cyan blue pool with visible tile seams. An L-shaped tan boardwalk crosses the pool edge toward house. Green lawn strip to right, two small brick-built palm-like trees with brown cylindrical trunks and green angular leaves, tiny red and white flowers. Every object should visibly be made of plastic interlocking toy bricks with studs and subtle seams, no logos or lettering. Pure white seamless background, soft studio lighting, subtle contact shadow, centered composition filling 75 percent of image. No text, no UI, no badges, no people. High quality physically rendered ABS plastic, precise geometry, near orthographic camera. This is GENERATED / SYNTHETIC concept imagery, not an official or licensed commercial kit.
