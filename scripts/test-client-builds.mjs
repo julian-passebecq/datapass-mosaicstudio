@@ -65,7 +65,7 @@ try{
       else if(id==='experience-reference'||id===spatial){await page.getByText('3D ready',{exact:true}).waitFor();await page.getByRole('group',{name:'Explorer views'}).getByRole('button',{name:'Library',exact:true}).click();await page.locator('.explorer-library').waitFor();}
       else if(id===knowledge){await page.getByTestId('explorer').waitFor();assert.equal(await page.getByTestId('explorer').getAttribute('data-view'),'library');assert.equal(await page.locator('canvas').count(),0);await page.locator('.explorer-library-card').first().click();await page.getByRole('article',{name:'Platform overview',exact:true}).waitFor();}
       else if(id==='architecture-reference')await page.locator('.arch-node').first().waitFor();
-      else if(id==='portfolio-showcase'){await page.getByTestId('portfolio').waitFor();assert.equal(await page.locator('.pf-card').count(),8);assert.equal(await page.locator('canvas').count(),0);}
+      else if(id==='portfolio-showcase'){await page.getByTestId('portfolio').waitFor();assert.equal(await page.locator('.pf-card').count(),10);assert.equal(await page.locator('canvas').count(),0);}
       else if(id==='animated-coding-lab'){await page.getByTestId('coding-lab').waitFor();await page.getByTestId('lab-next').click();await page.waitForFunction(()=>document.querySelector('[data-testid=coding-lab]')?.getAttribute('data-step')==='1');assert.equal(await page.locator('[data-testid=lab-code] li[data-current=true]').count(),1);assert.equal(await page.locator('canvas').count(),0);assert.deepEqual(evidence.capabilities,['motion']);}
       else if(id===fresh)await page.getByRole('heading',{name:'Client-owned component',exact:true}).waitFor();
       else await page.getByTestId('metric-observation-count').waitFor();
