@@ -61,11 +61,19 @@ test('camera keyframes interpolate on the shortest arc and replay identically on
   // Capture / reduced motion: the tour lands on its last keyframe at once.
   const seen=[];new Motion({capture:true}).tween({duration:1600,onFrame:t=>seen.push(t)});assert.deepEqual(seen,[1]);
 });
-test('the chart block routes through viz only when the flag is on',()=>{
-  assert.equal(vizChartEnabled({},{search:''},{dataset:{}}),false);
+test('the chart block routes through viz by default; the flag is now an opt-out',()=>{
+  assert.equal(vizChartEnabled({},{search:''},{dataset:{}}),true);
+  assert.equal(vizChartEnabled(undefined,undefined,undefined),true);
   assert.equal(vizChartEnabled({},{search:'?viz-chart=1'},{dataset:{}}),true);
   assert.equal(vizChartEnabled({VITE_DP_VIZ_CHART:'1'},{search:''},{dataset:{}}),true);
   assert.equal(vizChartEnabled({},{search:''},{dataset:{vizChart:'on'}}),true);
+  // Opt-outs: build, document, page; the page wins over the document, the document over the build.
+  assert.equal(vizChartEnabled({VITE_DP_VIZ_CHART:'0'},{search:''},{dataset:{}}),false);
+  assert.equal(vizChartEnabled({},{search:''},{dataset:{vizChart:'off'}}),false);
+  assert.equal(vizChartEnabled({},{search:'?viz-chart=0'},{dataset:{}}),false);
+  assert.equal(vizChartEnabled({VITE_DP_VIZ_CHART:'0'},{search:'?viz-chart=1'},{dataset:{vizChart:'off'}}),true);
+  assert.equal(vizChartEnabled({},{search:'?viz-chart=0'},{dataset:{vizChart:'on'}}),false);
+  assert.equal(vizChartEnabled({VITE_DP_VIZ_CHART:'0'},{search:''},{dataset:{vizChart:'on'}}),true);
 });
 test('the viz core never imports the WebGL chunk',async()=>{
   const index=await readFile('src/framework/viz/index.ts','utf8');assert.doesNotMatch(index,/webgl|three/);

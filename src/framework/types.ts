@@ -38,7 +38,7 @@ export type Block = {id: string; span?: number; title?: string} & (
   | {type: 'custom'; resource: string}
 );
 /** Chart renderer choice and viz-kit-only options. Without `renderer` the build default applies
- * (VizForge unless the `viz-chart` flag is on). The other options need `renderer: 'viz'`: the
+ * (the viz kit; `renderer: 'vizforge'` or the global `viz-chart=0` opt-out keeps VizForge). The other options need `renderer: 'viz'`: the
  * VizForge adapter cannot draw them, so they are rejected rather than silently dropped. */
 export type ChartVizOptions = {
   renderer?: 'viz' | 'vizforge';

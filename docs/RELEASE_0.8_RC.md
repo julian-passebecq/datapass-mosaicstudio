@@ -48,7 +48,7 @@ Branch `release/studio-0.8-rc`, one integration baseline built from the stacked 
 Setup notes for a fresh clone: `npm ci`, then `npm run bootstrap` (otherwise `tsc` and 3 tests fail on missing `@vizforge`/`@conceptmotion`), `npm run test:fixtures`, and Python with `fastapi` and `uvicorn` for the service smoke.
 
 ## Open API decisions (before the viz kit can become the default Chart)
-`blocks/Chart.tsx` still renders through VizForge by default. The viz path stays behind `vizChartEnabled()`, which is OFF unless `VITE_DP_VIZ_CHART=1`, `?viz-chart=1` or `data-viz-chart="on"` is set. Still to decide:
+**Update (FW-VIZ-HEADROOM, 2026-10-06):** the viz kit is now the default Chart renderer. `vizChartEnabled()` is ON unless `VITE_DP_VIZ_CHART=0`, `?viz-chart=0` or `data-viz-chart="off"` is set; `renderer: 'vizforge'` stays the per-block opt-out. Viz core is 27,070 B gz (zod moved to the tooling-only `viz/schema.ts`), so item 6's budget concern is resolved. Original list:
 1. **Block contract**: `series`/`color` encodings, `sort`, `stack`, several y columns (multi-Y), and a `selection` field on the chart block. This touches `types.ts`, `validate.ts`, the JSON schema and the catalog.
 2. **Selection contract**: the additive `multi`/`interval` view fields (#15) versus the single `select`. Decide which ones the chart block emits.
 3. **Visual parity**: capture the VizForge chart blocks in the reference clients, compare them with the viz path, and agree on the accepted diffs.

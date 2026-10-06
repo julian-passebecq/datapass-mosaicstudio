@@ -1,5 +1,5 @@
-/** Chart block through the viz kit: `renderer: 'viz'` on the block, or every chart while the
- * `viz-chart` flag is on (see chart-flag.ts). Loaded lazily so the VizForge path pays nothing.
+/** Chart block through the viz kit: the default for every chart block without `renderer: 'vizforge'`
+ * (see chart-flag.ts for the global opt-out). Loaded lazily so an opted-out VizForge page pays nothing.
  * `planChart` turns the block into categories/series, keyed values and VizForge-equivalent
  * domains (structural parity: tests/chart-parity.test.mjs); this file only renders the plan.
  * Bars and lines are SVG; points are SVG up to RENDER_LIMITS.svg marks, Canvas beyond.
