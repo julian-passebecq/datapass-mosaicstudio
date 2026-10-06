@@ -6,7 +6,8 @@
 import {writeFile,mkdir} from 'node:fs/promises';
 import path from 'node:path';
 import {specs} from '../specs/index.ts';
-import {layeredSvg,isometricSvg} from '../svg.ts';
+import {layerCakeSvg as layeredSvg} from '../../../src/framework/concept/flat.ts';
+import {isometricSvg} from '../../../src/framework/concept/iso.ts';
 
 const out=path.resolve('clients/arch-atlas/qa/diagrams');await mkdir(out,{recursive:true});
 const files=[];

@@ -1,0 +1,62 @@
+{
+  "$schema": "../../../../docs/contracts/concept-spec.schema.json",
+  "format": "datapass.concept-spec",
+  "version": 1,
+  "id": "forecast-app",
+  "title": "Sales forecasting app",
+  "subtitle": "An operational app writes to its SQL database; mirroring lands every change in the shared lake for analytics.",
+  "provenance": "synthetic",
+  "note": "SYNTHETIC illustration of a Fabric-style operational app (forecast vs actual). Generic names, no logos; not a vendor reference architecture, a tenant or a measured system.",
+  "layers": [
+    {"id": "lake", "label": "Shared lake", "height": 0, "role": "storage", "description": "One logical lake under every workload: mirrored and gold tables are kept once as open columnar files."},
+    {"id": "stores", "label": "Stores", "height": 1, "role": "data", "description": "The app's transactional SQL database and the mirrored tables that land in the lake."},
+    {"id": "sync", "label": "Sync & transform", "height": 1.9, "role": "compute", "description": "Mirroring copies every committed change; a transform builds the forecast-vs-actual gold table."},
+    {"id": "service", "label": "Model & service", "height": 2.9, "role": "serving", "description": "The data model generates the data API; the SQL analytics endpoint exposes lake tables read-only."},
+    {"id": "apps", "label": "App & report", "height": 4.1, "role": "experience", "description": "What people open: the editable forecast app and the forecast-vs-actual report."},
+    {"id": "people", "label": "People", "height": 5.1, "role": "users", "description": "Finance planners edit forecasts; executives read the result."}
+  ],
+  "domains": [
+    {"id": "app", "label": "Operational app", "description": "Write path: UI, data API, data model and the SQL database."},
+    {"id": "analytics", "label": "Analytics", "description": "Read path: mirrored tables, gold transform, SQL analytics endpoint and report."},
+    {"id": "access", "label": "Identity & access", "placement": "side", "description": "Cross-cutting sign-in, roles and row policies."}
+  ],
+  "nodes": [
+    {"id": "shared-lake", "kind": "lake", "layer": "lake", "domain": "analytics", "label": "Shared lake", "description": "Single storage layer. Mirrored (bronze) and gold tables are open columnar files with snapshot history."},
+    {"id": "forecast-db", "kind": "sql-db", "layer": "stores", "domain": "app", "label": "Forecast SQL DB", "description": "Transactional SQL database for departments, forecasts and actuals. Written only through the data API."},
+    {"id": "mirrored", "kind": "lakehouse", "layer": "stores", "domain": "analytics", "label": "Mirrored tables", "description": "Read-only copies of the SQL tables, kept in the lake as bronze tables (one snapshot per batch)."},
+    {"id": "mirror", "kind": "stream", "layer": "sync", "domain": "analytics", "label": "Mirroring", "description": "Change feed from the SQL database to the lake: on every commit and on a short timer."},
+    {"id": "gold-transform", "kind": "pipeline", "layer": "sync", "domain": "analytics", "label": "Gold transform", "description": "Builds the forecast-vs-actual gold table with variance from the mirrored tables."},
+    {"id": "data-model", "kind": "semantic-model", "layer": "service", "domain": "app", "label": "Data model", "description": "Entities (Department, Forecast, Actual), relations and validation rules. The single source of truth for the API."},
+    {"id": "data-api", "kind": "api", "layer": "service", "domain": "app", "label": "Data API", "description": "GraphQL/REST data API generated from the model. Validates every write and applies row policies."},
+    {"id": "sql-endpoint", "kind": "endpoint", "layer": "service", "domain": "analytics", "label": "SQL analytics endpoint", "description": "Read-only SQL endpoint over the lake tables, used by reports."},
+    {"id": "identity", "kind": "identity", "layer": "service", "domain": "access", "label": "Workspace identity", "description": "Sign-in and roles (finance, executive). Every call carries a token checked by the API and the endpoint."},
+    {"id": "forecast-ui", "kind": "web-app", "layer": "apps", "domain": "app", "label": "Forecast app", "description": "Editable forecast-vs-actual table with validation, KPI cards and a monthly chart."},
+    {"id": "forecast-report", "kind": "report", "layer": "apps", "domain": "analytics", "label": "Forecast vs actual", "description": "Report on the gold table: variance by department and month."},
+    {"id": "variance-alert", "kind": "alert", "layer": "apps", "domain": "analytics", "label": "Variance alert", "status": "planned", "description": "Planned: notify the planner when the variance of a department crosses a threshold."},
+    {"id": "planner", "kind": "user", "layer": "people", "domain": "app", "label": "Finance planner", "description": "Edits forecasts for their own department."},
+    {"id": "executive", "kind": "user", "layer": "people", "domain": "analytics", "label": "Executive", "description": "Reads the forecast-vs-actual report; cannot edit."}
+  ],
+  "flows": [
+    {"id": "f-planner-ui", "from": "planner", "to": "forecast-ui", "kind": "control", "label": "Edit forecast"},
+    {"id": "f-ui-api", "from": "forecast-ui", "to": "data-api", "kind": "data", "label": "Read / write", "direction": "both"},
+    {"id": "f-model-api", "from": "data-model", "to": "data-api", "kind": "control", "label": "Generates"},
+    {"id": "f-api-db", "from": "data-api", "to": "forecast-db", "kind": "data", "label": "Rows", "direction": "both"},
+    {"id": "f-db-mirror", "from": "forecast-db", "to": "mirror", "kind": "data", "label": "Change feed"},
+    {"id": "f-mirror-tables", "from": "mirror", "to": "mirrored", "kind": "data", "label": "Replicate"},
+    {"id": "f-tables-lake", "from": "mirrored", "to": "shared-lake", "kind": "data", "label": "Bronze files"},
+    {"id": "f-tables-gold", "from": "mirrored", "to": "gold-transform", "kind": "data", "label": "Bronze"},
+    {"id": "f-gold-endpoint", "from": "gold-transform", "to": "sql-endpoint", "kind": "data", "label": "Gold table"},
+    {"id": "f-endpoint-report", "from": "sql-endpoint", "to": "forecast-report", "kind": "data", "label": "SQL"},
+    {"id": "f-endpoint-alert", "from": "sql-endpoint", "to": "variance-alert", "kind": "data", "label": "Watch"},
+    {"id": "f-report-exec", "from": "forecast-report", "to": "executive", "kind": "data", "label": "Read"},
+    {"id": "f-alert-planner", "from": "variance-alert", "to": "planner", "kind": "control", "label": "Notify"},
+    {"id": "f-id-ui", "from": "identity", "to": "forecast-ui", "kind": "auth", "label": "Sign in"},
+    {"id": "f-id-api", "from": "identity", "to": "data-api", "kind": "auth", "label": "Token + policy"},
+    {"id": "f-id-endpoint", "from": "identity", "to": "sql-endpoint", "kind": "auth", "label": "Authorize"}
+  ],
+  "annotations": [
+    {"id": "n-mirror", "target": "mirror", "text": "Near real time: one lake snapshot per batch of committed changes."},
+    {"id": "n-api", "target": "data-api", "text": "Row policies run on every call: planners edit only their department."},
+    {"id": "n-alert", "target": "variance-alert", "text": "Planned, not built yet."}
+  ]
+}

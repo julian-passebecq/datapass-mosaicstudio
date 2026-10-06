@@ -1,0 +1,19 @@
+{
+  "app": "concept-viewer",
+  "spec": "examples/forecast-app.concept.json",
+  "duration": 28,
+  "fps": 30,
+  "size": "1280x720",
+  "frames": 840,
+  "seconds": 77,
+  "stills": [
+    "clients/concept-viewer/qa/film/still-01.0s.png",
+    "clients/concept-viewer/qa/film/still-07.0s.png",
+    "clients/concept-viewer/qa/film/still-15.0s.png",
+    "clients/concept-viewer/qa/film/still-21.5s.png",
+    "clients/concept-viewer/qa/film/still-27.0s.png"
+  ],
+  "video": "clients/concept-viewer/qa/film/concept-viewer-film.mp4",
+  "errors": [],
+  "bytes": 3429949
+}

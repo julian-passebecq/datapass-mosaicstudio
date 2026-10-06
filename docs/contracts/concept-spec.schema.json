@@ -1,0 +1,318 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://datapass.local/contracts/concept-spec.schema.json",
+  "title": "DataPass concept spec v1",
+  "description": "One renderer-free description of an app or a cloud project (format \"datapass.concept-spec\", version 1). Layers are listed bottom to top with strictly increasing heights (gap ≥ 0.6); every id is unique across the document; node.layer, node.domain, flow.from, flow.to and annotation.target must name declared ids; at most one lake, on the bottom layer; at most 3 nodes per (layer, domain) cell; side domains come after main domains; a documented spec cites a source for every node.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "id",
+    "title",
+    "provenance",
+    "note",
+    "layers",
+    "domains",
+    "nodes",
+    "flows"
+  ],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "maxLength": 300
+    },
+    "format": {
+      "const": "datapass.concept-spec"
+    },
+    "version": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]{0,47}$"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "subtitle": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240
+    },
+    "provenance": {
+      "enum": [
+        "synthetic",
+        "documented"
+      ]
+    },
+    "note": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 600
+    },
+    "layers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "height"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,47}$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "height": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 40
+          },
+          "role": {
+            "enum": [
+              "storage",
+              "data",
+              "compute",
+              "serving",
+              "experience",
+              "delivery",
+              "users"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 8
+    },
+    "domains": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,47}$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 400
+          },
+          "placement": {
+            "enum": [
+              "main",
+              "side"
+            ]
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 8
+    },
+    "nodes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "kind",
+          "layer",
+          "domain",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,47}$"
+          },
+          "kind": {
+            "enum": [
+              "app",
+              "web-app",
+              "browser",
+              "api",
+              "endpoint",
+              "function",
+              "sql-db",
+              "database",
+              "lake",
+              "lakehouse",
+              "warehouse",
+              "eventhouse",
+              "notebook",
+              "pipeline",
+              "stream",
+              "queue",
+              "producer",
+              "library",
+              "semantic-model",
+              "report",
+              "dashboard",
+              "alert",
+              "identity",
+              "repo",
+              "artifact",
+              "ci-runner",
+              "static-host",
+              "user",
+              "users",
+              "device",
+              "external"
+            ]
+          },
+          "layer": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,47}$"
+          },
+          "domain": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,47}$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "status": {
+            "enum": [
+              "active",
+              "planned",
+              "deprecated",
+              "external"
+            ]
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 600
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "path"
+              ],
+              "properties": {
+                "path": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                "note": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                }
+              }
+            },
+            "maxItems": 6
+          }
+        }
+      },
+      "minItems": 1,
+      "maxItems": 40
+    },
+    "flows": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "from",
+          "to",
+          "kind",
+          "label"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,47}$"
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,47}$"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,47}$"
+          },
+          "kind": {
+            "enum": [
+              "data",
+              "control",
+              "auth"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 60
+          },
+          "direction": {
+            "enum": [
+              "forward",
+              "both"
+            ]
+          }
+        }
+      },
+      "maxItems": 64
+    },
+    "annotations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "text"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,47}$"
+          },
+          "target": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]{0,47}$"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        }
+      },
+      "maxItems": 6
+    }
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "$schema": "../../../../docs/contracts/concept-spec.schema.json",
+  "format": "datapass.concept-spec",
+  "version": 1,
+  "id": "cloud-data-platform",
+  "title": "Cloud data platform",
+  "subtitle": "Ingest, land in the lake, transform, serve and read: one copy of the data, every stage at its own height.",
+  "provenance": "synthetic",
+  "note": "SYNTHETIC illustration of a generic cloud data platform. Generic names, no vendors or logos; not a reference architecture or a measured system.",
+  "layers": [
+    {"id": "lake", "label": "Data lake", "height": 0, "role": "storage", "description": "Object storage with open table formats: raw, cleaned and curated zones."},
+    {"id": "ingest", "label": "Ingest", "height": 1, "role": "data", "description": "Sources outside the platform and the jobs that bring their data in, in batches or as events."},
+    {"id": "transform", "label": "Transform", "height": 2.1, "role": "compute", "description": "Spark jobs clean and join; quality checks gate every promotion to the curated zone."},
+    {"id": "serve", "label": "Serve", "height": 3.3, "role": "serving", "description": "A curated warehouse, a metrics layer and a data API answer every consumer."},
+    {"id": "bi", "label": "BI & apps", "height": 4.5, "role": "experience", "description": "Reports, live dashboards and a partner portal."},
+    {"id": "people", "label": "People", "height": 5.5, "role": "users", "description": "Analysts and partners."}
+  ],
+  "domains": [
+    {"id": "sources", "label": "Sources", "description": "Systems that produce data."},
+    {"id": "platform", "label": "Data platform", "description": "Ingest, lake, transform and warehouse."},
+    {"id": "consumers", "label": "Consumers", "description": "Metrics, API, BI and the people who read them."},
+    {"id": "governance", "label": "Governance", "placement": "side", "description": "Catalog, lineage and access control across every stage."}
+  ],
+  "nodes": [
+    {"id": "data-lake", "kind": "lake", "layer": "lake", "domain": "platform", "label": "Data lake", "description": "Raw, cleaned and curated zones as open columnar files in object storage."},
+    {"id": "crm", "kind": "external", "layer": "ingest", "domain": "sources", "label": "SaaS CRM", "status": "external", "description": "Third-party CRM exposing an export API."},
+    {"id": "orders-db", "kind": "sql-db", "layer": "ingest", "domain": "sources", "label": "Orders database", "description": "Operational SQL database; read through change data capture."},
+    {"id": "clicks", "kind": "device", "layer": "ingest", "domain": "sources", "label": "Web & app events", "description": "Click and usage events from web and mobile clients."},
+    {"id": "batch-ingest", "kind": "pipeline", "layer": "ingest", "domain": "platform", "label": "Batch ingest", "description": "Scheduled copy of CRM exports and database changes into the raw zone."},
+    {"id": "event-ingest", "kind": "stream", "layer": "ingest", "domain": "platform", "label": "Event ingest", "description": "Event stream that buffers clicks and writes micro-batches to the raw zone."},
+    {"id": "spark", "kind": "notebook", "layer": "transform", "domain": "platform", "label": "Spark transforms", "description": "Cleans, deduplicates and joins raw tables into the cleaned and curated zones."},
+    {"id": "quality", "kind": "function", "layer": "transform", "domain": "platform", "label": "Quality checks", "description": "Row counts, schema and freshness checks; a failed check stops the promotion."},
+    {"id": "catalog", "kind": "repo", "layer": "transform", "domain": "governance", "label": "Catalog & lineage", "description": "Every table, its owner, schema history and lineage."},
+    {"id": "warehouse", "kind": "warehouse", "layer": "serve", "domain": "platform", "label": "Curated warehouse", "description": "Star schemas over the curated zone for SQL consumers."},
+    {"id": "metrics", "kind": "semantic-model", "layer": "serve", "domain": "consumers", "label": "Metrics layer", "description": "Shared measure definitions (revenue, active users) used by every report."},
+    {"id": "data-api", "kind": "api", "layer": "serve", "domain": "consumers", "label": "Data API", "description": "Read-only API over curated tables for applications."},
+    {"id": "access", "kind": "identity", "layer": "serve", "domain": "governance", "label": "Access control", "description": "Single sign-on, roles and column masking enforced at the warehouse and the API."},
+    {"id": "exec-bi", "kind": "report", "layer": "bi", "domain": "consumers", "label": "Executive BI", "description": "Revenue and growth reports on the metrics layer."},
+    {"id": "ops-dash", "kind": "dashboard", "layer": "bi", "domain": "consumers", "label": "Ops dashboard", "description": "Near-real-time usage tiles."},
+    {"id": "portal", "kind": "app", "layer": "bi", "domain": "consumers", "label": "Partner portal", "description": "Partner-facing app that reads its own data through the API."},
+    {"id": "analysts", "kind": "users", "layer": "people", "domain": "consumers", "label": "Analysts", "description": "Explore reports and dashboards."},
+    {"id": "partners", "kind": "user", "layer": "people", "domain": "sources", "label": "Partner", "status": "external", "description": "External partner using the portal."}
+  ],
+  "flows": [
+    {"id": "f-crm-batch", "from": "crm", "to": "batch-ingest", "kind": "data", "label": "Exports"},
+    {"id": "f-orders-batch", "from": "orders-db", "to": "batch-ingest", "kind": "data", "label": "CDC"},
+    {"id": "f-clicks-events", "from": "clicks", "to": "event-ingest", "kind": "data", "label": "Events"},
+    {"id": "f-batch-lake", "from": "batch-ingest", "to": "data-lake", "kind": "data", "label": "Raw"},
+    {"id": "f-events-lake", "from": "event-ingest", "to": "data-lake", "kind": "data", "label": "Raw"},
+    {"id": "f-lake-spark", "from": "data-lake", "to": "spark", "kind": "data", "label": "Read raw"},
+    {"id": "f-spark-quality", "from": "spark", "to": "quality", "kind": "control", "label": "Check"},
+    {"id": "f-quality-wh", "from": "quality", "to": "warehouse", "kind": "data", "label": "Promote"},
+    {"id": "f-spark-catalog", "from": "spark", "to": "catalog", "kind": "control", "label": "Lineage"},
+    {"id": "f-wh-metrics", "from": "warehouse", "to": "metrics", "kind": "data", "label": "Tables"},
+    {"id": "f-wh-api", "from": "warehouse", "to": "data-api", "kind": "data", "label": "Query"},
+    {"id": "f-metrics-bi", "from": "metrics", "to": "exec-bi", "kind": "data", "label": "Measures"},
+    {"id": "f-metrics-dash", "from": "metrics", "to": "ops-dash", "kind": "data", "label": "Measures"},
+    {"id": "f-api-portal", "from": "data-api", "to": "portal", "kind": "data", "label": "JSON"},
+    {"id": "f-bi-analysts", "from": "exec-bi", "to": "analysts", "kind": "data", "label": "Read"},
+    {"id": "f-portal-partner", "from": "portal", "to": "partners", "kind": "data", "label": "Use"},
+    {"id": "f-access-wh", "from": "access", "to": "warehouse", "kind": "auth", "label": "Roles"},
+    {"id": "f-access-api", "from": "access", "to": "data-api", "kind": "auth", "label": "Tokens"}
+  ],
+  "annotations": [
+    {"id": "n-quality", "target": "quality", "text": "Nothing reaches the curated zone without passing its checks."},
+    {"id": "n-lake", "target": "spark", "text": "Engines read the one lake copy; no per-tool duplicates."}
+  ]
+}

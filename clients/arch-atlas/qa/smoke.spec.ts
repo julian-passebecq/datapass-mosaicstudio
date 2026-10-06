@@ -9,7 +9,7 @@ const open=async(page:Page,query='')=>{
 
 test('3D atlas: layers by keyboard, domains, node focus and properties',async({page})=>{
   const errors=await open(page);
-  await expect(page.locator('canvas[data-renderer=arch-atlas-webgl2]')).toBeVisible({timeout:180000});
+  await expect(page.locator('canvas[data-renderer=concept-webgl2]')).toBeVisible({timeout:180000});
   const atlas=page.getByTestId('arch-atlas');
   await expect(atlas).toHaveAttribute('data-layer','-1');
   await page.keyboard.press('ArrowUp');await page.keyboard.press('ArrowUp');
@@ -52,12 +52,12 @@ test('static 2D: same ids in layered and isometric SVG, click selects, export do
 
 test('film: seek renders an exact frame and ends on the layered diagram',async({page})=>{
   const errors=await open(page,'&film=1&paused=1&chrome=0&t=0');
-  await page.waitForFunction(()=>!!(window as unknown as {__archFilm?:unknown}).__archFilm,null,{timeout:180000});
-  const shown=await page.evaluate(()=>(window as unknown as {__archFilm:{seek(t:number):Promise<number>}}).__archFilm.seek(21.5));
+  await page.waitForFunction(()=>!!(window as unknown as {__conceptFilm?:unknown}).__conceptFilm,null,{timeout:180000});
+  const shown=await page.evaluate(()=>(window as unknown as {__conceptFilm:{seek(t:number):Promise<number>}}).__conceptFilm.seek(21.5));
   expect(shown).toBe(21.5);
   await expect(page.getByTestId('atlas-film')).toHaveAttribute('data-film-t','21.5000');
   await expect(page.locator('.aa-film-panel [data-node=sales-model]')).toBeVisible();
-  await page.evaluate(()=>(window as unknown as {__archFilm:{seek(t:number):Promise<number>}}).__archFilm.seek(27.5));
+  await page.evaluate(()=>(window as unknown as {__conceptFilm:{seek(t:number):Promise<number>}}).__conceptFilm.seek(27.5));
   await expect(page.locator('.aa-film-diagram svg[data-representation=layered]')).toBeVisible();
   expect(errors).toEqual([]);
 });

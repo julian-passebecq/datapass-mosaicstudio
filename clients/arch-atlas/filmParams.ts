@@ -1,4 +1,4 @@
-import {FILM_DURATION} from './navigation';
+import {FILM_DURATION} from '../../src/framework/concept/navigation.ts';
 /** ?film=1&t=<seconds>&paused=1&chrome=0 opens the film at an exact frame (deterministic captures). */
 export function parseFilmParams(search:string){
   const q=new URLSearchParams(search);

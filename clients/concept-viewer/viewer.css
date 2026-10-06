@@ -1,0 +1,9 @@
+.cv .aa-top{flex-wrap:wrap;row-gap:8px}
+.cv .aa-tabs{flex-wrap:wrap;row-gap:6px}
+.cv-source{display:block;font-size:10.5px;color:var(--muted);overflow-wrap:anywhere;margin-top:2px}
+.cv .aa-tabs input[hidden]{display:none}
+.cv .aa-actions button:disabled{opacity:.5;cursor:default}
+.cv-problem{position:absolute;left:18px;right:18px;top:14px;z-index:5;background:#fff7f2;border:1px solid #e3b9a2;border-radius:12px;padding:12px 40px 12px 16px;font-size:12px;color:#5a3424;box-shadow:0 4px 14px rgba(36,51,61,.08)}
+.cv-problem ul{margin:6px 0 0;padding-left:18px}.cv-problem li{margin:2px 0}.cv-problem code{font-size:11px;background:#fbe7dc;border-radius:4px;padding:1px 5px}
+.cv-problem .aa-close{top:8px;right:8px}
+.cv-drop{position:absolute;inset:12px;z-index:6;display:grid;place-items:center;border:2px dashed #2f6f84;border-radius:16px;background:rgba(241,238,231,.88);font-size:15px;font-weight:600;color:#2f6f84;pointer-events:none}
