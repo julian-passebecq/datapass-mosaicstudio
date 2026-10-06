@@ -1,7 +1,7 @@
 import {StrictMode,useCallback,useEffect,useMemo,useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {ConceptWorkbench,type LoadResult,type Problem,type SpecExample,type SpecSource} from '../ConceptWorkbench.tsx';
-import {embeddedSpecText,readyMessage} from './embed.ts';
+import {embedOptions,embeddedSpecText,readyMessage,type EmbedOptions} from './embed.ts';
 import {EXAMPLES,RENDERINGS,type Rendering} from '../examples.ts';
 import {checkSpecUrl,fetchSpecText} from './source.ts';
 import forecastApp from '../public/examples/forecast-app.concept.json';
@@ -40,21 +40,27 @@ function Standalone(){
   // Embed API: only when framed, only from the direct parent, only the exact message type.
   const embedded=typeof window!=='undefined'&&window.parent!==window;
   const [incoming,setIncoming]=useState<(SpecSource&{seq:number})|undefined>();
+  // Display options sent with a load; each key keeps its last sent value (a load without options changes nothing).
+  const [display,setDisplay]=useState<Omit<EmbedOptions,'view'>>({});
   useEffect(()=>{
     if(!embedded)return;
     const receive=(e:MessageEvent)=>{
       if(e.source!==window.parent)return;
       const text=embeddedSpecText(e.data);if(text===null)return;
+      const {view:asked,...rest}=embedOptions(e.data);
+      if(asked)onView(asked);
+      if(Object.keys(rest).length)setDisplay(d=>({...d,...rest}));
       setIncoming(prev=>({key:EMBED_SOURCE,read:async()=>text,seq:(prev?.seq??0)+1}));
     };
     window.addEventListener('message',receive);
     window.parent.postMessage(readyMessage(),'*');
     return()=>window.removeEventListener('message',receive);
-  },[embedded]);
+  },[embedded,onView]);
   // After each load: ready again. Details only for specs the parent sent; a file the visitor opened is not described.
   const onResult=useCallback((r:LoadResult)=>{if(!embedded)return;
     window.parent.postMessage(r.source!==EMBED_SOURCE?readyMessage():readyMessage(r.ok?{ok:true,id:r.id,warnings:r.warnings}:{ok:false,issues:r.issues}),'*');},[embedded]);
-  return <ConceptWorkbench view={view} onView={onView} examples={examples} initial={start.initial} initialProblem={start.problem} openUrl={fromUrl} paste incoming={incoming} onResult={onResult}/>;
+  return <ConceptWorkbench view={view} onView={onView} examples={examples} initial={start.initial} initialProblem={start.problem} openUrl={fromUrl} paste incoming={incoming} onResult={onResult}
+    chrome={display.chrome} fit={display.fit} theme={display.theme}/>;
 }
 
 createRoot(document.getElementById('root')!).render(<StrictMode><div className="studio-site"><Standalone/></div></StrictMode>);

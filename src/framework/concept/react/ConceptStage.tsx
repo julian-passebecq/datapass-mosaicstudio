@@ -10,7 +10,7 @@ declare global{interface Window{__conceptStage?:{settled():boolean;pose():Pose;p
  * (from, to, elapsed); the rAF loop only supplies elapsed time and the icon clock. With reduced motion the
  * camera jumps and icons hold still.
  */
-export default function ConceptStage({spec,nav,reduced,onSelect,onStep}:{spec:ConceptSpec;nav:Nav;reduced:boolean;onSelect(id:string):void;onStep(dir:'up'|'down'|'left'|'right'):void}){
+export default function ConceptStage({spec,nav,reduced,onSelect,onStep,whole=false}:{spec:ConceptSpec;nav:Nav;reduced:boolean;onSelect(id:string):void;onStep(dir:'up'|'down'|'left'|'right'):void;whole?:boolean}){
   const host=useRef<HTMLDivElement>(null),overlay=useRef<HTMLDivElement>(null),stage=useRef<Stage|null>(null);
   const motion=useRef<{from:Pose;to:Pose;start:number}|null>(null),current=useRef<Pose|null>(null);
   const [error,setError]=useState('');
@@ -19,7 +19,7 @@ export default function ConceptStage({spec,nav,reduced,onSelect,onStep}:{spec:Co
   const viewRef=useRef({selection:nav.selection,layer:nav.layer});
   viewRef.current={selection:nav.selection,layer:nav.selection!=='none'?spec.layers.findIndex(l=>l.id===spec.nodes.find(n=>n.id===nav.selection)?.layer):nav.layer};
   useEffect(()=>{
-    try{stage.current=createStage(host.current!,overlay.current!,spec);}catch(e){setError(e instanceof Error?e.message:String(e));return;}
+    try{stage.current=createStage(host.current!,overlay.current!,spec,{fitAspect:whole?2:1.5});}catch(e){setError(e instanceof Error?e.message:String(e));return;}
     const pose=navPose(spec,nav);current.current=pose;motion.current={from:pose,to:pose,start:-1e9};
     const observer=new ResizeObserver(()=>{stage.current?.resize();});observer.observe(host.current!);
     let frame=0;
@@ -34,7 +34,7 @@ export default function ConceptStage({spec,nav,reduced,onSelect,onStep}:{spec:Co
     return()=>{cancelAnimationFrame(frame);observer.disconnect();stage.current?.dispose();stage.current=null;delete window.__conceptStage;};
     // The stage is rebuilt only for a new spec; navigation changes retarget the camera below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  },[spec,reduced]);
+  },[spec,reduced,whole]);
   useEffect(()=>{
     if(!motion.current||!current.current)return;
     motion.current={from:current.current,to:target,start:performance.now()};

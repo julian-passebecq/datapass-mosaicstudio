@@ -3,7 +3,7 @@ import {Maximize2,Minus,Plus} from 'lucide-react';
 
 /** Smallest on-screen size (CSS px) of a node label at the starting zoom. */
 export const MIN_LABEL_PX=11;
-const PAD=18,MAX_ZOOM=4,KEEP=80;
+const PAD=18,MAX_ZOOM=4,KEEP=80,TOOLS=30,HINT=30;
 type View={k:number;x:number;y:number};
 const VIEWBOX=/viewBox="([-\d.]+) ([-\d.]+) ([-\d.]+) ([-\d.]+)"/;
 const viewBoxOf=(attr:string)=>{const m=VIEWBOX.exec(attr);return m?{w:Number(m[3]),h:Number(m[4])}:null;};
@@ -12,9 +12,14 @@ const viewBoxOf=(attr:string)=>{const m=VIEWBOX.exec(attr);return m?{w:Number(m[
  * Pan/zoom stage for a static SVG string (isometric view). The SVG is laid out at its viewBox size (1 unit = 1 CSS px)
  * and scaled with a CSS transform, so the markup and the exported file stay full size.
  * Start: fit to the stage width, zoomed in further when needed so the smallest node label is >= MIN_LABEL_PX on screen.
- * Wheel zooms around the pointer, drag pans (a drag never counts as a click), "Fit" returns to the stage width.
+ * With `whole` (embed option fit), the start and "Fit" show the whole diagram instead: contained in both directions,
+ * centred, never zoomed in for label size.
+ * Until the reader pans or zooms, every stage resize fits again: a framed viewer often gets its final size only after
+ * the first layout (iframe sized by the host's CSS or shown later), and a fit computed on the provisional size would
+ * stay zoomed on one corner.
+ * Wheel zooms around the pointer, drag pans (a drag never counts as a click), "Fit" returns to the fitted view.
  */
-export function PanZoom({svg,resetKey,testId,onClick}:{svg:string;resetKey:string;testId:string;onClick:(e:React.MouseEvent)=>void}){
+export function PanZoom({svg,resetKey,testId,onClick,whole=false}:{svg:string;resetKey:string;testId:string;onClick:(e:React.MouseEvent)=>void;whole?:boolean}){
   const host=useRef<HTMLDivElement>(null),content=useRef<HTMLDivElement>(null);
   // Keyed on the viewBox text: a new selection re-renders the markup but must not reset the view.
   const vbText=VIEWBOX.exec(svg)?.[0]??'',box=useMemo(()=>viewBoxOf(vbText),[vbText]);
@@ -32,16 +37,24 @@ export function PanZoom({svg,resetKey,testId,onClick}:{svg:string;resetKey:strin
     return {k:v.k,x,y};
   },[box]);
   const fit=useCallback((readable:boolean)=>{
-    if(!box||!content.current)return;const {cw}=size();if(!cw)return;
+    if(!box||!content.current)return;const {cw,ch}=size();if(!cw||(whole&&!ch))return;
     const fonts=[...content.current.querySelectorAll('[data-entity] text,[data-node] text')].map(t=>Number(t.getAttribute('font-size'))).filter(n=>n>0);
-    const font=fonts.length?Math.min(...fonts):0,k=(cw-2*PAD)/box.w;
-    setFitK(k);setLabelFont(font);
+    const font=fonts.length?Math.min(...fonts):0;
+    setLabelFont(font);
+    if(whole){
+      // Leave room for the zoom tools above and the hint below.
+      const top=PAD+TOOLS,bottom=PAD+HINT,k=Math.max(.01,Math.min((cw-2*PAD)/box.w,(ch-top-bottom)/box.h));
+      setFitK(k);setView({k,x:(cw-box.w*k)/2,y:top+(ch-top-bottom-box.h*k)/2});return;
+    }
+    const k=(cw-2*PAD)/box.w;setFitK(k);
     const start=readable&&font?Math.max(k,MIN_LABEL_PX/font):k;
     // Wider than the stage: start at the left edge, where the title and the layer labels are.
     setView(clamp({k:start,x:PAD,y:PAD}));
-  },[box,clamp]);
+  },[box,clamp,whole]);
   // New spec or new stage size (until the reader pans or zooms): fit to width at a readable zoom.
   useLayoutEffect(()=>{touched.current=false;fit(true);},[resetKey,box?.w,box?.h,fit]);
+  // The host frame can keep resizing after the first fit (iframe sized late, window resize, panel toggled): refit until
+  // the reader takes over.
   useEffect(()=>{
     const el=host.current;if(!el)return;
     const ro=new ResizeObserver(()=>{if(!touched.current)fit(true);else setView(v=>v&&clamp(v));});ro.observe(el);
@@ -77,7 +90,7 @@ export function PanZoom({svg,resetKey,testId,onClick}:{svg:string;resetKey:strin
       <button onClick={()=>zoomAt(1/1.25)} aria-label="Zoom out" title="Zoom out"><Minus size={13}/></button>
       <output aria-live="polite">{Math.round(k*100)}%</output>
       <button onClick={()=>zoomAt(1.25)} aria-label="Zoom in" title="Zoom in"><Plus size={13}/></button>
-      <button onClick={()=>{touched.current=false;fit(false);}} aria-label="Fit to width" title="Fit the diagram to the stage width"><Maximize2 size={12}/> Fit</button>
+      <button onClick={()=>{touched.current=false;fit(false);}} aria-label={whole?'Fit the whole diagram':'Fit to width'} title={whole?'Show the whole diagram':'Fit the diagram to the stage width'}><Maximize2 size={12}/> Fit</button>
     </div>
   </div>;
 }
