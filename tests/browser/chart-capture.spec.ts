@@ -41,7 +41,8 @@ for(const ref of BLOCKS)for(const mode of ['light','dark'] as const){
   test(`capture parity: ${ref.app}/${ref.block} (${mode})`,async({page},info)=>{
     const seen:Record<string,Awaited<ReturnType<typeof marks>>>={};
     for(const renderer of ['vizforge','viz'] as const){
-      await page.goto(`/?app=${ref.app}&page=${ref.page}&capture=1&theme=${mode}${renderer==='viz'?'&viz-chart=1':''}`);
+      // viz is the default renderer; `viz-chart=0` is the global VizForge opt-out.
+      await page.goto(`/?app=${ref.app}&page=${ref.page}&capture=1&theme=${mode}${renderer==='vizforge'?'&viz-chart=0':''}`);
       const block=page.locator(`[data-block="${ref.block}"]`);
       if(renderer==='viz'){
         await expect(block.locator('.dp-viz')).toHaveAttribute('data-viz-theme',mode);
