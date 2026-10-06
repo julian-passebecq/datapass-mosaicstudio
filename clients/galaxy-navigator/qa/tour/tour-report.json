@@ -1,0 +1,21 @@
+{
+  "format": "galaxy-navigator.tour-recording",
+  "version": 1,
+  "duration": 24,
+  "fps": 30,
+  "size": "1280x720",
+  "scheme": "light",
+  "frames": 720,
+  "seconds": 88,
+  "stills": [
+    "clients/galaxy-navigator/qa/tour/still-01.0s.png",
+    "clients/galaxy-navigator/qa/tour/still-06.0s.png",
+    "clients/galaxy-navigator/qa/tour/still-10.5s.png",
+    "clients/galaxy-navigator/qa/tour/still-14.5s.png",
+    "clients/galaxy-navigator/qa/tour/still-18.0s.png",
+    "clients/galaxy-navigator/qa/tour/still-23.0s.png"
+  ],
+  "video": "clients/galaxy-navigator/qa/tour/galaxy-tour.mp4",
+  "errors": [],
+  "bytes": 2445863
+}
