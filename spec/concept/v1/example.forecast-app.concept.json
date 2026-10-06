@@ -1,5 +1,5 @@
 {
-  "$schema": "../../../../spec/concept/v1/concept-spec.schema.json",
+  "$schema": "./concept-spec.schema.json",
   "format": "datapass.concept-spec",
   "version": 1,
   "specVersion": "1.0.0",

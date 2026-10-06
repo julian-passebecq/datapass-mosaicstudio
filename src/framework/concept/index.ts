@@ -4,7 +4,7 @@
  * load them lazily so a 2D-only page never downloads Three.js.
  */
 export * from './schema.ts';
-export {conceptSpecJsonSchema} from './json-schema.ts';
+export {conceptSpecJsonSchema,CONCEPT_SCHEMA_URL} from './json-schema.ts';
 export {KINDS,kindLabel,kindColor,layerTint,FLOW_STYLE,INK,MUTED,PAPER,LINE} from './kinds.ts';
 export {layerCakeSvg,flatRoutes,cardText,FLAT_FONT} from './flat.ts';
 export {isometricSvg,toMotion,isoScreenPaths,ISO} from './iso.ts';

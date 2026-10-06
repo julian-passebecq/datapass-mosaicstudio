@@ -6,7 +6,8 @@
 
 ## What's in 0.8
 
-- **Concept spec v1**: one JSON file describes an app or cloud architecture (layers, domains, nodes, flows) and renders as an isometric SVG, a flat layer cake and a lazy 3D scene. See [`docs/CONCEPT_SPEC.md`](docs/CONCEPT_SPEC.md).
+- **Concept spec v1**: one JSON file describes an app or cloud architecture (layers, domains, nodes, flows) and renders as an isometric SVG, a flat layer cake and a lazy 3D scene. See [`docs/CONCEPT_SPEC.md`](docs/CONCEPT_SPEC.md). The stable contract (`specVersion` 1.0.0, JSON Schema, evidence refs, rules for exporters) is published in [`spec/concept/v1/`](spec/concept/v1/); `node scripts/concept-validate.mjs <file>` checks a file.
+- **Standalone concept viewer**: [`dist-standalone/concept-viewer.html`](dist-standalone/concept-viewer.html), one self-contained HTML file. Double-click it, then drop, pick or paste a `.concept.json`, or pass `?src=https://…`.
 - **Viz kit**: the D3 kit in [`src/framework/viz/`](src/framework/viz/) is now the default Chart renderer, with one crossfilter shared by 2D and 3D views (`renderer: 'vizforge'` stays the per-block opt-out).
 - **Python bridge**: Python code produces typed Artifacts that the site renders, plus an optional FastAPI artifact service. See [`docs/PYTHON_BRIDGE.md`](docs/PYTHON_BRIDGE.md).
 - **galaxy-navigator** ([`clients/galaxy-navigator/`](clients/galaxy-navigator/)): one registry snapshot shown as a 3D galaxy, an exportable isometric SVG, a graph, a list, a contract matrix and a board, with one shared selection.

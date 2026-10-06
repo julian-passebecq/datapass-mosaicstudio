@@ -1,7 +1,8 @@
 {
-  "$schema": "../../../docs/contracts/concept-spec.schema.json",
+  "$schema": "../../../spec/concept/v1/concept-spec.schema.json",
   "format": "datapass.concept-spec",
   "version": 1,
+  "specVersion": "1.0.0",
   "id": "fabric-platform",
   "title": "Unified data platform",
   "subtitle": "One shared lake underneath; every workload sits at its own height above it.",

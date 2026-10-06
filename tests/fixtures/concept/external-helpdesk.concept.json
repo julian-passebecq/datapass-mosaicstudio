@@ -1,0 +1,39 @@
+{
+  "$schema": "https://raw.githubusercontent.com/julian-passebecq/datapass-mosaicstudio/main/spec/concept/v1/concept-spec.schema.json",
+  "format": "datapass.concept-spec",
+  "version": 1,
+  "specVersion": "1.0.0",
+  "id": "helpdesk-fixture",
+  "title": "Helpdesk app (external test fixture)",
+  "subtitle": "Not part of any build: the standalone viewer test opens it from disk.",
+  "provenance": "documented",
+  "note": "SYNTHETIC test fixture shaped like an exporter's output; every node carries evidence refs that point at no real system.",
+  "layers": [
+    {"id": "store", "label": "Storage", "height": 0, "role": "storage"},
+    {"id": "logic", "label": "Services", "height": 1, "role": "compute"},
+    {"id": "ui", "label": "Front end", "height": 2, "role": "experience"}
+  ],
+  "domains": [
+    {"id": "tickets", "label": "Tickets"},
+    {"id": "auth", "label": "Sign-in", "placement": "side"}
+  ],
+  "nodes": [
+    {"id": "tickets-db", "kind": "sql-db", "layer": "store", "domain": "tickets", "label": "Tickets DB",
+      "evidence": [{"kind": "source", "ref": "db/schema.sql#L1-L40", "label": "Table definitions"}]},
+    {"id": "tickets-api", "kind": "api", "layer": "logic", "domain": "tickets", "label": "Tickets API",
+      "evidence": [{"kind": "source", "ref": "server/routes/tickets.ts"}, {"kind": "test", "ref": "server/routes/tickets.test.ts", "label": "Route tests"}]},
+    {"id": "triage-job", "kind": "function", "layer": "logic", "domain": "tickets", "label": "Triage job", "status": "planned",
+      "evidence": [{"kind": "issue", "ref": "https://example.com/issues/42", "label": "Planned in issue 42"}]},
+    {"id": "helpdesk-ui", "kind": "web-app", "layer": "ui", "domain": "tickets", "label": "Helpdesk UI",
+      "evidence": [{"kind": "source", "ref": "web/src/App.tsx"}]},
+    {"id": "sso", "kind": "identity", "layer": "logic", "domain": "auth", "label": "Single sign-on",
+      "evidence": [{"kind": "config", "ref": "server/auth.config.json"}]}
+  ],
+  "flows": [
+    {"id": "f-api-db", "from": "tickets-api", "to": "tickets-db", "kind": "data", "label": "Reads and writes", "direction": "both",
+      "evidence": [{"kind": "source", "ref": "server/db.ts", "label": "Query layer"}]},
+    {"id": "f-ui-api", "from": "helpdesk-ui", "to": "tickets-api", "kind": "data", "label": "REST calls"},
+    {"id": "f-job-api", "from": "triage-job", "to": "tickets-api", "kind": "control", "label": "Assigns tickets"},
+    {"id": "f-ui-sso", "from": "helpdesk-ui", "to": "sso", "kind": "auth", "label": "Sign-in"}
+  ]
+}

@@ -1,7 +1,8 @@
 {
-  "$schema": "../../../../docs/contracts/concept-spec.schema.json",
+  "$schema": "../../../../spec/concept/v1/concept-spec.schema.json",
   "format": "datapass.concept-spec",
   "version": 1,
+  "specVersion": "1.0.0",
   "id": "cloud-data-platform",
   "title": "Cloud data platform",
   "subtitle": "Ingest, land in the lake, transform, serve and read: one copy of the data, every stage at its own height.",

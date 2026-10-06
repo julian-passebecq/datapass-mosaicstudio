@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile,readdir} from 'node:fs/promises';
-import {checkConceptSpec,parseConceptSpec,parseConceptJson,ConceptSpecError,CONCEPT_KINDS,conceptSpecJsonSchema,
+import {checkConceptSpec,parseConceptSpec,parseConceptJson,readConceptJson,ConceptSpecError,CONCEPT_KINDS,conceptSpecJsonSchema,CONCEPT_SPEC_VERSION,CONCEPT_SCHEMA_URL,
   layerCakeSvg,isometricSvg,toMotion,KINDS,FLAT_GLYPHS,CONCEPT_GLYPHS,registerConceptGlyphs,grid,flatCard,flatHead,cardText,textWidth,fitText,layerY,FLAT,
   filmFrame,FILM_DURATION} from '../src/framework/concept/index.ts';
 import {ICON_NAMES} from '../src/framework/concept/three/icons.ts';
@@ -53,8 +53,12 @@ test('validation fails closed with a path and a clear message for each problem',
     [s=>{s.layers[1].height=.3;},/layers\[1\]\.height: must be at least 0\.6 above "data"/],
     [s=>{s.layers[0].height=-1;},/layers\[0\]\.height: must be ≥ 0/],
     [s=>{s.nodes.push({id:'lake',kind:'lake',layer:'apps',domain:'main',label:'Lake'});},/the lake lies on the bottom layer "data"/],
-    [s=>{s.provenance='documented';},/nodes\[0\]\.sources: a documented spec needs at least one source ref per node/],
-    [s=>{s.extra=1;},/unknown field "extra"/],
+    [s=>{s.provenance='documented';},/nodes\[0\]\.sources: a documented spec needs at least one source or evidence ref per node/],
+    [s=>{s.specVersion='2.0.0';},/specVersion: must be a 1\.x semver version/],
+    [s=>{s.specVersion=1;},/specVersion: must be a semver string/],
+    [s=>{s.nodes[0].evidence=[{kind:'Source',ref:'a.ts'}];},/nodes\[0\]\.evidence\[0\]\.kind: must be a lowercase evidence kind/],
+    [s=>{s.flows[0].evidence=[{kind:'url',ref:''}];},/flows\[0\]\.evidence\[0\]\.ref: must not be empty/],
+    [s=>{s.flows[0].evidence=[{kind:'url'}];},/flows\[0\]\.evidence\[0\]\.ref: is required/],
     [s=>{s.nodes[0].label='x'.repeat(41);},/nodes\[0\]\.label: must be at most 40 characters/],
     [s=>{s.nodes[0].label='  ';},/nodes\[0\]\.label: must not be blank/],
     [s=>{s.format='datapass.arch-atlas';},/format: must be "datapass.concept-spec"/],
@@ -74,10 +78,96 @@ test('JSON Schema export matches the zod schema and the committed contract',asyn
   const committed=JSON.parse(await readFile('docs/contracts/concept-spec.schema.json','utf8'));
   assert.deepEqual(committed,JSON.parse(JSON.stringify(conceptSpecJsonSchema)));
   assert.deepEqual(conceptSpecJsonSchema.properties.nodes.items.properties.kind.enum,[...CONCEPT_KINDS]);
-  assert.equal(conceptSpecJsonSchema.additionalProperties,false);
+  assert.equal(conceptSpecJsonSchema.additionalProperties,true,"unknown fields are allowed (readers ignore them with a warning)");
   assert.deepEqual(conceptSpecJsonSchema.required,['format','version','id','title','provenance','note','layers','domains','nodes','flows']);
   assert.equal(conceptSpecJsonSchema.properties.nodes.items.properties.label.maxLength,40);
   assert.equal(conceptSpecJsonSchema.properties.layers.maxItems,8);
+});
+
+test('unknown fields are ignored with a warning; specVersion is checked; evidence is normalized on nodes and flows',()=>{
+  const input={...minimal(),specVersion:'1.0.0',extra:1};input.nodes[0].lable='typo';input.flows[0].evidence=[{kind:'source',ref:'src/q.ts',label:'Query',color:'x'}];
+  const r=checkConceptSpec(input);assert.equal(r.ok,true);
+  assert.deepEqual(r.warnings.map(w=>w.path).sort(),['extra','flows[0].evidence[0].color','nodes[0].lable']);
+  assert.match(r.warnings.find(w=>w.path==='extra').message,/unknown field "extra" ignored/);
+  assert.equal('extra' in r.spec,false,'unknown fields never reach the normalized spec');
+  assert.deepEqual(r.spec.flows[0].evidence,[{kind:'source',ref:'src/q.ts',label:'Query'}]);
+  assert.deepEqual(r.spec.nodes[0].evidence,[]);
+  assert.match(checkConceptSpec(minimal()).warnings[0].message,/specVersion|missing; read as 1\.0\.0/);
+  assert.match(checkConceptSpec({...minimal(),specVersion:'1.4.0'}).warnings[0].message,/file is 1\.4\.0, this reader knows 1\.0\.0/);
+  assert.equal(checkConceptSpec({...minimal(),specVersion:CONCEPT_SPEC_VERSION}).warnings.length,0);
+  const documented={...minimal(),provenance:'documented'};
+  documented.nodes[0].evidence=[{kind:'source',ref:'db.sql'}];documented.nodes[1].sources=[{path:'ui.tsx'}];
+  assert.equal(checkConceptSpec(documented).ok,true,'a documented node may cite evidence instead of sources');
+  const {spec,warnings}=readConceptJson(JSON.stringify({...minimal(),specVersion:'1.0.0',future:{x:1}}));
+  assert.equal(spec.id,'mini');assert.equal(warnings.length,1);
+  assert.throws(()=>readConceptJson('{}'),ConceptSpecError);
+});
+
+test('published contract spec/concept/v1: schema matches zod, carries $id and version; examples validate without warnings',async()=>{
+  const published=JSON.parse(await readFile('spec/concept/v1/concept-spec.schema.json','utf8'));
+  assert.deepEqual(published,JSON.parse(JSON.stringify(conceptSpecJsonSchema)),'Published schema drifted from zod: run npm run contracts');
+  assert.equal(published.$schema,'https://json-schema.org/draft/2020-12/schema');
+  assert.equal(published.$id,'https://raw.githubusercontent.com/julian-passebecq/datapass-mosaicstudio/main/spec/concept/v1/concept-spec.schema.json');
+  assert.equal(published.$id,CONCEPT_SCHEMA_URL);
+  assert.equal(published.version,CONCEPT_SPEC_VERSION);assert.match(CONCEPT_SPEC_VERSION,/^1\.\d+\.\d+$/);
+  assert.ok(published.properties.specVersion.pattern.startsWith('^1\\.'));
+  for(const where of [published.properties.nodes.items,published.properties.flows.items]){
+    const ev=where.properties.evidence;assert.equal(ev.type,'array');assert.deepEqual(ev.items.required,['kind','ref']);assert.equal(ev.maxItems,12);
+  }
+  const names=(await readdir('spec/concept/v1')).sort();
+  assert.deepEqual(names,['README.md','concept-spec.schema.json','example.forecast-app.concept.json','example.minimal.concept.json']);
+  for(const name of names.filter(n=>n.endsWith('.concept.json'))){
+    const raw=JSON.parse(await readFile('spec/concept/v1/'+name,'utf8')),r=checkConceptSpec(raw);
+    assert.equal(r.ok,true,name);assert.deepEqual(r.warnings,[],name);assert.equal(raw.specVersion,'1.0.0');assert.equal(raw.$schema,'./concept-spec.schema.json');
+  }
+  const minimalEx=JSON.parse(await readFile('spec/concept/v1/example.minimal.concept.json','utf8'));
+  assert.ok(minimalEx.nodes.every(n=>n.evidence?.length)&&minimalEx.flows.every(f=>f.evidence?.length),'the minimal example shows evidence on nodes and flows');
+  const viewer=JSON.parse(await readFile(EX+'forecast-app.concept.json','utf8')),pub=JSON.parse(await readFile('spec/concept/v1/example.forecast-app.concept.json','utf8'));
+  delete viewer.$schema;delete pub.$schema;assert.deepEqual(pub,viewer,'the published forecast example is the viewer example');
+  const readme=await readFile('spec/concept/v1/README.md','utf8');
+  for(const topic of ['specVersion','backward compatible','evidence','ignored','Required','exporter'])assert.ok(readme.toLowerCase().includes(topic.toLowerCase()),topic);
+});
+
+test('validator CLI: exit 0 on valid files, 1 with path: message on invalid ones, --strict fails on warnings',async()=>{
+  const {spawnSync}=await import('node:child_process'),{mkdtemp,writeFile,rm}=await import('node:fs/promises'),{tmpdir}=await import('node:os'),path=await import('node:path');
+  const dir=await mkdtemp(path.join(tmpdir(),'concept-cli-'));
+  try{
+    const bad={...minimal(),specVersion:'1.0.0'};bad.flows[0].to='ghost';
+    const warn={...minimal(),specVersion:'1.0.0',extra:true};
+    await writeFile(path.join(dir,'bad.json'),JSON.stringify(bad));await writeFile(path.join(dir,'warn.json'),JSON.stringify(warn));
+    const run=(...a)=>spawnSync(process.execPath,['scripts/concept-validate.mjs',...a],{encoding:'utf8'});
+    const ok=run('spec/concept/v1/example.minimal.concept.json');assert.equal(ok.status,0,ok.stderr);assert.match(ok.stdout,/^OK {3}spec\/concept\/v1\/example\.minimal\.concept\.json {2}minimal-orders/);
+    const fail=run(path.join(dir,'bad.json'));assert.equal(fail.status,1);assert.match(fail.stdout,/FAIL[^\n]*bad\.json\n {2}error {3}flows\[0\]\.to: unknown node "ghost"/);
+    assert.equal(run(path.join(dir,'warn.json')).status,0);
+    const strict=run('--strict',path.join(dir,'warn.json'));assert.equal(strict.status,1);assert.match(strict.stdout,/warning extra: unknown field "extra" ignored/);
+    const json=JSON.parse(run('--json',path.join(dir,'bad.json')).stdout);assert.equal(json.results[0].ok,false);assert.equal(json.specVersion,CONCEPT_SPEC_VERSION);
+    assert.equal(run().status,2);
+  }finally{await rm(dir,{recursive:true,force:true});}
+});
+
+test('standalone viewer: ?src= accepts https (and local http) only, and reads with no credentials and a size bound',async()=>{
+  const {checkSpecUrl,fetchSpecText}=await import('../clients/concept-viewer/standalone/source.ts');
+  for(const ok of ['https://raw.githubusercontent.com/o/r/main/a.concept.json','http://localhost:8080/a.json','http://127.0.0.1/a.json'])assert.equal(checkSpecUrl(ok).ok,true,ok);
+  for(const [bad,msg] of [['file:///C:/a.json',/must use https/],['http://example.com/a.json',/must use https/],['javascript:alert(1)',/must use https/],['data:application/json,{}',/must use https/],
+    ['https://user:pw@example.com/a.json',/user name or password/],['examples/a.json',/absolute URL/],['',/empty/],[null,/empty/],['https://x/'+'a'.repeat(2001),/longer than/]])
+    assert.match(checkSpecUrl(bad).message??'',msg,String(bad));
+  let init;const text=await fetchSpecText('https://x.test/a.json',async(_u,i)=>{init=i;return new Response('{"a":1}');});
+  assert.equal(text,'{"a":1}');assert.equal(init.credentials,'omit');assert.equal(init.referrerPolicy,'no-referrer');
+  await assert.rejects(fetchSpecText('https://x.test/a.json',async()=>{throw new TypeError('Failed to fetch');}),/Access-Control-Allow-Origin/);
+  await assert.rejects(fetchSpecText('https://x.test/a.json',async()=>new Response('',{status:404})),/HTTP 404/);
+  await assert.rejects(fetchSpecText('https://x.test/a.json',async()=>new Response('x',{headers:{'content-length':String(300*1024)}})),/larger than 256 KB/);
+});
+
+test('standalone embed API: only the exact load type is read; the spec is turned into bounded JSON text',async()=>{
+  const {embeddedSpecText,readyMessage,EMBED_LOAD,EMBED_READY}=await import('../clients/concept-viewer/standalone/embed.ts');
+  assert.equal(EMBED_LOAD,'datapass.concept-spec/load');assert.equal(EMBED_READY,'datapass.concept-spec/ready');
+  for(const ignored of [null,'datapass.concept-spec/load',42,{},{type:'datapass.concept-spec/ready'},{type:'DATAPASS.CONCEPT-SPEC/LOAD',spec:{}},{kind:EMBED_LOAD}])assert.equal(embeddedSpecText(ignored),null);
+  assert.equal(embeddedSpecText({type:EMBED_LOAD,spec:{id:'x'}}),'{"id":"x"}');
+  assert.equal(embeddedSpecText({type:EMBED_LOAD,spec:'{"id":"y"}'}),'{"id":"y"}');
+  assert.equal(embeddedSpecText({type:EMBED_LOAD}),'null');
+  assert.throws(()=>parseConceptJson(embeddedSpecText({type:EMBED_LOAD,spec:{pad:'x'.repeat(300*1024)}})),/larger than 256 KB/);
+  assert.deepEqual(readyMessage(),{type:EMBED_READY,specVersion:CONCEPT_SPEC_VERSION});
+  assert.deepEqual(readyMessage({ok:true,id:'a'}),{type:EMBED_READY,specVersion:CONCEPT_SPEC_VERSION,result:{ok:true,id:'a'}});
 });
 
 test('every kind has a label, a color, a flat glyph, an isometric glyph and a 3D icon',()=>{

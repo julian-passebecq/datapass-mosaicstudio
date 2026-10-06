@@ -1,7 +1,8 @@
 {
-  "$schema": "../../../../docs/contracts/concept-spec.schema.json",
+  "$schema": "../../../../spec/concept/v1/concept-spec.schema.json",
   "format": "datapass.concept-spec",
   "version": 1,
+  "specVersion": "1.0.0",
   "id": "datapass-stack",
   "title": "DataPass MosaicStudio stack",
   "subtitle": "Python computes, artifacts carry the result, Studio clients render it as static sites.",
