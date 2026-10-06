@@ -23,6 +23,11 @@ if(modules.some(id=>id.includes('/node_modules/@duckdb/')||id.includes('/node_mo
 this.emitFile({type:'asset',fileName:'studio-build.json',source:JSON.stringify({format:'datapass.client-build',version:1,client:id,capabilities,containsThree:modules.some(id=>id.includes('/node_modules/three/')),note:'Build evidence, not runtime health or access control.'},null,2)});
 this.emitFile({type:'asset',fileName:'favicon.svg',source:'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="#286b7d"/><text x="5" y="22" fill="white" font-family="sans-serif" font-size="18">dp</text></svg>'});this.emitFile({type:'asset',fileName:'_headers',source:`/*\n  Content-Security-Policy: ${csp}\n  X-Content-Type-Options: nosniff\n  Referrer-Policy: no-referrer\n`});}}],
   resolve:{alias:[{find:/^@fluentui\/react-icons$/,replacement:path.resolve('.generated/fluent-icons.js')},{find:'@vizforge',replacement:path.resolve('.upstream/vizforge/src')},...['core','svg','react'].map(name=>({find:'@conceptmotion/'+name,replacement:path.resolve('.upstream/conceptmotion/project/conceptmotion_studio/packages',name,'src/index.ts')}))],dedupe:['react','react-dom']},
+  // The dev server is rooted at the repository, so Vite's default scan would crawl every *.html (the full
+  // studio's index.html with the SQL workbench, plus dist-clients/*) and pre-bundle dependencies this client
+  // never loads. Vite's close() waits for that in-flight esbuild run, which kept the host alive after stop.
+  // Scan only the client entry; dependencies found later are still optimized on demand.
+  optimizeDeps:{entries:['src/client-main.tsx']},
   build:{outDir:path.resolve('dist-clients',id),emptyOutDir:true,sourcemap:false,chunkSizeWarningLimit:1200},
   preview:{host:'127.0.0.1',port:4174,headers:{'Content-Security-Policy':csp,'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer'}}
 });

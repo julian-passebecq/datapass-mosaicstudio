@@ -45,7 +45,7 @@ async function startDev(clientId){
   const exit=new Promise(resolve=>child.once('exit',(code,signal)=>resolve({code,signal})));child.once('error',error=>{stderr+=String(error);});
   return {child,events,exit,get stdout(){return stdout;},get stderr(){return stderr;},async close(){
     // Windows has no catchable SIGTERM (kill is TerminateProcess), so ask for the same graceful stop through stdin EOF, as a closing terminal does.
-    if(child.exitCode===null&&child.signalCode===null){if(process.platform==='win32')child.stdin.end();else child.kill('SIGTERM');}const result=await Promise.race([exit,delay(8000).then(()=>{child.kill('SIGKILL');throw new Error('Owned dev process did not terminate');})]);await writeFile(path.join(output,'dev.stdout.jsonl'),stdout);await writeFile(path.join(output,'dev.stderr.log'),stderr);report.host=events;return result;}};
+    if(child.exitCode===null&&child.signalCode===null){if(process.platform==='win32')child.stdin.end();else child.kill('SIGTERM');}const result=await Promise.race([exit,delay(8000).then(()=>{child.kill('SIGKILL');throw new Error('Owned dev process did not terminate; stderr tail: '+stderr.slice(-1500));})]);await writeFile(path.join(output,'dev.stdout.jsonl'),stdout);await writeFile(path.join(output,'dev.stderr.log'),stderr);report.host=events;return result;}};
 }
 async function pageContext({reduced='reduce',instrument=false,canvasFailure=false}={}){
   const context=await browser.newContext({viewport:{width:1440,height:1000},deviceScaleFactor:1,reducedMotion:reduced,colorScheme:'light',locale:'en-US',timezoneId:'UTC'});
