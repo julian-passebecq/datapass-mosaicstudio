@@ -14,6 +14,8 @@ export const clientBudgets = Object.freeze({
   // Added in Studio 0.8 RC2 (baseline measured on release/studio-0.8-rc2; budgets match each client's own smoke).
   'portfolio-showcase': [138494, 160 * 1024],
   'animated-coding-lab': [158683, 185 * 1024],
+  // Added with concept spec v1 (FW-CONCEPT-SPEC): measured locally on the first build; Three.js is a lazy chunk.
+  'concept-viewer': [306914, 370 * 1024],
   'acceptance-fresh': [98929, 125 * 1024],
   'acceptance-knowledge': [165415, 210 * 1024],
   'acceptance-spatial': [296739, 365 * 1024],
