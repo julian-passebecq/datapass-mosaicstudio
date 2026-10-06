@@ -83,3 +83,22 @@ test('scatter plan and the VizForge domain rule for flat extents',()=>{
   assert.deepEqual(extentDomain([5,5]),[4.5,5.5]);assert.deepEqual(extentDomain([0,0]),[-1,1]);assert.deepEqual(extentDomain([]),[0,1]);
   assert.throws(()=>planChart({id:'s',kind:'scatter',x:'region',y:'margin',renderer:'viz'},dataset,rows),/numeric X/);
 });
+
+test('bar orientation and ranking extras: horizontal ranking like VizForge, rank change against "previous"',()=>{
+  ok({kind:'bar',x:'region',y:'revenue',renderer:'viz',orientation:'vertical',previous:'margin'});
+  bad({kind:'bar',x:'region',y:'revenue',orientation:'vertical'},/orientation needs renderer "viz"/);
+  bad({kind:'line',x:'month',y:'revenue',renderer:'viz',orientation:'horizontal'},/bar charts/);
+  bad({kind:'bar',x:'region',y:'revenue',renderer:'viz',orientation:'diagonal'},/orientation: invalid choice/);
+  bad({kind:'bar',x:'region',y:'revenue',renderer:'viz',previous:'region'},/previous must be another numeric column/);
+  bad({kind:'bar',x:'region',y:'revenue',renderer:'viz',series:'product',previous:'margin'},/without a series/);
+  const rows=[{id:'n',region:'North',revenue:30,margin:10},{id:'s',region:'South',revenue:50,margin:30},{id:'e',region:'East',revenue:20,margin:null},{id:'w',region:'West',revenue:40,margin:40}];
+  const plain=planChart({id:'c',kind:'bar',x:'region',y:'revenue'},dataset,rows);
+  assert.equal(plain.orientation,'horizontal');
+  assert.deepEqual([...plain.ranks].map(([k,r])=>k+r.rank+r.delta),['s1—','w2—','n3—','e4—']);
+  const ranked=planChart({id:'c',kind:'bar',x:'region',y:'revenue',previous:'margin'},dataset,rows);
+  // Before: West 1, South 2, North 3, East none. Now: South 1, West 2, North 3, East 4.
+  assert.deepEqual(Object.fromEntries([...ranked.ranks].map(([k,r])=>[k,r.delta])),{s:'↑1',w:'↓1',n:'·',e:'—'});
+  assert.equal(planChart({id:'c',kind:'bar',x:'region',y:'revenue',orientation:'vertical'},dataset,rows).orientation,'vertical');
+  const series=planChart({id:'c',kind:'bar',x:'region',y:'revenue',series:'product'},dataset,rows.map(r=>({...r,product:'A'})));
+  assert.equal(series.orientation,'vertical');assert.equal(series.ranks,null);
+});

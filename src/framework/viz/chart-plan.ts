@@ -14,7 +14,9 @@ export type ChartPlanBlock={id:string;title?:string;x:string;y:string;kind:'bar'
 export type Domain=readonly [number,number];
 export type PlanSeries={key:string;label:string;axis:'y'|'y2'};
 type Common={missing:number;marks:number;series:PlanSeries[];columns:{x:Column;y:Column;y2?:Column}};
-export type BarPlan=Common&{mark:'bar';categories:{key:string;label:string}[];value:(category:string,series:string)=>number;stack:'stacked'|'grouped';domains:{y:Domain}};
+/** Ranking extras (VizForge ranking): 1-based rank by value, and the rank change against `previous`. */
+export type Rank={rank:number;delta:string};
+export type BarPlan=Common&{mark:'bar';categories:{key:string;label:string}[];value:(category:string,series:string)=>number;stack:'stacked'|'grouped';orientation:'horizontal'|'vertical';ranks:Map<string,Rank>|null;domains:{y:Domain}};
 export type LinePlan=Common&{mark:'line';lines:(PlanSeries&{points:{x:number;y:number}[]})[];domains:{x:Domain;y:Domain;y2?:Domain}};
 export type PointPlan=Common&{mark:'point';points:{key:string;x:number;y:number}[];domains:{x:Domain;y:Domain}};
 export type ChartPlan=BarPlan|LinePlan|PointPlan;
@@ -51,22 +53,26 @@ export function planChart(block:ChartPlanBlock,dataset:Pick<Dataset,'rowKey'|'co
     // Without a series a bar is one row (VizForge ranking: one entity per row key); with a series a
     // category is one X value and each (category, series) pair must be unique.
     const keyOf=(r:Rows[number],i:number)=>block.series!==undefined?String(r[block.x]):String(r[dataset.rowKey]??i);
-    const values=new Map<string,number>(),labels=new Map<string,string>();
+    const values=new Map<string,number>(),labels=new Map<string,string>(),previous=block.previous!==undefined?new Map<string,number>():null;
+    if(previous&&col(block.previous)?.type!=='number')throw new ChartPlanError('chart.previous must be a numeric column');
     complete.forEach((r,i)=>{
       const category=keyOf(r,i),k=category+SEP+seriesOf(r);
       if(values.has(k))throw new ChartPlanError(`Duplicate bar for "${String(r[block.x])}"${block.series!==undefined?' / '+seriesOf(r):''}. Aggregate the rows first.`);
       values.set(k,Number(r[block.y]));if(!labels.has(category))labels.set(category,String(r[block.x]));
+      if(previous&&finite(r[block.previous!]))previous.set(category,Number(r[block.previous!]));
     });
     const value=(c:string,s:string)=>values.get(c+SEP+s)??NaN;
     const stack=block.stack||'stacked',stacked=stack==='stacked'&&series.length>1;
     const total=(c:string)=>series.reduce((sum,s)=>sum+(Number.isFinite(value(c,s.key))?value(c,s.key):0),0);
     let categories=[...labels].map(([key,label])=>({key,label}));
+    // Ties order by category key: the row key without a series, as the VizForge ranking does.
     const sort=block.sort||'descending';
-    if(sort!=='none'){const dir=sort==='descending'?-1:1;categories=categories.map((c,i)=>({c,i,t:total(c.key)})).sort((a,b)=>dir*(a.t-b.t)||a.c.label.localeCompare(b.c.label)||a.i-b.i).map(e=>e.c);}
+    if(sort!=='none'){const dir=sort==='descending'?-1:1;categories=categories.map((c,i)=>({c,i,t:total(c.key)})).sort((a,b)=>dir*(a.t-b.t)||a.c.key.localeCompare(b.c.key)||a.i-b.i).map(e=>e.c);}
     const all=stacked?categories.flatMap(c=>{let pos=0,neg=0;for(const s of series){const v=value(c.key,s.key);if(Number.isFinite(v)){if(v>=0)pos+=v;else neg+=v;}}return [pos,neg];}):[...values.values()];
     const lo=Math.min(0,...all),hi=Math.max(...all,0);
     const domain:Domain=hi>0||lo===0?[lo,Math.max(1,hi)]:[lo,0];
-    return {mark:'bar',categories,series,value,stack,domains:{y:domain},marks:values.size,missing,columns};
+    const orientation=block.orientation||(block.series===undefined?'horizontal':'vertical');
+    return {mark:'bar',categories,series,value,stack,orientation,ranks:block.series===undefined?rankBars(categories,value,series[0]!.key,previous):null,domains:{y:domain},marks:values.size,missing,columns};
   }
   if(x.type!=='number')throw new ChartPlanError(`${block.kind} needs a numeric X column`);
   if(block.kind==='line'){
@@ -79,6 +85,15 @@ export function planChart(block:ChartPlanBlock,dataset:Pick<Dataset,'rowKey'|'co
   const points=complete.map((r,i)=>({key:String(r[dataset.rowKey]??i),x:Number(r[block.x]),y:Number(r[block.y])}));
   if(points.some(p=>!Number.isFinite(p.x)))throw new ChartPlanError(`Column "${block.x}" holds a non-numeric value`);
   return {mark:'point',points,series,domains:{x:nice(extentDomain(points.map(p=>p.x),true)),y:nice(extentDomain(points.map(p=>p.y),true))},marks:points.length,missing,columns};
+}
+/** VizForge ranking order: value descending, then entity key; ties never share a rank. */
+const byValue=(entries:[string,number][])=>entries.sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0])).map(e=>e[0]);
+/** Rank of each bar by value and its change against the prior values: "↑n", "↓n", "·" (same) or
+ * "—" (no prior value, as VizForge shows for an entity absent from the prior snapshot). */
+export function rankBars(categories:readonly {key:string;label:string}[],value:(c:string,s:string)=>number,seriesKey:string,previous:ReadonlyMap<string,number>|null):Map<string,Rank>{
+  const now=byValue(categories.map(c=>[c.key,value(c.key,seriesKey)]));
+  const before=previous?byValue(categories.filter(c=>previous.has(c.key)).map(c=>[c.key,previous.get(c.key)!])):[];
+  return new Map(now.map((key,i)=>{const old=before.indexOf(key);return [key,{rank:i+1,delta:old<0?'—':old===i?'·':old>i?'↑'+(old-i):'↓'+(i-old)}];}));
 }
 /** The structural summary the parity tests compare with VizForge. */
 export function planSummary(plan:ChartPlan){return {mark:plan.mark,series:plan.series.length,marks:plan.marks,domains:plan.domains};}

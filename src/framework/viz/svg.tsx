@@ -34,80 +34,95 @@ export function Legend({items,active,onToggle}:{items:{key:string;label:string;c
   return <ul className="viz-legend" aria-label="Legend">{items.map(it=><li key={it.key}>{onToggle?<button type="button" aria-pressed={!active||active.size===0||active.has(it.key)} onClick={e=>onToggle(it.key,isAdditive(e))}><i style={{background:it.color}}/>{it.label}</button>:<><i style={{background:it.color}}/>{it.label}</>}</li>)}</ul>;
 }
 
-/* ---------- Bar: clustered / stacked, vertical, any number of categories ---------- */
+/* ---------- Bar: clustered / stacked, vertical or horizontal, any number of categories ---------- */
+/** Plot geometry handed to an overlay: category band start, value position, inner size, margin. */
+export type BarGeometry={band:(key:string)=>number;bandwidth:number;at:(n:number)=>number;w:number;h:number;m:Margin};
 export type BarProps=Selectable&{
   categories:readonly {key:string;label:string}[];series:readonly {key:string;label:string;color?:string}[];
   value:(category:string,series:string)=>number;mode?:'stacked'|'grouped';format?:NumberFormat;margin?:Partial<Margin>;label?:string;testId?:string;
   /** Fixed value domain (e.g. from planChart); otherwise zero-based and niced from the values. */
   domain?:readonly [number,number];
+  /** Horizontal: categories down the Y axis, values along X (VizForge ranking). Default vertical. */
+  orientation?:'vertical'|'horizontal';
+  /** Extra non-interactive marks drawn in plot coordinates (ranks, deltas, value labels). */
+  overlay?:(g:BarGeometry)=>ReactNode;
 };
 type BarDatum={category:string;series:string;value:number};
 export function BarChart(props:BarProps){
   const {ref,width,height,ready}=useSize();
   return <div ref={ref} className="viz-chart">{ready&&<BarSvg {...props} width={width} height={height}/>}{!ready&&<div data-viz-settled="false"/>}</div>;
 }
-function BarSvg({categories,series,value,mode='stacked',format,selected,onSelect,margin,label,testId,domain,width,height}:BarProps&{width:number;height:number}){
-  const tooltip=useTooltip(),many=categories.length>16;
-  const m:Margin={top:8,right:8,bottom:many?40:24,left:48,...margin},{w,h}=inner(width,height,m);
+function BarSvg({categories,series,value,mode='stacked',format,selected,onSelect,margin,label,testId,domain,orientation,overlay,width,height}:BarProps&{width:number;height:number}){
+  const tooltip=useTooltip(),hz=orientation==='horizontal',many=!hz&&categories.length>16;
+  const m:Margin={top:8,right:8,bottom:many?40:24,left:hz?96:48,...margin},{w,h}=inner(width,height,m);
   const fmt=(n:number)=>formatNumber(n,format);
+  // Band axis: X when vertical, Y when horizontal. Value axis: Y up, or X to the right.
   const {marks,x,y}=useMemo(()=>{
-    const x=scaleBand<string>().domain(categories.map(c=>c.key)).range([0,w]).paddingInner(categories.length>30?0.18:0.28).paddingOuter(0.1);
+    const x=scaleBand<string>().domain(categories.map(c=>c.key)).range([0,hz?h:w]).paddingInner(categories.length>30?0.18:0.28).paddingOuter(0.1);
     const totals=categories.map(c=>series.reduce((s,se)=>s+Math.max(0,value(c.key,se.key)),0));
     const values=mode==='stacked'?[...totals,...categories.map(c=>series.reduce((s,se)=>s+Math.min(0,value(c.key,se.key)),0))]:categories.flatMap(c=>series.map(se=>value(c.key,se.key)));
-    const y=domain?scaleLinear().domain([domain[0],domain[1]]).range([h,0]):zeroLinear(values,[h,0]);
+    const range:[number,number]=hz?[0,w]:[h,0],y=domain?scaleLinear().domain([domain[0],domain[1]]).range(range):zeroLinear(values,range);
     const inner=scaleBand<string>().domain(series.map(s=>s.key)).range([0,x.bandwidth()]).paddingInner(series.length>1?0.12:0);
     const out:Mark<BarDatum>[]=[];
     for(const c of categories){
       let pos=0,neg=0;
       series.forEach(se=>{
         const val=value(c.key,se.key);if(!Number.isFinite(val))return;
-        let x0:number,bw:number,y0:number,y1:number;
-        if(mode==='stacked'){x0=x(c.key)!;bw=x.bandwidth();if(val>=0){y0=pos;pos+=val;y1=pos;}else{y0=neg;neg+=val;y1=neg;}}
-        else{x0=x(c.key)!+inner(se.key)!;bw=inner.bandwidth();y0=0;y1=val;}
-        const top=y(Math.max(y0,y1)),bottom=y(Math.min(y0,y1));
+        let b0:number,bw:number,v0:number,v1:number;
+        if(mode==='stacked'){b0=x(c.key)!;bw=x.bandwidth();if(val>=0){v0=pos;pos+=val;v1=pos;}else{v0=neg;neg+=val;v1=neg;}}
+        else{b0=x(c.key)!+inner(se.key)!;bw=inner.bandwidth();v0=0;v1=val;}
+        const p0=y(Math.min(v0,v1)),p1=y(Math.max(v0,v1)),lo=Math.min(p0,p1),len=Math.abs(p1-p0);
         // 2px surface gap between stacked segments.
         const gap=mode==='stacked'&&series.length>1?1:0;
-        out.push({key:c.key+'\u0000'+se.key,datum:{category:c.key,series:se.key,value:val},attrs:{x:x0,w:bw,y:top+gap,h:Math.max(0,bottom-top-gap*2)}});
+        out.push({key:c.key+'\u0000'+se.key,datum:{category:c.key,series:se.key,value:val},attrs:hz?{x:lo+gap,w:Math.max(0,len-gap*2),y:b0,h:bw}:{x:b0,w:bw,y:lo+gap,h:Math.max(0,len-gap*2)}});
       });
     }
     return {marks:out,x,y};
-  },[categories,series,value,mode,w,h,domain]);
+  },[categories,series,value,mode,w,h,domain,hz]);
   const base=y(0);
-  const t=useMarkTransition(marks,{enter:mk=>({...mk.attrs,y:base,h:0}),exit:mk=>({...mk.attrs,y:base,h:0})});
+  const collapse=(mk:Mark<BarDatum>)=>({...mk.attrs,...(hz?{x:base,w:0}:{y:base,h:0})}),t=useMarkTransition(marks,{enter:collapse,exit:collapse});
   const colorOf=new Map(series.map((s,i)=>[s.key,s.color||cat(i)])),labelOf=new Map(categories.map(c=>[c.key,c.label]));
   const showTip=(e:MouseEvent,category:string)=>{
     const rows:TooltipRow[]=series.map(se=>({label:se.label,value:fmt(value(category,se.key)),color:colorOf.get(se.key)}));
     if(series.length>1&&mode==='stacked')rows.push({label:'Total',value:fmt(series.reduce((s,se)=>s+value(category,se.key),0))});
     tooltip.show({x:e.clientX,y:e.clientY,title:labelOf.get(category)||category,rows});
   };
-  const step=Math.max(1,Math.ceil(categories.length/Math.max(1,Math.floor(w/(many?28:56)))));
-  return <svg width={width} height={height} role="img" aria-label={label||'Bar chart'} data-testid={testId} data-viz-settled={settledAttr(t.settled)} data-viz-renderer="svg" data-marks={marks.length} data-series={series.length} data-domain-y={y.domain().join(':')}>
+  const step=hz?1:Math.max(1,Math.ceil(categories.length/Math.max(1,Math.floor(w/(many?28:56))))),tickFmt=(n:number)=>formatNumber(n,{...format,digits:undefined,unit:undefined});
+  const hit=(c:{key:string})=>(x(c.key)??0)-x.step()*x.paddingInner()/2,line=Math.round(base)+.5;
+  return <svg width={width} height={height} role="img" aria-label={label||'Bar chart'} data-testid={testId} data-viz-settled={settledAttr(t.settled)} data-viz-renderer="svg" data-orientation={hz?'horizontal':'vertical'} data-marks={marks.length} data-series={series.length} data-domain-y={y.domain().join(':')}>
     <g transform={`translate(${m.left},${m.top})`}>
-      <YAxis scale={y} width={w} ticks={tickCount(h,48)} fmt={n=>formatNumber(n,{...format,digits:undefined,unit:undefined})}/>
-      <g>{t.marks.map(mk=>{const r=Math.min(4,mk.attrs.w!/2,mk.attrs.h!);return <path key={mk.key} className="viz-mark-shape" d={roundedTop(mk.attrs.x!,mk.attrs.y!,mk.attrs.w!,mk.attrs.h!,mk.datum.value>=0?r:0)} fill={colorOf.get(mk.datum.series)} opacity={mk.opacity*(dimmed(selected,mk.datum.category)?0.28:1)} pointerEvents="none"/>;})}</g>
-      <line className="viz-baseline" x1={0} x2={w} y1={Math.round(base)+.5} y2={Math.round(base)+.5} stroke={v('axis')}/>
-      <g>{categories.map(c=><rect key={c.key} className="viz-mark" data-key={c.key} role="button" tabIndex={0} aria-pressed={!!selected?.has(c.key)} aria-label={c.label+': '+fmt(series.reduce((s,se)=>s+value(c.key,se.key),0))} x={(x(c.key)??0)-x.step()*x.paddingInner()/2} width={x.step()} y={0} height={h} fill="transparent" onMouseMove={e=>showTip(e,c.key)} onMouseLeave={()=>tooltip.hide()} onBlur={()=>tooltip.hide()} {...activate(onSelect,c.key)}/>)}</g>
-      <g className="viz-axis" aria-hidden="true" transform={`translate(0,${h})`}>{categories.map((c,i)=>i%step?null:<text key={c.key} x={(x(c.key)??0)+x.bandwidth()/2} y={14} textAnchor={many?'end':'middle'} transform={many?`rotate(-40 ${(x(c.key)??0)+x.bandwidth()/2} 14)`:undefined} fontWeight={selected?.has(c.key)?600:undefined}>{c.label}</text>)}</g>
+      {hz?<g className="viz-axis viz-grid" aria-hidden="true">{y.ticks(tickCount(w,80)).map(n=><g key={n} transform={`translate(${Math.round(y(n))+.5},0)`}><line y1={0} y2={h}/><text y={h+16} textAnchor="middle">{tickFmt(n)}</text></g>)}</g>
+        :<YAxis scale={y} width={w} ticks={tickCount(h,48)} fmt={tickFmt}/>}
+      <g>{t.marks.map(mk=>{const a=mk.attrs,r=Math.min(4,hz?a.h!/2:a.w!/2,hz?a.w!:a.h!),pos=mk.datum.value>=0;return <path key={mk.key} className="viz-mark-shape" data-mark="bar" d={hz?roundedEnd(a.y!,a.x!,a.h!,a.w!,pos?r:0,1):roundedEnd(a.x!,a.y!,a.w!,a.h!,pos?r:0)} fill={colorOf.get(mk.datum.series)} opacity={mk.opacity*(dimmed(selected,mk.datum.category)?0.28:1)} pointerEvents="none"/>;})}</g>
+      <line className="viz-baseline" {...hz?{x1:line,x2:line,y1:0,y2:h}:{x1:0,x2:w,y1:line,y2:line}} stroke={v('axis')}/>
+      <g>{categories.map(c=><rect key={c.key} className="viz-mark" data-key={c.key} role="button" tabIndex={0} aria-pressed={!!selected?.has(c.key)} aria-label={c.label+': '+fmt(series.reduce((s,se)=>s+value(c.key,se.key),0))} {...hz?{x:0,width:w,y:hit(c),height:x.step()}:{x:hit(c),width:x.step(),y:0,height:h}} fill="transparent" onMouseMove={e=>showTip(e,c.key)} onMouseLeave={()=>tooltip.hide()} onBlur={()=>tooltip.hide()} {...activate(onSelect,c.key)}/>)}</g>
+      <g className="viz-axis" aria-hidden="true" transform={hz?undefined:`translate(0,${h})`}>{categories.map((c,i)=>{if(i%step)return null;const mid=(x(c.key)??0)+x.bandwidth()/2;return <text key={c.key} data-mark="label" {...hz?{x:-10,y:mid,dy:'0.32em',textAnchor:'end'}:{x:mid,y:14,textAnchor:many?'end':'middle',transform:many?`rotate(-40 ${mid} 14)`:undefined}} fontWeight={selected?.has(c.key)?600:undefined}>{c.label}</text>;})}</g>
+      {overlay&&<g pointerEvents="none">{overlay({band:k=>x(k)??0,bandwidth:x.bandwidth(),at:y,w,h,m})}</g>}
     </g>
   </svg>;
 }
-function roundedTop(x:number,y:number,w:number,h:number,r:number){
-  if(h<=0||w<=0)return `M${x},${y}h${Math.max(0,w)}v0h${-Math.max(0,w)}Z`;
-  r=Math.max(0,Math.min(r,w/2,h));
-  return `M${x},${y+h}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h}Z`;
+/** Bar path with its value end rounded: the top (vertical) or, with `flip`, the right end
+ * (horizontal: b/l are the band start/size, v/len the value start/length). */
+function roundedEnd(b:number,v:number,l:number,len:number,r:number,flip?:1){
+  if(len<=0||l<=0)return '';
+  r=Math.max(0,Math.min(r,l/2,len));
+  return flip
+    ?`M${v},${b}H${v+len-r}Q${v+len},${b} ${v+len},${b+r}V${b+l-r}Q${v+len},${b+l} ${v+len-r},${b+l}H${v}Z`
+    :`M${b},${v+len}V${v+r}Q${b},${v} ${b+r},${v}H${b+l-r}Q${b+l},${v} ${b+l},${v+r}V${v+len}Z`;
 }
-
 /* ---------- Line / area, multi-series, hover crosshair ---------- */
 /** `axis: 'y2'` draws the series against a second, right-hand axis (dual axis; not stacked). */
 export type LineSeries={key:string;label:string;color?:string;axis?:'y'|'y2';points:readonly {x:number;y:number}[]};
 export type LineProps={series:readonly LineSeries[];area?:boolean|'stacked';xFormat?:(x:number)=>string;format?:NumberFormat;y2Format?:NumberFormat;label?:string;testId?:string;margin?:Partial<Margin>;highlight?:ReadonlySet<string>|null;onSelect?:(key:string,additive:boolean)=>void;zero?:boolean;
   /** Fixed domains (e.g. from planChart); otherwise derived from the points. */
-  xDomain?:readonly [number,number];domain?:readonly [number,number];y2Domain?:readonly [number,number]};
+  xDomain?:readonly [number,number];domain?:readonly [number,number];y2Domain?:readonly [number,number];
+  /** Extra non-interactive marks in plot coordinates (end labels, focus point); `y` follows the series axis. */
+  overlay?:(g:{x:(n:number)=>number;y:(s:LineSeries,n:number)=>number;w:number;h:number})=>ReactNode};
 export function LineChart(props:LineProps){
   const {ref,width,height,ready}=useSize();
   return <div ref={ref} className="viz-chart">{ready&&<LineSvg {...props} width={width} height={height}/>}</div>;
 }
-function LineSvg({series,area,xFormat=String,format,y2Format,label,testId,margin,highlight,width,height,zero,xDomain,domain,y2Domain}:LineProps&{width:number;height:number}){
+function LineSvg({series,area,xFormat=String,format,y2Format,label,testId,margin,highlight,width,height,zero,xDomain,domain,y2Domain,overlay}:LineProps&{width:number;height:number}){
   const tooltip=useTooltip(),[hover,setHover]=useState<number|null>(null);
   const dual=series.some(s=>s.axis==='y2');
   const m:Margin={top:10,right:dual?52:12,bottom:24,left:48,...margin},{w,h}=inner(width,height,m);
@@ -146,9 +161,10 @@ function LineSvg({series,area,xFormat=String,format,y2Format,label,testId,margin
         const lineD=d3line<{x:number;a:number}>().x(p=>p.x).y(p=>p.a).curve(curveMonotoneX)(pts)||'';
         const areaD=area?d3area<{x:number;a:number;b:number}>().x(p=>p.x).y0(p=>p.b).y1(p=>p.a).curve(curveMonotoneX)(pts)||'':'';
         const faded=highlight&&highlight.size>0&&!highlight.has(s.key);
-        return <g key={mk.key} opacity={mk.opacity*(faded?0.25:1)} data-series={s.key}>{area&&<path d={areaD} fill={`url(#g-${testId||'line'}-${s.key})`} stroke={stacked?v('surface'):'none'} strokeWidth={stacked?1:0}/>}<path d={lineD} fill="none" stroke={i>=0?colorOf(s,i):undefined} strokeWidth={2} strokeDasharray={s.axis==='y2'?'6 4':undefined} strokeLinejoin="round" strokeLinecap="round"/></g>;
+        return <g key={mk.key} opacity={mk.opacity*(faded?0.25:1)} data-series={s.key}>{area&&<path d={areaD} fill={`url(#g-${testId||'line'}-${s.key})`} stroke={stacked?v('surface'):'none'} strokeWidth={stacked?1:0}/>}<path data-mark="line" d={lineD} fill="none" stroke={i>=0?colorOf(s,i):undefined} strokeWidth={2} strokeDasharray={s.axis==='y2'?'6 4':undefined} strokeLinejoin="round" strokeLinecap="round"/></g>;
       })}
       {hover!==null&&xs[hover]!==undefined&&<g pointerEvents="none"><line className="viz-crosshair" x1={x(xs[hover]!)} x2={x(xs[hover]!)} y1={0} y2={h}/>{series.map((s,si)=>{const p=stacked?stacks.get(s.key)?.find(q=>q.x===xs[hover]):s.points.find(q=>q.x===xs[hover]);if(!p)return null;const yy='y1' in p?p.y1:p.y;return <circle key={s.key} cx={x(xs[hover]!)} cy={scaleOf(s)(yy)} r={4} fill={colorOf(s,si)} stroke={v('surface')} strokeWidth={2}/>;})}</g>}
+      {overlay&&<g pointerEvents="none">{overlay({x,y:(s,n)=>scaleOf(s)(n),w,h})}</g>}
       <rect x={0} y={0} width={w} height={h} fill="transparent" onMouseMove={onMove} onMouseLeave={()=>{setHover(null);tooltip.hide();}}/>
     </g>
   </svg>;

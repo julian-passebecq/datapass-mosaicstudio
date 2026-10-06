@@ -46,7 +46,7 @@ function validateDataset(d: unknown, fieldIds: Set<string>): asserts d is Datase
   if (d.source === 'inline' && (d.inputs.length || d.dependsOn.length)) throw new Error('Inline data cannot declare compute dependencies');
 }
 const blockFields = {
-  text:['text','tone'], metric:['value','unit','digits','note'], input:['field','control'], table:['dataset','pageSize'], chart:['dataset','x','y','kind','unit','renderer','series','y2','sort','stack','selection'], task:['task'], catalog:[], code:['text','language'],
+  text:['text','tone'], metric:['value','unit','digits','note'], input:['field','control'], table:['dataset','pageSize'], chart:['dataset','x','y','kind','unit','renderer','series','y2','sort','stack','orientation','previous','selection'], task:['task'], catalog:[], code:['text','language'],
   model3d:['resource','selection','camera','mode','explode','section','view','annotations','source'], runs:['resource'], motion:['resource','step','selection','projection','panel','source'], scene3d:['resource','explode','phase','camera','selection'], 'story-controls':['resource'], 'story-figure':['resource'], architecture:['resource'], replay:['resource','frame','selection','channel','view','speed'], custom:['resource'], explanation:['resource'], explorer:['resource','focus','facet','view','level','group','document','scroll'],
 } as const;
 export const BLOCK_TYPES = Object.freeze(Object.keys(blockFields));
@@ -59,13 +59,15 @@ function valueRef(v: unknown, manifest: Manifest): void {
 /** Viz-kit chart options. They need `renderer: 'viz'`: the VizForge adapter cannot draw them. */
 function chartVizOptions(v: Record<string, unknown>, d: Manifest['datasets'][number], m: Manifest): void {
   if (v.renderer !== undefined) oneOf(v.renderer, ['viz','vizforge'], 'chart.renderer');
-  const extended = (['series','y2','sort','stack','selection'] as const).filter(key => v[key] !== undefined);
+  const extended = (['series','y2','sort','stack','orientation','previous','selection'] as const).filter(key => v[key] !== undefined);
   if (extended.length && v.renderer !== 'viz') throw new Error('chart.' + extended[0] + ' needs renderer "viz"');
   const column = (key: string) => d.columns.find(c => c.id === v[key]);
   if (v.series !== undefined) {identifier(v.series, 'chart.series'); if (column('series')?.type !== 'string' || v.series === v.x) throw new Error('chart.series must be another string column'); if (v.kind === 'scatter') throw new Error('chart.series applies to bar or line');}
   if (v.y2 !== undefined) {identifier(v.y2, 'chart.y2'); if (v.kind !== 'line' || column('y2')?.type !== 'number' || v.y2 === v.y) throw new Error('chart.y2 must be another numeric column on a line chart'); if (v.series !== undefined) throw new Error('chart.y2 and chart.series cannot be combined');}
   if (v.sort !== undefined) {oneOf(v.sort, ['none','ascending','descending'], 'chart.sort'); if (v.kind !== 'bar') throw new Error('chart.sort applies to bar charts');}
   if (v.stack !== undefined) {oneOf(v.stack, ['stacked','grouped'], 'chart.stack'); if (v.kind !== 'bar' || v.series === undefined) throw new Error('chart.stack needs a bar chart with a series');}
+  if (v.orientation !== undefined) {oneOf(v.orientation, ['horizontal','vertical'], 'chart.orientation'); if (v.kind !== 'bar') throw new Error('chart.orientation applies to bar charts');}
+  if (v.previous !== undefined) {identifier(v.previous, 'chart.previous'); if (v.kind !== 'bar' || v.series !== undefined || column('previous')?.type !== 'number' || v.previous === v.y) throw new Error('chart.previous must be another numeric column on a bar chart without a series');}
   if (v.selection !== undefined) {
     identifier(v.selection, 'chart.selection');
     const f = m.fields.find(f => f.id === v.selection), want = v.kind === 'scatter' ? ['interval'] : ['select','multi'];
