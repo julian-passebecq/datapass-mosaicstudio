@@ -17,7 +17,8 @@ test('original ConceptMotion uses compact geometry and settled non-overlapping s
   await page.screenshot({path:info.outputPath('explorer-compact-explanation.png'),fullPage:true});
 });
 test('dark analytical views use original VizForge theme and indicators retain natural height',async({page},info)=>{
-  await page.goto('/?app=experience-reference');
+  // The chart block defaults to the viz kit (dark theme covered by chart-capture.spec); `viz-chart=0` keeps VizForge here.
+  await page.goto('/?app=experience-reference&viz-chart=0');
   await page.getByRole('navigation',{name:'Component outline'}).getByRole('button',{name:'Explore Cloud platform',exact:true}).click();
   const heights=await page.locator('.site-metric').evaluateAll(elements=>elements.map(el=>el.getBoundingClientRect().height));expect(heights).toHaveLength(2);expect(Math.max(...heights)).toBeLessThan(180);
   await page.getByRole('navigation',{name:'Site pages'}).getByRole('button',{name:'Content signals',exact:true}).click();
