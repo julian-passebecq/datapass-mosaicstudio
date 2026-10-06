@@ -55,3 +55,21 @@ export async function exportPng(svg:SVGSVGElement,name:string,caption:string){
     download(blob,name+'.png');
   }finally{URL.revokeObjectURL(url);}
 }
+
+/** A ready-made standalone SVG document (the isometric export already carries its colours and background). */
+export function exportSvgText(text:string,name:string){
+  download(new Blob(['<?xml version="1.0" encoding="UTF-8"?>\n'+text],{type:'image/svg+xml'}),name+'.svg');
+}
+export async function exportPngText(text:string,name:string,width=2400){
+  const doc=new DOMParser().parseFromString(text,'image/svg+xml').documentElement;
+  const [,,w,h]=(doc.getAttribute('viewBox')||'0 0 1600 1000').split(/\s+/).map(Number) as [number,number,number,number];
+  doc.setAttribute('width',String(width));doc.setAttribute('height',String(Math.round(width*h/w)));
+  const url=URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(doc)],{type:'image/svg+xml'}));
+  try{
+    const img=new Image();img.decoding='sync';img.src=url;await img.decode();
+    const canvas=document.createElement('canvas');canvas.width=img.naturalWidth;canvas.height=img.naturalHeight;
+    const ctx=canvas.getContext('2d');if(!ctx)throw new Error('No 2D canvas');ctx.drawImage(img,0,0);
+    const blob=await new Promise<Blob>((ok,fail)=>canvas.toBlob(b=>b?ok(b):fail(new Error('PNG encoding failed')),'image/png'));
+    download(blob,name+'.png');
+  }finally{URL.revokeObjectURL(url);}
+}

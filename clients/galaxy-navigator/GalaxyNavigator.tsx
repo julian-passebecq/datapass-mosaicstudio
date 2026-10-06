@@ -1,20 +1,25 @@
 /** Galaxy Navigator: one client-owned component over the registry snapshot.
- * Graph and List are two projections of the same selection (field gn-focus); switching keeps it.
+ * Six projections (3D Galaxy, Isometric, Graph, List, Matrix, Board) share one selection (field gn-focus);
+ * switching keeps it. 3D (three.js) and Isometric (framework Motion v2 exporter) are lazy chunks.
  * Search is literal and local. Focus frames the node and its neighbours (viz motion clock; settles at
  * once under reduced motion or ?capture=1). Export writes the current 2D view as SVG or PNG.
  */
-import {useEffect,useMemo,useRef,useState,type KeyboardEvent} from 'react';
-import {useRuntime,useSiteState} from '../../src/framework/ui';
-import {VizRoot,Kpi,BarChart,useMotion,cat,v,lerp} from '../../src/framework/viz/index.ts';
+import {lazy,Suspense,useEffect,useMemo,useRef,useState,type KeyboardEvent} from 'react';
+import {useReducedMotion,useRuntime,useSiteState} from '../../src/framework/ui';
+import {VizRoot,Kpi,BarChart,useMotion,cat,v,lerp,detectCapture} from '../../src/framework/viz/index.ts';
 import {FIELDS} from './fields.ts';
 import {REGISTRY} from './registry.generated.ts';
 import {GROUPS,OTHER_GROUP,STATUS_DASH,STATUS_FILTERS,STATUS_LABEL,STATUS_ORDER,contractsOf,curve,clusterLabelFits,labelSpot,shortName,LABEL,focusBox,layout,neighbours,search,type Graph,type Placed,type StatusFilter} from './registry.ts';
-import {exportPng,exportSvg} from './export.ts';
+import {exportPng,exportSvg,exportPngText,exportSvgText} from './export.ts';
+import {MatrixView,BoardView} from './Tables.tsx';
+import {VIEWS,asView} from './views.ts';
+
+const Galaxy3D=lazy(()=>import('./Galaxy3D.tsx'));
+const IsoView=lazy(()=>import('./IsoView.tsx'));
 import './galaxy.css';
 
 const GROUP_INDEX=new Map([...GROUPS,OTHER_GROUP].map((g,i)=>[g.id,i]));
 const groupColor=(id:string)=>cat(GROUP_INDEX.get(id)??7);
-const asView=(x:unknown)=>x==='list'?'list':'graph';
 const asFilter=(x:unknown):StatusFilter=>x==='live'||x==='pending'?x:'all';
 
 function useSystemDark(){
@@ -24,8 +29,17 @@ function useSystemDark(){
   return dark;
 }
 
+/** `?tour=1[&t=<s>][&paused=1]` opens the 3D camera tour (deterministic: a frame depends only on t). */
+function tourParams(){
+  if(typeof location==='undefined')return null;const q=new URLSearchParams(location.search);if(q.get('tour')!=='1')return null;
+  const t=Number(q.get('t')||0);return {open:true,start:Number.isFinite(t)?Math.max(0,t):0,paused:q.get('paused')==='1',film:q.get('film')==='1'};
+}
 export function GalaxyNavigator(){
-  const runtime=useRuntime(),snapshot=useSiteState(),dark=useSystemDark();
+  const runtime=useRuntime(),snapshot=useSiteState(),dark=useSystemDark(),reduced=useReducedMotion(),capture=useMemo(()=>detectCapture(),[]);
+  const [tour,setTour]=useState(tourParams);
+  useEffect(()=>{if(tour)runtime.set(FIELDS.view,'galaxy3d');// eslint-disable-next-line react-hooks/exhaustive-deps
+  },[]);
+  const isoText=useRef('');
   const view=asView(snapshot.values[FIELDS.view]),filter=asFilter(snapshot.values[FIELDS.status]);
   const focusValue=String(snapshot.values[FIELDS.focus]??'none'),focus=REGISTRY.nodes.some(n=>n.id===focusValue)?focusValue:null;
   const graph=useMemo(()=>layout(REGISTRY,{allowed:STATUS_FILTERS[filter]}),[filter]);
@@ -39,13 +53,29 @@ export function GalaxyNavigator(){
     if(e.key==='Enter'&&hits[0]){e.preventDefault();select(hits[0].node);}
     if(e.key==='Escape'){setQuery('');}
   };
+  const exportable=view==='graph'||view==='iso';
   const doExport=async(kind:'svg'|'png')=>{
-    const svg=svgRef.current;if(!svg){setNote('Switch to the Graph projection to export.');return;}
     const caption=`App Galaxy · ${REGISTRY.source.name}, updated ${REGISTRY.source.updated.slice(0,10)} · ${STATUS_FILTERS[filter].length===STATUS_ORDER.length?'all statuses':filter}${focus?' · focus '+focus:''}`;
-    const name=`galaxy-navigator-${focus||'all'}`;
-    try{if(kind==='svg')exportSvg(svg,name,caption);else await exportPng(svg,name,caption);setNote(`Exported ${name}.${kind}`);}catch(err){setNote('Export failed: '+(err as Error).message);}
+    const name=`galaxy-navigator-${view==='iso'?'isometric-':''}${focus||'all'}`;
+    try{
+      if(view==='iso'){if(!isoText.current)throw new Error('the isometric view is still loading');if(kind==='svg')exportSvgText(isoText.current,name);else await exportPngText(isoText.current,name);}
+      else{const svg=svgRef.current;if(!svg){setNote('Switch to the Graph or Isometric projection to export.');return;}if(kind==='svg')exportSvg(svg,name,caption);else await exportPng(svg,name,caption);}
+      setNote(`Exported ${name}.${kind}`);
+    }catch(err){setNote('Export failed: '+(err as Error).message);}
   };
-  return <VizRoot mode={dark?'dark':'light'} className="gn" data-testid="galaxy-navigator" data-focus={focus||'none'} data-view={view}>
+  const hitSet=query.trim()?matched:null,setFocus=(id:string|null)=>runtime.set(FIELDS.focus,id??'none');
+  const projection=()=>{
+    switch(view){
+      case 'galaxy3d':return <Suspense fallback={<div className="gn-loading" role="status">Loading the 3D Galaxy…</div>}>
+        <Galaxy3D filter={filter} focus={focus} mode={dark?'dark':'light'} reduced={reduced} capture={capture} onSelect={select} tour={tour} onTourEnd={()=>setTour(null)}/></Suspense>;
+      case 'iso':return <Suspense fallback={<div className="gn-loading" role="status">Loading the isometric view…</div>}><IsoView filter={filter} focus={focus} onSelect={select} svgText={t=>{isoText.current=t;}}/></Suspense>;
+      case 'matrix':return <MatrixView filter={filter} focus={focus} matched={hitSet} contract={contract} onSelect={setFocus} onContract={setContract}/>;
+      case 'board':return <BoardView filter={filter} focus={focus} matched={hitSet} contract={contract} onSelect={setFocus} onContract={setContract}/>;
+      case 'list':return <ListView graph={graph} focus={focus} matched={hitSet} onSelect={select}/>;
+      default:return <GraphView graph={graph} focus={focus} matched={hitSet} contract={contract} onSelect={select} svgRef={svgRef}/>;
+    }
+  };
+  return <VizRoot mode={dark?'dark':'light'} className="gn" data-testid="galaxy-navigator" data-focus={focus||'none'} data-view={view} data-film={tour?.film?'true':undefined}>
     <div className="gn-bar">
       <div className="gn-search" role="search">
         <input type="search" data-testid="gn-search" value={query} onChange={e=>setQuery(e.currentTarget.value)} onKeyDown={onSearchKey}
@@ -57,7 +87,7 @@ export function GalaxyNavigator(){
         </ul>}
       </div>
       <div className="gn-seg" role="group" aria-label="Projection">
-        {(['graph','list'] as const).map(p=><button type="button" key={p} data-testid={'gn-view-'+p} aria-pressed={view===p} onClick={()=>runtime.set(FIELDS.view,p)}>{p==='graph'?'Graph':'List'}</button>)}
+        {VIEWS.map(p=><button type="button" key={p.id} data-testid={'gn-view-'+p.id} aria-pressed={view===p.id} title={p.hint} onClick={()=>runtime.set(FIELDS.view,p.id)}>{p.label}</button>)}
       </div>
       <label className="gn-filter">Contracts
         <select data-testid="gn-status" value={filter} onChange={e=>runtime.set(FIELDS.status,e.currentTarget.value)}>
@@ -65,17 +95,15 @@ export function GalaxyNavigator(){
         </select>
       </label>
       <div className="gn-export" role="group" aria-label="Export">
-        <button type="button" data-testid="gn-export-svg" onClick={()=>void doExport('svg')} disabled={view!=='graph'}>Export SVG</button>
-        <button type="button" data-testid="gn-export-png" onClick={()=>void doExport('png')} disabled={view!=='graph'}>Export PNG</button>
+        <button type="button" data-testid="gn-export-svg" onClick={()=>void doExport('svg')} disabled={!exportable}>Export SVG</button>
+        <button type="button" data-testid="gn-export-png" onClick={()=>void doExport('png')} disabled={!exportable}>Export PNG</button>
       </div>
     </div>
     <p className="gn-source" data-testid="gn-source">Registry snapshot: {REGISTRY.source.name}, updated {REGISTRY.source.updated.slice(0,10)}. {REGISTRY.nodes.length} nodes, {REGISTRY.contracts.length} contracts. Positions are a computed cluster layout, not live data.{note&&<span className="gn-note" role="status"> {note}</span>}</p>
     <div className="gn-main">
       <div className="gn-stage">
-        {view==='graph'
-          ?<GraphView graph={graph} focus={focus} matched={query.trim()?matched:null} contract={contract} onSelect={select} svgRef={svgRef}/>
-          :<ListView graph={graph} focus={focus} matched={query.trim()?matched:null} onSelect={select}/>}
-        <Legend/>
+        {projection()}
+        {(view==='graph'||view==='list')&&<Legend/>}
       </div>
       <Inspector graph={graph} focus={focus} contract={contract} onContract={setContract} onSelect={select}/>
     </div>

@@ -56,3 +56,79 @@ test('search, neighbours, contracts and focus box',()=>{
   assert.deepEqual(focusBox(g,[]),{x:0,y:0,w:g.width,h:g.height});
   for(const n of g.nodes)assert.ok(['start','middle','end'].includes(labelSpot(n).anchor));
 });
+
+/* ---------- N2: layered world, isometric export, matrix, board, camera tour ---------- */
+const world=await import('../clients/galaxy-navigator/world.ts');
+const {isometricSvg,toMotion}=await import('../clients/galaxy-navigator/iso.ts');
+const {validateMotion}=await import('../src/framework/motion/index.ts');
+const {VIEWS,asView}=await import('../clients/galaxy-navigator/views.ts');
+
+test('layered world: planes at distinct heights, repos on the commons, one pipe per pair, deterministic',()=>{
+  const w=world.buildWorld(REGISTRY),again=world.buildWorld(REGISTRY);
+  assert.deepEqual(w.stations.map(s=>[s.id,s.position]),again.stations.map(s=>[s.id,s.position]));
+  assert.deepEqual(w.pipes.map(p=>p.route),again.pipes.map(p=>p.route));
+  assert.equal(w.stations.length,REGISTRY.nodes.length);
+  assert.equal(new Set(w.planes.map(p=>p.z)).size,w.planes.length,'each group has its own height');
+  assert.ok(w.planes.every(p=>p.z>0));
+  assert.deepEqual([...w.commons.members].sort(),REGISTRY.nodes.filter(n=>n.kind==='repo').map(n=>n.id).sort());
+  for(const s of w.stations)assert.equal(s.position[2],s.plane===world.COMMONS.id?0:w.planes.find(p=>p.id===s.plane).z,s.id);
+  const pairs=new Set(REGISTRY.edges.filter(e=>e.from!==e.to).map(e=>e.from+'>'+e.to));
+  assert.equal(w.pipes.length,pairs.size);
+  assert.deepEqual(new Set(w.pipes.map(p=>p.lane)).size,w.pipes.length,'one lane per pipe');
+  for(const p of w.pipes){
+    assert.ok(p.route.length-2<=8,'isometric route budget: '+p.id);
+    assert.ok(p.route.every(q=>q[0]>=w.bounds.x0&&q[0]<=w.bounds.x1&&q[1]>=w.bounds.y0&&q[1]<=w.bounds.y1),'route inside the commons: '+p.id);
+  }
+  const live=world.buildWorld(REGISTRY,'live');
+  assert.ok(live.pipes.length<w.pipes.length&&live.pipes.every(p=>p.status==='live'));
+  // Natural kinds come from the registry kind and stack text.
+  const kinds=Object.fromEntries(w.stations.map(s=>[s.id,s.kind]));
+  assert.equal(kinds['datapass-vscode'],'extension');assert.equal(kinds.diagramcloud,'webapp');assert.equal(kinds.powerops,'desktop');
+  assert.equal(kinds.foil,'doc');assert.equal(kinds['foil-study'],'cli');assert.equal(kinds['datapass-vscode-common'],'repo');
+});
+
+test('isometric view is a valid framework Motion v2 scene and a deterministic standalone SVG',()=>{
+  const spec=toMotion(world.buildWorld(REGISTRY));
+  validateMotion(spec);
+  assert.equal(spec.layers[0].texture,'water');
+  assert.ok(spec.entities.every(e=>e.glyph?.startsWith('galaxy-')));
+  const a=isometricSvg(),b=isometricSvg();
+  assert.equal(a,b);
+  assert.ok(a.includes('data-renderer="framework-motion-v2"')&&!a.includes('var(--'));
+  for(const n of REGISTRY.nodes)assert.ok(a.includes(`data-entity="${n.id}"`),n.id);
+  assert.ok(!/[A-Za-z]:\\|\\Users\\/.test(a),'no local paths in the export');
+  assert.notEqual(isometricSvg('all','mongoku'),a,'selection is drawn');
+});
+
+test('contract matrix and status board',()=>{
+  const rows=world.matrixRows(REGISTRY);
+  assert.equal(rows.length,REGISTRY.contracts.length);
+  assert.equal(rows[0].status,'live');
+  const byId=world.matrixRows(REGISTRY,'all','id'),desc=world.matrixRows(REGISTRY,'all','id',null,true);
+  assert.deepEqual(byId.map(r=>r.id),[...desc.map(r=>r.id)].reverse());
+  const focused=world.matrixRows(REGISTRY,'all','focus','mongoku');
+  assert.ok(['P','PC'].includes(focused[0].roles.mongoku));
+  const self=rows.find(r=>r.id==='control_changesets');assert.equal(self.roles.mongoku,'PC');
+  assert.equal(world.matrixColumns(world.buildWorld(REGISTRY)).length,REGISTRY.nodes.length);
+  const lanes=world.boardLanes(REGISTRY);
+  assert.deepEqual(lanes.map(l=>l.status),world.BOARD_LANES);
+  assert.equal(lanes.reduce((n,l)=>n+l.contracts.length,0),REGISTRY.contracts.length);
+  assert.deepEqual(world.boardLanes(REGISTRY,'live').map(l=>l.status),['live']);
+});
+
+test('camera: fitted overview, focus pose, eased flight and a deterministic tour',()=>{
+  const w=world.buildWorld(REGISTRY),home=world.overviewPose(w,16/9),narrow=world.overviewPose(w,.5);
+  assert.ok(narrow.distance>home.distance,'narrow viewports pull back');
+  const f=world.focusPose(w,'mongoku',home);assert.deepEqual(f.target.slice(0,2),w.byId.get('mongoku').position.slice(0,2));
+  assert.deepEqual(world.flight(home,f,0,false),world.mixPose(home,f,0));
+  assert.deepEqual(world.flight(home,f,10,true),f,'reduced motion jumps');
+  assert.deepEqual(world.flight(home,f,world.CAMERA.flyMs*2,false).target,f.target);
+  const keys=world.tourKeys(w);
+  assert.equal(keys.at(-1).t,world.TOUR_SECONDS);assert.ok(world.TOUR_SECONDS>=20&&world.TOUR_SECONDS<=30);
+  assert.ok(keys.every((k,i)=>i===0||k.t>=keys[i-1].t));
+  assert.deepEqual(world.tourFrame(keys,12.3),world.tourFrame(keys,12.3));
+  assert.ok(keys.some(k=>k.highlight==='mongoku'),'the tour visits the hub');
+  assert.equal(world.clampPose({...home,elevation:9}).elevation,world.CAMERA.maxElevation);
+  assert.deepEqual(VIEWS.map(v=>v.id),['galaxy3d','iso','graph','list','matrix','board']);
+  assert.equal(asView('nope'),'graph');
+});
