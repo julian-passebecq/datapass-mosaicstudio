@@ -12,7 +12,7 @@ import {vizTokens} from '../../src/framework/viz/index.ts';
 import {GALAXY_GLYPHS,glyphName} from './glyphs.ts';
 import {REGISTRY} from './registry.generated.ts';
 import {GROUPS,OTHER_GROUP,shortName,STATUS_LABEL,type StatusFilter} from './registry.ts';
-import {CAMERA,COMMONS,KIND_LABEL,STATUS_COLOR,TOUR_SECONDS,WORLD,buildWorld,cameraAt,clampPose,flight,focusPose,overviewPose,tourFrame,tourKeys,type P3,type Pose,type World} from './world.ts';
+import {trunkRadius,CAMERA,COMMONS,KIND_LABEL,STATUS_COLOR,TOUR_SECONDS,WORLD,buildWorld,cameraAt,clampPose,flight,focusPose,overviewPose,tourFrame,tourKeys,type P3,type Pose,type World} from './world.ts';
 
 type Mode='light'|'dark';
 export type Galaxy3DProps={filter:StatusFilter;focus:string|null;mode:Mode;reduced:boolean;capture:boolean;onSelect(id:string|null):void;tour:{open:boolean;start:number;paused:boolean}|null;onTourEnd():void};
@@ -83,11 +83,11 @@ function slab(w:number,d:number,h:number,r:number,mat:THREE.Material){
 }
 
 /* ---------- stage ---------- */
-type View={focus:string|null;highlight:string|null};
+type View={focus:string|null;highlight:string|null;hover:string|null};
 type Stage={render(t:number,pose:Pose,view:View):void;pick(x:number,y:number):string|null;resize():void;dispose():void;aspect():number};
 const THEME={light:{bg:'#eef0ee',ground:'#e2e5e1',water:'#7fb0bb',rim:'#5d8c96',label:'#1f2a30'},dark:{bg:'#11171b',ground:'#161e23',water:'#2f6170',rim:'#1f4652',label:'#e8eef0'}};
 
-function createStage(host:HTMLElement,overlay:HTMLElement,world:World,mode:Mode,onLabel:(id:string)=>void):Stage{
+function createStage(host:HTMLElement,overlay:HTMLElement,world:World,mode:Mode,onLabel:(id:string)=>void,onHover:(id:string|null)=>void):Stage{
   const theme=THEME[mode],tokens=vizTokens(mode);
   const canvas=document.createElement('canvas');canvas.dataset.renderer='galaxy-webgl2';canvas.setAttribute('aria-hidden','true');
   const context=canvas.getContext('webgl2',{antialias:true,preserveDrawingBuffer:true});
@@ -137,17 +137,20 @@ function createStage(host:HTMLElement,overlay:HTMLElement,world:World,mode:Mode,
     if(s.node.hub){const hub=new THREE.Mesh(new THREE.TorusGeometry(1.05,.06,6,48),std('#e5a65a'));cache.geos.push(hub.geometry);hub.rotation.x=Math.PI/2;hub.position.copy(V(s.position)).add(new THREE.Vector3(0,.04,0));scene.add(hub);}
   }
 
-  // Contract pipes (bundled per pair), beads flowing on live ones.
-  type Flow={from:string;to:string;mat:THREE.MeshStandardMaterial;curve:THREE.CurvePath<THREE.Vector3>;length:number;beads:THREE.InstancedMesh|null;count:number};
-  const flows:Flow[]=[];
-  for(const p of world.pipes){
-    const curve=roundedCurve(p.route),length=curve.getLength(),radius=.035+Math.min(4,p.contracts.length-1)*.012;
-    const mat=new THREE.MeshStandardMaterial({color:STATUS_COLOR[p.status],roughness:.55,transparent:true,opacity:1});
-    const tube=new THREE.Mesh(new THREE.TubeGeometry(curve as unknown as THREE.Curve<THREE.Vector3>,Math.max(32,Math.round(length*8)),radius,6,false),mat);cache.geos.push(tube.geometry);tube.castShadow=true;scene.add(tube);
-    let beads:THREE.InstancedMesh|null=null,count=0;
-    if(p.status==='live'){count=Math.max(2,Math.round(length/3));beads=new THREE.InstancedMesh(new THREE.SphereGeometry(radius*2.2,8,6),std('#ffffff',{emissive:STATUS_COLOR.live,emissiveIntensity:.4}),count);cache.geos.push(beads.geometry);scene.add(beads);}
-    flows.push({from:p.from,to:p.to,mat,curve,length,beads,count});
-  }
+  // Overview: one trunk per pair of planes, width by contract count, one bead each. Individual contract pipes
+  // appear only for the focused, hovered or tour-highlighted node.
+  type Flow={from:string;to:string;mesh:THREE.Mesh;mat:THREE.MeshStandardMaterial;curve:THREE.CurvePath<THREE.Vector3>;length:number;bead:THREE.Mesh|null;radius:number};
+  const tube=(route:P3[],radius:number,color:string,bead:boolean):Omit<Flow,'from'|'to'>=>{
+    const curve=roundedCurve(route,Math.max(.3,radius*2.5)),length=curve.getLength();
+    const mat=new THREE.MeshStandardMaterial({color,roughness:.55,transparent:true,opacity:1});
+    const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve as unknown as THREE.Curve<THREE.Vector3>,Math.max(32,Math.round(length*8)),radius,8,false),mat);cache.geos.push(mesh.geometry);mesh.castShadow=true;scene.add(mesh);
+    let b:THREE.Mesh|null=null;
+    if(bead){b=new THREE.Mesh(new THREE.SphereGeometry(Math.max(.09,radius*1.35),12,8),std('#ffffff',{emissive:color,emissiveIntensity:.35}));cache.geos.push(b.geometry);scene.add(b);}
+    return {mesh,mat,curve,length,bead:b,radius};
+  };
+  const trunks=world.trunks.map(t=>({...tube(t.route,trunkRadius(t.contracts),STATUS_COLOR[t.status],true),from:t.a,to:t.b,planes:[t.a,t.b]}));
+  const flows:Flow[]=world.pipes.map(p=>({...tube(p.route,.04+Math.min(4,p.contracts.length-1)*.012,STATUS_COLOR[p.status],p.status==='live'),from:p.from,to:p.to}));
+  const moveBead=(f:Omit<Flow,'from'|'to'>,t:number,phase=0)=>{if(!f.bead)return;f.curve.getPointAt(((t*1.2/f.length)+phase)%1,v);f.bead.position.copy(v);};
 
   // HTML labels: stations are buttons (accessible picking), planes are captions.
   overlay.replaceChildren();
@@ -156,7 +159,7 @@ function createStage(host:HTMLElement,overlay:HTMLElement,world:World,mode:Mode,
     const el=document.createElement('button');el.type='button';el.className='gn3-label';el.dataset.node=s.id;el.dataset.kind=s.kind;
     el.setAttribute('aria-label',`${s.node.name}, ${KIND_LABEL[s.kind]}`);
     el.innerHTML='<strong></strong><small></small>';el.querySelector('strong')!.textContent=shortName(s.node.name);el.querySelector('small')!.textContent=KIND_LABEL[s.kind];
-    el.addEventListener('pointerdown',e=>e.stopPropagation());el.addEventListener('click',e=>{e.stopPropagation();onLabel(s.id);});
+    el.addEventListener('pointerdown',e=>e.stopPropagation());el.addEventListener('pointerenter',()=>onHover(s.id));el.addEventListener('pointerleave',()=>onHover(null));el.addEventListener('click',e=>{e.stopPropagation();onLabel(s.id);});
     overlay.appendChild(el);labels.set(s.id,el);
   }
   for(const p of [...world.planes,world.commons]){
@@ -166,7 +169,7 @@ function createStage(host:HTMLElement,overlay:HTMLElement,world:World,mode:Mode,
   }
   host.appendChild(canvas);
   let size={width:1,height:1};
-  const v=new THREE.Vector3(),m4=new THREE.Object3D();
+  const v=new THREE.Vector3();
   const project=(p:P3)=>{v.copy(V(p)).project(camera);return {x:(v.x*.5+.5)*size.width,y:(-v.y*.5+.5)*size.height,visible:v.z<1&&v.z>-1};};
   /** Greedy label placement in priority order: a label is shown only when it is wholly inside the stage and
    * does not overlap a label already placed; otherwise it is hidden (never clipped, never stacked). */
@@ -188,14 +191,19 @@ function createStage(host:HTMLElement,overlay:HTMLElement,world:World,mode:Mode,
     camera.aspect=size.width/size.height;(scene.fog as THREE.Fog).near=pose.distance*1.1;(scene.fog as THREE.Fog).far=pose.distance*2.8+30;
     const pos=cameraAt(pose);camera.position.copy(V(pos));camera.lookAt(V(pose.target));camera.updateProjectionMatrix();
     ripples.forEach(r=>{const k=(t*.12+r.userData.phase)%1;r.scale.setScalar(.4+k*2.4);(r.material as THREE.MeshBasicMaterial).opacity=.42*(1-k);});
-    const sel=view.focus;
+    const sel=view.focus,active=sel??view.hover??view.highlight;
+    let shown=0;
     for(const f of flows){
-      const on=!sel||f.from===sel||f.to===sel;
-      f.mat.opacity=on?1:.16;f.mat.depthWrite=on;
-      if(f.beads){f.beads.visible=on;
-        for(let k=0;k<f.count;k++){const u=((t*1.2/f.length)+k/f.count)%1;f.curve.getPointAt(u,v);m4.position.copy(v);m4.updateMatrix();f.beads.setMatrixAt(k,m4.matrix);}
-        f.beads.instanceMatrix.needsUpdate=true;}
+      const on=!!active&&(f.from===active||f.to===active);f.mesh.visible=on;if(f.bead)f.bead.visible=on;
+      if(on){shown++;moveBead(f,t);}
     }
+    const activePlane=active?world.byId.get(active)?.plane:undefined;
+    for(const tr of trunks){
+      const touches=!!activePlane&&tr.planes.includes(activePlane);
+      tr.mat.opacity=!active?1:touches?.3:.14;tr.mat.depthWrite=!active;
+      if(tr.bead){tr.bead.visible=!active;moveBead(tr,t,.37);}
+    }
+    canvas.dataset.pipes=String(shown);canvas.dataset.trunks=String(trunks.length);
     const focusStation=sel?world.byId.get(sel):undefined;focusRing.visible=!!focusStation;if(focusStation)focusRing.position.copy(V(focusStation.position)).add(new THREE.Vector3(0,.06,0));
     const hl=view.highlight?world.byId.get(view.highlight):undefined;tourRing.visible=!!hl;if(hl){tourRing.position.copy(V(hl.position)).add(new THREE.Vector3(0,.08,0));tourRing.scale.setScalar(1+.06*Math.sin(t*4));}
     const focusPlane=focusStation?.plane;plates.forEach(p=>{p.mat.opacity=focusPlane===p.id?.86:.72;});
@@ -204,7 +212,8 @@ function createStage(host:HTMLElement,overlay:HTMLElement,world:World,mode:Mode,
     const list:Candidate[]=[];
     for(const s of world.stations){
       const el=labels.get(s.id)!,p=project([s.position[0],s.position[1]+WORLD.station[1]/2+.15,s.position[2]]);
-      const near=!sel||sel===s.id||flows.some(f=>(f.from===sel&&f.to===s.id)||(f.to===sel&&f.from===s.id));
+      const near=!active||active===s.id||flows.some(f=>(f.from===active&&f.to===s.id)||(f.to===active&&f.from===s.id));
+      el.classList.toggle('hover',view.hover===s.id);
       el.classList.toggle('on',sel===s.id);el.classList.toggle('hl',view.highlight===s.id);
       const depth=camera.position.distanceTo(V(s.position));
       list.push({el,x:p.x,y:p.y,ax:.5,visible:p.visible,opacity:near?'1':'.5',priority:sel===s.id?0:view.highlight===s.id?1:(near&&sel?3:5)+depth/1000});
@@ -236,12 +245,12 @@ export default function Galaxy3D({filter,focus,mode,reduced,capture,onSelect,tou
   // Camera state lives in refs: the rAF loop samples it, React never re-renders per frame.
   const cam=useRef<{current:Pose;from:Pose;to:Pose;start:number}|null>(null);
   const tourState=useRef<{t:number;playing:boolean;origin:number}|null>(null);
-  const viewRef=useRef<View>({focus,highlight:null});viewRef.current={...viewRef.current,focus};
+  const viewRef=useRef<View>({focus,highlight:null,hover:null});viewRef.current={...viewRef.current,focus};
   const selectRef=useRef(onSelect);selectRef.current=onSelect;
   const endRef=useRef(onTourEnd);endRef.current=onTourEnd;
   const keys=useRef(tourKeys(world));
   useEffect(()=>{
-    try{stage.current=createStage(host.current!,overlay.current!,world,mode,id=>selectRef.current(viewRef.current.focus===id?null:id));}catch(e){setError(e instanceof Error?e.message:String(e));return;}
+    try{stage.current=createStage(host.current!,overlay.current!,world,mode,id=>selectRef.current(viewRef.current.focus===id?null:id),id=>{viewRef.current.hover=id;});}catch(e){setError(e instanceof Error?e.message:String(e));return;}
     stage.current.resize();keys.current=tourKeys(world,stage.current.aspect());
     const home=overviewPose(world,stage.current.aspect()),target=viewRef.current.focus?focusPose(world,viewRef.current.focus,home):home;
     cam.current={current:target,from:target,to:target,start:-1e9};
@@ -286,7 +295,7 @@ export default function Galaxy3D({filter,focus,mode,reduced,capture,onSelect,tou
   const drag=useRef<{x:number;y:number;moved:boolean}|null>(null);
   const down=(e:React.PointerEvent)=>{drag.current={x:e.clientX,y:e.clientY,moved:false};(e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);};
   const move=(e:React.PointerEvent)=>{
-    const d=drag.current,c=cam.current;if(!d||!c)return;
+    const d=drag.current,c=cam.current;if(!d){if(e.target===e.currentTarget||(e.target as HTMLElement).tagName==='CANVAS'||(e.target as HTMLElement).classList?.contains('gn3-overlay'))viewRef.current.hover=stage.current?.pick(e.clientX,e.clientY)??null;return;}if(!c)return;
     const dx=e.clientX-d.x,dy=e.clientY-d.y;if(!d.moved&&Math.hypot(dx,dy)<4)return;
     if(!d.moved)stopTour();d.moved=true;d.x=e.clientX;d.y=e.clientY;
     const next=clampPose({...c.current,azimuth:c.current.azimuth-dx*.006,elevation:c.current.elevation+dy*.005});c.current=next;c.from=next;c.to=next;c.start=-1e9;
@@ -299,7 +308,7 @@ export default function Galaxy3D({filter,focus,mode,reduced,capture,onSelect,tou
   const legend=useMemo(()=>(['live','branch','planned','proposed'] as const).map(s=>({s,label:STATUS_LABEL[s],color:STATUS_COLOR[s]})),[]);
   return <div className="gn3" data-testid="gn-3d" data-theme={mode}>
     <div className="gn3-stage" tabIndex={0} role="application" aria-label="3D App Galaxy. Arrow keys orbit, plus and minus zoom, Home resets. Node labels are buttons."
-      onKeyDown={keyNav} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={()=>{drag.current=null;}}>
+      onKeyDown={keyNav} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={()=>{drag.current=null;}} onPointerLeave={()=>{viewRef.current.hover=null;}}>
       <div className="gn3-canvas" ref={host} data-settled="false" data-testid="gn-3d-canvas"/>
       <div className="gn3-overlay" ref={overlay} data-testid="gn-3d-labels"/>
       {caption&&<div className="gn3-caption" role="status" data-testid="gn-tour-caption">{caption}</div>}

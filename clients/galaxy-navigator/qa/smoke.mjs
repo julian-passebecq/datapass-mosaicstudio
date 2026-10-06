@@ -197,6 +197,7 @@ try{
     assert.ok(lazyGzip<=BUDGET.lazy3dJsGzip,`lazy 3D JS gzip ${lazyGzip} > ${BUDGET.lazy3dJsGzip}`);
     assert.equal(await page.locator('.gn3-label').count(),REGISTRY.nodes.length);
     assert.ok(await page.locator('.gn3-label.on[data-node=datapass-vscode]').count()===1,'focus kept in 3D');
+    assert.ok(await page.evaluate(()=>Number(document.querySelector('[data-testid=gn-3d-canvas] canvas').dataset.pipes))>0,'focused node shows its individual contract pipes');
     const shown=await labels3dInside(page);assert.ok(shown>=4,'3D labels shown: '+shown);
     if(scheme==='light'){
       // Click a label: focus moves and the camera flies.
@@ -225,6 +226,8 @@ try{
     // Overview capture of the whole galaxy.
     await page.getByTestId('gn-3d-reset').click();await page.waitForSelector('[data-testid=galaxy-navigator][data-focus=none]');await settled3d(page);await page.waitForTimeout(300);
     await labels3dInside(page);
+    const ov=await page.evaluate(()=>{const c=document.querySelector('[data-testid=gn-3d-canvas] canvas');return {pipes:Number(c.dataset.pipes),trunks:Number(c.dataset.trunks)};});
+    assert.ok(ov.pipes===0&&ov.trunks>0,'overview shows trunks only: '+JSON.stringify(ov));report.checks['overview'+scheme]=ov;
     await shot(page,'3d-overview-'+scheme,'.gn3-stage');
     assert.deepEqual(errors,[],'page errors '+scheme);assert.deepEqual(external,[],'external requests');
     await context.close();

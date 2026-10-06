@@ -6,7 +6,7 @@
   "size": "1280x720",
   "scheme": "light",
   "frames": 720,
-  "seconds": 94,
+  "seconds": 88,
   "stills": [
     "clients/galaxy-navigator/qa/tour/still-01.0s.png",
     "clients/galaxy-navigator/qa/tour/still-06.0s.png",
@@ -17,5 +17,5 @@
   ],
   "video": "clients/galaxy-navigator/qa/tour/galaxy-tour.mp4",
   "errors": [],
-  "bytes": 3273993
+  "bytes": 2445863
 }

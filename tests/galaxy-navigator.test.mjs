@@ -98,6 +98,16 @@ test('isometric view is a valid framework Motion v2 scene and a deterministic st
   for(const n of REGISTRY.nodes)assert.ok(a.includes(`data-entity="${n.id}"`),n.id);
   assert.ok(!/[A-Za-z]:\\|\\Users\\/.test(a),'no local paths in the export');
   assert.notEqual(isometricSvg('all','mongoku'),a,'selection is drawn');
+  // Readable at document size: labels scale with the viewBox; plane titles have their own band.
+  const w=Number(a.match(/viewBox="[^"]+"/)[0].split(/\s+/)[2]);
+  const sizes=[...a.matchAll(/<text[^>]*text-anchor="middle" font-size="([\d.]+)"/g)].map(m=>Number(m[1]));
+  assert.ok(sizes.length>=REGISTRY.nodes.length&&sizes.every(s=>s*1440/w>=10.99),'station labels >= 11 px at 1440 wide');
+  assert.equal((a.match(/data-plane-title=""/g)||[]).length,world.buildWorld(REGISTRY).planes.length+1);
+  // Trunks bundle the pipes per pair of planes, wider for more contracts.
+  const wd=world.buildWorld(REGISTRY);
+  assert.equal(wd.trunks.reduce((n,t)=>n+t.pipes.length,0),wd.pipes.length);
+  assert.ok(wd.trunks.length<wd.pipes.length/2,'far fewer trunks than pipes');
+  assert.ok(world.trunkRadius(9)>world.trunkRadius(1));
 });
 
 test('contract matrix and status board',()=>{

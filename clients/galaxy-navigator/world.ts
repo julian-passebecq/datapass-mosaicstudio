@@ -33,7 +33,9 @@ export const WORLD={cell:3.4,gap:2.6,depth:6.8,station:[2,2,1.45] as P3,pipeLift
 export type Station={id:string;node:RegistryNode;kind:GlyphKind;plane:string;position:P3;row:number};
 export type Plane={id:string;label:string;group:Group|null;z:number;extent:[number,number,number,number];members:string[]};
 export type Pipe={id:string;from:string;to:string;status:Status;contracts:string[];lane:number;route:P3[]};
-export type World={stations:Station[];byId:Map<string,Station>;planes:Plane[];commons:Plane;pipes:Pipe[];loops:string[];bounds:{x0:number;x1:number;y0:number;y1:number;z1:number}};
+/** One bundled trunk per pair of planes (a and b sorted; a===b for pipes inside one plane). */
+export type Trunk={id:string;a:string;b:string;pipes:string[];contracts:number;status:Status;route:P3[]};
+export type World={stations:Station[];byId:Map<string,Station>;planes:Plane[];commons:Plane;pipes:Pipe[];trunks:Trunk[];loops:string[];bounds:{x0:number;x1:number;y0:number;y1:number;z1:number}};
 
 const r=(v:number)=>Math.round(v*1000)/1000;
 const isCommons=(n:RegistryNode)=>n.kind==='repo';
@@ -96,9 +98,34 @@ export function buildWorld(registry:Registry,filter:StatusFilter='all',groups:re
     const laneY=r(D/2+WORLD.laneStart+lane*WORLD.laneStep),a=byId.get(p.from)!,b=byId.get(p.to)!;
     return {id:p.id,from:p.from,to:p.to,status:strongest(p.statuses),contracts:p.contracts,lane,route:[...leg(a,p.id,laneY),...leg(b,p.id,laneY).reverse()]};
   });
+  // Trunks: all pipes between two planes (or within one) bundled into one, for the overview.
+  const tmap=new Map<string,{a:string;b:string;pipes:Pipe[]}>();
+  for(const p of pipes){
+    const pa=byId.get(p.from)!.plane,pb=byId.get(p.to)!.plane,[a,b]=[pa,pb].sort(),key=a+'~'+b;
+    const t=tmap.get(key)??{a,b,pipes:[]};t.pipes.push(p);tmap.set(key,t);
+  }
+  const planeAt=new Map<string,{x:number;y:number;z:number;width:number}>();
+  for(const p of planes)planeAt.set(p.id,{x:(p.extent[0]+p.extent[2])/2,y:edge,z:p.z,width:p.extent[2]-p.extent[0]});
+  const repoXs=stations.filter(s=>s.plane===COMMONS.id).map(s=>s.position[0]);
+  if(repoXs.length)planeAt.set(COMMONS.id,{x:(Math.min(...repoXs)+Math.max(...repoXs))/2,y:repoY-half,z:0,width:Math.max(...repoXs)-Math.min(...repoXs)+cell});
+  const tlist=[...tmap.entries()].map(([id,t])=>({id,...t,span:Math.abs(planeAt.get(t.a)!.x-planeAt.get(t.b)!.x)})).sort((p,q)=>p.span-q.span||p.id.localeCompare(q.id));
+  const tEnds=new Map<string,string[]>();for(const t of tlist)for(const s of t.a===t.b?[t.a,t.a+'#2']:[t.a,t.b])tEnds.set(s.replace('#2',''),[...(tEnds.get(s.replace('#2',''))||[]),t.id+(s.endsWith('#2')?'#2':'')]);
+  const laneArea=laneCount*WORLD.laneStep,tStep=Math.min(.5,laneArea/Math.max(1,tlist.length));
+  const trunks:Trunk[]=tlist.map((t,i)=>{
+    const laneY=r(D/2+WORLD.laneStart+(i+.5)*tStep);
+    const tleg=(plane:string,key:string):P3[]=>{
+      const at=planeAt.get(plane)!,all=tEnds.get(plane)!,k=all.indexOf(key),step=Math.min(.75,(at.width-1)/Math.max(1,all.length));
+      const x=r(at.x+(k-(all.length-1)/2)*step);
+      return plane===COMMONS.id?[[x,r(at.y),lift],[x,laneY,lift]]:[[x,r(at.y-.9),at.z+lift],[x,r(at.y),at.z+lift],[x,r(at.y),lift],[x,laneY,lift]];
+    };
+    const contracts=new Set(t.pipes.flatMap(p=>p.contracts)).size;
+    return {id:t.id,a:t.a,b:t.b,pipes:t.pipes.map(p=>p.id),contracts,status:strongest(t.pipes.map(p=>p.status)),route:[...tleg(t.a,t.id),...tleg(t.b,t.a===t.b?t.id+'#2':t.id).reverse()]};
+  });
   const zs=planes.map(p=>p.z);
-  return {stations,byId,planes,commons,pipes,loops,bounds:{x0:commons.extent[0],x1:commons.extent[2],y0:commons.extent[1],y1:commons.extent[3],z1:Math.max(0,...zs)+WORLD.station[2]}};
+  return {stations,byId,planes,commons,pipes,trunks,loops,bounds:{x0:commons.extent[0],x1:commons.extent[2],y0:commons.extent[1],y1:commons.extent[3],z1:Math.max(0,...zs)+WORLD.station[2]}};
 }
+/** Trunk radius: grows with the square root of the contract count, capped. */
+export const trunkRadius=(contracts:number)=>Math.min(.32,.06+.045*Math.sqrt(contracts));
 
 /** Contract matrix rows: one per contract, with the provides/consumes role of every node. */
 export type MatrixRow={id:string;name:string;owner:string;status:Status;consumers:string[];roles:Record<string,'P'|'C'|'PC'>};
@@ -157,11 +184,37 @@ export function fitDistance(points:readonly P3[],pose:Omit<Pose,'distance'>,aspe
   let lo=1,hi=400;for(let i=0;i<40;i++){const mid=(lo+hi)/2;if(fits(mid))hi=mid;else lo=mid;}
   return hi;
 }
+/** Points that must be in the overview: the commons (with its bank) and every plane with its glyphs. */
+export function worldHull(world:World):P3[]{
+  const pts:P3[]=[];const [x0,y0,x1,y1]=world.commons.extent;
+  for(const x of [x0-.8,x1+.8])for(const y of [y0-.8,y1+.8])pts.push([x,y,0]);
+  for(const p of world.planes)for(const x of [p.extent[0]-.7,p.extent[2]+.7])for(const y of [p.extent[1]-.3,p.extent[3]+.3])for(const z of [p.z,p.z+WORLD.station[2]+.4])pts.push([x,y,z]);
+  return pts;
+}
+/** Camera basis for a pose direction (world coordinates). */
+function basis(azimuth:number,elevation:number){
+  const c=Math.cos(elevation),dir:P3=[Math.sin(azimuth)*c,Math.cos(azimuth)*c,Math.sin(elevation)];
+  const f:P3=[-dir[0],-dir[1],-dir[2]],len=Math.hypot(f[1],f[0])||1,right:P3=[f[1]/len,-f[0]/len,0];
+  const up:P3=[right[1]*f[2]-right[2]*f[1],right[2]*f[0]-right[0]*f[2],right[0]*f[1]-right[1]*f[0]];
+  return {dir,f,right,up};
+}
+/** Frame the points tightly: centre their projection, then take the smallest distance that shows them all. */
+export function fitPose(points:readonly P3[],azimuth:number,elevation:number,aspect:number,margin=.94):Pose{
+  const {dir,f,right,up}=basis(azimuth,elevation),dot=(a:P3,b:P3)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+  const tanV=Math.tan(CAMERA.fov*Math.PI/360),tanH=tanV*aspect;
+  let target:P3=[0,1,2].map(i=>points.reduce((s,p)=>s+p[i],0)/points.length) as P3,distance=fitDistance(points,{target,azimuth,elevation},aspect,margin);
+  for(let it=0;it<6;it++){
+    const cam:P3=[target[0]+dir[0]*distance,target[1]+dir[1]*distance,target[2]+dir[2]*distance];
+    const xs:number[]=[],ys:number[]=[];
+    for(const p of points){const v:P3=[p[0]-cam[0],p[1]-cam[1],p[2]-cam[2]],z=dot(v,f);xs.push(dot(v,right)/(z*tanH));ys.push(dot(v,up)/(z*tanV));}
+    const cx=(Math.min(...xs)+Math.max(...xs))/2,cy=(Math.min(...ys)+Math.max(...ys))/2,k=distance;
+    target=[target[0]+(right[0]*cx*tanH+up[0]*cy*tanV)*k,target[1]+(right[1]*cx*tanH+up[1]*cy*tanV)*k,target[2]+(right[2]*cx*tanH+up[2]*cy*tanV)*k];
+    distance=fitDistance(points,{target,azimuth,elevation},aspect,margin);
+  }
+  return {target:target.map(r) as P3,azimuth,elevation,distance:r(Math.min(CAMERA.maxDistance,distance))};
+}
 export function overviewPose(world:World,aspect=16/9):Pose{
-  const b=world.bounds,corners:P3[]=[];
-  for(const x of [b.x0-1,b.x1+1])for(const y of [b.y0-1,b.y1+1])for(const z of [0,b.z1+.6])corners.push([x,y,z]);
-  const base={target:[r((b.x0+b.x1)/2),r((b.y0+b.y1)/2),r(b.z1*.3)] as P3,azimuth:-.3,elevation:.68};
-  return {...base,distance:r(Math.min(CAMERA.maxDistance,fitDistance(corners,base,Math.max(.4,aspect))))};
+  return fitPose(worldHull(world),-.3,.68,Math.max(.4,aspect));
 }
 export function focusPose(world:World,id:string,from:Pose):Pose{
   const s=world.byId.get(id);if(!s)return from;
@@ -182,7 +235,8 @@ export function tourKeys(world:World,aspect=16/9):TourKey[]{
   const home=overviewPose(world,aspect),pick=(ids:string[])=>ids.find(id=>world.byId.has(id))??world.stations[0].id;
   const at=(id:string,az:number,el:number,d:number):Pose=>{const s=world.byId.get(id)!;return {target:[s.position[0],s.position[1],s.position[2]+.5],azimuth:az,elevation:el,distance:d};};
   const repos=world.commons.members.length?world.commons.members:[world.stations[0].id];
-  const lake:Pose={target:[r((world.bounds.x0+world.bounds.x1)/2),world.byId.get(repos[0])!.position[1]-2,0],azimuth:.18,elevation:.28,distance:r(home.distance*.62)};
+  const repoXs=repos.map(id=>world.byId.get(id)!.position[0]),repoCx=(Math.min(...repoXs)+Math.max(...repoXs))/2;
+  const lake:Pose={target:[r(repoCx+4),r(world.byId.get(repos[0])!.position[1]-4.5),0],azimuth:.22,elevation:.42,distance:r(Math.min(home.distance*.5,34))};
   const big=pick(['datapass-vscode']),hub=world.stations.find(s=>s.node.hub)?.id??pick(['mongoku']),ctl=pick(['claude-control']);
   // Each stop is a pair of keys (arrive, leave) so the camera holds still while the caption is read.
   const stops:[number,number,Pose,string|null,string][]=[
