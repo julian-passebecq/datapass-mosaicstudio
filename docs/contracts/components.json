@@ -54,8 +54,8 @@
       "y",
       "kind"
     ],
-    "engine": "Existing VizForge Figure / D3",
-    "limits": "Bar adapter: at most 30 nonnegative categories; line/scatter numeric X; nulls are not bridged"
+    "engine": "Existing VizForge Figure / D3; renderer \"viz\" uses the d3 viz kit",
+    "limits": "VizForge bar adapter: at most 30 nonnegative categories; line/scatter numeric X; nulls are not bridged. series, y2, sort, stack and selection need renderer \"viz\""
   },
   {
     "type": "task",

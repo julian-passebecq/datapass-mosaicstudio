@@ -991,6 +991,58 @@
                           "unit": {
                             "type": "string",
                             "maxLength": 30
+                          },
+                          "renderer": {
+                            "enum": [
+                              "viz",
+                              "vizforge"
+                            ]
+                          },
+                          "series": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "y2": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "sort": {
+                            "enum": [
+                              "none",
+                              "ascending",
+                              "descending"
+                            ]
+                          },
+                          "stack": {
+                            "enum": [
+                              "stacked",
+                              "grouped"
+                            ]
+                          },
+                          "selection": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
                           }
                         },
                         "required": [

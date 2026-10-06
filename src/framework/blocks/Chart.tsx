@@ -5,12 +5,13 @@ import type {Block} from '../types';
 import {useDataset,useRuntime,useReducedMotion} from '../hooks';
 import {chartInput} from '../chart-input';
 import {withSiteChartTheme} from '../visual-theme';
-import {vizChartEnabled} from './chart-flag';
-/** Viz-kit path (one chart path). Lazy, so the default VizForge path does not pay for it. */
+import {chartUsesViz} from './chart-flag';
+/** Viz-kit path (one chart path, `renderer: 'viz'`). Lazy, so the default VizForge path does not pay for it. */
 const ChartViz=lazy(()=>import('./ChartViz.tsx'));
 type ChartBlock=Extract<Block,{type:'chart'}>;
 export default function Chart({block}:{block:ChartBlock}){
-  if(vizChartEnabled())return <Suspense fallback={<div className="site-loading" role="status">Loading chart...</div>}><ChartViz block={block}/></Suspense>;
+  // `renderer` on the block wins; without it the build/page flag decides (default: VizForge).
+  if(chartUsesViz(block))return <Suspense fallback={<div className="site-loading" role="status">Loading chart...</div>}><ChartViz block={block}/></Suspense>;
   return <LegacyChart block={block}/>;
 }
 function LegacyChart({block}:{block:ChartBlock}){

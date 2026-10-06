@@ -46,7 +46,7 @@ function validateDataset(d: unknown, fieldIds: Set<string>): asserts d is Datase
   if (d.source === 'inline' && (d.inputs.length || d.dependsOn.length)) throw new Error('Inline data cannot declare compute dependencies');
 }
 const blockFields = {
-  text:['text','tone'], metric:['value','unit','digits','note'], input:['field','control'], table:['dataset','pageSize'], chart:['dataset','x','y','kind','unit'], task:['task'], catalog:[], code:['text','language'],
+  text:['text','tone'], metric:['value','unit','digits','note'], input:['field','control'], table:['dataset','pageSize'], chart:['dataset','x','y','kind','unit','renderer','series','y2','sort','stack','selection'], task:['task'], catalog:[], code:['text','language'],
   model3d:['resource','selection','camera','mode','explode','section','view','annotations','source'], runs:['resource'], motion:['resource','step','selection','projection','panel','source'], scene3d:['resource','explode','phase','camera','selection'], 'story-controls':['resource'], 'story-figure':['resource'], architecture:['resource'], replay:['resource','frame','selection','channel','view','speed'], custom:['resource'], explanation:['resource'], explorer:['resource','focus','facet','view','level','group','document','scroll'],
 } as const;
 export const BLOCK_TYPES = Object.freeze(Object.keys(blockFields));
@@ -55,6 +55,23 @@ function valueRef(v: unknown, manifest: Manifest): void {
   if ('literal' in v) {strict(v, ['literal'], 'value'); if (!scalar(v.literal)) throw new Error('Non-scalar literal');}
   else if ('field' in v) {strict(v, ['field'], 'value'); if (!manifest.fields.some(f => f.id === v.field)) throw new Error('Unknown value field');}
   else {strict(v, ['dataset','row','column'], 'value'); text(v.row, 'value.row', 160); const d = manifest.datasets.find(d => d.id === v.dataset); if (!d?.columns.some(c => c.id === v.column)) throw new Error('Unknown value dataset/column');}
+}
+/** Viz-kit chart options. They need `renderer: 'viz'`: the VizForge adapter cannot draw them. */
+function chartVizOptions(v: Record<string, unknown>, d: Manifest['datasets'][number], m: Manifest): void {
+  if (v.renderer !== undefined) oneOf(v.renderer, ['viz','vizforge'], 'chart.renderer');
+  const extended = (['series','y2','sort','stack','selection'] as const).filter(key => v[key] !== undefined);
+  if (extended.length && v.renderer !== 'viz') throw new Error('chart.' + extended[0] + ' needs renderer "viz"');
+  const column = (key: string) => d.columns.find(c => c.id === v[key]);
+  if (v.series !== undefined) {identifier(v.series, 'chart.series'); if (column('series')?.type !== 'string' || v.series === v.x) throw new Error('chart.series must be another string column'); if (v.kind === 'scatter') throw new Error('chart.series applies to bar or line');}
+  if (v.y2 !== undefined) {identifier(v.y2, 'chart.y2'); if (v.kind !== 'line' || column('y2')?.type !== 'number' || v.y2 === v.y) throw new Error('chart.y2 must be another numeric column on a line chart'); if (v.series !== undefined) throw new Error('chart.y2 and chart.series cannot be combined');}
+  if (v.sort !== undefined) {oneOf(v.sort, ['none','ascending','descending'], 'chart.sort'); if (v.kind !== 'bar') throw new Error('chart.sort applies to bar charts');}
+  if (v.stack !== undefined) {oneOf(v.stack, ['stacked','grouped'], 'chart.stack'); if (v.kind !== 'bar' || v.series === undefined) throw new Error('chart.stack needs a bar chart with a series');}
+  if (v.selection !== undefined) {
+    identifier(v.selection, 'chart.selection');
+    const f = m.fields.find(f => f.id === v.selection), want = v.kind === 'scatter' ? ['interval'] : ['select','multi'];
+    if (!f || f.role !== 'view' || !want.includes(f.type)) throw new Error('chart.selection must name a view ' + want.join('/') + ' field');
+    if (v.kind === 'line' && v.series === undefined) throw new Error('A line chart selects series: chart.selection needs chart.series');
+  }
 }
 function validateBlock(v: unknown, m: Manifest, columns: number): asserts v is Block {
   if (!object(v) || !Object.hasOwn(blockFields, String(v.type))) throw new Error('Unknown block type');
@@ -67,7 +84,7 @@ function validateBlock(v: unknown, m: Manifest, columns: number): asserts v is B
   if (v.type === 'table' || v.type === 'chart') {
     const d = m.datasets.find(d => d.id === v.dataset); if (!d) throw new Error('Unknown block dataset');
     if (v.type === 'table' && v.pageSize !== undefined) number(v.pageSize, 1, 100, 'table.pageSize', true);
-    if (v.type === 'chart') {oneOf(v.kind, ['bar','line','scatter'], 'chart.kind'); const x=d.columns.find(c => c.id === v.x), y=d.columns.find(c => c.id === v.y); if (!x || y?.type !== 'number' || (v.kind !== 'bar' && x.type !== 'number')) throw new Error('Invalid chart encoding types'); if (v.unit !== undefined) text(v.unit, 'chart.unit', 30, false);}
+    if (v.type === 'chart') {oneOf(v.kind, ['bar','line','scatter'], 'chart.kind'); const x=d.columns.find(c => c.id === v.x), y=d.columns.find(c => c.id === v.y); if (!x || y?.type !== 'number' || (v.kind !== 'bar' && x.type !== 'number')) throw new Error('Invalid chart encoding types'); if (v.unit !== undefined) text(v.unit, 'chart.unit', 30, false); chartVizOptions(v, d, m);}
   }
   if (v.type === 'task' && !m.tasks.some(t => t.id === v.task)) throw new Error('Unknown task block');
   if (['scene3d','story-controls','story-figure','architecture','custom','explorer','explanation','replay','motion','runs','model3d'].includes(v.type as string)) identifier(v.resource, 'block.resource');
