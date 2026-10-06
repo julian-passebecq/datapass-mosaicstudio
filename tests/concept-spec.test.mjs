@@ -158,6 +158,18 @@ test('standalone viewer: ?src= accepts https (and local http) only, and reads wi
   await assert.rejects(fetchSpecText('https://x.test/a.json',async()=>new Response('x',{headers:{'content-length':String(300*1024)}})),/larger than 256 KB/);
 });
 
+test('standalone embed API: only the exact load type is read; the spec is turned into bounded JSON text',async()=>{
+  const {embeddedSpecText,readyMessage,EMBED_LOAD,EMBED_READY}=await import('../clients/concept-viewer/standalone/embed.ts');
+  assert.equal(EMBED_LOAD,'datapass.concept-spec/load');assert.equal(EMBED_READY,'datapass.concept-spec/ready');
+  for(const ignored of [null,'datapass.concept-spec/load',42,{},{type:'datapass.concept-spec/ready'},{type:'DATAPASS.CONCEPT-SPEC/LOAD',spec:{}},{kind:EMBED_LOAD}])assert.equal(embeddedSpecText(ignored),null);
+  assert.equal(embeddedSpecText({type:EMBED_LOAD,spec:{id:'x'}}),'{"id":"x"}');
+  assert.equal(embeddedSpecText({type:EMBED_LOAD,spec:'{"id":"y"}'}),'{"id":"y"}');
+  assert.equal(embeddedSpecText({type:EMBED_LOAD}),'null');
+  assert.throws(()=>parseConceptJson(embeddedSpecText({type:EMBED_LOAD,spec:{pad:'x'.repeat(300*1024)}})),/larger than 256 KB/);
+  assert.deepEqual(readyMessage(),{type:EMBED_READY,specVersion:CONCEPT_SPEC_VERSION});
+  assert.deepEqual(readyMessage({ok:true,id:'a'}),{type:EMBED_READY,specVersion:CONCEPT_SPEC_VERSION,result:{ok:true,id:'a'}});
+});
+
 test('every kind has a label, a color, a flat glyph, an isometric glyph and a 3D icon',()=>{
   registerConceptGlyphs();
   for(const k of CONCEPT_KINDS){

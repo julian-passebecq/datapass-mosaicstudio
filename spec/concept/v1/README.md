@@ -40,6 +40,24 @@ A concept file (`*.concept.json`) describes an app or a cloud project as **layer
 
 Unknown fields are **ignored, with a warning** (path + message), at every level. This keeps newer 1.x files readable by older readers and still shows typos such as `"lable"`. The schema allows them too (`additionalProperties: true`). Errors, by contrast, block loading: the viewer keeps the previous file and lists each error as `path: message`.
 
+## Embedding
+
+A host page (for example Contoso) can show a spec in the standalone viewer by framing `concept-viewer.html` and talking to it with `postMessage`:
+
+```js
+const frame = document.querySelector('iframe#concept');           // src=".../concept-viewer.html?view=isometric"
+addEventListener('message', e => {
+  if (e.source !== frame.contentWindow || e.data?.type !== 'datapass.concept-spec/ready') return;
+  // First "ready": the viewer is listening. Later ones carry e.data.result for each spec you sent:
+  // {ok: true, id, warnings: [{path, message}]} or {ok: false, issues: [{path, message}]}
+});
+frame.contentWindow.postMessage({type: 'datapass.concept-spec/load', spec}, '*'); // after the first "ready"
+```
+
+- `spec` is the concept object, or its JSON text. It goes through the same path as **Open file**: 256 KB bound, validation, errors listed as `path: message` in the viewer while the previous spec stays, warnings for unknown fields. Nothing in it is evaluated.
+- The viewer reads only messages from its direct parent whose `type` is exactly `datapass.concept-spec/load`; anything else is ignored without a reply. It answers `{type: 'datapass.concept-spec/ready', specVersion}` once it listens, and again after every load (with `result` only for specs the parent sent; files a visitor opens in the frame are not described to the parent).
+- Messages go to the parent with target origin `*` and hold only the result above. Keep the parent's own CSP `frame-src` open to the viewer's location.
+
 ## Validate and view
 
 - CLI: `node scripts/concept-validate.mjs <file> [more files] [--strict] [--json]` (exit 0 valid, 1 invalid, 2 bad usage).

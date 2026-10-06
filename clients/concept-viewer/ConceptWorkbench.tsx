@@ -22,6 +22,8 @@ function download(name:string,text:string){
 export type SpecSource={key:string;read():Promise<string>};
 export type SpecExample=SpecSource&{label:string;provenance:string};
 export type Problem={source:string;issues:ConceptIssue[]};
+/** Outcome of every load attempt, reported to the host (the standalone embed API forwards it to the parent page). */
+export type LoadResult={source:string;ok:true;id:string;warnings:ConceptIssue[]}|{source:string;ok:false;issues:ConceptIssue[]};
 type Loaded={spec:ConceptSpec;source:string;warnings:ConceptIssue[]};
 const toProblem=(source:string,e:unknown):Problem=>({source,issues:e instanceof ConceptSpecError?e.issues:[{path:'',message:e instanceof Error?e.message:String(e)}]});
 
@@ -31,9 +33,12 @@ const toProblem=(source:string,e:unknown):Problem=>({source,issues:e instanceof 
  * three views, lists errors (path + message) and warnings, and exports SVG. A file that fails validation never
  * replaces the current spec. `openUrl` and `paste` add the standalone inputs.
  */
-export function ConceptWorkbench({view,onView,examples,initial,initialProblem=null,onOpened,openUrl,paste=false,brand='CONCEPT VIEWER'}:{
+export function ConceptWorkbench({view,onView,examples,initial,initialProblem=null,onOpened,onResult,incoming,openUrl,paste=false,brand='CONCEPT VIEWER'}:{
   view:Rendering;onView(view:Rendering):void;examples:readonly SpecExample[];initial:SpecSource|null;initialProblem?:Problem|null;
-  onOpened?(key:string):void;openUrl?(url:string):SpecSource|Problem;paste?:boolean;brand?:string;
+  onOpened?(key:string):void;onResult?(result:LoadResult):void;
+  /** A spec pushed by the host (embed API). Each new `seq` is opened like a picked file. */
+  incoming?:SpecSource&{seq:number};
+  openUrl?(url:string):SpecSource|Problem;paste?:boolean;brand?:string;
 }){
   const reduced=useReducedMotion();
   const [loaded,setLoaded]=useState<Loaded|null>(null),[problem,setProblem]=useState<Problem|null>(initialProblem),[dragging,setDragging]=useState(false);
@@ -44,9 +49,13 @@ export function ConceptWorkbench({view,onView,examples,initial,initialProblem=nu
   const fileInput=useRef<HTMLInputElement>(null);
   const open=useCallback(async(source:SpecSource)=>{
     try{const {spec,warnings}=readConceptJson(await source.read());setLoaded({spec,source:source.key,warnings});setProblem(null);setShowWarnings(true);
-      setNav({layer:OVERVIEW,domain:-1,selection:'none'});onOpened?.(source.key);return true;}
-    catch(e){setProblem(toProblem(source.key,e));return false;}
-  },[onOpened]);
+      setNav({layer:OVERVIEW,domain:-1,selection:'none'});onOpened?.(source.key);onResult?.({source:source.key,ok:true,id:spec.id,warnings});return true;}
+    catch(e){const p=toProblem(source.key,e);setProblem(p);onResult?.({source:source.key,ok:false,issues:p.issues});return false;}
+  },[onOpened,onResult]);
+  useEffect(()=>{if(incoming)void open(incoming);
+    // Only a new seq opens again.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[incoming?.seq]);
   const openFile=useCallback((file:File)=>open({key:file.name,read:()=>file.text()}),[open]);
   useEffect(()=>{if(initial)void open(initial);
     // The first source is read once; later choices go through open().

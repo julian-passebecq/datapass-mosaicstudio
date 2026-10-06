@@ -72,6 +72,38 @@ test('validation errors list path and message; the current spec stays; pasted JS
   }finally{await rm(dir,{recursive:true,force:true});}
 });
 
+test('embed API: a parent page iframes the viewer, gets ready, sends specs and receives each result',async({page})=>{
+  // Two origins, as when Contoso frames the viewer: the parent and the viewer are served from different hosts.
+  const viewerHtml=await readFile(HTML,'utf8'),fixture=JSON.parse(await readFile(FIXTURE,'utf8'));
+  await page.route('https://viewer.concept.test/**',route=>route.fulfill({status:200,contentType:'text/html',body:viewerHtml}));
+  await page.route('https://host.concept.test/**',route=>route.fulfill({status:200,contentType:'text/html',body:`<!doctype html><meta charset="utf-8"><title>host</title>
+    <script>window.msgs=[];addEventListener('message',e=>{if(e.origin==='https://viewer.concept.test')window.msgs.push(e.data);});</script>
+    <iframe id="v" src="https://viewer.concept.test/concept-viewer.html?view=layered" style="width:1200px;height:800px;border:0"></iframe>`}));
+  await page.goto('https://host.concept.test/parent.html');
+  const msgs=()=>page.evaluate(()=>(window as unknown as {msgs:{type:string;result?:{ok:boolean;id?:string;issues?:{path:string;message:string}[];warnings?:unknown[]}}[]}).msgs);
+  await expect.poll(async()=>(await msgs()).filter(m=>m.type==='datapass.concept-spec/ready').length).toBeGreaterThanOrEqual(1);
+  const frame=page.frameLocator('#v'),inner=frame.getByTestId('concept-viewer');
+  await expect(inner).toHaveAttribute('data-spec','forecast-app');
+  const send=(data:unknown)=>page.evaluate(d=>(document.getElementById('v') as HTMLIFrameElement).contentWindow!.postMessage(d,'*'),data);
+  // Wrong type and a "spec" with code-looking text: ignored / treated as data only.
+  await send({type:'datapass.concept-spec/other',spec:fixture});
+  await send({type:'datapass.concept-spec/load',spec:{...fixture,title:'alert(1)',onload:'alert(2)'}});
+  await expect(inner).toHaveAttribute('data-spec','helpdesk-fixture');
+  await expect(inner).toHaveAttribute('data-source','embedded spec');
+  await expect(inner).toHaveAttribute('data-view','layered');
+  await expect(frame.getByTestId('concept-warnings')).toContainText('unknown field "onload" ignored');
+  await expect.poll(async()=>(await msgs()).at(-1)?.result).toEqual({ok:true,id:'helpdesk-fixture',warnings:[{path:'onload',message:'unknown field "onload" ignored (not part of concept spec 1.0.0)'}]});
+  // Invalid spec (as JSON text): issues shown exactly like Open file, current spec kept, issues returned to the parent.
+  const bad=structuredClone(fixture);bad.flows[0].from='ghost';
+  await send({type:'datapass.concept-spec/load',spec:JSON.stringify(bad)});
+  await expect(frame.getByTestId('concept-problem')).toContainText('embedded spec was not loaded');
+  await expect(frame.getByTestId('concept-problem').locator('code')).toHaveText('flows[0].from');
+  await expect(inner).toHaveAttribute('data-spec','helpdesk-fixture');
+  await expect.poll(async()=>(await msgs()).at(-1)?.result?.ok).toBe(false);
+  expect((await msgs()).at(-1)?.result?.issues?.[0]).toEqual({path:'flows[0].from',message:'unknown node "ghost"'});
+  expect((await msgs()).filter(m=>m.type!=='datapass.concept-spec/ready')).toEqual([]);
+});
+
 test('?src= reads an https URL that allows CORS and rejects other schemes; SVG export downloads a file',async({page})=>{
   const body=await readFile(FIXTURE,'utf8');
   await page.route('https://specs.concept.test/**',route=>route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body}));
