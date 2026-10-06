@@ -21,7 +21,7 @@ export type Block = {id: string; span?: number; title?: string} & (
   | {type: 'metric'; value: ValueRef; unit?: string; digits?: number; note?: string}
   | {type: 'input'; field: string; control?: 'field' | 'slider'}
   | {type: 'table'; dataset: string; pageSize?: number}
-  | {type: 'chart'; dataset: string; x: string; y: string; kind: 'bar' | 'line' | 'scatter'; unit?: string}
+  | ({type: 'chart'; dataset: string; x: string; y: string; kind: 'bar' | 'line' | 'scatter'; unit?: string} & ChartVizOptions)
   | {type: 'task'; task: string}
   | {type: 'catalog'}
   | {type: 'code'; text: string; language: string}
@@ -37,6 +37,23 @@ export type Block = {id: string; span?: number; title?: string} & (
   | {type: 'runs'; resource: string}
   | {type: 'custom'; resource: string}
 );
+/** Chart renderer choice and viz-kit-only options. Without `renderer` the build default applies
+ * (VizForge unless the `viz-chart` flag is on). The other options need `renderer: 'viz'`: the
+ * VizForge adapter cannot draw them, so they are rejected rather than silently dropped. */
+export type ChartVizOptions = {
+  renderer?: 'viz' | 'vizforge';
+  /** String column: one series per value (long format). Colour follows the series. */
+  series?: string;
+  /** Numeric column on a second (right) axis. Line charts only. */
+  y2?: string;
+  /** Bar category order. The viz path defaults to descending, like the VizForge ranking. */
+  sort?: 'none' | 'ascending' | 'descending';
+  /** Bars with a series: stacked (default) or grouped. */
+  stack?: 'stacked' | 'grouped';
+  /** One view field, as for other blocks: select/multi over bar categories or line series,
+   * interval over scatter X. Values are semantic keys (category/series values), never indexes. */
+  selection?: string;
+};
 export type Section = {id: string; title?: string; columns: number; blocks: Block[]};
 export type Page = {id: string; title: string; description: string; sections: Section[]};
 export type Manifest = {

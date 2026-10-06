@@ -27,7 +27,7 @@ const dimmed=(selected:ReadonlySet<string>|null|undefined,key:string)=>!!selecte
 const isAdditive=(e:MouseEvent|KeyboardEvent)=>e.ctrlKey||e.metaKey||e.shiftKey;
 function activate(onSelect:Selectable['onSelect'],key:string){return {onClick:(e:MouseEvent)=>onSelect?.(key,isAdditive(e)),onKeyDown:(e:KeyboardEvent)=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onSelect?.(key,isAdditive(e));}}};}
 
-function YAxis({scale,width,ticks,fmt}:{scale:ReturnType<typeof scaleLinear<number>>;width:number;ticks:number;fmt:(n:number)=>string}){
+export function YAxis({scale,width,ticks,fmt}:{scale:ReturnType<typeof scaleLinear<number>>;width:number;ticks:number;fmt:(n:number)=>string}){
   return <g className="viz-axis viz-grid" aria-hidden="true">{scale.ticks(ticks).map(t=><g key={t} transform={`translate(0,${Math.round(scale(t))+.5})`}><line x1={0} x2={width}/><text x={-8} dy="0.32em" textAnchor="end">{fmt(t)}</text></g>)}</g>;
 }
 export function Legend({items,active,onToggle}:{items:{key:string;label:string;color:string}[];active?:ReadonlySet<string>|null;onToggle?:(key:string,additive:boolean)=>void}){
@@ -38,13 +38,15 @@ export function Legend({items,active,onToggle}:{items:{key:string;label:string;c
 export type BarProps=Selectable&{
   categories:readonly {key:string;label:string}[];series:readonly {key:string;label:string;color?:string}[];
   value:(category:string,series:string)=>number;mode?:'stacked'|'grouped';format?:NumberFormat;margin?:Partial<Margin>;label?:string;testId?:string;
+  /** Fixed value domain (e.g. from planChart); otherwise zero-based and niced from the values. */
+  domain?:readonly [number,number];
 };
 type BarDatum={category:string;series:string;value:number};
 export function BarChart(props:BarProps){
   const {ref,width,height,ready}=useSize();
   return <div ref={ref} className="viz-chart">{ready&&<BarSvg {...props} width={width} height={height}/>}{!ready&&<div data-viz-settled="false"/>}</div>;
 }
-function BarSvg({categories,series,value,mode='stacked',format,selected,onSelect,margin,label,testId,width,height}:BarProps&{width:number;height:number}){
+function BarSvg({categories,series,value,mode='stacked',format,selected,onSelect,margin,label,testId,domain,width,height}:BarProps&{width:number;height:number}){
   const tooltip=useTooltip(),many=categories.length>16;
   const m:Margin={top:8,right:8,bottom:many?40:24,left:48,...margin},{w,h}=inner(width,height,m);
   const fmt=(n:number)=>formatNumber(n,format);
@@ -52,7 +54,7 @@ function BarSvg({categories,series,value,mode='stacked',format,selected,onSelect
     const x=scaleBand<string>().domain(categories.map(c=>c.key)).range([0,w]).paddingInner(categories.length>30?0.18:0.28).paddingOuter(0.1);
     const totals=categories.map(c=>series.reduce((s,se)=>s+Math.max(0,value(c.key,se.key)),0));
     const values=mode==='stacked'?[...totals,...categories.map(c=>series.reduce((s,se)=>s+Math.min(0,value(c.key,se.key)),0))]:categories.flatMap(c=>series.map(se=>value(c.key,se.key)));
-    const y=zeroLinear(values,[h,0]);
+    const y=domain?scaleLinear().domain([domain[0],domain[1]]).range([h,0]):zeroLinear(values,[h,0]);
     const inner=scaleBand<string>().domain(series.map(s=>s.key)).range([0,x.bandwidth()]).paddingInner(series.length>1?0.12:0);
     const out:Mark<BarDatum>[]=[];
     for(const c of categories){
@@ -69,7 +71,7 @@ function BarSvg({categories,series,value,mode='stacked',format,selected,onSelect
       });
     }
     return {marks:out,x,y};
-  },[categories,series,value,mode,w,h]);
+  },[categories,series,value,mode,w,h,domain]);
   const base=y(0);
   const t=useMarkTransition(marks,{enter:mk=>({...mk.attrs,y:base,h:0}),exit:mk=>({...mk.attrs,y:base,h:0})});
   const colorOf=new Map(series.map((s,i)=>[s.key,s.color||cat(i)])),labelOf=new Map(categories.map(c=>[c.key,c.label]));
@@ -79,7 +81,7 @@ function BarSvg({categories,series,value,mode='stacked',format,selected,onSelect
     tooltip.show({x:e.clientX,y:e.clientY,title:labelOf.get(category)||category,rows});
   };
   const step=Math.max(1,Math.ceil(categories.length/Math.max(1,Math.floor(w/(many?28:56)))));
-  return <svg width={width} height={height} role="img" aria-label={label||'Bar chart'} data-testid={testId} data-viz-settled={settledAttr(t.settled)} data-viz-renderer="svg" data-marks={marks.length}>
+  return <svg width={width} height={height} role="img" aria-label={label||'Bar chart'} data-testid={testId} data-viz-settled={settledAttr(t.settled)} data-viz-renderer="svg" data-marks={marks.length} data-series={series.length} data-domain-y={y.domain().join(':')}>
     <g transform={`translate(${m.left},${m.top})`}>
       <YAxis scale={y} width={w} ticks={tickCount(h,48)} fmt={n=>formatNumber(n,{...format,digits:undefined,unit:undefined})}/>
       <g>{t.marks.map(mk=>{const r=Math.min(4,mk.attrs.w!/2,mk.attrs.h!);return <path key={mk.key} className="viz-mark-shape" d={roundedTop(mk.attrs.x!,mk.attrs.y!,mk.attrs.w!,mk.attrs.h!,mk.datum.value>=0?r:0)} fill={colorOf.get(mk.datum.series)} opacity={mk.opacity*(dimmed(selected,mk.datum.category)?0.28:1)} pointerEvents="none"/>;})}</g>
@@ -96,27 +98,34 @@ function roundedTop(x:number,y:number,w:number,h:number,r:number){
 }
 
 /* ---------- Line / area, multi-series, hover crosshair ---------- */
-export type LineSeries={key:string;label:string;color?:string;points:readonly {x:number;y:number}[]};
-export type LineProps={series:readonly LineSeries[];area?:boolean|'stacked';xFormat?:(x:number)=>string;format?:NumberFormat;label?:string;testId?:string;margin?:Partial<Margin>;highlight?:ReadonlySet<string>|null;onSelect?:(key:string,additive:boolean)=>void;zero?:boolean};
+/** `axis: 'y2'` draws the series against a second, right-hand axis (dual axis; not stacked). */
+export type LineSeries={key:string;label:string;color?:string;axis?:'y'|'y2';points:readonly {x:number;y:number}[]};
+export type LineProps={series:readonly LineSeries[];area?:boolean|'stacked';xFormat?:(x:number)=>string;format?:NumberFormat;y2Format?:NumberFormat;label?:string;testId?:string;margin?:Partial<Margin>;highlight?:ReadonlySet<string>|null;onSelect?:(key:string,additive:boolean)=>void;zero?:boolean;
+  /** Fixed domains (e.g. from planChart); otherwise derived from the points. */
+  xDomain?:readonly [number,number];domain?:readonly [number,number];y2Domain?:readonly [number,number]};
 export function LineChart(props:LineProps){
   const {ref,width,height,ready}=useSize();
   return <div ref={ref} className="viz-chart">{ready&&<LineSvg {...props} width={width} height={height}/>}</div>;
 }
-function LineSvg({series,area,xFormat=String,format,label,testId,margin,highlight,width,height,zero}:LineProps&{width:number;height:number}){
+function LineSvg({series,area,xFormat=String,format,y2Format,label,testId,margin,highlight,width,height,zero,xDomain,domain,y2Domain}:LineProps&{width:number;height:number}){
   const tooltip=useTooltip(),[hover,setHover]=useState<number|null>(null);
-  const m:Margin={top:10,right:12,bottom:24,left:48,...margin},{w,h}=inner(width,height,m);
-  const fmt=(n:number)=>formatNumber(n,format);
+  const dual=series.some(s=>s.axis==='y2');
+  const m:Margin={top:10,right:dual?52:12,bottom:24,left:48,...margin},{w,h}=inner(width,height,m);
+  const fmtOf=(s:LineSeries)=>(n:number)=>formatNumber(n,s.axis==='y2'?y2Format:format);
   const xs=useMemo(()=>[...new Set(series.flatMap(s=>s.points.map(p=>p.x)))].sort((a,b)=>a-b),[series]);
-  const stacked=area==='stacked';
-  const {x,y,marks,stacks}=useMemo(()=>{
-    const x=scaleLinear().domain([xs[0]??0,xs[xs.length-1]??1]).range([0,w]);
+  const stacked=area==='stacked'&&!dual;
+  const {x,y,y2,marks,stacks}=useMemo(()=>{
+    const x=scaleLinear().domain(xDomain?[xDomain[0],xDomain[1]]:[xs[0]??0,xs[xs.length-1]??1]).range([0,w]);
     const stacks=new Map<string,{x:number;y0:number;y1:number}[]>();
     if(stacked){const acc=new Map<number,number>();for(const s of series){stacks.set(s.key,s.points.map(p=>{const y0=acc.get(p.x)||0,y1=y0+p.y;acc.set(p.x,y1);return {x:p.x,y0,y1};}));}}
-    const all=stacked?[...stacks.values()].flatMap(a=>a.map(p=>p.y1)):series.flatMap(s=>s.points.map(p=>p.y));
-    const y=stacked||area||zero?zeroLinear(all,[h,0]):fittedLinear(all,[h,0]);
-    const marks:Mark<LineSeries>[]=series.map(s=>{const attrs:Record<string,number>={};(stacked?stacks.get(s.key)!:s.points.map(p=>({x:p.x,y0:0,y1:p.y}))).forEach((p,i)=>{attrs['x'+i]=x(p.x);attrs['a'+i]=y(p.y1);attrs['b'+i]=y(p.y0);});return {key:s.key,datum:s,attrs};});
-    return {x,y,marks,stacks};
-  },[series,xs,w,h,stacked,area,zero]);
+    const on=(axis:'y'|'y2')=>series.filter(s=>(s.axis||'y')===axis).flatMap(s=>s.points.map(p=>p.y));
+    const all=stacked?[...stacks.values()].flatMap(a=>a.map(p=>p.y1)):on('y');
+    const fit=(fixed:readonly [number,number]|undefined,values:number[])=>fixed?scaleLinear().domain([fixed[0],fixed[1]]).range([h,0]):stacked||area||zero?zeroLinear(values,[h,0]):fittedLinear(values,[h,0]);
+    const y=fit(domain,all),y2=dual?fit(y2Domain,on('y2')):null;
+    const marks:Mark<LineSeries>[]=series.map(s=>{const sy=s.axis==='y2'&&y2?y2:y,attrs:Record<string,number>={};(stacked?stacks.get(s.key)!:s.points.map(p=>({x:p.x,y0:0,y1:p.y}))).forEach((p,i)=>{attrs['x'+i]=x(p.x);attrs['a'+i]=sy(p.y1);attrs['b'+i]=sy(p.y0);});return {key:s.key,datum:s,attrs};});
+    return {x,y,y2,marks,stacks};
+  },[series,xs,w,h,stacked,area,zero,xDomain,domain,y2Domain,dual]);
+  const scaleOf=(s:LineSeries)=>s.axis==='y2'&&y2?y2:y;
   const base=y(0);
   const t=useMarkTransition(marks,{enter:mk=>{const a:Record<string,number>={};for(const k in mk.attrs)a[k]=k[0]==='x'?mk.attrs[k]!:base;return a;}});
   const colorOf=(s:LineSeries,i:number)=>s.color||cat(i);
@@ -124,21 +133,22 @@ function LineSvg({series,area,xFormat=String,format,label,testId,margin,highligh
     const r=(e.currentTarget as SVGRectElement).getBoundingClientRect(),xv=x.invert(e.clientX-r.left);
     const i=Math.min(xs.length-1,Math.max(0,bisector((d:number)=>d).center(xs,xv)));setHover(i);
     const at=xs[i]!;
-    tooltip.show({x:e.clientX,y:e.clientY,title:xFormat(at),rows:series.map((s,si)=>({label:s.label,value:fmt(s.points.find(p=>p.x===at)?.y??NaN),color:colorOf(s,si)}))});
+    tooltip.show({x:e.clientX,y:e.clientY,title:xFormat(at),rows:series.map((s,si)=>({label:s.label,value:fmtOf(s)(s.points.find(p=>p.x===at)?.y??NaN),color:colorOf(s,si)}))});
   };
-  return <svg width={width} height={height} role="img" aria-label={label||'Line chart'} data-testid={testId} data-viz-settled={settledAttr(t.settled)} data-viz-renderer="svg">
+  return <svg width={width} height={height} role="img" aria-label={label||'Line chart'} data-testid={testId} data-viz-settled={settledAttr(t.settled)} data-viz-renderer="svg" data-marks={series.reduce((n,s)=>n+s.points.length,0)} data-series={series.length} data-domain-x={x.domain().join(':')} data-domain-y={y.domain().join(':')} data-domain-y2={y2?y2.domain().join(':'):undefined}>
     <defs>{series.map((s,i)=><linearGradient key={s.key} id={`g-${testId||'line'}-${s.key}`} x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor={colorOf(s,i)} stopOpacity={stacked?0.85:0.32}/><stop offset="1" stopColor={colorOf(s,i)} stopOpacity={stacked?0.55:0.02}/></linearGradient>)}</defs>
     <g transform={`translate(${m.left},${m.top})`}>
       <YAxis scale={y} width={w} ticks={tickCount(h,44)} fmt={n=>formatNumber(n,{...format,digits:undefined,unit:undefined})}/>
+      {y2&&<g className="viz-axis viz-axis-y2" aria-hidden="true" transform={`translate(${w},0)`}>{y2.ticks(tickCount(h,44)).map(t=><text key={t} x={8} y={Math.round(y2(t))} dy="0.32em" textAnchor="start">{formatNumber(t,{...y2Format,digits:undefined,unit:undefined})}</text>)}</g>}
       <g className="viz-axis" aria-hidden="true" transform={`translate(0,${h})`}>{xs.filter((_,i)=>i%Math.max(1,Math.ceil(xs.length/Math.max(2,Math.floor(w/64))))===0).map(xv=><text key={xv} x={x(xv)} y={16} textAnchor="middle">{xFormat(xv)}</text>)}</g>
       {t.marks.map(mk=>{
         const s=mk.datum,i=series.findIndex(q=>q.key===s.key),n=s.points.length,pts=Array.from({length:n},(_,k)=>({x:mk.attrs['x'+k]!,a:mk.attrs['a'+k]!,b:mk.attrs['b'+k]!}));
         const lineD=d3line<{x:number;a:number}>().x(p=>p.x).y(p=>p.a).curve(curveMonotoneX)(pts)||'';
         const areaD=area?d3area<{x:number;a:number;b:number}>().x(p=>p.x).y0(p=>p.b).y1(p=>p.a).curve(curveMonotoneX)(pts)||'':'';
         const faded=highlight&&highlight.size>0&&!highlight.has(s.key);
-        return <g key={mk.key} opacity={mk.opacity*(faded?0.25:1)} data-series={s.key}>{area&&<path d={areaD} fill={`url(#g-${testId||'line'}-${s.key})`} stroke={stacked?v('surface'):'none'} strokeWidth={stacked?1:0}/>}<path d={lineD} fill="none" stroke={i>=0?colorOf(s,i):undefined} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round"/></g>;
+        return <g key={mk.key} opacity={mk.opacity*(faded?0.25:1)} data-series={s.key}>{area&&<path d={areaD} fill={`url(#g-${testId||'line'}-${s.key})`} stroke={stacked?v('surface'):'none'} strokeWidth={stacked?1:0}/>}<path d={lineD} fill="none" stroke={i>=0?colorOf(s,i):undefined} strokeWidth={2} strokeDasharray={s.axis==='y2'?'6 4':undefined} strokeLinejoin="round" strokeLinecap="round"/></g>;
       })}
-      {hover!==null&&xs[hover]!==undefined&&<g pointerEvents="none"><line className="viz-crosshair" x1={x(xs[hover]!)} x2={x(xs[hover]!)} y1={0} y2={h}/>{series.map((s,si)=>{const p=stacked?stacks.get(s.key)?.find(q=>q.x===xs[hover]):s.points.find(q=>q.x===xs[hover]);if(!p)return null;const yy='y1' in p?p.y1:p.y;return <circle key={s.key} cx={x(xs[hover]!)} cy={y(yy)} r={4} fill={colorOf(s,si)} stroke={v('surface')} strokeWidth={2}/>;})}</g>}
+      {hover!==null&&xs[hover]!==undefined&&<g pointerEvents="none"><line className="viz-crosshair" x1={x(xs[hover]!)} x2={x(xs[hover]!)} y1={0} y2={h}/>{series.map((s,si)=>{const p=stacked?stacks.get(s.key)?.find(q=>q.x===xs[hover]):s.points.find(q=>q.x===xs[hover]);if(!p)return null;const yy='y1' in p?p.y1:p.y;return <circle key={s.key} cx={x(xs[hover]!)} cy={scaleOf(s)(yy)} r={4} fill={colorOf(s,si)} stroke={v('surface')} strokeWidth={2}/>;})}</g>}
       <rect x={0} y={0} width={w} height={h} fill="transparent" onMouseMove={onMove} onMouseLeave={()=>{setHover(null);tooltip.hide();}}/>
     </g>
   </svg>;

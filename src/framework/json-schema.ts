@@ -15,7 +15,7 @@ const blocks={oneOf:[
   block('text',{text:text(20000),tone:{enum:['lead','body','note']}},['text']),
   block('metric',{value,unit:text(40),digits:{type:'integer',minimum:0,maximum:6},note:text()},['value']),
   block('input',{field:id,control:{enum:['field','slider']}},['field']),block('table',{dataset:id,pageSize:{type:'integer',minimum:1,maximum:100}},['dataset']),
-  block('chart',{dataset:id,x:id,y:id,kind:{enum:['bar','line','scatter']},unit:text(30)},['dataset','x','y','kind']),
+  block('chart',{dataset:id,x:id,y:id,kind:{enum:['bar','line','scatter']},unit:text(30),renderer:{enum:['viz','vizforge']},series:id,y2:id,sort:{enum:['none','ascending','descending']},stack:{enum:['stacked','grouped']},selection:id},['dataset','x','y','kind']),
   block('task',{task:id},['task']),block('catalog',{},[]),block('code',{text:text(20000),language:{...text(40),minLength:1}},['text','language']),
   block('scene3d',{resource:id,explode:id,phase:id,camera:id,selection:id},['resource','explode','phase','camera','selection']),
   block('model3d',{resource:id,selection:id,camera:id,mode:id,explode:id,section:id,view:id,annotations:id,source:id},['resource','selection','camera','mode','explode','section','view','annotations','source']),
