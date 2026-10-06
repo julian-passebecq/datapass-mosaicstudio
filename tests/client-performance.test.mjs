@@ -16,3 +16,7 @@ for (const [name, edit] of Object.entries({
   'no JS files': r => r.clients[0].javascriptFiles = 0,
   'mutated framework': r => r.sourceUnchanged = false,
 })) test('performance gate refuses ' + name, () => {const report = fixture(); edit(report); assert.throws(() => assessClientBudgets(report));});
+test('CLIENT_PERFORMANCE_GATES.md states the real number of budgeted targets', async () => {
+  const {readFile} = await import('node:fs/promises'), doc = await readFile(new URL('../docs/CLIENT_PERFORMANCE_GATES.md', import.meta.url), 'utf8'), n = Object.keys(clientBudgets).length;
+  assert.deepEqual([...doc.matchAll(/(?:verifies|All) (\d+) (?:concrete targets|limits)/g)].map(m => Number(m[1])), [n, n]);
+});

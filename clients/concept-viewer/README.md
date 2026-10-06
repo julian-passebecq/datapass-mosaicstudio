@@ -3,7 +3,8 @@
 Opens any **concept spec v1** file (`docs/CONCEPT_SPEC.md`) and switches between its three framework renderings: isometric 2D (Motion v2), layer cake 2D, and the lazy 3D scene. Family: spatial. No AI features.
 
 - Open: example tabs, **Open file**, drag-and-drop a `.json` onto the window, or `?app=concept-viewer&spec=examples/<file>.json` (relative paths only).
-- Rendering: header buttons or `&view=isometric|layered|3d`. Both SVGs download from the header.
+- Rendering: header buttons or `&view=isometric|layered|3d`. Both SVGs download from the header, always at full size.
+- Isometric pan/zoom (`PanZoom.tsx`): starts fitted to the stage width, zoomed in further when needed so every node label is at least 11 px on screen; wheel zooms around the pointer, drag pans (a drag never selects), **Fit** returns to the stage width.
 - An invalid file shows every issue (`path: message`) and keeps the current spec.
 - Film: `&film=1&paused=1&chrome=0&t=<s>`; `window.__conceptFilm.seek(t)`; record with `scripts/record-concept-film.mjs --app concept-viewer --spec examples/forecast-app.concept.json`.
 

@@ -1,8 +1,17 @@
 # DataPass MosaicStudio
 
-**v0.7 alpha source SDK for AI-built technical websites.** Client content, approved data, domain calculations and page composition live under `clients/<id>/`; reusable state, contracts and rendering live under `src/framework/`.
+**v0.8 alpha source SDK for AI-built technical websites.** Client content, approved data, domain calculations and page composition live under `clients/<id>/`; reusable state, contracts and rendering live under `src/framework/`.
 
-Working branch: `feat/studio2-model-assets`, draft PR #8. This extends qualified v0.6. No merge, deployment, package publication, dependency upgrade or donor-repository modification is implied.
+`main` carries DataPass Studio 0.8 (rc3 plus the night packages, PR #34; RC history in `docs/RELEASE_0.8_RC.md`). It extends qualified v0.7. No deployment, package publication or donor-repository modification is implied.
+
+## What's in 0.8
+
+- **Concept spec v1**: one JSON file describes an app or cloud architecture (layers, domains, nodes, flows) and renders as an isometric SVG, a flat layer cake and a lazy 3D scene. See [`docs/CONCEPT_SPEC.md`](docs/CONCEPT_SPEC.md).
+- **Viz kit**: the D3 kit in [`src/framework/viz/`](src/framework/viz/) is now the default Chart renderer, with one crossfilter shared by 2D and 3D views (`renderer: 'vizforge'` stays the per-block opt-out).
+- **Python bridge**: Python code produces typed Artifacts that the site renders, plus an optional FastAPI artifact service. See [`docs/PYTHON_BRIDGE.md`](docs/PYTHON_BRIDGE.md).
+- **galaxy-navigator** ([`clients/galaxy-navigator/`](clients/galaxy-navigator/)): one registry snapshot shown as a 3D galaxy, an exportable isometric SVG, a graph, a list, a contract matrix and a board, with one shared selection.
+- **concept-viewer** ([`clients/concept-viewer/`](clients/concept-viewer/)): reference viewer for concept spec files (open, drop or `?spec=`), with pan/zoom on the isometric view, SVG export and a film.
+- **Fabric Bricks** ([`clients/fabric-bricks/`](clients/fabric-bricks/)) is a **draft**: a provisional, synthetic reference client kept without further investment; architecture concept visuals continue in concept spec and Architecture Atlas.
 
 ## Start with the smallest useful client
 

@@ -24,12 +24,53 @@ const clipped=(page:Page,selector:string)=>page.locator(selector).evaluate((root
   return out;
 });
 
+/** On-screen font size (CSS px) of every node label in the isometric view, CSS transform included. */
+const nodeLabelPx=(page:Page)=>page.locator('[data-testid=concept-isometric] svg[data-representation=isometric]').evaluate((root:SVGSVGElement)=>
+  [...root.querySelectorAll<SVGTextElement>('[data-entity] text,[data-node] text')].filter(t=>t.getBBox().width).map(t=>Number(t.getAttribute('font-size'))*t.getScreenCTM()!.a));
+
+test('isometric pan/zoom: wheel zooms, drag pans without selecting, Fit returns to the stage width, export stays full size',async({page})=>{
+  const errors=await open(page,'&spec=examples/cloud-data-platform.concept.json&view=isometric');
+  const iso=page.getByTestId('concept-isometric'),viewer=page.getByTestId('concept-viewer');
+  await expect(iso.locator('svg[data-representation=isometric]')).toBeVisible();
+  const zoom=async()=>Number(await iso.getAttribute('data-zoom'));
+  const fitZoom=Number(await iso.getAttribute('data-fit-zoom')),start=await zoom();
+  const stage=(await iso.boundingBox())!,cx=stage.x+stage.width/2,cy=stage.y+stage.height/2;
+  await page.mouse.move(cx,cy);await page.mouse.wheel(0,-400);
+  await expect.poll(zoom).toBeGreaterThan(start*1.2);
+  const before=await iso.locator('.cv-pz-content').evaluate(e=>getComputedStyle(e).transform);
+  await page.mouse.move(cx,cy);await page.mouse.down();await page.mouse.move(cx-120,cy-60,{steps:6});await page.mouse.up();
+  expect(await iso.locator('.cv-pz-content').evaluate(e=>getComputedStyle(e).transform)).not.toBe(before);
+  await expect(viewer).toHaveAttribute('data-selection','none');
+  await page.getByRole('button',{name:'Zoom out'}).click();
+  await page.getByRole('button',{name:'Fit to width'}).click();
+  await expect.poll(zoom).toBeCloseTo(fitZoom,2);
+  const svgBox=(await iso.locator('svg[data-representation=isometric]').boundingBox())!;
+  expect(Math.abs(svgBox.width-(stage.width-36))).toBeLessThan(2);
+  // A plain click still selects a node.
+  const nodeId=await iso.locator('[data-entity]').first().getAttribute('data-entity');
+  await iso.locator(`[data-entity="${nodeId}"] text`).first().click();
+  await expect(viewer).toHaveAttribute('data-selection',nodeId!);
+  // The SVG download is the full-size markup, not the zoomed view.
+  const download=page.waitForEvent('download');
+  await page.getByRole('button',{name:/Isometric SVG/}).click();
+  const file=await (await download).path(),text=(await import('node:fs')).readFileSync(file,'utf8');
+  const rendered=await iso.locator('svg[data-representation=isometric]').getAttribute('viewBox');
+  expect(text).toContain(`viewBox="${rendered}"`);
+  expect(text).not.toMatch(/^<svg[^>]*\swidth=/);
+  expect(text).not.toContain('scale(');
+  expect(errors).toEqual([]);
+});
+
 for(const id of EXAMPLES)test(`${id}: three renderings from one file, labels never clip, captures`,async({page})=>{
   const errors=await open(page,`&spec=examples/${id}.concept.json&view=isometric`);
   const viewer=page.getByTestId('concept-viewer');
   await expect(viewer).toHaveAttribute('data-spec',id);
   await expect(page.locator('[data-testid=concept-isometric] svg[data-renderer=framework-motion-v2]')).toBeVisible();
-  expect(await clipped(page,'[data-testid=concept-isometric] svg')).toEqual([]);
+  expect(await clipped(page,'[data-testid=concept-isometric] svg[data-representation=isometric]')).toEqual([]);
+  // Starts fitted to the stage width (or closer) with every node label >= 11 px on screen.
+  const iso=page.getByTestId('concept-isometric');
+  expect(Math.min(...await nodeLabelPx(page))).toBeGreaterThanOrEqual(11-.01);
+  expect(Number(await iso.getAttribute('data-zoom'))).toBeGreaterThanOrEqual(Number(await iso.getAttribute('data-fit-zoom'))-.001);
   await page.screenshot({path:path.join(CAPTURES,`${id}.isometric.png`)});
   await page.getByRole('button',{name:'Layer cake 2D',exact:true}).click();
   await expect(page.locator('[data-testid=concept-layered] svg[data-representation=layered]')).toBeVisible();

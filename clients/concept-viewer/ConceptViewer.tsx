@@ -10,6 +10,7 @@ import {NodeDetails} from '../../src/framework/concept/react/NodeDetails.tsx';
 import '../../src/framework/concept/react/concept.css';
 import './viewer.css';
 import {EXAMPLES,RENDERINGS,safeSpecPath,type Rendering} from './examples.ts';
+import {PanZoom} from './PanZoom.tsx';
 
 const Stage=lazy(()=>import('../../src/framework/concept/react/ConceptStage.tsx'));
 const Film=lazy(()=>import('../../src/framework/concept/react/ConceptFilm.tsx'));
@@ -102,8 +103,9 @@ export function ConceptViewer(){
       <div className="aa-stage">
         {!spec?<div className="aa-loading" role="status">{problem?'No valid spec loaded.':'Loading…'}</div>
           :view==='3d'?<Suspense fallback={<div className="aa-loading" role="status">Raising the layers…</div>}><Stage spec={spec} nav={nav} reduced={reduced} onSelect={select} onStep={go}/></Suspense>
+          :view==='isometric'?<PanZoom svg={svg} resetKey={spec.id+'|'+(loaded?.source??'')} testId="concept-isometric" onClick={svgClick}/>
           :<div className="aa-svg" data-testid={'concept-'+view} onClick={svgClick} dangerouslySetInnerHTML={{__html:svg}}/>}
-        <div className="aa-hint">{view==='3d'?'Scroll or ↑ ↓ between layers · ← → across domains · click a node':'Drop a .json concept spec anywhere · click a node · download as SVG'}</div>
+        <div className="aa-hint">{view==='3d'?'Scroll or ↑ ↓ between layers · ← → across domains · click a node':view==='isometric'?'Wheel to zoom · drag to pan · Fit for the full width · click a node · drop a .json spec anywhere':'Drop a .json concept spec anywhere · click a node · download as SVG'}</div>
         {problem&&<div className="cv-problem" role="alert" data-testid="concept-problem">
           <button className="aa-close" onClick={()=>setProblem(null)} aria-label="Dismiss"><X size={14}/></button>
           <b>{problem.source} was not loaded</b>{spec&&<small> · still showing {spec.title}</small>}
