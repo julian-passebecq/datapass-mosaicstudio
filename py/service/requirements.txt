@@ -1,0 +1,7 @@
+# Level 3 live artifact service (prototype). Install into a local venv:
+#   python -m venv .venv && .venv/Scripts/python -m pip install -r py/service/requirements.txt
+fastapi==0.142.2
+pydantic==2.13.5
+uvicorn==0.54.0
+# tests only (FastAPI TestClient)
+httpx==0.28.1

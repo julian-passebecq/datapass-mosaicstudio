@@ -1,0 +1,66 @@
+import {test, expect} from '@playwright/test';
+import {readFile} from 'node:fs/promises';
+const manifest={metadata:{dbt_schema_version:'https://schemas.getdbt.com/dbt/manifest/v12.json',project_name:'Browser review',project_id:'a'},nodes:{'model.demo.site':{unique_id:'model.demo.site',resource_type:'model',name:'Site model',original_file_path:'models/site.sql',raw_code:'globalThis.DO_NOT_RUN_ARCHITECTURE = true;',columns:{site_id:{name:'site_id',data_type:'INT'}},depends_on:{nodes:['source.demo.events']}}},sources:{'source.demo.events':{unique_id:'source.demo.events',resource_type:'source',name:'Events',columns:{}}}};
+const catalog={metadata:{dbt_schema_version:'https://schemas.getdbt.com/dbt/catalog/v1.json',generated_at:'2026-09-30T00:00:00Z',project_id:'a'},nodes:{'model.demo.site':{unique_id:'model.demo.site',columns:{site_id:{name:'site_id',type:'BIGINT'}}}},sources:{},errors:[]};
+const upload=(value:unknown,name='architecture.json')=>({name,mimeType:'application/json',buffer:Buffer.from(JSON.stringify(value))});
+let errors:string[]=[],consoleErrors:string[]=[],external:string[]=[],wasm:string[]=[];
+test.beforeEach(async({page})=>{errors=[];consoleErrors=[];external=[];wasm=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')consoleErrors.push(m.text());});page.on('request',r=>{if(/^https?:/.test(r.url())&&!r.url().startsWith('http://127.0.0.1:4173/'))external.push(r.url());if(/\/duckdb\/|\.wasm(?:\?|$)/.test(r.url()))wasm.push(r.url());});});
+test.afterEach(async({},info)=>{await info.attach('architecture-diagnostics',{body:JSON.stringify({errors,consoleErrors,external,wasm},null,2),contentType:'application/json'});expect(errors).toEqual([]);expect(consoleErrors).toEqual([]);expect(external).toEqual([]);});
+test('architecture embed is independent of DuckDB and has linked inspection',async({page},info)=>{
+ await page.goto('/?module=architecture&embed=1');
+ await expect(page.locator('.arch-node')).toHaveCount(8);
+ await expect(page.locator('.module-rail')).toHaveCount(0);
+ await page.getByRole('button',{name:'Select Site performance',exact:true}).click();
+ await expect(page.getByRole('complementary',{name:'Selected architecture component'})).toContainText('2 differences');
+ await page.getByLabel('Dependency direction').selectOption('downstream');
+ await expect(page.locator('.arch-node:not(.dimmed)')).toHaveCount(3);
+ await page.getByLabel('Schema view').selectOption('snapshot');
+ await expect(page.locator('.arch-node.active')).toContainText('operating_cost_eur');
+ expect(wasm).toEqual([]);
+ await page.screenshot({path:info.outputPath('architecture-desktop.png'),fullPage:true});
+});
+test('presentation chapters, keyboard navigation and script-free exports',async({page},info)=>{
+ await page.goto('/?module=architecture&embed=1');
+ await page.getByRole('button',{name:'Present',exact:true}).click();
+ await expect(page.locator('.arch-chapter h2')).toHaveText('System overview');
+ await page.getByRole('button',{name:'Next architecture chapter'}).click();
+ await expect(page.locator('.arch-chapter h2')).toHaveText('Sources');
+ await page.keyboard.press('ArrowRight');
+ await expect(page.locator('.arch-chapter h2')).toHaveText('Ingestion');
+ await page.screenshot({path:info.outputPath('architecture-presentation.png'),fullPage:true});
+ await page.keyboard.press('Escape');
+ await expect(page.getByRole('button',{name:'Present',exact:true})).toBeVisible();
+ await page.locator('.arch-export summary').click();
+ const pending=page.waitForEvent('download');await page.getByRole('button',{name:'Download review HTML'}).click();
+ const text=await readFile((await (await pending).path())!,'utf8');
+ expect(text).not.toContain('<script');expect(text).not.toContain('SELECT event_id');expect(text).toContain('Synthetic example');
+ const report=await page.context().newPage();await report.setContent(text);await expect(report.getByRole('heading',{name:'Renewable operations'})).toBeVisible();await report.screenshot({path:info.outputPath('architecture-report.png'),fullPage:true});await report.close();expect(wasm).toEqual([]);
+});
+test('dbt imports are reviewed, catalogue comparison is static, invalid import preserves state',async({page},info)=>{
+ await page.goto('/?module=architecture&embed=1');
+ await page.getByLabel('Import architecture file',{exact:true}).setInputFiles(upload(manifest,'manifest.json'));
+ await expect(page.getByRole('dialog')).toBeVisible();await expect(page.locator('.arch-node')).toHaveCount(8);
+ await page.getByRole('button',{name:'Apply architecture import'}).click();
+ await expect(page.locator('.arch-node')).toHaveCount(2);
+ expect(await page.evaluate(()=>Reflect.get(globalThis,'DO_NOT_RUN_ARCHITECTURE'))).toBeUndefined();
+ await page.getByLabel('Import dbt catalog file').setInputFiles(upload(catalog,'catalog.json'));await page.getByRole('button',{name:'Apply architecture import'}).click();
+ await page.getByRole('tab',{name:'Schema drift',exact:true}).click();
+ await expect(page.locator('.arch-analysis')).toContainText('BIGINT');await expect(page.locator('.arch-evidence')).toContainText('Imported dbt catalog (not live)');
+ await page.screenshot({path:info.outputPath('architecture-dbt-drift.png'),fullPage:true});
+ await page.getByLabel('Import architecture file',{exact:true}).setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from('{bad')});
+ await expect(page.locator('.arch-error')).toBeVisible();await expect(page.getByRole('heading',{name:'Browser review',exact:true})).toBeVisible();expect(wasm).toEqual([]);
+});
+test('dependency matrix, narrow layout and inert ADF reuse',async({page},info)=>{
+ await page.goto('/?module=architecture&embed=1');
+ await page.getByRole('tab',{name:'Dependencies',exact:true}).click();
+ await page.getByRole('button',{name:'Site performance to Performance report',exact:true}).click();
+ await expect(page.locator('.arch-inspector h2')).toHaveText('Site performance');
+ const adf={name:'Artifact review',properties:{activities:[{name:'Read',type:'Copy'},{name:'Write',type:'Script',dependsOn:[{activity:'Read',dependencyConditions:['Succeeded']}]}]}};
+ await page.getByLabel('Import architecture file',{exact:true}).setInputFiles(upload(adf));await page.getByRole('button',{name:'Apply architecture import'}).click();await expect(page.locator('.arch-node')).toHaveCount(2);
+ await page.setViewportSize({width:390,height:844});await expect(page.getByRole('button',{name:'Select Read',exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();await page.screenshot({path:info.outputPath('architecture-mobile.png'),fullPage:true});expect(wasm).toEqual([]);
+});
+test('architecture joins SQLRooms modules and retains its session across switches',async({page})=>{
+ await page.goto('/?module=architecture');await expect(page.getByTestId('runtime-state')).toHaveText('DuckDB ready',{timeout:60000});await expect(page.locator('.arch-node')).toHaveCount(8);
+ await page.getByLabel('Import architecture file',{exact:true}).setInputFiles(upload(manifest));await page.getByRole('button',{name:'Apply architecture import'}).click();await expect(page.locator('.arch-node')).toHaveCount(2);
+ await page.getByRole('button',{name:'Project board',exact:true}).click();await expect(page.getByLabel('Task title')).toBeVisible();await page.getByRole('button',{name:'Architecture review',exact:true}).click();await expect(page.getByRole('heading',{name:'Browser review',exact:true})).toBeVisible();await expect(page.locator('.arch-node')).toHaveCount(2);
+});

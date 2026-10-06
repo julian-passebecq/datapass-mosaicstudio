@@ -1,0 +1,2085 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataPass web app v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "datapass.web-app"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+      "not": {
+        "enum": [
+          "constructor",
+          "prototype",
+          "__proto__"
+        ]
+      }
+    },
+    "version": {
+      "type": "string",
+      "maxLength": 40,
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 160,
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 2000
+    },
+    "label": {
+      "type": "string",
+      "maxLength": 120,
+      "minLength": 1
+    },
+    "theme": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "accent": {
+          "type": "string",
+          "pattern": "^#[a-fA-F0-9]{6}$"
+        },
+        "density": {
+          "enum": [
+            "compact",
+            "comfortable"
+          ]
+        },
+        "mode": {
+          "enum": [
+            "light",
+            "dark"
+          ]
+        }
+      },
+      "required": [
+        "accent",
+        "density"
+      ]
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 160,
+                "minLength": 1
+              },
+              "role": {
+                "enum": [
+                  "input",
+                  "view"
+                ]
+              },
+              "unit": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "type": {
+                "const": "number"
+              },
+              "default": {
+                "type": "number",
+                "minimum": -1000000000000,
+                "maximum": 1000000000000
+              },
+              "min": {
+                "type": "number",
+                "minimum": -1000000000000,
+                "maximum": 1000000000000
+              },
+              "max": {
+                "type": "number",
+                "minimum": -1000000000000,
+                "maximum": 1000000000000
+              },
+              "step": {
+                "type": "number",
+                "minimum": 1e-12,
+                "maximum": 1000000000000
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "role",
+              "type",
+              "default",
+              "min",
+              "max",
+              "step"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 160,
+                "minLength": 1
+              },
+              "role": {
+                "enum": [
+                  "input",
+                  "view"
+                ]
+              },
+              "unit": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "type": {
+                "const": "select"
+              },
+              "default": {
+                "type": "string",
+                "maxLength": 160,
+                "minLength": 1
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "value": {
+                      "type": "string",
+                      "maxLength": 160,
+                      "minLength": 1
+                    },
+                    "label": {
+                      "type": "string",
+                      "maxLength": 160,
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "label"
+                  ]
+                },
+                "maxItems": 100,
+                "minItems": 1
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "role",
+              "type",
+              "default",
+              "options"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 160,
+                "minLength": 1
+              },
+              "role": {
+                "enum": [
+                  "input",
+                  "view"
+                ]
+              },
+              "unit": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "type": {
+                "const": "toggle"
+              },
+              "default": {
+                "type": "boolean"
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "role",
+              "type",
+              "default"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 160,
+                "minLength": 1
+              },
+              "role": {
+                "const": "view"
+              },
+              "unit": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "type": {
+                "const": "multi"
+              },
+              "default": {
+                "type": "string",
+                "maxLength": 4000
+              },
+              "options": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "value": {
+                      "type": "string",
+                      "maxLength": 160,
+                      "minLength": 1,
+                      "pattern": "^[^|]+$"
+                    },
+                    "label": {
+                      "type": "string",
+                      "maxLength": 160,
+                      "minLength": 1
+                    }
+                  },
+                  "required": [
+                    "value",
+                    "label"
+                  ]
+                },
+                "maxItems": 100,
+                "minItems": 1
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "role",
+              "type",
+              "default",
+              "options"
+            ]
+          },
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              "label": {
+                "type": "string",
+                "maxLength": 160,
+                "minLength": 1
+              },
+              "role": {
+                "const": "view"
+              },
+              "unit": {
+                "type": "string",
+                "maxLength": 40
+              },
+              "type": {
+                "const": "interval"
+              },
+              "default": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "maxLength": 64
+              },
+              "min": {
+                "type": "number",
+                "minimum": -1000000000000,
+                "maximum": 1000000000000
+              },
+              "max": {
+                "type": "number",
+                "minimum": -1000000000000,
+                "maximum": 1000000000000
+              }
+            },
+            "required": [
+              "id",
+              "label",
+              "role",
+              "type",
+              "default",
+              "min",
+              "max"
+            ]
+          }
+        ]
+      },
+      "maxItems": 100,
+      "minItems": 0
+    },
+    "datasets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+            "not": {
+              "enum": [
+                "constructor",
+                "prototype",
+                "__proto__"
+              ]
+            }
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1
+          },
+          "layer": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "source": {
+            "enum": [
+              "inline",
+              "derived",
+              "task"
+            ]
+          },
+          "provenance": {
+            "enum": [
+              "synthetic",
+              "user-provided",
+              "derived"
+            ]
+          },
+          "rowKey": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+            "not": {
+              "enum": [
+                "constructor",
+                "prototype",
+                "__proto__"
+              ]
+            }
+          },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                  "not": {
+                    "enum": [
+                      "constructor",
+                      "prototype",
+                      "__proto__"
+                    ]
+                  }
+                },
+                "label": {
+                  "type": "string",
+                  "maxLength": 120,
+                  "minLength": 1
+                },
+                "type": {
+                  "enum": [
+                    "string",
+                    "number",
+                    "boolean"
+                  ]
+                },
+                "unit": {
+                  "type": "string",
+                  "maxLength": 40
+                },
+                "nullable": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "id",
+                "label",
+                "type"
+              ]
+            },
+            "maxItems": 40,
+            "minItems": 1
+          },
+          "inputs": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+              "not": {
+                "enum": [
+                  "constructor",
+                  "prototype",
+                  "__proto__"
+                ]
+              }
+            },
+            "maxItems": 100,
+            "minItems": 0
+          },
+          "dependsOn": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+              "not": {
+                "enum": [
+                  "constructor",
+                  "prototype",
+                  "__proto__"
+                ]
+              }
+            },
+            "maxItems": 50,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "layer",
+          "description",
+          "source",
+          "provenance",
+          "rowKey",
+          "columns",
+          "inputs",
+          "dependsOn"
+        ]
+      },
+      "maxItems": 50,
+      "minItems": 0
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+            "not": {
+              "enum": [
+                "constructor",
+                "prototype",
+                "__proto__"
+              ]
+            }
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1
+          },
+          "output": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+            "not": {
+              "enum": [
+                "constructor",
+                "prototype",
+                "__proto__"
+              ]
+            }
+          },
+          "timeoutMs": {
+            "type": "integer",
+            "minimum": 100,
+            "maximum": 60000
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "output",
+          "timeoutMs"
+        ]
+      },
+      "maxItems": 50,
+      "minItems": 0
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+            "not": {
+              "enum": [
+                "constructor",
+                "prototype",
+                "__proto__"
+              ]
+            }
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "sections": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                  "not": {
+                    "enum": [
+                      "constructor",
+                      "prototype",
+                      "__proto__"
+                    ]
+                  }
+                },
+                "title": {
+                  "type": "string",
+                  "maxLength": 160,
+                  "minLength": 1
+                },
+                "columns": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 4
+                },
+                "blocks": {
+                  "type": "array",
+                  "items": {
+                    "oneOf": [
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "text"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "text": {
+                            "type": "string",
+                            "maxLength": 20000
+                          },
+                          "tone": {
+                            "enum": [
+                              "lead",
+                              "body",
+                              "note"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "text"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "metric"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "value": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "literal": {
+                                    "type": [
+                                      "string",
+                                      "number",
+                                      "boolean",
+                                      "null"
+                                    ],
+                                    "maxLength": 4000
+                                  }
+                                },
+                                "required": [
+                                  "literal"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "field": {
+                                    "type": "string",
+                                    "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                                    "not": {
+                                      "enum": [
+                                        "constructor",
+                                        "prototype",
+                                        "__proto__"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "field"
+                                ]
+                              },
+                              {
+                                "type": "object",
+                                "additionalProperties": false,
+                                "properties": {
+                                  "dataset": {
+                                    "type": "string",
+                                    "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                                    "not": {
+                                      "enum": [
+                                        "constructor",
+                                        "prototype",
+                                        "__proto__"
+                                      ]
+                                    }
+                                  },
+                                  "row": {
+                                    "type": "string",
+                                    "maxLength": 160,
+                                    "minLength": 1
+                                  },
+                                  "column": {
+                                    "type": "string",
+                                    "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                                    "not": {
+                                      "enum": [
+                                        "constructor",
+                                        "prototype",
+                                        "__proto__"
+                                      ]
+                                    }
+                                  }
+                                },
+                                "required": [
+                                  "dataset",
+                                  "row",
+                                  "column"
+                                ]
+                              }
+                            ]
+                          },
+                          "unit": {
+                            "type": "string",
+                            "maxLength": 40
+                          },
+                          "digits": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 6
+                          },
+                          "note": {
+                            "type": "string",
+                            "maxLength": 2000
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "value"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "input"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "field": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "control": {
+                            "enum": [
+                              "field",
+                              "slider"
+                            ]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "field"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "table"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "dataset": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "pageSize": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "dataset"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "chart"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "dataset": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "x": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "y": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "kind": {
+                            "enum": [
+                              "bar",
+                              "line",
+                              "scatter"
+                            ]
+                          },
+                          "unit": {
+                            "type": "string",
+                            "maxLength": 30
+                          },
+                          "renderer": {
+                            "enum": [
+                              "viz",
+                              "vizforge"
+                            ]
+                          },
+                          "series": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "y2": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "sort": {
+                            "enum": [
+                              "none",
+                              "ascending",
+                              "descending"
+                            ]
+                          },
+                          "stack": {
+                            "enum": [
+                              "stacked",
+                              "grouped"
+                            ]
+                          },
+                          "orientation": {
+                            "enum": [
+                              "horizontal",
+                              "vertical"
+                            ]
+                          },
+                          "previous": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "selection": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "dataset",
+                          "x",
+                          "y",
+                          "kind"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "task"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "task": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "task"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "catalog"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "code"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "text": {
+                            "type": "string",
+                            "maxLength": 20000
+                          },
+                          "language": {
+                            "type": "string",
+                            "maxLength": 40,
+                            "minLength": 1
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "text",
+                          "language"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "scene3d"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "resource": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "explode": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "phase": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "camera": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "selection": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "resource",
+                          "explode",
+                          "phase",
+                          "camera",
+                          "selection"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "model3d"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "resource": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "selection": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "camera": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "mode": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "explode": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "section": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "view": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "annotations": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "source": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "resource",
+                          "selection",
+                          "camera",
+                          "mode",
+                          "explode",
+                          "section",
+                          "view",
+                          "annotations",
+                          "source"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "motion"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "resource": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "step": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "selection": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "projection": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "panel": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "source": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "resource",
+                          "step",
+                          "selection",
+                          "projection",
+                          "panel",
+                          "source"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "replay"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "resource": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "frame": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "selection": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "channel": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "view": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "speed": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "resource",
+                          "frame",
+                          "selection",
+                          "channel",
+                          "view",
+                          "speed"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "explorer"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "resource": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "focus": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "facet": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "view": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "level": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "group": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "document": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "scroll": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "resource",
+                          "focus",
+                          "facet",
+                          "view",
+                          "level",
+                          "group",
+                          "document"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "story-controls"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "resource": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "resource"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "story-figure"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "resource": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "resource"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "architecture"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "resource": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "resource"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "custom"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "resource": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "resource"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "explanation"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "resource": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "resource"
+                        ]
+                      },
+                      {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          },
+                          "type": {
+                            "const": "runs"
+                          },
+                          "span": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 4
+                          },
+                          "title": {
+                            "type": "string",
+                            "maxLength": 200,
+                            "minLength": 1
+                          },
+                          "resource": {
+                            "type": "string",
+                            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                            "not": {
+                              "enum": [
+                                "constructor",
+                                "prototype",
+                                "__proto__"
+                              ]
+                            }
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "type",
+                          "resource"
+                        ]
+                      }
+                    ]
+                  },
+                  "maxItems": 40,
+                  "minItems": 1
+                }
+              },
+              "required": [
+                "id",
+                "columns",
+                "blocks"
+              ]
+            },
+            "maxItems": 30,
+            "minItems": 1
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "description",
+          "sections"
+        ]
+      },
+      "maxItems": 20,
+      "minItems": 1
+    }
+  },
+  "required": [
+    "format",
+    "schemaVersion",
+    "id",
+    "version",
+    "title",
+    "description",
+    "label",
+    "theme",
+    "fields",
+    "datasets",
+    "tasks",
+    "pages"
+  ]
+}

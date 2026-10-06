@@ -1,0 +1,577 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataPass authored motion v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "version",
+    "title",
+    "description",
+    "provenance",
+    "note",
+    "entities",
+    "links",
+    "steps",
+    "sources"
+  ],
+  "$defs": {
+    "timing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "startMs",
+        "endMs",
+        "easing"
+      ],
+      "properties": {
+        "startMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1800
+        },
+        "endMs": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 1800
+        },
+        "easing": {
+          "enum": [
+            "linear",
+            "cubic-in-out"
+          ]
+        }
+      }
+    }
+  },
+  "properties": {
+    "format": {
+      "$ref": "./motion.schema.json#/properties/format"
+    },
+    "version": {
+      "const": 2
+    },
+    "title": {
+      "$ref": "./motion.schema.json#/properties/title"
+    },
+    "description": {
+      "$ref": "./motion.schema.json#/properties/description"
+    },
+    "provenance": {
+      "enum": [
+        "synthetic",
+        "authored",
+        "recorded"
+      ]
+    },
+    "note": {
+      "$ref": "./motion.schema.json#/properties/note"
+    },
+    "entities": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 40,
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "label",
+              "description",
+              "color",
+              "evidence",
+              "kind",
+              "position",
+              "size"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "./motion.schema.json#/properties/entities/items/oneOf/0/properties/id"
+              },
+              "label": {
+                "$ref": "./motion.schema.json#/properties/entities/items/oneOf/0/properties/label"
+              },
+              "description": {
+                "$ref": "./motion.schema.json#/properties/entities/items/oneOf/0/properties/description"
+              },
+              "color": {
+                "$ref": "./motion.schema.json#/properties/entities/items/oneOf/0/properties/color"
+              },
+              "evidence": {
+                "$ref": "./motion.schema.json#/properties/entities/items/oneOf/0/properties/evidence"
+              },
+              "kind": {
+                "$ref": "./motion.schema.json#/properties/entities/items/oneOf/0/properties/kind"
+              },
+              "position": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": {
+                  "type": "number",
+                  "minimum": -400,
+                  "maximum": 400
+                }
+              },
+              "size": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": {
+                  "type": "number",
+                  "minimum": 0.1,
+                  "maximum": 64
+                }
+              },
+              "glyph": {
+                "$ref": "./motion.schema.json#/properties/steps/items/properties/id"
+              }
+            }
+          },
+          {
+            "$ref": "./motion.schema.json#/properties/entities/items/oneOf/1"
+          }
+        ]
+      }
+    },
+    "links": {
+      "type": "array",
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "from",
+          "to",
+          "label",
+          "via"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "./motion.schema.json#/properties/links/items/properties/id"
+          },
+          "from": {
+            "$ref": "./motion.schema.json#/properties/links/items/properties/from"
+          },
+          "to": {
+            "$ref": "./motion.schema.json#/properties/links/items/properties/to"
+          },
+          "label": {
+            "$ref": "./motion.schema.json#/properties/links/items/properties/label"
+          },
+          "via": {
+            "type": "array",
+            "maxItems": 8,
+            "items": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "number",
+                "minimum": -400,
+                "maximum": 400
+              }
+            }
+          },
+          "style": {
+            "enum": [
+              "solid",
+              "dashed"
+            ]
+          },
+          "attach": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "from",
+              "to"
+            ],
+            "properties": {
+              "from": {
+                "enum": [
+                  "top",
+                  "base",
+                  "surface",
+                  "side"
+                ]
+              },
+              "to": {
+                "enum": [
+                  "top",
+                  "base",
+                  "surface",
+                  "side"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "caption",
+          "focus",
+          "holdMs",
+          "transitionMs",
+          "commands",
+          "activeLinks",
+          "evidence"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "./motion.schema.json#/properties/steps/items/properties/id"
+          },
+          "title": {
+            "$ref": "./motion.schema.json#/properties/steps/items/properties/title"
+          },
+          "caption": {
+            "$ref": "./motion.schema.json#/properties/steps/items/properties/caption"
+          },
+          "focus": {
+            "$ref": "./motion.schema.json#/properties/steps/items/properties/focus"
+          },
+          "holdMs": {
+            "$ref": "./motion.schema.json#/properties/steps/items/properties/holdMs"
+          },
+          "transitionMs": {
+            "$ref": "./motion.schema.json#/properties/steps/items/properties/transitionMs"
+          },
+          "commands": {
+            "type": "array",
+            "maxItems": 80,
+            "items": {
+              "oneOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "type",
+                    "entity",
+                    "position"
+                  ],
+                  "properties": {
+                    "type": {
+                      "$ref": "./motion.schema.json#/properties/steps/items/properties/commands/items/oneOf/0/properties/type"
+                    },
+                    "entity": {
+                      "$ref": "./motion.schema.json#/properties/steps/items/properties/commands/items/oneOf/0/properties/entity"
+                    },
+                    "position": {
+                      "$ref": "./motion.schema.json#/properties/steps/items/properties/commands/items/oneOf/0/properties/position"
+                    },
+                    "timing": {
+                      "$ref": "#/$defs/timing"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "type",
+                    "entity",
+                    "link"
+                  ],
+                  "properties": {
+                    "type": {
+                      "$ref": "./motion.schema.json#/properties/steps/items/properties/commands/items/oneOf/1/properties/type"
+                    },
+                    "entity": {
+                      "$ref": "./motion.schema.json#/properties/steps/items/properties/commands/items/oneOf/1/properties/entity"
+                    },
+                    "link": {
+                      "$ref": "./motion.schema.json#/properties/steps/items/properties/commands/items/oneOf/1/properties/link"
+                    },
+                    "timing": {
+                      "$ref": "#/$defs/timing"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "type",
+                    "entity",
+                    "value"
+                  ],
+                  "properties": {
+                    "type": {
+                      "$ref": "./motion.schema.json#/properties/steps/items/properties/commands/items/oneOf/2/properties/type"
+                    },
+                    "entity": {
+                      "$ref": "./motion.schema.json#/properties/steps/items/properties/commands/items/oneOf/2/properties/entity"
+                    },
+                    "value": {
+                      "$ref": "./motion.schema.json#/properties/steps/items/properties/commands/items/oneOf/2/properties/value"
+                    },
+                    "timing": {
+                      "$ref": "#/$defs/timing"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "type",
+                    "entity",
+                    "visible"
+                  ],
+                  "properties": {
+                    "type": {
+                      "$ref": "./motion.schema.json#/properties/steps/items/properties/commands/items/oneOf/3/properties/type"
+                    },
+                    "entity": {
+                      "$ref": "./motion.schema.json#/properties/steps/items/properties/commands/items/oneOf/3/properties/entity"
+                    },
+                    "visible": {
+                      "$ref": "./motion.schema.json#/properties/steps/items/properties/commands/items/oneOf/3/properties/visible"
+                    },
+                    "timing": {
+                      "$ref": "#/$defs/timing"
+                    }
+                  }
+                },
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "type",
+                    "entity",
+                    "text"
+                  ],
+                  "properties": {
+                    "type": {
+                      "const": "label"
+                    },
+                    "entity": {
+                      "$ref": "./motion.schema.json#/properties/steps/items/properties/commands/items/oneOf/0/properties/entity"
+                    },
+                    "text": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 80
+                    },
+                    "timing": {
+                      "$ref": "#/$defs/timing"
+                    }
+                  }
+                }
+              ]
+            }
+          },
+          "activeLinks": {
+            "$ref": "./motion.schema.json#/properties/steps/items/properties/activeLinks"
+          },
+          "evidence": {
+            "$ref": "./motion.schema.json#/properties/steps/items/properties/evidence"
+          },
+          "annotations": {
+            "type": "array",
+            "maxItems": 6,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "entity",
+                "text",
+                "offset",
+                "evidence"
+              ],
+              "properties": {
+                "id": {
+                  "$ref": "./motion.schema.json#/properties/steps/items/properties/id"
+                },
+                "entity": {
+                  "$ref": "./motion.schema.json#/properties/steps/items/properties/id"
+                },
+                "text": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160
+                },
+                "offset": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": -280,
+                    "maximum": 280
+                  }
+                },
+                "evidence": {
+                  "$ref": "./motion.schema.json#/properties/steps/items/properties/evidence"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "sources": {
+      "$ref": "./motion.schema.json#/properties/sources"
+    },
+    "layers": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 12,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "label",
+          "z",
+          "color"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "./motion.schema.json#/properties/steps/items/properties/id"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "z": {
+            "type": "number",
+            "minimum": -400,
+            "maximum": 400
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[a-fA-F0-9]{6}$"
+          },
+          "texture": {
+            "enum": [
+              "plain",
+              "water"
+            ]
+          },
+          "extent": {
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "type": "number",
+              "minimum": -400,
+              "maximum": 400
+            }
+          }
+        }
+      }
+    },
+    "groups": {
+      "type": "array",
+      "maxItems": 24,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "layer",
+          "members",
+          "color"
+        ],
+        "properties": {
+          "id": {
+            "$ref": "./motion.schema.json#/properties/steps/items/properties/id"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "layer": {
+            "$ref": "./motion.schema.json#/properties/steps/items/properties/id"
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[a-fA-F0-9]{6}$"
+          },
+          "members": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 40,
+            "uniqueItems": true,
+            "items": {
+              "$ref": "./motion.schema.json#/properties/steps/items/properties/id"
+            }
+          }
+        }
+      }
+    },
+    "scene": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "stationSize": {
+          "type": "number",
+          "minimum": 8,
+          "maximum": 64
+        },
+        "positionRange": {
+          "type": "number",
+          "minimum": 30,
+          "maximum": 400
+        },
+        "labels": {
+          "enum": [
+            "auto",
+            "attached"
+          ]
+        },
+        "linkCasing": {
+          "type": "boolean"
+        },
+        "linkCorner": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 40
+        },
+        "header": {
+          "type": "boolean"
+        },
+        "background": {
+          "type": "string",
+          "pattern": "^#[a-fA-F0-9]{6}$"
+        },
+        "legend": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "solid",
+            "dashed"
+          ],
+          "properties": {
+            "solid": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            },
+            "dashed": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 60
+            }
+          }
+        }
+      }
+    }
+  }
+}

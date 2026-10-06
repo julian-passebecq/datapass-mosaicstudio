@@ -1,0 +1,31 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {mkdtemp,readdir,readFile,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+import {parseCaptureArguments} from '../scripts/capture-client.mjs';
+import {parseDevArguments,isClientFile} from '../scripts/client-dev.mjs';
+import {readSelection} from '../src/framework/selection.ts';
+import {SiteRuntime} from '../src/framework/runtime.ts';
+import {definition} from './foundation-fixture.mjs';
+import {scaffoldClient} from '../scripts/scaffold-client.mjs';
+import {customFields} from '../scripts/templates/custom.mjs';
+import {chapterAt} from '../src/framework/scroll-model.ts';
+const fixture=()=>{const d=definition();d.manifest.fields.push(...structuredClone(customFields));return d;};
+test('host CLI selects one loopback client and a strict, predictable port',()=>{assert.deepEqual(parseDevArguments(['example']),{id:'example',port:5173,json:false});assert.deepEqual(parseDevArguments(['example','--port','4193','--json']),{id:'example',port:4193,json:true});});
+test('host HMR filter accepts Vite POSIX ids for the native client root, and nothing outside it',()=>{
+  const root=path.resolve('clients','example'),posix=file=>file.split(path.sep).join('/');
+  assert.ok(isClientFile(path.join(root,'app.ts'),root));
+  assert.ok(isClientFile(posix(path.join(root,'app.ts')),root),'Vite normalizes ids to forward slashes (Windows edits were ignored)');
+  assert.ok(isClientFile(posix(path.join(root,'public','artifacts','a.json')),root));
+  for(const outside of [root,path.resolve('clients','example-two','app.ts'),path.resolve('src','main.tsx')])assert.ok(!isClientFile(posix(outside),root),outside);
+});
+for(const args of [[],['../other'],['Example'],['x','--host','0.0.0.0'],['x','--port','0'],['x','--port','4190'],['x','--port','65536'],['x','--port'],['x','--port','1.5'],['x','--json','--json'],['x','ignored']])test('host rejects ambiguous or unsafe arguments '+JSON.stringify(args),()=>assert.throws(()=>parseDevArguments(args)));
+test('semantic binding rejects domain input, missing field and renderer IDs',()=>{const d=fixture(),r=new SiteRuntime(d);assert.equal(readSelection(r.manifest,r.getSnapshot().values,'custom-selection'),'none');for(const field of ['gain','camera','missing'])assert.throws(()=>readSelection(r.manifest,r.getSnapshot().values,field));assert.throws(()=>readSelection(r.manifest,{'custom-selection':'node-index-2'},'custom-selection'));});
+test('selection, hidden projection and representation preserve one result without rerunning',async()=>{const d=fixture();let runs=0;const handler=d.bindings.tasks.compute;d.bindings.tasks.compute=async c=>{runs++;return handler(c);};const r=new SiteRuntime(d);await r.runTask('compute');const before=r.dataset('result');r.applyCue({'custom-selection':'alpha'});r.applyCue({'custom-representation':'canvas','custom-show-alpha':false});assert.equal(readSelection(r.manifest,r.getSnapshot().values,'custom-selection'),'alpha');assert.equal(r.dataset('result'),before);assert.equal(runs,1);assert.equal(r.getSnapshot().tasks.compute.status,'ready');});
+test('invalid semantic restore is atomic and does not change the selected projection',()=>{const r=new SiteRuntime(fixture());r.applyCue({'custom-selection':'beta','custom-representation':'canvas'});const before=r.getSnapshot(),saved=r.save('home');saved.values['custom-selection']='unknown';assert.throws(()=>r.restore(saved));assert.equal(r.getSnapshot(),before);assert.throws(()=>r.applyCue({'custom-selection':'alpha',gain:2}));assert.equal(r.getSnapshot(),before);});
+test('scroll maps only finite authored stops and keeps earlier behavior',()=>{assert.equal(chapterAt(-2,4),0);assert.equal(chapterAt(2,4),3);assert.equal(chapterAt(.5,3),1);assert.throws(()=>chapterAt(NaN,3));assert.throws(()=>chapterAt(.1,0));});
+test('every family accepts an additive client-owned custom component',async()=>{const root=await mkdtemp(path.join(tmpdir(),'studio-composed-'));try{for(const family of ['content','analytics','knowledge','spatial','replay']){const dir=await scaffoldClient({id:family,family,custom:true,root});const files=await readdir(dir),source=await readFile(path.join(dir,'app.ts'),'utf8');assert.ok(files.includes('ClientNote.tsx'));assert.ok(source.includes('clientNote:[]'));assert.ok(source.includes('custom-selection'));assert.equal(files.includes('base.ts'),family!=='content');assert.ok((await readFile(path.join(dir,'README.md'),'utf8')).includes('client:dev'));await assert.rejects(()=>scaffoldClient({id:family,family,custom:true,root}));}}finally{await rm(root,{recursive:true,force:true});}});
+test('qualified addons can compose with the same custom escape hatch',async()=>{const root=await mkdtemp(path.join(tmpdir(),'studio-addons-'));try{for(const [id,options]of Object.entries({motion:{motion:true},runs:{family:'analytics',foundation:true},models:{family:'spatial',model:true}})){const dir=await scaffoldClient({id,root,custom:true,...options});assert.ok((await readdir(dir)).includes('base.ts'));}}finally{await rm(root,{recursive:true,force:true});}});
+
+test('capture CLI bounds state/viewport intent and refuses unknown switches',()=>{assert.deepEqual(parseCaptureArguments(['example','--out','qa/capture']),{id:'example',width:1440,height:1000,port:4179,out:'qa/capture'});for(const args of [['example'],['example','--out','qa/x','--width','319'],['example','--out','qa/x','--height','99999'],['example','--out','qa/x','--width','NaN'],['example','--out','qa/x','--page','../other'],['example','--out','qa/x','--port','4190'],['example','--out','qa/x','--url','https://example.com'],['example','--out','qa/x','--out','qa/y']])assert.throws(()=>parseCaptureArguments(args));});

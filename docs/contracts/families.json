@@ -1,0 +1,52 @@
+[
+  {
+    "id": "content",
+    "title": "Content and presentation",
+    "template": "basic",
+    "guide": "docs/recipes/content.md",
+    "defaultCapabilities": [],
+    "purpose": "Pages, figures and public project content; no 3D requirement."
+  },
+  {
+    "id": "knowledge",
+    "title": "Knowledge and architecture",
+    "template": "knowledge",
+    "guide": "docs/recipes/knowledge.md",
+    "defaultCapabilities": [
+      "explorer"
+    ],
+    "purpose": "Search, documents, context and optional architecture views."
+  },
+  {
+    "id": "analytics",
+    "title": "Analytical applications",
+    "template": "analytics",
+    "guide": "docs/recipes/analytics.md",
+    "defaultCapabilities": [
+      "charts"
+    ],
+    "purpose": "Validated inputs, datasets, KPIs and charts."
+  },
+  {
+    "id": "spatial",
+    "title": "Spatial discovery",
+    "template": "spatial",
+    "guide": "docs/recipes/spatial.md",
+    "defaultCapabilities": [
+      "explorer",
+      "spatial"
+    ],
+    "purpose": "An optional 3D representation of an authored system."
+  },
+  {
+    "id": "replay",
+    "title": "Engineering replay",
+    "template": "replay",
+    "guide": "docs/recipes/replay.md",
+    "defaultCapabilities": [
+      "charts",
+      "replay"
+    ],
+    "purpose": "A shared sample index for a plan, measurements, events and optional 3D."
+  }
+]

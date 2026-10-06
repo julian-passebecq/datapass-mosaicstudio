@@ -1,0 +1,113 @@
+{
+  "format": "datapass.artifact-manifest",
+  "version": 1,
+  "artifacts": [
+    {
+      "id": "wind-aep-weibull",
+      "title": "ILLUSTRATIVE annual energy vs mean wind speed (Weibull k=2)",
+      "file": "wind-aep-weibull.json",
+      "bytes": 6202,
+      "sha256": "edb1de122518f010f48f68ff7ef0b84611bce25475156e5fa00b48b1205fbc62",
+      "provenance": {
+        "kind": "computed",
+        "source": "py/wind_reference_model.py (run as a script, from Jupyter or from marimo). ILLUSTRATIVE: generic 3 MW-class power curve, Rayleigh-like Weibull k=2, no losses. Not FOIL data, not a site assessment.",
+        "producer": {
+          "kind": "script",
+          "name": "py/wind_reference_model.py",
+          "evidence": [
+            {
+              "path": "py/wind_reference_model.py",
+              "start": 48,
+              "end": 56,
+              "label": "Trapezoid AEP integral"
+            },
+            {
+              "path": "py/wind_reference_model.py",
+              "start": 59,
+              "end": 70,
+              "label": "Table of cases"
+            }
+          ]
+        },
+        "inputs": [
+          {
+            "id": "k",
+            "label": "Weibull shape k",
+            "value": 2.0,
+            "evidence": [
+              {
+                "path": "py/wind_reference_model.py",
+                "start": 38,
+                "end": 41,
+                "label": "Weibull density"
+              }
+            ]
+          },
+          {
+            "id": "ratedPower",
+            "label": "Rated power",
+            "value": 3000.0,
+            "unit": "kW",
+            "evidence": [
+              {
+                "path": "py/wind_reference_model.py",
+                "start": 18,
+                "end": 18,
+                "label": "Rated power constant"
+              },
+              {
+                "path": "py/wind_reference_model.py",
+                "start": 29,
+                "end": 35,
+                "label": "Generic power curve"
+              }
+            ]
+          },
+          {
+            "id": "speeds",
+            "label": "Cut-in / rated / cut-out",
+            "value": "3 / 12 / 25",
+            "unit": "m/s",
+            "evidence": [
+              {
+                "path": "py/wind_reference_model.py",
+                "start": 19,
+                "end": 19,
+                "label": "Power curve speeds"
+              }
+            ]
+          },
+          {
+            "id": "hours",
+            "label": "Hours per year",
+            "value": 8760.0,
+            "unit": "h",
+            "evidence": [
+              {
+                "path": "py/wind_reference_model.py",
+                "start": 20,
+                "end": 20,
+                "label": "Hours per year"
+              }
+            ]
+          },
+          {
+            "id": "means",
+            "label": "Mean wind speeds",
+            "value": "5.0 .. 10.0 step 0.5",
+            "unit": "m/s",
+            "evidence": [
+              {
+                "path": "py/wind_reference_model.py",
+                "start": 44,
+                "end": 45,
+                "label": "Weibull scale from mean"
+              }
+            ]
+          }
+        ],
+        "inputHash": "de3e05a027f57c5ea70f374a206c631d0c449b2f5669a19d997ffa08c5222804"
+      }
+    }
+  ]
+}

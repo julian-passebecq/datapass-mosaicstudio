@@ -1,0 +1,82 @@
+{
+  "models": {
+    "title": "Approved static GLB models",
+    "flag": "__STUDIO_MODELS__",
+    "guide": "docs/recipes/models.md",
+    "engines": [
+      "Shared Three.js viewport / GLTFLoader"
+    ]
+  },
+  "runs": {
+    "title": "Run history and result views",
+    "flag": "__STUDIO_RUNS__",
+    "guide": "docs/recipes/runs.md",
+    "engines": [
+      "Existing SiteRuntime tasks / artifact adapters"
+    ]
+  },
+  "charts": {
+    "title": "Analytical charts",
+    "flag": "__STUDIO_CHARTS__",
+    "guide": "docs/recipes/analytics.md",
+    "engines": [
+      "VizForge / D3"
+    ]
+  },
+  "stories": {
+    "title": "Authored visual stories",
+    "flag": "__STUDIO_STORIES__",
+    "guide": "docs/recipes/stories.md",
+    "engines": [
+      "VizForge StoryPlayer"
+    ]
+  },
+  "spatial": {
+    "title": "Optional 3D scenes",
+    "flag": "__STUDIO_3D__",
+    "guide": "docs/recipes/spatial.md",
+    "engines": [
+      "Three.js"
+    ]
+  },
+  "architecture": {
+    "title": "Architecture review",
+    "flag": "__STUDIO_ARCHITECTURE__",
+    "guide": "docs/ARCHITECTURE_REVIEW.md",
+    "engines": [
+      "React Flow"
+    ]
+  },
+  "explorer": {
+    "title": "Context and documents",
+    "flag": "__STUDIO_EXPLORER__",
+    "guide": "docs/recipes/knowledge.md",
+    "engines": [
+      "React Flow"
+    ]
+  },
+  "explanation": {
+    "title": "Semantic explanations",
+    "flag": "__STUDIO_EXPLANATIONS__",
+    "guide": "docs/recipes/explanation.md",
+    "engines": [
+      "ConceptMotion"
+    ]
+  },
+  "motion": {
+    "title": "Authored 2D / isometric motion",
+    "flag": "__STUDIO_MOTION__",
+    "guide": "docs/recipes/motion.md",
+    "engines": [
+      "D3 SVG / VizForge StoryPlayer"
+    ]
+  },
+  "replay": {
+    "title": "Sampled engineering replay",
+    "flag": "__STUDIO_REPLAY__",
+    "guide": "docs/recipes/replay.md",
+    "engines": [
+      "VizForge StoryPlayer / Figure"
+    ]
+  }
+}

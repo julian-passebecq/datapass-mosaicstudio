@@ -1,0 +1,51 @@
+name: Engine authoring qualification
+on:
+  workflow_dispatch:
+  push:
+    branches: ['feat/studio2-engine-consolidation']
+permissions:
+  contents: read
+concurrency:
+  group: engine-qualification-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm run bootstrap
+      - name: Use an installed browser or install the pinned Playwright browser
+        run: |
+          browser="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -n "$browser" ]; then
+            echo "CI_BROWSER_PATH=$browser" >> "$GITHUB_ENV"
+            "$browser" --version
+          else
+            npx playwright install --with-deps chromium
+          fi
+      - run: npm run test:engine
+      - name: Preserve exact source, full history and available selected builds
+        if: always()
+        run: |
+          mkdir -p qa/engine-recovery
+          git rev-parse HEAD > qa/engine-recovery/source-sha.txt
+          git status --porcelain > qa/engine-recovery/working-tree.txt
+          git archive --format=tar.gz HEAD > qa/engine-recovery/source.tar.gz
+          git bundle create qa/engine-recovery/repository.bundle --all
+          if [ -d dist-clients ]; then tar -czf qa/engine-recovery/selected-builds.tar.gz dist-clients; fi
+          sha256sum qa/engine-recovery/* > qa/engine-recovery.sha256
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: studio-engine-evidence
+          path: qa/
+          retention-days: 3

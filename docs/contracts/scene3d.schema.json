@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataPass procedural scene v1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "format": {
+      "const": "datapass.scene3d"
+    },
+    "version": {
+      "const": 1
+    },
+    "title": {
+      "type": "string",
+      "maxLength": 200,
+      "minLength": 1
+    },
+    "note": {
+      "type": "string",
+      "maxLength": 2000,
+      "minLength": 1
+    },
+    "entities": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+            "not": {
+              "enum": [
+                "constructor",
+                "prototype",
+                "__proto__"
+              ]
+            }
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 160,
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000,
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "description"
+        ]
+      },
+      "maxItems": 64,
+      "minItems": 1
+    },
+    "parts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+            "not": {
+              "enum": [
+                "constructor",
+                "prototype",
+                "__proto__"
+              ]
+            }
+          },
+          "parent": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "entity": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                "not": {
+                  "enum": [
+                    "constructor",
+                    "prototype",
+                    "__proto__"
+                  ]
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "shape": {
+            "enum": [
+              "group",
+              "box",
+              "cylinder",
+              "sphere",
+              "cone"
+            ]
+          },
+          "size": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1000
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "position": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 1000
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "rotation": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 1000
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "explode": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 1000
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "color": {
+            "type": "string",
+            "pattern": "^#[a-fA-F0-9]{6}$"
+          },
+          "spin": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "axis": {
+                "enum": [
+                  "x",
+                  "y",
+                  "z"
+                ]
+              },
+              "turns": {
+                "type": "number",
+                "minimum": -10,
+                "maximum": 10
+              }
+            },
+            "required": [
+              "axis",
+              "turns"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "parent",
+          "entity",
+          "shape",
+          "size",
+          "position",
+          "rotation",
+          "explode",
+          "color"
+        ]
+      },
+      "maxItems": 128,
+      "minItems": 1
+    },
+    "cameras": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+            "not": {
+              "enum": [
+                "constructor",
+                "prototype",
+                "__proto__"
+              ]
+            }
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 1
+          },
+          "position": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 1000
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "target": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 1000
+            },
+            "minItems": 3,
+            "maxItems": 3
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "position",
+          "target"
+        ]
+      },
+      "maxItems": 12,
+      "minItems": 1
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "title",
+    "note",
+    "entities",
+    "parts",
+    "cameras"
+  ]
+}

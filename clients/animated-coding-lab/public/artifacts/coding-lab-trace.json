@@ -1,0 +1,439 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "coding-lab-trace",
+  "title": "Execution trace of normalize_rows.py (ILLUSTRATIVE readings)",
+  "provenance": {
+    "kind": "computed",
+    "source": "py/examples/normalize_rows.py executed by py/coding_lab_trace.py under sys.settrace (CPython 3.14). ILLUSTRATIVE readings, not client data.",
+    "runId": "trace-7912e92b3ff1",
+    "producer": {
+      "kind": "script",
+      "name": "py/coding_lab_trace.py (sys.settrace recorder)",
+      "evidence": [
+        {
+          "path": "py/coding_lab_trace.py",
+          "start": 42,
+          "end": 87,
+          "label": "Line tracer (sys.settrace)"
+        },
+        {
+          "path": "py/examples/normalize_rows.py",
+          "start": 5,
+          "end": 5,
+          "label": "Traced function"
+        }
+      ]
+    },
+    "inputs": [
+      {
+        "id": "rows",
+        "label": "Input readings",
+        "value": "12.0, 30.0, 21.0, 48.0",
+        "evidence": [
+          {
+            "path": "py/examples/normalize_rows.py",
+            "start": 9,
+            "end": 9,
+            "label": "Input list"
+          }
+        ]
+      },
+      {
+        "id": "program",
+        "label": "Traced program",
+        "value": "py/examples/normalize_rows.py",
+        "evidence": [
+          {
+            "path": "py/examples/normalize_rows.py",
+            "start": 13,
+            "end": 13,
+            "label": "Loop over rows"
+          },
+          {
+            "path": "py/examples/normalize_rows.py",
+            "start": 17,
+            "end": 17,
+            "label": "Aggregate"
+          }
+        ]
+      }
+    ],
+    "inputHash": "7912e92b3ff121da2ef6351f136b18fe977df9785793e260d9c665905c8fbf6f"
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "step",
+    "columns": [
+      {
+        "id": "step",
+        "label": "Step",
+        "type": "number"
+      },
+      {
+        "id": "line",
+        "label": "Source line",
+        "type": "number"
+      },
+      {
+        "id": "event",
+        "label": "Event",
+        "type": "string"
+      },
+      {
+        "id": "scope",
+        "label": "Frame",
+        "type": "string"
+      },
+      {
+        "id": "code",
+        "label": "Source text",
+        "type": "string"
+      },
+      {
+        "id": "changed",
+        "label": "Changed names",
+        "type": "string"
+      },
+      {
+        "id": "vars",
+        "label": "Variables after (JSON)",
+        "type": "string"
+      },
+      {
+        "id": "returned",
+        "label": "Returned value (JSON)",
+        "type": "string",
+        "nullable": true
+      }
+    ],
+    "rows": [
+      {
+        "step": 0,
+        "line": 5,
+        "event": "line",
+        "scope": "<module>",
+        "code": "def normalize(value, lo, hi):",
+        "changed": "",
+        "vars": "{}",
+        "returned": null
+      },
+      {
+        "step": 1,
+        "line": 9,
+        "event": "line",
+        "scope": "<module>",
+        "code": "rows = [12.0, 30.0, 21.0, 48.0]",
+        "changed": "rows",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0]}",
+        "returned": null
+      },
+      {
+        "step": 2,
+        "line": 10,
+        "event": "line",
+        "scope": "<module>",
+        "code": "lo, hi = min(rows), max(rows)",
+        "changed": "lo,hi",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0}",
+        "returned": null
+      },
+      {
+        "step": 3,
+        "line": 11,
+        "event": "line",
+        "scope": "<module>",
+        "code": "results = []",
+        "changed": "results",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[]}",
+        "returned": null
+      },
+      {
+        "step": 4,
+        "line": 12,
+        "event": "line",
+        "scope": "<module>",
+        "code": "total = 0.0",
+        "changed": "total",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[],\"total\":0.0}",
+        "returned": null
+      },
+      {
+        "step": 5,
+        "line": 13,
+        "event": "line",
+        "scope": "<module>",
+        "code": "for item in rows:",
+        "changed": "item",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[],\"total\":0.0,\"item\":12.0}",
+        "returned": null
+      },
+      {
+        "step": 6,
+        "line": 5,
+        "event": "call",
+        "scope": "normalize",
+        "code": "def normalize(value, lo, hi):",
+        "changed": "value,lo,hi",
+        "vars": "{\"value\":12.0,\"lo\":12.0,\"hi\":48.0}",
+        "returned": null
+      },
+      {
+        "step": 7,
+        "line": 6,
+        "event": "return",
+        "scope": "normalize",
+        "code": "return round((value - lo) / (hi - lo), 3)",
+        "changed": "",
+        "vars": "{\"value\":12.0,\"lo\":12.0,\"hi\":48.0}",
+        "returned": "0.0"
+      },
+      {
+        "step": 8,
+        "line": 14,
+        "event": "line",
+        "scope": "<module>",
+        "code": "transformed = normalize(item, lo, hi)",
+        "changed": "transformed",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[],\"total\":0.0,\"item\":12.0,\"transformed\":0.0}",
+        "returned": null
+      },
+      {
+        "step": 9,
+        "line": 15,
+        "event": "line",
+        "scope": "<module>",
+        "code": "results.append(transformed)",
+        "changed": "results",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0],\"total\":0.0,\"item\":12.0,\"transformed\":0.0}",
+        "returned": null
+      },
+      {
+        "step": 10,
+        "line": 16,
+        "event": "line",
+        "scope": "<module>",
+        "code": "total += transformed",
+        "changed": "",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0],\"total\":0.0,\"item\":12.0,\"transformed\":0.0}",
+        "returned": null
+      },
+      {
+        "step": 11,
+        "line": 13,
+        "event": "line",
+        "scope": "<module>",
+        "code": "for item in rows:",
+        "changed": "item",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0],\"total\":0.0,\"item\":30.0,\"transformed\":0.0}",
+        "returned": null
+      },
+      {
+        "step": 12,
+        "line": 5,
+        "event": "call",
+        "scope": "normalize",
+        "code": "def normalize(value, lo, hi):",
+        "changed": "value,lo,hi",
+        "vars": "{\"value\":30.0,\"lo\":12.0,\"hi\":48.0}",
+        "returned": null
+      },
+      {
+        "step": 13,
+        "line": 6,
+        "event": "return",
+        "scope": "normalize",
+        "code": "return round((value - lo) / (hi - lo), 3)",
+        "changed": "",
+        "vars": "{\"value\":30.0,\"lo\":12.0,\"hi\":48.0}",
+        "returned": "0.5"
+      },
+      {
+        "step": 14,
+        "line": 14,
+        "event": "line",
+        "scope": "<module>",
+        "code": "transformed = normalize(item, lo, hi)",
+        "changed": "transformed",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0],\"total\":0.0,\"item\":30.0,\"transformed\":0.5}",
+        "returned": null
+      },
+      {
+        "step": 15,
+        "line": 15,
+        "event": "line",
+        "scope": "<module>",
+        "code": "results.append(transformed)",
+        "changed": "results",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0,0.5],\"total\":0.0,\"item\":30.0,\"transformed\":0.5}",
+        "returned": null
+      },
+      {
+        "step": 16,
+        "line": 16,
+        "event": "line",
+        "scope": "<module>",
+        "code": "total += transformed",
+        "changed": "total",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0,0.5],\"total\":0.5,\"item\":30.0,\"transformed\":0.5}",
+        "returned": null
+      },
+      {
+        "step": 17,
+        "line": 13,
+        "event": "line",
+        "scope": "<module>",
+        "code": "for item in rows:",
+        "changed": "item",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0,0.5],\"total\":0.5,\"item\":21.0,\"transformed\":0.5}",
+        "returned": null
+      },
+      {
+        "step": 18,
+        "line": 5,
+        "event": "call",
+        "scope": "normalize",
+        "code": "def normalize(value, lo, hi):",
+        "changed": "value,lo,hi",
+        "vars": "{\"value\":21.0,\"lo\":12.0,\"hi\":48.0}",
+        "returned": null
+      },
+      {
+        "step": 19,
+        "line": 6,
+        "event": "return",
+        "scope": "normalize",
+        "code": "return round((value - lo) / (hi - lo), 3)",
+        "changed": "",
+        "vars": "{\"value\":21.0,\"lo\":12.0,\"hi\":48.0}",
+        "returned": "0.25"
+      },
+      {
+        "step": 20,
+        "line": 14,
+        "event": "line",
+        "scope": "<module>",
+        "code": "transformed = normalize(item, lo, hi)",
+        "changed": "transformed",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0,0.5],\"total\":0.5,\"item\":21.0,\"transformed\":0.25}",
+        "returned": null
+      },
+      {
+        "step": 21,
+        "line": 15,
+        "event": "line",
+        "scope": "<module>",
+        "code": "results.append(transformed)",
+        "changed": "results",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0,0.5,0.25],\"total\":0.5,\"item\":21.0,\"transformed\":0.25}",
+        "returned": null
+      },
+      {
+        "step": 22,
+        "line": 16,
+        "event": "line",
+        "scope": "<module>",
+        "code": "total += transformed",
+        "changed": "total",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0,0.5,0.25],\"total\":0.75,\"item\":21.0,\"transformed\":0.25}",
+        "returned": null
+      },
+      {
+        "step": 23,
+        "line": 13,
+        "event": "line",
+        "scope": "<module>",
+        "code": "for item in rows:",
+        "changed": "item",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0,0.5,0.25],\"total\":0.75,\"item\":48.0,\"transformed\":0.25}",
+        "returned": null
+      },
+      {
+        "step": 24,
+        "line": 5,
+        "event": "call",
+        "scope": "normalize",
+        "code": "def normalize(value, lo, hi):",
+        "changed": "value,lo,hi",
+        "vars": "{\"value\":48.0,\"lo\":12.0,\"hi\":48.0}",
+        "returned": null
+      },
+      {
+        "step": 25,
+        "line": 6,
+        "event": "return",
+        "scope": "normalize",
+        "code": "return round((value - lo) / (hi - lo), 3)",
+        "changed": "",
+        "vars": "{\"value\":48.0,\"lo\":12.0,\"hi\":48.0}",
+        "returned": "1.0"
+      },
+      {
+        "step": 26,
+        "line": 14,
+        "event": "line",
+        "scope": "<module>",
+        "code": "transformed = normalize(item, lo, hi)",
+        "changed": "transformed",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0,0.5,0.25],\"total\":0.75,\"item\":48.0,\"transformed\":1.0}",
+        "returned": null
+      },
+      {
+        "step": 27,
+        "line": 15,
+        "event": "line",
+        "scope": "<module>",
+        "code": "results.append(transformed)",
+        "changed": "results",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0,0.5,0.25,1.0],\"total\":0.75,\"item\":48.0,\"transformed\":1.0}",
+        "returned": null
+      },
+      {
+        "step": 28,
+        "line": 16,
+        "event": "line",
+        "scope": "<module>",
+        "code": "total += transformed",
+        "changed": "total",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0,0.5,0.25,1.0],\"total\":1.75,\"item\":48.0,\"transformed\":1.0}",
+        "returned": null
+      },
+      {
+        "step": 29,
+        "line": 13,
+        "event": "line",
+        "scope": "<module>",
+        "code": "for item in rows:",
+        "changed": "",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0,0.5,0.25,1.0],\"total\":1.75,\"item\":48.0,\"transformed\":1.0}",
+        "returned": null
+      },
+      {
+        "step": 30,
+        "line": 17,
+        "event": "line",
+        "scope": "<module>",
+        "code": "mean = round(total / len(results), 3)",
+        "changed": "mean",
+        "vars": "{\"rows\":[12.0,30.0,21.0,48.0],\"lo\":12.0,\"hi\":48.0,\"results\":[0.0,0.5,0.25,1.0],\"total\":1.75,\"item\":48.0,\"transformed\":1.0,\"mean\":0.438}",
+        "returned": null
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "trace",
+      "title": "Execution trace",
+      "kind": "table",
+      "inputs": [
+        "rows",
+        "program"
+      ]
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "kind": "json"
+    }
+  ]
+}

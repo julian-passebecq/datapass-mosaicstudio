@@ -1,0 +1,71 @@
+/** Reads the framework's own numbers from this repository and writes `../stats.generated.ts`.
+ * Usage (repo root): node --experimental-strip-types clients/portfolio-showcase/tools/stats.mjs [--no-run] [--check]
+ *   --no-run  skip running the unit tests (keeps the previous pass/fail counts)
+ *   --check   fail when clients, framework size, declared tests or bundle sizes differ from the repo (ignores git,
+ *             which moves with every commit, the test run and the PR count, which needs a network call)
+ * Every number is observed from files, git, esbuild or a local test run. Nothing is estimated.
+ */
+import {execFileSync,spawnSync} from 'node:child_process';
+import {existsSync,readFileSync,readdirSync,writeFileSync} from 'node:fs';
+import {mkdir} from 'node:fs/promises';
+import path from 'node:path';
+import {gzipSync} from 'node:zlib';
+import {build} from 'esbuild';
+import {clientBudgets} from '../../../scripts/check-client-performance.mjs';
+
+const ROOT=process.cwd(),OUT=path.join(ROOT,'clients/portfolio-showcase/stats.generated.ts');
+if(!existsSync(path.join(ROOT,'clients/portfolio-showcase/app.ts')))throw new Error('Run from the repository root');
+const args=new Set(process.argv.slice(2));
+const previous=existsSync(OUT)?JSON.parse(readFileSync(OUT,'utf8').split('/*json*/')[1]?.split('/*end*/')[0]||'null'):null;
+const git=(...a)=>execFileSync('git',a,{cwd:ROOT,encoding:'utf8'}).trim();
+
+const walk=(dir,ok)=>readdirSync(dir,{withFileTypes:true}).flatMap(d=>{const p=path.join(dir,d.name);return d.isDirectory()?walk(p,ok):ok(d.name)?[p]:[];});
+const clients=readdirSync(path.join(ROOT,'clients'),{withFileTypes:true}).filter(d=>d.isDirectory()&&existsSync(path.join(ROOT,'clients',d.name,'app.ts'))).map(d=>d.name).sort();
+const frameworkFiles=walk(path.join(ROOT,'src/framework'),n=>/\.(ts|tsx)$/.test(n));
+const frameworkLines=frameworkFiles.reduce((s,f)=>s+readFileSync(f,'utf8').split('\n').length,0);
+const testFiles=readdirSync(path.join(ROOT,'tests')).filter(n=>n.endsWith('.test.mjs')).sort();
+const testsDeclared=testFiles.reduce((s,f)=>s+(readFileSync(path.join(ROOT,'tests',f),'utf8').match(/(?<![\w.])test\(/g)||[]).length,0);
+
+let run=previous?.tests?.run||null;
+if(!args.has('--no-run')&&!args.has('--check')){
+  const p=spawnSync(process.execPath,['--experimental-strip-types','--test','--test-reporter=spec',...testFiles.map(f=>'tests/'+f)],{cwd:ROOT,encoding:'utf8',maxBuffer:64*1024*1024});
+  const n=k=>Number((p.stdout.match(new RegExp('ℹ '+k+' (\\d+)'))||[])[1]);
+  if(Number.isFinite(n('tests')))run={total:n('tests'),pass:n('pass'),fail:n('fail'),platform:process.platform,date:new Date().toISOString().slice(0,10)};
+}
+
+/** Same measurement as scripts/test-viz-gallery.mjs: esbuild min + gzip -9, React external. */
+async function gz(entry){
+  const out=await build({entryPoints:[entry],bundle:true,minify:true,write:false,format:'esm',platform:'browser',external:['react','react-dom','react/jsx-runtime'],jsx:'automatic',loader:{'.css':'empty'},logLevel:'silent'});
+  return gzipSync(out.outputFiles[0].contents,{level:9}).length;
+}
+await mkdir(path.join(ROOT,'.generated'),{recursive:true});
+const vizCore=await gz(path.join(ROOT,'src/framework/viz/index.ts'));
+
+const commits=Number(git('rev-list','--count','HEAD'));
+const since=new Date(Date.parse(git('log','-1','--format=%cI'))-27*864e5).toISOString().slice(0,10);
+const days=git('log','--since='+since,'--format=%cs').split('\n').filter(Boolean);
+const last=git('log','-1','--format=%cs'),activity=[];
+for(let i=27;i>=0;i--){const d=new Date(Date.parse(last)-i*864e5).toISOString().slice(0,10);activity.push({date:d,commits:days.filter(x=>x===d).length});}
+
+let prs=previous?.prs??null;
+if(!args.has('--check')){const p=spawnSync('gh',['pr','list','--state','all','--limit','500','--json','number'],{cwd:ROOT,encoding:'utf8',shell:false});if(p.status===0)prs=JSON.parse(p.stdout).length;}
+
+const reference=Object.entries(clientBudgets).filter(([id])=>!id.startsWith('acceptance-')).map(([id,[bytes]])=>({id,gzipBytes:bytes}));
+const stats={format:'portfolio.repo-stats',version:1,
+  clients:{count:clients.length,ids:clients},
+  framework:{files:frameworkFiles.length,lines:frameworkLines},
+  tests:{files:testFiles.length,declared:testsDeclared,run},
+  bundles:{vizCoreGzipBytes:vizCore,vizCoreBudgetBytes:40*1024,reference,source:'scripts/check-client-performance.mjs baselines (sum of separately gzipped emitted JS per selected-client build)'},
+  git:{commits,activity,lastCommit:last},
+  prs};
+
+if(args.has('--check')){
+  if(!previous)throw new Error('stats.generated.ts missing');
+  const strip=s=>JSON.stringify({...s,tests:{...s.tests,run:null},git:null,prs:null});
+  if(strip(previous)!==strip(stats)){console.error('Portfolio stats are stale: run node --experimental-strip-types clients/portfolio-showcase/tools/stats.mjs');process.exit(1);}
+  console.log('Portfolio stats match the repository.');
+}else{
+  const json=JSON.stringify(stats);
+  writeFileSync(OUT,`/** GENERATED by tools/stats.mjs from this repository (files, git, esbuild, local test run). Do not edit. */\nimport type {RepoStats} from './stats-types.ts';\nexport const STATS:RepoStats=/*json*/${json}/*end*/;\n`);
+  console.log(`Wrote stats: ${clients.length} clients, ${testsDeclared} tests declared${run?`, ${run.pass}/${run.total} passing`:''}, viz core ${vizCore} B, ${commits} commits, ${prs??'?'} PRs.`);
+}

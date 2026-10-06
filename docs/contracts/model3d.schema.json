@@ -1,0 +1,291 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "DataPass approved static model v1",
+  "type": "object",
+  "properties": {
+    "format": {
+      "const": "datapass.model3d"
+    },
+    "version": {
+      "const": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 160
+    },
+    "note": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+    },
+    "provenance": {
+      "enum": [
+        "synthetic",
+        "provided"
+      ]
+    },
+    "credit": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1000
+    },
+    "asset": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string",
+          "maxLength": 240,
+          "pattern": "^[a-zA-Z0-9_-]+(?:/[a-zA-Z0-9_.-]+)*\\.glb$"
+        },
+        "byteLength": {
+          "type": "integer",
+          "minimum": 28,
+          "maximum": 16777216
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        }
+      },
+      "required": [
+        "path",
+        "byteLength",
+        "sha256"
+      ],
+      "additionalProperties": false
+    },
+    "parts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$"
+          },
+          "node": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 127
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "explode": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "number",
+              "minimum": -100,
+              "maximum": 100
+            }
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "artifact": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$"
+                },
+                "start": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 2000
+                },
+                "end": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 2000
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 160
+                }
+              },
+              "required": [
+                "artifact",
+                "start",
+                "end",
+                "label"
+              ],
+              "additionalProperties": false
+            },
+            "maxItems": 8,
+            "minItems": 0
+          }
+        },
+        "required": [
+          "id",
+          "node",
+          "label",
+          "description",
+          "explode",
+          "evidence"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 64,
+      "minItems": 1
+    },
+    "annotations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "part": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "position": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 1000
+            }
+          }
+        },
+        "required": [
+          "part",
+          "label",
+          "position"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 64,
+      "minItems": 0
+    },
+    "cameras": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "position": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 1000
+            }
+          },
+          "target": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "number",
+              "minimum": -1000,
+              "maximum": 1000
+            }
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "position",
+          "target"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 12,
+      "minItems": 1
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$"
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          },
+          "language": {
+            "enum": [
+              "python",
+              "sql",
+              "typescript",
+              "json",
+              "markdown",
+              "text"
+            ]
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 64000
+          },
+          "provenance": {
+            "enum": [
+              "synthetic",
+              "provided"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "path",
+          "language",
+          "title",
+          "text",
+          "provenance"
+        ],
+        "additionalProperties": false
+      },
+      "maxItems": 24,
+      "minItems": 0
+    }
+  },
+  "required": [
+    "format",
+    "version",
+    "title",
+    "note",
+    "provenance",
+    "credit",
+    "asset",
+    "parts",
+    "annotations",
+    "cameras",
+    "sources"
+  ],
+  "additionalProperties": false
+}

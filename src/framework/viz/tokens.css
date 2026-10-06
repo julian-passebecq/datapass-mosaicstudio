@@ -1,0 +1,35 @@
+/* Viz kit structural styles. Colours come only from --dp-viz-* variables set by VizRoot. */
+.dp-viz{color:var(--dp-viz-ink);font-family:"Segoe UI Variable Text","Segoe UI",system-ui,-apple-system,sans-serif;font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+.dp-viz svg{display:block;overflow:visible}
+.dp-viz .viz-axis text{fill:var(--dp-viz-ink-muted);font-size:11px}
+.dp-viz .viz-axis line,.dp-viz .viz-axis path{stroke:var(--dp-viz-axis);shape-rendering:crispEdges}
+.dp-viz .viz-grid line{stroke:var(--dp-viz-grid);shape-rendering:crispEdges}
+.dp-viz .viz-label{fill:var(--dp-viz-ink-secondary);font-size:11px}
+.dp-viz .viz-mark{cursor:pointer;outline:none}
+.dp-viz .viz-mark:focus-visible{stroke:var(--dp-viz-focus);stroke-width:2px}
+.dp-viz .viz-chart{position:relative;width:100%;height:100%;min-height:0}
+.dp-viz .viz-legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:11px;color:var(--dp-viz-ink-secondary);margin:0;padding:0;list-style:none}
+.dp-viz .viz-legend li{display:flex;align-items:center;gap:6px}
+.dp-viz .viz-legend i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.dp-viz .viz-legend button{all:unset;display:flex;align-items:center;gap:6px;cursor:pointer;border-radius:4px;padding:1px 4px}
+.dp-viz .viz-legend button:focus-visible{outline:2px solid var(--dp-viz-focus)}
+.dp-viz .viz-legend button[aria-pressed=false]{opacity:.45}
+.viz-tooltip{position:fixed;z-index:1000;pointer-events:none;min-width:140px;max-width:280px;padding:8px 10px;border-radius:6px;background:var(--dp-viz-tooltip);color:var(--dp-viz-tooltip-ink);border:1px solid var(--dp-viz-border-strong);box-shadow:0 8px 16px rgba(0,0,0,.24),0 0 2px rgba(0,0,0,.2);font:12px/1.4 "Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;font-variant-numeric:tabular-nums}
+.viz-tooltip strong{display:block;font-weight:600;margin-bottom:4px}
+.viz-tooltip dl{display:grid;grid-template-columns:auto auto;gap:2px 14px;margin:0}
+.viz-tooltip dt{color:var(--dp-viz-ink-muted);display:flex;align-items:center;gap:6px}
+.viz-tooltip dd{margin:0;text-align:right;font-weight:600}
+.viz-tooltip i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.viz-skeleton{position:relative;overflow:hidden;border-radius:4px;background:var(--dp-viz-shimmer)}
+.viz-skeleton::after{content:"";position:absolute;inset:0;transform:translateX(-100%);background:linear-gradient(90deg,transparent,var(--dp-viz-shimmer-highlight),transparent);animation:viz-shimmer 1.4s ease-in-out infinite}
+@keyframes viz-shimmer{to{transform:translateX(100%)}}
+.dp-viz[data-viz-capture=true] .viz-skeleton::after,.dp-viz[data-viz-reduced=true] .viz-skeleton::after{animation:none;display:none}
+@media (prefers-reduced-motion:reduce){.viz-skeleton::after{animation:none;display:none}}
+.dp-viz .viz-kpi-value{font-size:28px;font-weight:600;letter-spacing:-.02em;line-height:1.1;color:var(--dp-viz-ink)}
+.dp-viz .viz-kpi-label{font-size:12px;color:var(--dp-viz-ink-muted);font-weight:500}
+.dp-viz .viz-kpi-delta{font-size:12px;font-weight:600}
+.dp-viz .viz-kpi-delta[data-sign=up]{color:var(--dp-viz-positive)}
+.dp-viz .viz-kpi-delta[data-sign=down]{color:var(--dp-viz-negative)}
+.dp-viz .viz-brush{fill:var(--dp-viz-accent);fill-opacity:.12;stroke:var(--dp-viz-accent);stroke-width:1px;shape-rendering:crispEdges}
+.dp-viz .viz-crosshair{stroke:var(--dp-viz-ink-muted);stroke-dasharray:3 3;pointer-events:none}
+.dp-viz .viz-empty{display:grid;place-items:center;height:100%;color:var(--dp-viz-ink-muted);font-size:12px}

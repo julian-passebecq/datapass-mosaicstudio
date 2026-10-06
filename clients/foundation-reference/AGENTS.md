@@ -1,0 +1,1 @@
+This is synthetic framework acceptance, not a finished Foil'o or Galaxy site. Do not infer a production architecture from the small graph. Preserve explicit task execution and the separation of view-only fields from the model.

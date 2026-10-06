@@ -1,0 +1,83 @@
+/** End-to-end acceptance: selected-client builds and a newly scaffolded TSX client.
+ * Does not deploy or modify framework source. Compiled test clients remain artifacts.
+ */
+import {spawn,spawnSync} from 'node:child_process';
+import {mkdir,readFile,readdir,rm,writeFile} from 'node:fs/promises';
+import {existsSync} from 'node:fs';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+import {gzipSync} from 'node:zlib';
+import assert from 'node:assert/strict';
+import {chromium} from '@playwright/test';
+import {scaffoldClient} from './scaffold-client.mjs';
+async function files(dir){let result=[];for(const entry of await readdir(dir,{withFileTypes:true})){const full=path.join(dir,entry.name);if(entry.isDirectory())result.push(...await files(full));else if(entry.isFile())result.push(full);}return result;}
+async function digest(dir){const h=createHash('sha256');for(const f of (await files(dir)).sort()){h.update(f);h.update(await readFile(f));}return h.digest('hex');}
+const before=await digest('src'),report=[];
+const fresh='acceptance-fresh',knowledge='acceptance-knowledge',spatial='acceptance-spatial',analytics='acceptance-analytics',replay='acceptance-replay',motion='acceptance-motion',foundation='acceptance-foundation',model='acceptance-model';for(const id of [fresh,knowledge,spatial,analytics,replay,motion,foundation,model])if(existsSync('clients/'+id))throw new Error('Refusing to replace existing acceptance client: '+id);
+await mkdir('qa/client-builds',{recursive:true});
+let browser;
+try{
+  await scaffoldClient({id:fresh,title:'Fresh scaffold acceptance',custom:true});
+  await writeFile('clients/'+fresh+'/publication.json',JSON.stringify({format:'datapass.publication',version:1,visibility:'public',language:'en',canonicalUrl:'https://example.test/acceptance/'}));
+  await scaffoldClient({id:knowledge,title:'Fresh knowledge acceptance',template:'knowledge'});
+  await scaffoldClient({id:spatial,title:'Fresh spatial acceptance',template:'spatial'});
+  await scaffoldClient({id:analytics,title:'Fresh analytics acceptance',family:'analytics'});
+  await scaffoldClient({id:replay,title:'Fresh replay acceptance',family:'replay'});
+  await scaffoldClient({id:motion,title:'Fresh motion acceptance',family:'content',motion:true});
+  await scaffoldClient({id:foundation,title:'Fresh foundation acceptance',family:'analytics',foundation:true});
+  await scaffoldClient({id:model,title:'Fresh model acceptance',family:'spatial',model:true});
+  browser=await chromium.launch({...(process.env.CI_BROWSER_PATH?{executablePath:process.env.CI_BROWSER_PATH}:{}),args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+  for(const id of ['operations-reference','wind-reference','architecture-reference','experience-reference','energy-replay-reference','motion-reference','foundation-reference','model-reference','portfolio-showcase','animated-coding-lab',fresh,knowledge,spatial,analytics,replay,motion,foundation,model]){
+    const built=spawnSync(process.execPath,['--experimental-strip-types','scripts/build-client.mjs',id],{encoding:'utf8',timeout:180000,env:process.env});
+    await writeFile('qa/client-builds/'+id+'-build.log',(built.stdout||'')+(built.stderr||''));
+    if(built.status!==0)throw new Error('Client build failed: '+id+'\n'+built.stderr+'\n'+built.stdout);
+    const root=path.join('dist-clients',id),all=await files(root),js=all.filter(f=>f.endsWith('.js'));
+    assert.ok(!all.some(f=>/\.wasm$|duckdb|sql-parser/.test(f)),'Client build accidentally includes database assets');
+    const evidence=JSON.parse(await readFile(path.join(root,'studio-build.json'),'utf8'));assert.equal(evidence.client,id);
+    if([fresh,knowledge,analytics,replay,motion,foundation,'operations-reference','motion-reference','foundation-reference','portfolio-showcase','animated-coding-lab'].includes(id))assert.equal(evidence.containsThree,false,'Unexpected Three in a non-spatial build');
+    if(!['model-reference',model].includes(id))assert.ok(!all.some(f=>/\.glb$|ModelViewport-/.test(f)),'Unrequested model capability leaked into a client');
+    const contents=(await Promise.all(js.map(f=>readFile(f,'utf8')))).join('\n');
+    const titles={'model-reference':'Static model / reference app',[model]:'Fresh model acceptance','operations-reference':'Operations / reference app','wind-reference':'Wind / reference app','architecture-reference':'Architecture / reference app','experience-reference':'Experience / reference app',[fresh]:'Fresh scaffold acceptance',[knowledge]:'Fresh knowledge acceptance',[spatial]:'Fresh spatial acceptance',[analytics]:'Fresh analytics acceptance',[replay]:'Fresh replay acceptance','energy-replay-reference':'Energy / replay reference','motion-reference':'Motion / reference app',[motion]:'Fresh motion acceptance','foundation-reference':'Foundation / reference app',[foundation]:'Fresh foundation acceptance'};
+    for(const [other,title] of Object.entries(titles))if(other!==id)assert.ok(!contents.includes(title),'Unexpected other-client payload: '+other+' in '+id);
+    if(id==='operations-reference'||id===knowledge||id===fresh||id===analytics||id===replay||id===motion||id==='motion-reference'||id==='foundation-reference'||id===foundation)assert.ok(!all.some(f=>/Scene3D|SceneViewport|Architecture-/.test(f)),'Basic data app includes an unused 3D/architecture chunk');
+    const server=spawn(process.execPath,['node_modules/vite/bin/vite.js','preview','--config','vite.client.config.ts','--strictPort','--port','4174'],{env:{...process.env,STUDIO_CLIENT:id},stdio:['ignore','pipe','pipe']});
+    let output='';server.stdout.on('data',v=>{output+=v;});server.stderr.on('data',v=>{output+=v;});
+    const context=await browser.newContext({viewport:{width:1440,height:960}}),page=await context.newPage();
+    const errors=[],requests=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('request',r=>{if(/^https?:/.test(r.url()))requests.push(r.url());});
+    try{
+      let ready=false;for(let i=0;i<100;i++){try{const r=await fetch('http://127.0.0.1:4174');if(r.ok){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,100));}
+      assert.ok(ready,'Target preview failed: '+output);
+      const response=await page.goto('http://127.0.0.1:4174');assert.ok(response.headers()['content-security-policy'].includes("script-src 'self'"));
+      const metadata=JSON.parse(await readFile(path.join(root,'studio-publication.json'),'utf8'));
+      const initialHtml=await response.text();
+      assert.ok(initialHtml.includes('property="og:title"'),'Missing build-time social metadata');
+      assert.ok(initialHtml.includes(id===fresh?'content="index,follow"':'content="noindex,nofollow"'));
+      assert.equal(metadata.visibility,id===fresh?'public':'preview');
+      assert.ok((await readFile(path.join(root,'robots.txt'),'utf8')).includes(id===fresh?'Allow: /':'Disallow: /'));
+      if(id===fresh)assert.ok(initialHtml.includes('href="https://example.test/acceptance/"'));
+      await page.locator('.studio-site[data-app-id="'+id+'"]').waitFor();
+      if(id==='model-reference'||id===model){await page.getByTestId('model-workbench').waitFor();assert.equal(await page.locator('canvas').count(),0);assert.ok(!requests.some(r=>/\.glb|ModelViewport-/.test(r)),'Model was eagerly requested');await page.getByRole('button',{name:'Load verified 3D model',exact:true}).click();await page.getByText('3D ready',{exact:true}).waitFor();await page.getByLabel('Model mode',{exact:true}).selectOption('exploded');await page.waitForFunction(()=>document.querySelector('canvas')?.getAttribute('data-animating')==='false');assert.deepEqual(JSON.parse(await page.locator('canvas').getAttribute('data-part-positions')).plate,[0,5.75,.95]);assert.ok(evidence.capabilities.includes('models'));assert.equal(evidence.containsThree,true);}
+      else if(id==='foundation-reference'||id===foundation){await page.getByTestId('runs').waitFor();await page.getByRole('button',{name:id===foundation?'Evaluate samples':'Evaluate example',exact:true}).click();await page.getByTestId('artifact').waitFor();assert.equal(await page.getByTestId('runs').getAttribute('data-run-count'),'1');await page.getByLabel('Artifact representation').selectOption(id===foundation?'final':'metric');await page.getByTestId(id===foundation?'metric-final':'metric-metric').waitFor();assert.equal(await page.locator('canvas').count(),0);assert.deepEqual(evidence.capabilities,['charts','runs']);}
+      else if(id==='motion-reference'||id===motion){await page.getByTestId('motion').waitFor();await page.getByRole('button',{name:'Use isometric projection',exact:true}).click();await page.getByRole('button',{name:'Next motion step',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-testid=motion]')?.getAttribute('data-step-index')==='1');await page.waitForFunction(()=>document.querySelector('[data-testid=motion-svg]')?.getAttribute('data-animating')==='false');assert.equal(await page.locator('canvas').count(),0);assert.deepEqual(evidence.capabilities,['motion']);}
+      else if(id==='energy-replay-reference'||id===replay){await page.getByTestId('replay').waitFor();assert.equal(await page.getByTestId('replay').getAttribute('data-view'),'plan');assert.equal(await page.locator('canvas').count(),0);assert.ok(!requests.some(r=>/SceneViewport/.test(r)),'2D replay eagerly loads 3D');await page.getByRole('button',{name:'Next replay sample',exact:true}).click();await page.waitForFunction(()=>document.querySelector('[data-testid=replay]')?.getAttribute('data-frame')==='1');if(id==='energy-replay-reference'){await page.getByRole('button',{name:'3D scene',exact:true}).click();await page.getByText('3D ready',{exact:true}).waitFor();}}
+      else if(id===analytics){await page.getByLabel('Region',{exact:true}).selectOption('north');await page.locator('.site-data-table').getByRole('cell',{name:'North',exact:true}).waitFor();}
+      else if(id==='wind-reference'){await page.getByText('3D ready',{exact:true}).waitFor();await page.getByRole('button',{name:'Next shared scene'}).click();await page.waitForFunction(()=>document.querySelector('[data-testid=scene3d]')?.getAttribute('data-selection')==='rotor');}
+      else if(id==='experience-reference'||id===spatial){await page.getByText('3D ready',{exact:true}).waitFor();await page.getByRole('group',{name:'Explorer views'}).getByRole('button',{name:'Library',exact:true}).click();await page.locator('.explorer-library').waitFor();}
+      else if(id===knowledge){await page.getByTestId('explorer').waitFor();assert.equal(await page.getByTestId('explorer').getAttribute('data-view'),'library');assert.equal(await page.locator('canvas').count(),0);await page.locator('.explorer-library-card').first().click();await page.getByRole('article',{name:'Platform overview',exact:true}).waitFor();}
+      else if(id==='architecture-reference')await page.locator('.arch-node').first().waitFor();
+      else if(id==='portfolio-showcase'){await page.getByTestId('portfolio').waitFor();assert.equal(await page.locator('.pf-card').count(),10);assert.equal(await page.locator('canvas').count(),0);}
+      else if(id==='animated-coding-lab'){await page.getByTestId('coding-lab').waitFor();await page.getByTestId('lab-next').click();await page.waitForFunction(()=>document.querySelector('[data-testid=coding-lab]')?.getAttribute('data-step')==='1');assert.equal(await page.locator('[data-testid=lab-code] li[data-current=true]').count(),1);assert.equal(await page.locator('canvas').count(),0);assert.deepEqual(evidence.capabilities,['motion']);}
+      else if(id===fresh)await page.getByRole('heading',{name:'Client-owned component',exact:true}).waitFor();
+      else await page.getByTestId('metric-observation-count').waitFor();
+      await page.screenshot({path:'qa/client-builds/'+id+'.png',fullPage:true});
+      assert.deepEqual(errors,[],'Target browser errors');assert.deepEqual(requests.filter(r=>!r.startsWith('http://127.0.0.1:4174/')),[],'Unexpected network');
+      assert.ok(!requests.some(r=>/\.wasm|\/duckdb\//.test(r)),'Client initialized DuckDB');
+      const gzipBytes=(await Promise.all(js.map(async f=>gzipSync(await readFile(f)).byteLength))).reduce((a,b)=>a+b,0);
+      const totalBytes=(await Promise.all(all.map(async f=>(await readFile(f)).byteLength))).reduce((a,b)=>a+b,0);
+      assert.ok(gzipBytes<=2*1024*1024,'Selected-client JavaScript exceeds 2 MiB gzip budget; inspect payload');
+      report.push({id,files:all.length,javascriptFiles:js.length,javascriptGzipBytes:gzipBytes,totalBytes,requests:requests.length,status:'passed'});
+      console.log('Target client passed: '+id+' / JS gzip '+gzipBytes+' bytes');
+    }finally{await context.close();server.kill('SIGTERM');await new Promise(resolve=>{if(server.exitCode!==null)return resolve();server.once('exit',resolve);setTimeout(()=>{server.kill('SIGKILL');resolve();},3000).unref();});await writeFile('qa/client-builds/'+id+'-preview.log',output);}
+  }
+  assert.equal(await digest('src'),before,'Client creation/build changed framework source');
+}finally{await browser?.close();for(const id of [fresh,knowledge,spatial,analytics,replay,motion,foundation,model])await rm('clients/'+id,{recursive:true,force:true});await writeFile('qa/client-builds/results.json',JSON.stringify({sourceUnchanged:await digest('src')===before,clients:report},null,2)+'\n');}

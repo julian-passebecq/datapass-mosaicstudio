@@ -1,0 +1,232 @@
+name: Studio web gate
+on:
+  push:
+    branches: [main, 'feat/**']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: studio-web-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare the genuine lock only for the first framework qualification
+        if: github.ref == 'refs/heads/feat/studio2-framework-kit'
+        run: |
+          if ! test -f qa/FRAMEWORK_LOCK_VERIFIED.md; then
+            npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+          fi
+      - name: Prepare additive experience contracts once without changing dependencies
+        if: github.ref == 'refs/heads/feat/studio2-experience-navigation'
+        run: |
+          if ! test -f qa/EXPERIENCE_CONTRACTS_RECORDED.md; then
+            node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          const pkg=JSON.parse(readFileSync('package.json','utf8'));
+          const lock=JSON.parse(readFileSync('package-lock.json','utf8'));
+          assert.deepEqual(lock.packages[''].dependencies,pkg.dependencies);
+          assert.deepEqual(lock.packages[''].devDependencies,pkg.devDependencies);
+          lock.version=pkg.version;lock.packages[''].version=pkg.version;
+          writeFileSync('package-lock.json',JSON.stringify(lock,null,2)+'\n');
+          NODE
+            npm run contracts
+          fi
+      - name: Generate additive family contracts once without changing dependencies
+        if: github.ref == 'refs/heads/feat/studio2-families-replay'
+        run: |
+          if ! test -f qa/FAMILIES_CONTRACTS_RECORDED.md; then
+            node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          const pkg=JSON.parse(readFileSync('package.json','utf8'));
+          const lock=JSON.parse(readFileSync('package-lock.json','utf8'));
+          assert.deepEqual(lock.packages[''].dependencies,pkg.dependencies);
+          assert.deepEqual(lock.packages[''].devDependencies,pkg.devDependencies);
+          lock.version=pkg.version;lock.packages[''].version=pkg.version;
+          writeFileSync('package-lock.json',JSON.stringify(lock,null,2)+'\n');
+          NODE
+            npm run contracts
+          fi
+      - name: Generate additive motion contracts once without changing dependencies
+        if: github.ref == 'refs/heads/feat/studio2-motion-evidence'
+        run: |
+          if ! test -f qa/MOTION_CONTRACTS_RECORDED.md; then
+            node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          const pkg=JSON.parse(readFileSync('package.json','utf8'));
+          const lock=JSON.parse(readFileSync('package-lock.json','utf8'));
+          assert.deepEqual(lock.packages[''].dependencies,pkg.dependencies);
+          assert.deepEqual(lock.packages[''].devDependencies,pkg.devDependencies);
+          lock.version=pkg.version;lock.packages[''].version=pkg.version;
+          writeFileSync('package-lock.json',JSON.stringify(lock,null,2)+'\n');
+          NODE
+            npm run contracts
+          fi
+      - name: Generate additive foundation contracts once without changing dependencies
+        if: github.ref == 'refs/heads/feat/studio2-foundation-runs-context'
+        run: |
+          if ! test -f qa/FOUNDATION_CONTRACTS_RECORDED.md; then
+            node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          const pkg=JSON.parse(readFileSync('package.json','utf8'));
+          const lock=JSON.parse(readFileSync('package-lock.json','utf8'));
+          assert.deepEqual(lock.packages[''].dependencies,pkg.dependencies);
+          assert.deepEqual(lock.packages[''].devDependencies,pkg.devDependencies);
+          lock.version=pkg.version;lock.packages[''].version=pkg.version;
+          writeFileSync('package-lock.json',JSON.stringify(lock,null,2)+'\n');
+          NODE
+            npm run contracts
+          fi
+      - name: Generate additive model contracts once without changing dependencies
+        if: github.ref == 'refs/heads/feat/studio2-model-assets'
+        run: |
+          if ! test -f qa/MODEL_ASSET_CONTRACTS_RECORDED.md; then
+            node --input-type=module <<'NODE'
+          import {readFileSync,writeFileSync} from 'node:fs';
+          import assert from 'node:assert/strict';
+          const pkg=JSON.parse(readFileSync('package.json','utf8'));
+          const lock=JSON.parse(readFileSync('package-lock.json','utf8'));
+          assert.deepEqual(lock.packages[''].dependencies,pkg.dependencies);
+          assert.deepEqual(lock.packages[''].devDependencies,pkg.devDependencies);
+          lock.version=pkg.version;lock.packages[''].version=pkg.version;
+          writeFileSync('package-lock.json',JSON.stringify(lock,null,2)+'\n');
+          NODE
+            npm run contracts
+          fi
+      - name: Frozen dependency installation without peer bypasses
+        run: npm ci --no-audit --no-fund
+      - name: Generate first contract artifacts or enforce drift check
+        run: |
+          if git ls-files --error-unmatch docs/contracts/components.json >/dev/null 2>&1; then
+            npm run contracts:check
+          else
+            npm run contracts
+          fi
+      - name: Prepare pinned engines for the real replay-controller contract
+        run: npm run bootstrap
+      - name: Core and boundary tests
+        run: npm test
+      - name: Build actual production modules
+        run: npm run build
+      - name: Validate client source and original visual-engine contracts
+        run: |
+          npm run client:check
+          npm run test:visual-contracts
+      - name: Prepare synthetic file fixtures
+        run: |
+          python -m pip install duckdb==1.4.3
+          npm run test:fixtures
+      - name: Select and record a real browser
+        run: |
+          browser="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if test -n "$browser"; then
+            echo "CI_BROWSER_PATH=$browser" >> "$GITHUB_ENV"
+            "$browser" --version | tee qa/browser-version.txt
+          else
+            npx playwright install --with-deps chromium
+            echo 'Playwright-managed Chromium' > qa/browser-version.txt
+          fi
+      - name: Real HTTP workbench and framework browser tests
+        run: npm run test:browser
+      - name: Isolated clients and eight fresh family/scaffold checks
+        run: npm run test:client-builds
+      - name: Record genuinely generated contract and dependency artifacts once
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/feat/studio2-framework-kit'
+        run: |
+          if ! test -f qa/FRAMEWORK_LOCK_VERIFIED.md; then
+            printf '# Framework qualification lock\n\nGenerated by npm and used by npm ci for successful source run %s.\n\nSource commit: %s\n\nFuture runs use the frozen lock and enforce generated-contract drift checks.\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > qa/FRAMEWORK_LOCK_VERIFIED.md
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add package-lock.json docs/contracts qa/FRAMEWORK_LOCK_VERIFIED.md
+            git commit -m 'build: record qualified framework lock and authoring schemas [skip ci]'
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
+      - name: Record qualified experience schemas once
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/feat/studio2-experience-navigation'
+        run: |
+          if ! test -f qa/EXPERIENCE_CONTRACTS_RECORDED.md; then
+            printf '# Experience contract qualification\n\nGenerated and tested in workflow %s from source %s.\n\nDependency versions, integrity hashes and upstream pins were unchanged. Only package root version metadata was synchronized; schemas were generated from source. Future runs require frozen lockfiles and schema drift checks.\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > qa/EXPERIENCE_CONTRACTS_RECORDED.md
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add package-lock.json docs/contracts qa/EXPERIENCE_CONTRACTS_RECORDED.md
+            git commit -m 'build: preserve qualified experience contracts and package metadata [skip ci]'
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
+      - name: Record qualified family contracts once
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/feat/studio2-families-replay'
+        run: |
+          if ! test -f qa/FAMILIES_CONTRACTS_RECORDED.md; then
+            printf '# Family and replay contract qualification\n\nGenerated and tested in workflow %s from source %s.\n\nDependency versions, integrity hashes and upstream pins were unchanged. Only root version metadata was synchronized. Future runs enforce frozen lockfiles and schema drift checks.\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > qa/FAMILIES_CONTRACTS_RECORDED.md
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add package-lock.json docs/contracts qa/FAMILIES_CONTRACTS_RECORDED.md
+            git commit -m 'build: record qualified family contracts and version metadata [skip ci]'
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
+      - name: Record qualified motion contracts once
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/feat/studio2-motion-evidence'
+        run: |
+          if ! test -f qa/MOTION_CONTRACTS_RECORDED.md; then
+            printf '# Motion and evidence contract qualification\n\nGenerated and tested in workflow %s from source %s.\n\nDependency versions, integrity hashes and upstream pins were unchanged. Only root version metadata was synchronized. Future runs enforce frozen lockfiles and schema drift checks.\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > qa/MOTION_CONTRACTS_RECORDED.md
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add package-lock.json docs/contracts qa/MOTION_CONTRACTS_RECORDED.md
+            git commit -m 'build: record qualified motion contracts and version metadata [skip ci]'
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
+      - name: Record qualified foundation contracts once
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/feat/studio2-foundation-runs-context'
+        run: |
+          if ! test -f qa/FOUNDATION_CONTRACTS_RECORDED.md; then
+            printf '# Foundation contract qualification\n\nGenerated and tested in workflow %s from source %s.\n\nDependency versions, integrity hashes and upstream pins were unchanged. Only root version metadata was synchronized. Future runs enforce frozen lockfiles and schema drift checks.\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > qa/FOUNDATION_CONTRACTS_RECORDED.md
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add package-lock.json docs/contracts qa/FOUNDATION_CONTRACTS_RECORDED.md
+            git commit -m 'build: record qualified foundation contracts and version metadata [skip ci]'
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
+      - name: Record qualified model asset contracts once
+        if: success() && github.event_name == 'push' && github.ref == 'refs/heads/feat/studio2-model-assets'
+        run: |
+          if ! test -f qa/MODEL_ASSET_CONTRACTS_RECORDED.md; then
+            printf '# Model asset contract qualification\n\nGenerated and tested in workflow %s from source %s.\n\nDependency versions, integrity hashes and upstream pins were unchanged. Only root version metadata was synchronized. Future runs enforce frozen lockfiles and schema drift checks.\n' "$GITHUB_RUN_ID" "$GITHUB_SHA" > qa/MODEL_ASSET_CONTRACTS_RECORDED.md
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add package-lock.json docs/contracts qa/MODEL_ASSET_CONTRACTS_RECORDED.md
+            git commit -m 'build: record qualified model asset contracts and version metadata [skip ci]'
+            git push origin "HEAD:$GITHUB_REF_NAME"
+          fi
+      - name: Package source, workbench and isolated client outputs
+        if: always()
+        run: |
+          mkdir -p review-source
+          git archive HEAD | tar -x -C review-source
+          if test -f package-lock.json; then cp package-lock.json review-source/; fi
+          if test -d docs/contracts; then mkdir -p review-source/docs/contracts; cp docs/contracts/* review-source/docs/contracts/; fi
+          tar -czf studio-source.tar.gz -C review-source .
+          if test -d dist; then tar -czf studio-web.tar.gz -C dist .; fi
+          if test -d dist-clients; then tar -czf studio-clients.tar.gz -C dist-clients .; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: studio-web-evidence
+          path: |
+            studio-source.tar.gz
+            studio-web.tar.gz
+            studio-clients.tar.gz
+            qa/
+            test-results/
+            playwright-report/
+          retention-days: 3

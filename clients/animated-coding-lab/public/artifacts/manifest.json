@@ -1,0 +1,71 @@
+{
+  "format": "datapass.artifact-manifest",
+  "version": 1,
+  "artifacts": [
+    {
+      "id": "coding-lab-trace",
+      "title": "Execution trace of normalize_rows.py (ILLUSTRATIVE readings)",
+      "file": "coding-lab-trace.json",
+      "bytes": 12960,
+      "sha256": "57cb01b9d97bed55bed7f8df0371ebdb9a37ff6f827b29c074c1ace9b1f8f687",
+      "provenance": {
+        "kind": "computed",
+        "source": "py/examples/normalize_rows.py executed by py/coding_lab_trace.py under sys.settrace (CPython 3.14). ILLUSTRATIVE readings, not client data.",
+        "runId": "trace-7912e92b3ff1",
+        "producer": {
+          "kind": "script",
+          "name": "py/coding_lab_trace.py (sys.settrace recorder)",
+          "evidence": [
+            {
+              "path": "py/coding_lab_trace.py",
+              "start": 42,
+              "end": 87,
+              "label": "Line tracer (sys.settrace)"
+            },
+            {
+              "path": "py/examples/normalize_rows.py",
+              "start": 5,
+              "end": 5,
+              "label": "Traced function"
+            }
+          ]
+        },
+        "inputs": [
+          {
+            "id": "rows",
+            "label": "Input readings",
+            "value": "12.0, 30.0, 21.0, 48.0",
+            "evidence": [
+              {
+                "path": "py/examples/normalize_rows.py",
+                "start": 9,
+                "end": 9,
+                "label": "Input list"
+              }
+            ]
+          },
+          {
+            "id": "program",
+            "label": "Traced program",
+            "value": "py/examples/normalize_rows.py",
+            "evidence": [
+              {
+                "path": "py/examples/normalize_rows.py",
+                "start": 13,
+                "end": 13,
+                "label": "Loop over rows"
+              },
+              {
+                "path": "py/examples/normalize_rows.py",
+                "start": 17,
+                "end": 17,
+                "label": "Aggregate"
+              }
+            ]
+          }
+        ],
+        "inputHash": "7912e92b3ff121da2ef6351f136b18fe977df9785793e260d9c665905c8fbf6f"
+      }
+    }
+  ]
+}

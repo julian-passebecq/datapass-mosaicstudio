@@ -1,0 +1,8 @@
+{
+  "version": 1,
+  "sources": [
+    {"id":"vizforge","repository":"julian-passebecq/Fluent2_J_Viz","commit":"7aaa8fa601c5fa2c9f8acfd7a4d4eb54b887b9ef","purpose":"Reuse the existing D3 analytical story engine, not its application shell"},
+    {"id":"conceptmotion","repository":"julian-passebecq/react_ms_fluent_2_framework","commit":"30e69639bfc3929c348fd8f9c6c38a2cb61984d8","purpose":"Reuse canonical semantic explanation packages through an adapter"},
+    {"id":"sqlrooms-examples","repository":"sqlrooms/examples","commit":"cb3b6d01609b6373e68af096c3724ed17f6f19dc","purpose":"Reference-only audit of feature slice composition; not imported wholesale"}
+  ]
+}
