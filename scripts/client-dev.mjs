@@ -5,6 +5,7 @@ import {lstat,mkdir,writeFile,rename} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {clientWatchFiles,waitForWatchedFiles} from './client-watch-ready.mjs';
+import {createRestartGate} from './client-restart.mjs';
 // WHATWG Fetch 2.9, non-privileged bad ports (checked 2026-10-04). Never bypass browser blocking.
 const badPorts=new Set([1719,1720,1723,2049,3659,4045,4190,5060,5061,6000,6566,6665,6666,6667,6668,6669,6679,6697,10080]);
 
@@ -33,7 +34,7 @@ export function isClientFile(file,root){
 export async function startClientDev(options){
   const {id,port,json}=parseDevArguments([options.id,'--port',String(options.port??5173),...(options.json?['--json']:[])]);
   const root=path.resolve('clients',id),abort=new AbortController();
-  let server,closing=false,stopped=false,restarting=false,restartQueued=false,descriptor,environmentKey='',lastPlan,refresh=Promise.resolve(),restartTask=Promise.resolve();
+  let server,closing=false,stopped=false,descriptor,environmentKey='',lastPlan,refresh=Promise.resolve();
   // Process ownership stays with the caller. The descriptor is a status receipt, not a PID kill command.
   const descriptorPath=path.resolve('.generated','client-host-'+id+'-'+process.pid+'.json');
   let writes=Promise.resolve();
@@ -65,10 +66,13 @@ export async function startClientDev(options){
     return next;
   }
   async function watchReady(active){await waitForWatchedFiles(active.watcher,await clientWatchFiles(root),{signal:abort.signal});}
+  const gate=createRestartGate({isClosing:()=>closing,
+    restart:async()=>{await server.restart();await watchReady(server);},
+    onReady:()=>report('ready'),onError:error=>report('invalid',{message:String(error.message||error)})});
   function recordStop(){if(stopped)return writes;stopped=true;return report('stopped');}
   async function stop(){
     if(closing)return;closing=true;abort.abort();
-    try{await refresh.catch(()=>{});await restartTask;await server?.close();await recordStop();}finally{process.removeListener('SIGINT',stop);process.removeListener('SIGTERM',stop);process.stdin.removeListener('end',stop);if(followStdin)process.stdin.pause();}
+    try{await refresh.catch(()=>{});await gate.settled();await server?.close();await recordStop();}finally{process.removeListener('SIGINT',stop);process.removeListener('SIGTERM',stop);process.stdin.removeListener('end',stop);if(followStdin)process.stdin.pause();}
   }
   process.once('SIGINT',stop);process.once('SIGTERM',stop);process.stdin.once('end',stop);
   // A paused stdin never emits 'end'. The CLI follows an owner's pipe so closing it stops the host gracefully:
@@ -88,29 +92,28 @@ export async function startClientDev(options){
       server:{host:'127.0.0.1',port,strictPort:true,cors:false,open:false},
       plugins:[{name:'studio-client-authoring-status',enforce:'pre',
         // Vite installs its own SIGTERM exit handler. Its close hook must await our final receipt.
-        async closeBundle(){if(closing&&!restarting)await recordStop();},
+        async closeBundle(){if(closing&&!gate.running)await recordStop();},
         async handleHotUpdate(context){
         if(!isClientFile(context.file,root))return;
         // Artifact data files are followed by artifact-watch-plugin (no client re-validation, no reload).
         if(path.dirname(path.resolve(context.file))===path.join(root,'public','artifacts'))return [];
-        let restart=false,invalid=false;
-        refresh=refresh.catch(()=>{}).then(async()=>{
-          if(closing)return;
-          try{
-            const next=await environment();restart=next!==environmentKey;environmentKey=next;
-            await report(restart?'restarting':'ready');
-          }catch(error){invalid=true;await report('invalid',{message:String(error.message||error)});}
+        return gate.hook(async()=>{
+          let invalid=false;
+          const task=refresh=refresh.catch(()=>{}).then(async()=>{
+            if(closing)return;
+            try{
+              const next=await environment();if(next!==environmentKey)gate.request();environmentKey=next;
+              // A duplicate watcher event for a save that already queued a restart is not `ready` yet.
+              await report(gate.pending?'restarting':'ready');
+            }catch(error){invalid=true;await report('invalid',{message:String(error.message||error)});}
+          });
+          // Vite owns HMR. Restart only when compile-time capabilities/publication change. The gate starts a restart
+          // only after every in-flight hook has returned, and a hook never awaits across a pending restart.
+          if(gate.pending)return [];
+          await task;
+          if(gate.pending)return [];
+          if(invalid)return; // Let Vite show its normal source error overlay; a later save can recover.
         });
-        await refresh;
-        // Vite owns HMR. Restart only when compile-time capabilities/publication change.
-        // Defer restart until this hook returns, avoiding a restart waiting on its own transform.
-        if(restart&&!closing){
-          if(!restartQueued){restartQueued=true;setImmediate(()=>{
-            if(closing){restartQueued=false;return;}
-            restarting=true;restartTask=(async()=>{try{await context.server.restart();await watchReady(context.server);restarting=false;restartQueued=false;if(!closing)await report('ready');}catch(error){if(!closing)await report('invalid',{message:String(error.message||error)});}finally{restarting=false;restartQueued=false;}})();
-          });}return [];
-        }
-        if(invalid)return; // Let Vite show its normal source error overlay; a later save can recover.
       }}]});
     abort.signal.throwIfAborted();await server.listen();await watchReady(server);abort.signal.throwIfAborted();
     if(!json)console.error(`Client ${id}: http://127.0.0.1:${port}/?app=${id}\nEdit clients/${id}/; stop with Ctrl+C. Local trusted source only, not a security boundary.`);
