@@ -1,6 +1,9 @@
 @import 'tailwindcss';
 @import '@sqlrooms/ui/tailwind-preset.css';
-@source '../node_modules/@sqlrooms/*/dist/';
+/* One static base per SQLRooms package: Tailwind's scanner only reaches a wildcard base (@sqlrooms/*) through the
+   project walk, which does not enter a symlinked/junctioned node_modules, so those builds silently lost every SQLRooms
+   utility (e.g. VgPlotChart's h-full container collapsed to 0 px). tests/tailwind-sources.test.mjs keeps this list complete. */
+@source '../node_modules/@sqlrooms/{ai-config,artifacts,blocks,codemirror,color-scales,crdt,data-table,db,documents,duckdb,duckdb-core,layout,layout-config,monaco-editor,mosaic,room-config,room-shell,room-store,schema-tree,sql-editor,sql-editor-config,ui,utils}/dist/';
 @source './**/*.{ts,tsx}';
 :root{--background:220 16% 98%;--foreground:220 20% 20%;--card:0 0% 100%;--card-foreground:220 20% 20%;--popover:0 0% 100%;--popover-foreground:220 20% 20%;--primary:164 26% 32%;--primary-foreground:0 0% 100%;--secondary:220 14% 95%;--secondary-foreground:220 20% 20%;--muted:220 14% 96%;--muted-foreground:218 10% 43%;--accent:160 20% 94%;--accent-foreground:162 28% 27%;--destructive:0 65% 42%;--destructive-foreground:0 0% 100%;--border:218 14% 88%;--input:218 14% 86%;--ring:164 26% 38%;--radius:0.35rem;--line:#dde1e7;--ink:#293344;--soft:#697383;--surface:#fff;--canvas:#f7f8fa;--teal:#386d60;--mono:'Cascadia Code',Consolas,monospace}
 *{box-sizing:border-box}html,body,#root,.fluent-root{height:100%;width:100%;margin:0}body{overflow:hidden;font:13px/1.5 system-ui,sans-serif;color:var(--ink)}button,input,select{font:inherit}button{cursor:pointer}button:disabled{cursor:default;opacity:.48}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid #386d60;outline-offset:3px}h1,h2,h3,p{margin:0}h1{font-size:21px;line-height:1.3;letter-spacing:-.55px;font-weight:650}h2{font-size:16px;font-weight:600}h3{font-size:12px;font-weight:650}small{font-size:11px}.spacer{flex:1}.mono,pre,code{font-family:var(--mono)}
