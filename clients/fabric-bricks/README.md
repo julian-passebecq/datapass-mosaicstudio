@@ -1,5 +1,7 @@
 # Fabric Bricks 2D/3D
 
+> **Status: DRAFT (2026-10-06).** Kept as a reference client with no further investment (Julian: "ça fait plus pro sans lego"). Architecture concept visuals continue in the Architecture Atlas instead. See `handoff/ROADMAP.md`.
+
 First real-client pressure test for MosaicStudio, implemented as a client-owned thin slice.
 
 ## Source status
