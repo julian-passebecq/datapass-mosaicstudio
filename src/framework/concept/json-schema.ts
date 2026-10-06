@@ -5,7 +5,10 @@
  * `checkConceptSpec`.
  */
 import {z} from 'zod';
-import {conceptSpecSchema,CONCEPT_FORMAT} from './schema.ts';
+import {conceptSpecSchema,CONCEPT_FORMAT,CONCEPT_SPEC_VERSION} from './schema.ts';
+
+/** Stable published location of the v1 contract (raw file on main). */
+export const CONCEPT_SCHEMA_URL='https://raw.githubusercontent.com/julian-passebecq/datapass-mosaicstudio/main/spec/concept/v1/concept-spec.schema.json';
 
 type Json={[k:string]:unknown};
 function convert(schema:z.ZodTypeAny):Json{
@@ -49,11 +52,14 @@ function convert(schema:z.ZodTypeAny):Json{
 const root=convert(conceptSpecSchema);
 export const conceptSpecJsonSchema={
   $schema:'https://json-schema.org/draft/2020-12/schema',
-  $id:'https://datapass.local/contracts/concept-spec.schema.json',
+  $id:CONCEPT_SCHEMA_URL,
   title:'DataPass concept spec v1',
+  /** Contract version of this schema document (semver). 1.x changes stay backward compatible. */
+  version:CONCEPT_SPEC_VERSION,
   description:`One renderer-free description of an app or a cloud project (format "${CONCEPT_FORMAT}", version 1). `
     +'Layers are listed bottom to top with strictly increasing heights (gap ≥ 0.6); every id is unique across the document; '
     +'node.layer, node.domain, flow.from, flow.to and annotation.target must name declared ids; at most one lake, on the bottom layer; '
-    +'at most 3 nodes per (layer, domain) cell; side domains come after main domains; a documented spec cites a source for every node.',
+    +'at most 3 nodes per (layer, domain) cell; side domains come after main domains; a documented spec cites a source or evidence ref for every node. '
+    +'Unknown fields are allowed by this schema; readers ignore them with a warning. See spec/concept/v1/README.md.',
   ...root
 };

@@ -1,6 +1,6 @@
 {
   "name": "datapass-mosaicstudio",
-  "version": "0.7.0-alpha.1",
+  "version": "0.8.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -17,7 +17,9 @@
     "test:browser": "playwright test",
     "test:fixtures": "python scripts/make-test-fixtures.py",
     "contracts": "node --experimental-strip-types scripts/export-contracts.mjs",
-    "contracts:check": "node --experimental-strip-types scripts/export-contracts.mjs --check",
+    "contracts:check": "node --experimental-strip-types scripts/export-contracts.mjs --check && node scripts/concept-validate.mjs --strict spec/concept/v1/example.minimal.concept.json spec/concept/v1/example.forecast-app.concept.json",
+    "concept:validate": "node scripts/concept-validate.mjs",
+    "build:concept-standalone": "node --experimental-strip-types scripts/build-concept-standalone.mjs",
     "client:capture": "node --experimental-strip-types scripts/capture-client.mjs",
     "client:dev": "node --experimental-strip-types scripts/client-dev.mjs",
     "client:new": "node --experimental-strip-types scripts/scaffold-client.mjs",

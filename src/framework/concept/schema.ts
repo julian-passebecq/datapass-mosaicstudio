@@ -7,6 +7,10 @@
 import {z} from 'zod';
 
 export const CONCEPT_FORMAT='datapass.concept-spec';
+/** Published contract version (semver). A 1.x reader accepts every 1.y file; a 1.y change only adds optional fields. */
+export const CONCEPT_SPEC_VERSION='1.0.0';
+/** Well-known evidence kinds. Other lowercase kinds are accepted (forward compatible) and shown as given. */
+export const EVIDENCE_KINDS=['source','doc','url','commit','test','issue','config','log','other'] as const;
 export const CONCEPT_KINDS=[
   'app','web-app','browser','api','endpoint','function','sql-db','database','lake','lakehouse','warehouse','eventhouse',
   'notebook','pipeline','stream','queue','producer','library','semantic-model','report','dashboard','alert',
@@ -19,7 +23,7 @@ export const FLOW_KINDS=['data','control','auth'] as const;
 export type FlowKind=typeof FLOW_KINDS[number];
 export const NODE_STATUSES=['active','planned','deprecated','external'] as const;
 export type NodeStatus=typeof NODE_STATUSES[number];
-export const CONCEPT_LIMITS=Object.freeze({layers:8,domains:8,nodes:40,flows:64,annotations:6,perCell:3,minLayerGap:.6,maxHeight:40,bytes:256*1024});
+export const CONCEPT_LIMITS=Object.freeze({layers:8,domains:8,nodes:40,flows:64,annotations:6,evidence:12,perCell:3,minLayerGap:.6,maxHeight:40,bytes:256*1024});
 
 const ID=/^[a-z][a-z0-9-]{0,47}$/;
 const id=z.string({required_error:'is required',invalid_type_error:'must be a string id'})
@@ -37,29 +41,39 @@ export const conceptLayerSchema=z.object({
   height:z.number({required_error:'is required',invalid_type_error:'must be a number'}).finite().min(0,'must be ≥ 0').max(CONCEPT_LIMITS.maxHeight,`must be ≤ ${CONCEPT_LIMITS.maxHeight}`),
   role:oneOf(LAYER_ROLES,'layer role').optional(),
   description:text(400).optional()
-}).strict();
+});
 export const conceptDomainSchema=z.object({
   id,label:text(60),description:text(400).optional(),
   /** `side`: a cross-cutting band (identity, monitoring) drawn as a vertical band beside the layer cake. */
   placement:oneOf(['main','side'] as const,'domain placement').optional()
-}).strict();
-export const conceptSourceSchema=z.object({path:text(200),note:text(200).optional()}).strict();
+});
+export const conceptSourceSchema=z.object({path:text(200),note:text(200).optional()});
+/** A pointer to where a node or flow was found (a file, a URL, a commit). Inert text: renderers never fetch it. */
+export const conceptEvidenceSchema=z.object({
+  kind:z.string({required_error:'is required',invalid_type_error:'must be text'}).regex(/^[a-z][a-z0-9-]{0,31}$/,`must be a lowercase evidence kind such as ${EVIDENCE_KINDS.join(', ')}`),
+  ref:text(500),label:text(120).optional()
+});
+const evidence=z.array(conceptEvidenceSchema).max(CONCEPT_LIMITS.evidence,`must hold at most ${CONCEPT_LIMITS.evidence} evidence refs`).optional();
 export const conceptNodeSchema=z.object({
   id,kind:oneOf(CONCEPT_KINDS,'node kind'),layer:id,domain:id,label:text(40),
   status:oneOf(NODE_STATUSES,'node status').optional(),
   description:text(600).optional(),
-  sources:z.array(conceptSourceSchema).max(6,'must hold at most 6 refs').optional()
-}).strict();
+  sources:z.array(conceptSourceSchema).max(6,'must hold at most 6 refs').optional(),
+  evidence
+});
 export const conceptFlowSchema=z.object({
   id,from:id,to:id,kind:oneOf(FLOW_KINDS,'flow kind'),label:text(60),
-  direction:oneOf(['forward','both'] as const,'flow direction').optional()
-}).strict();
-export const conceptAnnotationSchema=z.object({id,target:id.optional(),text:text(160)}).strict();
+  direction:oneOf(['forward','both'] as const,'flow direction').optional(),
+  evidence
+});
+export const conceptAnnotationSchema=z.object({id,target:id.optional(),text:text(160)});
 export const conceptSpecSchema=z.object({
   /** Optional editor hint (a path or URL to concept-spec.schema.json); ignored by renderers. */
   $schema:z.string().max(300).optional(),
   format:z.literal(CONCEPT_FORMAT,{errorMap:()=>({message:`must be "${CONCEPT_FORMAT}"`})}),
   version:z.literal(1,{errorMap:()=>({message:'must be 1'})}),
+  /** Contract version the file was written for (semver, major 1). Exporters always emit it. */
+  specVersion:z.string({invalid_type_error:'must be a semver string such as "1.0.0"'}).regex(/^1\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/,`must be a 1.x semver version such as "${CONCEPT_SPEC_VERSION}" (this reader supports major version 1)`).optional(),
   id,title:text(120),subtitle:text(240).optional(),
   /** synthetic = generic illustration; documented = every node cites a repository source. */
   provenance:oneOf(['synthetic','documented'] as const,'provenance'),
@@ -69,15 +83,16 @@ export const conceptSpecSchema=z.object({
   nodes:z.array(conceptNodeSchema).min(1,'needs at least 1 node').max(CONCEPT_LIMITS.nodes,`must hold at most ${CONCEPT_LIMITS.nodes} nodes`),
   flows:z.array(conceptFlowSchema).max(CONCEPT_LIMITS.flows,`must hold at most ${CONCEPT_LIMITS.flows} flows`),
   annotations:z.array(conceptAnnotationSchema).max(CONCEPT_LIMITS.annotations,`must hold at most ${CONCEPT_LIMITS.annotations} annotations`).optional()
-}).strict();
+});
 export type ConceptSpecInput=z.input<typeof conceptSpecSchema>;
 
 /* ---------- normalized document (defaults filled) consumed by every renderer ---------- */
 export type ConceptLayer={id:string;label:string;height:number;role?:LayerRole;description:string};
 export type ConceptDomain={id:string;label:string;description:string;placement:'main'|'side'};
 export type SourceRef={path:string;note?:string};
-export type ConceptNode={id:string;kind:ConceptKind;layer:string;domain:string;label:string;status:NodeStatus;description:string;sources:SourceRef[]};
-export type ConceptFlow={id:string;from:string;to:string;kind:FlowKind;label:string;direction:'forward'|'both'};
+export type EvidenceRef={kind:string;ref:string;label?:string};
+export type ConceptNode={id:string;kind:ConceptKind;layer:string;domain:string;label:string;status:NodeStatus;description:string;sources:SourceRef[];evidence:EvidenceRef[]};
+export type ConceptFlow={id:string;from:string;to:string;kind:FlowKind;label:string;direction:'forward'|'both';evidence:EvidenceRef[]};
 export type ConceptAnnotation={id:string;target?:string;text:string};
 export type ConceptSpec={
   format:typeof CONCEPT_FORMAT;version:1;id:string;title:string;subtitle:string;provenance:'synthetic'|'documented';note:string;
@@ -116,7 +131,7 @@ function semanticIssues(s:z.output<typeof conceptSpecSchema>):ConceptIssue[]{
   s.nodes.forEach((n,i)=>{
     if(!layers.has(n.layer))add(`nodes[${i}].layer`,`unknown layer "${n.layer}"; declared layers: ${[...layers].join(', ')}`);
     if(!domains.has(n.domain))add(`nodes[${i}].domain`,`unknown domain "${n.domain}"; declared domains: ${[...domains].join(', ')}`);
-    if(s.provenance==='documented'&&!(n.sources?.length))add(`nodes[${i}].sources`,'a documented spec needs at least one source ref per node');
+    if(s.provenance==='documented'&&!(n.sources?.length)&&!(n.evidence?.length))add(`nodes[${i}].sources`,'a documented spec needs at least one source or evidence ref per node');
     if(n.kind==='lake'){
       if(lake>=0)add(`nodes[${i}].kind`,`only one lake per spec (nodes[${lake}] is already the lake)`);lake=i;
       if(n.layer!==s.layers[0].id)add(`nodes[${i}].layer`,`the lake lies on the bottom layer "${s.layers[0].id}"`);
@@ -141,30 +156,64 @@ function normalize(s:z.output<typeof conceptSpecSchema>):ConceptSpec{
     format:CONCEPT_FORMAT,version:1,id:s.id,title:s.title,subtitle:s.subtitle??'',provenance:s.provenance,note:s.note,
     layers:s.layers.map(l=>({id:l.id,label:l.label,height:l.height,...(l.role?{role:l.role}:{}),description:l.description??''})),
     domains:s.domains.map(d=>({id:d.id,label:d.label,description:d.description??'',placement:d.placement??'main'})),
-    nodes:s.nodes.map(n=>({id:n.id,kind:n.kind,layer:n.layer,domain:n.domain,label:n.label,status:n.status??'active',description:n.description??'',sources:(n.sources??[]).map(r=>({...r}))})),
-    flows:s.flows.map(f=>({id:f.id,from:f.from,to:f.to,kind:f.kind,label:f.label,direction:f.direction??'forward'})),
+    nodes:s.nodes.map(n=>({id:n.id,kind:n.kind,layer:n.layer,domain:n.domain,label:n.label,status:n.status??'active',description:n.description??'',sources:(n.sources??[]).map(r=>({...r})),evidence:(n.evidence??[]).map(r=>({...r}))})),
+    flows:s.flows.map(f=>({id:f.id,from:f.from,to:f.to,kind:f.kind,label:f.label,direction:f.direction??'forward',evidence:(f.evidence??[]).map(r=>({...r}))})),
     annotations:(s.annotations??[]).map(a=>({...a}))
   };
 }
 
-/** Never throws: either a normalized spec or every issue found (schema issues first, then cross-references). */
-export function checkConceptSpec(input:unknown):{ok:true;spec:ConceptSpec}|{ok:false;issues:ConceptIssue[]}{
+/**
+ * Fields this reader does not know. They are ignored (a newer 1.x file stays readable) and reported as warnings,
+ * so a typo such as "lable" is still visible. Walks the raw input against the zod object shapes.
+ */
+function unknownFieldWarnings(input:unknown):ConceptIssue[]{
+  const out:ConceptIssue[]=[];
+  const walk=(value:unknown,schema:z.ZodTypeAny,path:string)=>{
+    let s=schema;
+    while(s instanceof z.ZodOptional||s instanceof z.ZodEffects)s=s instanceof z.ZodOptional?s.unwrap():s.innerType();
+    if(s instanceof z.ZodArray){const el=s.element as z.ZodTypeAny;if(Array.isArray(value))value.forEach((v,i)=>walk(v,el,path+'['+i+']'));return;}
+    if(!(s instanceof z.ZodObject)||!value||typeof value!=='object'||Array.isArray(value))return;
+    const shape=s.shape as Record<string,z.ZodTypeAny>;
+    for(const [k,v] of Object.entries(value as Record<string,unknown>)){
+      const at=path?path+'.'+k:k;
+      if(Object.hasOwn(shape,k))walk(v,shape[k],at);else out.push({path:at,message:`unknown field "${k}" ignored (not part of concept spec ${CONCEPT_SPEC_VERSION})`});
+    }
+  };
+  walk(input,conceptSpecSchema,'');
+  return out;
+}
+function versionWarnings(input:unknown):ConceptIssue[]{
+  const v=(input as {specVersion?:unknown}).specVersion;
+  if(v===undefined)return [{path:'specVersion',message:`missing; read as ${CONCEPT_SPEC_VERSION} (exporters always write it)`}];
+  if(typeof v==='string'&&/^1\.\d+\.\d+$/.test(v)&&Number(v.split('.')[1])>Number(CONCEPT_SPEC_VERSION.split('.')[1]))
+    return [{path:'specVersion',message:`file is ${v}, this reader knows ${CONCEPT_SPEC_VERSION}: newer optional fields are ignored`}];
+  return [];
+}
+
+export type ConceptCheck={ok:true;spec:ConceptSpec;warnings:ConceptIssue[]}|{ok:false;issues:ConceptIssue[];warnings:ConceptIssue[]};
+/** Never throws: either a normalized spec or every issue found (schema issues first, then cross-references), plus non-blocking warnings. */
+export function checkConceptSpec(input:unknown):ConceptCheck{
   const parsed=conceptSpecSchema.safeParse(input);
-  if(!parsed.success)return {ok:false,issues:parsed.error.issues.map(i=>({path:pathText(i.path),message:i.code==='unrecognized_keys'?`unknown field${i.keys.length>1?'s':''} ${i.keys.map(k=>'"'+k+'"').join(', ')}`:i.message}))};
+  const warnings=input&&typeof input==='object'&&!Array.isArray(input)?[...versionWarnings(input),...unknownFieldWarnings(input)]:[];
+  if(!parsed.success)return {ok:false,warnings,issues:parsed.error.issues.map(i=>({path:pathText(i.path),message:i.message}))};
   const issues=semanticIssues(parsed.data);
-  return issues.length?{ok:false,issues}:{ok:true,spec:normalize(parsed.data)};
+  return issues.length?{ok:false,issues,warnings}:{ok:true,spec:normalize(parsed.data),warnings};
 }
 /** Fails closed with a readable ConceptSpecError. Returns a fresh normalized copy (the input is not mutated). */
 export function parseConceptSpec(input:unknown):ConceptSpec{
   const r=checkConceptSpec(input);if(!r.ok)throw new ConceptSpecError(r.issues);return r.spec;
 }
-/** JSON text (a dropped file, a fetched URL) to a normalized spec. Bounded and inert: plain JSON only. */
-export function parseConceptJson(text:string):ConceptSpec{
+/** JSON text to a plain value. Bounded and inert: plain JSON only (a leading BOM is tolerated). */
+function jsonValue(text:string):unknown{
   if(typeof text!=='string')throw new ConceptSpecError([{path:'',message:'expected JSON text'}]);
   if(text.length>CONCEPT_LIMITS.bytes)throw new ConceptSpecError([{path:'',message:`file is larger than ${CONCEPT_LIMITS.bytes/1024} KB`}]);
-  let value:unknown;
-  try{value=JSON.parse(text);}catch(e){throw new ConceptSpecError([{path:'',message:'not valid JSON ('+(e instanceof Error?e.message:String(e))+')'}]);}
-  return parseConceptSpec(value);
+  try{return JSON.parse(text.charCodeAt(0)===0xfeff?text.slice(1):text);}catch(e){throw new ConceptSpecError([{path:'',message:'not valid JSON ('+(e instanceof Error?e.message:String(e))+')'}]);}
+}
+/** JSON text (a dropped file, a fetched URL) to a normalized spec. */
+export function parseConceptJson(text:string):ConceptSpec{return parseConceptSpec(jsonValue(text));}
+/** Like parseConceptJson, and also returns the warnings (unknown fields ignored, missing or newer specVersion). */
+export function readConceptJson(text:string):{spec:ConceptSpec;warnings:ConceptIssue[]}{
+  const r=checkConceptSpec(jsonValue(text));if(!r.ok)throw new ConceptSpecError(r.issues);return {spec:r.spec,warnings:r.warnings};
 }
 
 export const nodeById=(spec:ConceptSpec,id:string)=>spec.nodes.find(n=>n.id===id);

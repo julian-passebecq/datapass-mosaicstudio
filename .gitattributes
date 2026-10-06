@@ -1,2 +1,5 @@
 # Generated contracts are compared byte for byte; keep LF on every platform.
 docs/contracts/*.json text eol=lf
+spec/**/*.json text eol=lf
+# The standalone viewer's CSP holds a hash of its inline script: never convert its line endings.
+dist-standalone/*.html -text
