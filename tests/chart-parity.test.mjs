@@ -106,3 +106,31 @@ test('structural parity also holds for a scatter and a flat series (synthetic, b
     assert.equal(actual.series,expected.series,block.id);assert.equal(actual.marks,expected.marks,block.id);close(actual.domains,expected.domains,block.id);
   }
 });
+
+test('VizForge extras: ranking rank/rank change and line focus point match on every reference block',()=>{
+  let ranked=0,lined=0;
+  for(const [id,definition] of definitions){
+    for(const state of STATES[id]||[{}]){
+      const runtime=new SiteRuntime(definition);
+      for(const [field,value] of Object.entries(state))runtime.set(field,value);
+      for(const block of charts(runtime.manifest)){
+        const dataset=runtime.manifest.datasets.find(d=>d.id===block.dataset),rows=runtime.dataset(block.dataset),label=`${id}/${block.id} ${JSON.stringify(state)}`;
+        const input=chartInput(block,dataset,rows);if(!input.input)continue;
+        const spec=vf.parseVisualization(withSiteChartTheme(input.input,runtime.manifest.theme)),layout=vf.layoutChart(spec,undefined,WIDTH),plan=planChart(block,dataset,rows);
+        const text=(e,key)=>e.marks.find(m=>m.key===key)?.text;
+        if(spec.type==='ranking'){
+          // VizForge ranking bars run along X (width carries the value): horizontal, like the viz plan.
+          assert.equal(plan.orientation,'horizontal',label);
+          for(const e of layout.entities){const r=plan.ranks.get(e.id);assert.ok(r,label+': rank for '+e.id);assert.equal(String(r.rank).padStart(2,'0'),text(e,'rank'),label+': rank '+e.id);assert.equal(r.delta,text(e,'delta'),label+': delta '+e.id);}
+          assert.equal(plan.ranks.size,layout.entities.length,label);ranked++;
+        }
+        if(spec.type==='time-series'){
+          // VizForge draws a focus point and an end label at each series' last point; the viz overlay uses the plan's last point.
+          for(const [i,e] of layout.entities.entries()){assert.ok(e.marks.some(m=>m.key==='focus-point'),label);assert.ok(text(e,'label'),label);assert.ok(plan.lines[i].points.length,label);}
+          assert.equal(plan.lines.length,layout.entities.length,label);lined++;
+        }
+      }
+    }
+  }
+  assert.ok(ranked>=3&&lined>=1,`compared ${ranked} rankings and ${lined} lines`);
+});

@@ -13,7 +13,7 @@ export {formatNumber,tickCount} from './scales.ts';
 export {VizRoot,useMotion,useMarkTransition,useCountUp,settledAttr} from './react.tsx';
 export {useTooltip} from './Tooltip.tsx';
 export {BarChart,LineChart,Donut,Heatmap,Legend,useSize} from './svg.tsx';
-export type {BarProps,LineProps,LineSeries,DonutProps,HeatProps,NumberFormat} from './svg.tsx';
+export type {BarProps,BarGeometry,LineProps,LineSeries,DonutProps,HeatProps,NumberFormat} from './svg.tsx';
 export {Kpi} from './Kpi.tsx';
 export {Skeleton} from './Skeleton.tsx';
 export {useMultiField,useIntervalField,passes,activeFilters,crossfilter,groupSum} from './interaction.ts';

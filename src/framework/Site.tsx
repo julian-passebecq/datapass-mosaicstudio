@@ -19,8 +19,15 @@ function Review({pending,onApply,onClose}:{pending:SavedState;onApply():void;onC
   useEffect(()=>{const d=ref.current!;d.showModal();return()=>d.close();},[]);
   return <dialog ref={ref} className="site-review" onCancel={onClose}><h2>Review saved inputs</h2><p>This restores {Object.keys(pending.values).length} input/view values for <strong>{pending.appId}</strong> and opens <strong>{pending.page}</strong>. Data files and task results are not imported. No computation task is started.</p><div className="site-table-scroll"><table><thead><tr><th>Field</th><th>Saved value</th></tr></thead><tbody>{Object.entries(pending.values).map(([key,value])=><tr key={key}><th>{key}</th><td>{String(value)}</td></tr>)}</tbody></table></div><div><button type="button" onClick={onClose}>Cancel</button><button type="button" className="site-primary" onClick={onApply}>Apply saved inputs</button></div></dialog>;
 }
+/** Capture runs only (`?capture=1`, the deterministic-clock mode) may force the theme with
+ * `&theme=light|dark`, so one client can be captured in both modes. Ignored otherwise. */
+function captureTheme(definition:AppDefinition):AppDefinition{
+  const q=new URLSearchParams(globalThis.location?.search),mode=q.get('theme'),capture=q.get('capture');
+  if((capture!=='1'&&capture!=='true')||(mode!=='light'&&mode!=='dark'))return definition;
+  return {...definition,manifest:{...definition.manifest,theme:{...definition.manifest.theme,mode}}};
+}
 export function StudioSite({definition}:{definition:AppDefinition}){
-  const runtime=useMemo(()=>new SiteRuntime(definition),[definition]),manifest=runtime.manifest;
+  const runtime=useMemo(()=>new SiteRuntime(captureTheme(definition)),[definition]),manifest=runtime.manifest;
   const [pageId,setPageId]=useState(()=>{const id=new URLSearchParams(location.search).get('page');return manifest.pages.some(p=>p.id===id)?id!:manifest.pages[0].id;});
   const [pending,setPending]=useState<SavedState|null>(null),[error,setError]=useState('');
   const file=useRef<HTMLInputElement>(null),heading=useRef<HTMLHeadingElement>(null),sessionMenu=useRef<HTMLDetailsElement>(null);

@@ -50,6 +50,12 @@ export type ChartVizOptions = {
   sort?: 'none' | 'ascending' | 'descending';
   /** Bars with a series: stacked (default) or grouped. */
   stack?: 'stacked' | 'grouped';
+  /** Bar direction. Default: horizontal for a ranking (bars without a series, like VizForge),
+   * vertical with a series. */
+  orientation?: 'horizontal' | 'vertical';
+  /** Ranking bars only (no series): numeric column with each bar's prior value. The rank change
+   * against it is shown next to each bar (↑2, ↓1, ·); without it the change reads "—", as in VizForge. */
+  previous?: string;
   /** One view field, as for other blocks: select/multi over bar categories or line series,
    * interval over scatter X. Values are semantic keys (category/series values), never indexes. */
   selection?: string;
