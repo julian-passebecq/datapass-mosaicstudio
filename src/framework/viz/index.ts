@@ -5,8 +5,9 @@ export {DURATIONS,CURVES,cubicBezier,ease,Motion,VirtualClock,realClock,detectCa
 export type {Clock,MotionOptions,Tween,DurationName,CurveName} from './motion.ts';
 export {lightTokens,darkTokens,vizTokens,tokenVars,tokenCss,cat,v,resolveVars} from './tokens.ts';
 export type {VizTokens,VizMode,TokenOverrides} from './tokens.ts';
-export {chartSpecSchema,parseChartSpec,fromLegacyChart,specFromTable,missingEncoded,ChartSpecError,MARKS} from './spec.ts';
+export {parseChartSpec,fromLegacyChart,specFromTable,missingEncoded,ChartSpecError,MARKS} from './spec.ts';
 export type {ChartSpec,ArtifactTable} from './spec.ts';
+// The zod `chartSpecSchema` (tooling contract) lives in './schema.ts', outside the core bundle.
 export {estimateMarks,chooseRenderer,routeSpec,RENDER_LIMITS,is3D,fallback2D} from './route.ts';
 export type {RendererId} from './route.ts';
 export {formatNumber,tickCount} from './scales.ts';

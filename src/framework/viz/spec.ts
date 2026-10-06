@@ -1,28 +1,12 @@
-/** ChartSpec: a small, Vega-Lite-like JSON grammar validated with zod against an artifact table.
+/** ChartSpec: a small, Vega-Lite-like JSON grammar validated against an artifact table. The zod schema
+ * (spec-schema.ts) is the tooling contract; the hot path uses its zod-free twin (spec-shape.ts).
  * Encodings name column ids; types come from the table's columns, never from guessing values.
  * The legacy chart block `{kind,x,y}` is translated, so existing manifests keep working.
  */
-import {z} from 'zod';
 import type {Column,Rows} from '../types.ts';
-
-const id=z.string().regex(/^[a-z][a-zA-Z0-9_-]{0,79}$/,'column id');
-export const MARKS=['bar','line','area','point','arc','rect','kpi','bar3d','surface','point3d'] as const;
-const channel=z.object({field:id,title:z.string().max(120).optional(),format:z.string().max(24).optional()}).strict();
-export const chartSpecSchema=z.object({
-  id:id,
-  title:z.string().max(200).optional(),
-  mark:z.enum(MARKS),
-  encoding:z.object({
-    x:channel.optional(),y:channel.optional(),z:channel.optional(),color:channel.optional(),size:channel.optional(),
-    series:channel.optional(),theta:channel.optional(),tooltip:z.array(channel).max(8).optional(),
-  }).strict(),
-  stack:z.enum(['stacked','grouped','normalize']).optional(),
-  sort:z.enum(['none','ascending','descending']).optional(),
-  format:z.object({unit:z.string().max(30).optional(),digits:z.number().int().min(0).max(6).optional(),compact:z.boolean().optional()}).strict().optional(),
-  selection:z.object({field:id,mode:z.enum(['point','multi','interval']),on:id.optional()}).strict().optional(),
-  renderer:z.enum(['auto','svg','canvas','webgl']).optional(),
-}).strict();
-export type ChartSpec=z.infer<typeof chartSpecSchema>;
+import {checkSpecShape,MARKS,type ChartSpec} from './spec-shape.ts';
+export {MARKS};
+export type {ChartSpec};
 export type ArtifactTable={columns:readonly Column[];rows:Rows};
 
 /** Which channels each mark needs, and the column type each channel accepts. */
@@ -40,10 +24,10 @@ const NEEDS:Record<ChartSpec['mark'],{required:(keyof ChartSpec['encoding'])[];n
 };
 export class ChartSpecError extends Error {readonly issues:string[];constructor(issues:string[]){super('Invalid chart spec: '+issues.join('; '));this.issues=issues;}}
 
-/** Validate structure (zod) then references and types against the table's columns. */
+/** Validate structure (zod-free twin of chartSpecSchema) then references and types against the table's columns. */
 export function parseChartSpec(input:unknown,table:Pick<ArtifactTable,'columns'>):ChartSpec{
-  const parsed=chartSpecSchema.safeParse(input);
-  if(!parsed.success)throw new ChartSpecError(parsed.error.issues.map(i=>(i.path.join('.')||'spec')+': '+i.message));
+  const parsed=checkSpecShape(input);
+  if(!parsed.success)throw new ChartSpecError(parsed.issues);
   const spec=parsed.data,issues:string[]=[],columns=new Map(table.columns.map(c=>[c.id,c]));
   const need=NEEDS[spec.mark];
   for(const key of need.required)if(!spec.encoding[key])issues.push(`${spec.mark} needs encoding.${key}`);
