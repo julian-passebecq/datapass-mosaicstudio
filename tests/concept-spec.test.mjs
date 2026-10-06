@@ -170,6 +170,13 @@ test('standalone embed API: only the exact load type is read; the spec is turned
   assert.deepEqual(readyMessage({ok:true,id:'a'}),{type:EMBED_READY,specVersion:CONCEPT_SPEC_VERSION,result:{ok:true,id:'a'}});
 });
 
+test('standalone embed API: load options are optional and only valid values are kept',async()=>{
+  const {embedOptions,EMBED_LOAD}=await import('../clients/concept-viewer/standalone/embed.ts');
+  for(const none of [null,{type:EMBED_LOAD},{type:EMBED_LOAD,options:null},{type:EMBED_LOAD,options:[1]},{type:EMBED_LOAD,options:'embed'}])assert.deepEqual(embedOptions(none),{});
+  assert.deepEqual(embedOptions({type:EMBED_LOAD,options:{view:'layered',fit:true,chrome:'embed',theme:'auto'}}),{view:'layered',fit:true,chrome:'embed',theme:'auto'});
+  assert.deepEqual(embedOptions({type:EMBED_LOAD,options:{view:'globe',fit:'yes',chrome:'none',theme:'dark',extra:1}}),{theme:'dark'});
+});
+
 test('every kind has a label, a color, a flat glyph, an isometric glyph and a 3D icon',()=>{
   registerConceptGlyphs();
   for(const k of CONCEPT_KINDS){

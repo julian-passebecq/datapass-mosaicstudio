@@ -44,7 +44,8 @@ function roundedCurve(points:Vec3[],r=.38){
   return path;
 }
 
-export function createStage(host:HTMLElement,overlay:HTMLElement,spec:ConceptSpec):Stage{
+/** `fitAspect`: below this width/height ratio the camera pulls back. 1.5 frames the core; a larger value (embed fit) keeps the side labels in view. */
+export function createStage(host:HTMLElement,overlay:HTMLElement,spec:ConceptSpec,{fitAspect=1.5}:{fitAspect?:number}={}):Stage{
   const canvas=document.createElement('canvas');canvas.dataset.renderer='concept-webgl2';canvas.setAttribute('aria-hidden','true');
   const context=canvas.getContext('webgl2',{antialias:true,preserveDrawingBuffer:true});
   if(!context)throw new Error('WebGL2 is unavailable. The layered and isometric 2D diagrams remain available.');
@@ -145,7 +146,7 @@ export function createStage(host:HTMLElement,overlay:HTMLElement,spec:ConceptSpe
   function render(t:number,pose:Pose,view:View){
     camera.fov=pose.fov;camera.aspect=size.width/size.height;
     // Narrow viewports pull the camera back so the same pose frames the same content.
-    const fit=Math.max(1,1.5/camera.aspect);if(fit>1)pose={...pose,distance:pose.distance*fit};
+    const fit=Math.max(1,fitAspect/camera.aspect);if(fit>1)pose={...pose,distance:pose.distance*fit};
     if(pose.shift)camera.setViewOffset(size.width,size.height,-pose.shift*size.width,0,size.width,size.height);else camera.clearViewOffset();
     camera.position.set(...cameraPosition(pose));camera.lookAt(...pose.target);camera.updateProjectionMatrix();
     (scene.fog as THREE.Fog).near=pose.distance*.85;(scene.fog as THREE.Fog).far=pose.distance*3.2+20;

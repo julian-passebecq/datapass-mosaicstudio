@@ -1,5 +1,5 @@
 import {lazy,Suspense,useCallback,useEffect,useMemo,useRef,useState} from 'react';
-import {ClipboardPaste,Download,FolderOpen,Home,Link,Play,X} from 'lucide-react';
+import {ClipboardPaste,Download,FolderOpen,Home,Link,PanelRight,Play,X} from 'lucide-react';
 import {useReducedMotion} from '../../src/framework/hooks.tsx';
 import {readConceptJson,ConceptSpecError,type ConceptSpec,type ConceptIssue} from '../../src/framework/concept/schema.ts';
 import {layerCakeSvg} from '../../src/framework/concept/flat.ts';
@@ -25,6 +25,13 @@ export type Problem={source:string;issues:ConceptIssue[]};
 /** Outcome of every load attempt, reported to the host (the standalone embed API forwards it to the parent page). */
 export type LoadResult={source:string;ok:true;id:string;warnings:ConceptIssue[]}|{source:string;ok:false;issues:ConceptIssue[]};
 type Loaded={spec:ConceptSpec;source:string;warnings:ConceptIssue[]};
+/** Frame width below which the embed chrome collapses the details panel into a toggle. */
+export const EMBED_PANEL_MIN_WIDTH=1100;
+function useMedia(query:string){
+  const [on,setOn]=useState(()=>typeof matchMedia==='function'&&matchMedia(query).matches);
+  useEffect(()=>{if(typeof matchMedia!=='function')return;const m=matchMedia(query),f=()=>setOn(m.matches);f();m.addEventListener('change',f);return()=>m.removeEventListener('change',f);},[query]);
+  return on;
+}
 const toProblem=(source:string,e:unknown):Problem=>({source,issues:e instanceof ConceptSpecError?e.issues:[{path:'',message:e instanceof Error?e.message:String(e)}]});
 
 /**
@@ -32,14 +39,22 @@ const toProblem=(source:string,e:unknown):Problem=>({source,issues:e instanceof 
  * specs come from (examples, the first source) and owns the rendering choice; the workbench validates, renders the
  * three views, lists errors (path + message) and warnings, and exports SVG. A file that fails validation never
  * replaces the current spec. `openUrl` and `paste` add the standalone inputs.
+ * `chrome="embed"` (host pages) drops the example gallery, the open/URL/paste inputs and drag-and-drop, and collapses
+ * the details panel below EMBED_PANEL_MIN_WIDTH. `fit` shows the whole diagram in every view (no readable zoom-in).
  */
-export function ConceptWorkbench({view,onView,examples,initial,initialProblem=null,onOpened,onResult,incoming,openUrl,paste=false,brand='CONCEPT VIEWER'}:{
+export function ConceptWorkbench({view,onView,examples,initial,initialProblem=null,onOpened,onResult,incoming,openUrl,paste=false,brand='CONCEPT VIEWER',chrome='full',fit=false,theme='light'}:{
   view:Rendering;onView(view:Rendering):void;examples:readonly SpecExample[];initial:SpecSource|null;initialProblem?:Problem|null;
   onOpened?(key:string):void;onResult?(result:LoadResult):void;
   /** A spec pushed by the host (embed API). Each new `seq` is opened like a picked file. */
   incoming?:SpecSource&{seq:number};
   openUrl?(url:string):SpecSource|Problem;paste?:boolean;brand?:string;
+  chrome?:'full'|'embed';fit?:boolean;theme?:'light'|'dark'|'auto';
 }){
+  const embed=chrome==='embed';
+  const narrow=useMedia(`(max-width:${EMBED_PANEL_MIN_WIDTH-.02}px)`),prefersDark=useMedia('(prefers-color-scheme: dark)');
+  const dark=theme==='dark'||(theme==='auto'&&prefersDark);
+  const collapsible=embed&&narrow;
+  const [panelOpen,setPanelOpen]=useState(false);
   const reduced=useReducedMotion();
   const [loaded,setLoaded]=useState<Loaded|null>(null),[problem,setProblem]=useState<Problem|null>(initialProblem),[dragging,setDragging]=useState(false);
   const [showWarnings,setShowWarnings]=useState(true),[input,setInput]=useState<'url'|'paste'|null>(null),[draft,setDraft]=useState('');
@@ -63,6 +78,7 @@ export function ConceptWorkbench({view,onView,examples,initial,initialProblem=nu
   },[]);
   // Drag and drop anywhere on the page.
   useEffect(()=>{
+    if(embed)return;
     let depth=0;
     const enter=(e:DragEvent)=>{if(!e.dataTransfer?.types.includes('Files'))return;e.preventDefault();depth++;setDragging(true);};
     const over=(e:DragEvent)=>{if(e.dataTransfer?.types.includes('Files'))e.preventDefault();};
@@ -70,9 +86,9 @@ export function ConceptWorkbench({view,onView,examples,initial,initialProblem=nu
     const drop=(e:DragEvent)=>{e.preventDefault();depth=0;setDragging(false);const f=e.dataTransfer?.files?.[0];if(f)void openFile(f);};
     window.addEventListener('dragenter',enter);window.addEventListener('dragover',over);window.addEventListener('dragleave',leave);window.addEventListener('drop',drop);
     return()=>{window.removeEventListener('dragenter',enter);window.removeEventListener('dragover',over);window.removeEventListener('dragleave',leave);window.removeEventListener('drop',drop);};
-  },[openFile]);
+  },[openFile,embed]);
   const spec=loaded?.spec??null;
-  const select=useCallback((id:string)=>{if(!spec)return;setNav(n=>{if(n.selection===id)return {...n,selection:'none'};const node=spec.nodes.find(x=>x.id===id);if(!node)return n;
+  const select=useCallback((id:string)=>{if(!spec)return;setPanelOpen(true);setNav(n=>{if(n.selection===id)return {...n,selection:'none'};const node=spec.nodes.find(x=>x.id===id);if(!node)return n;
     return {selection:id,layer:spec.layers.findIndex(l=>l.id===node.layer),domain:spec.domains.findIndex(d=>d.id===node.domain)};});},[spec]);
   const go=useCallback((dir:'up'|'down'|'left'|'right'|'home')=>{if(spec)setNav(n=>step(spec,n,dir));},[spec]);
   useEffect(()=>{
@@ -96,19 +112,21 @@ export function ConceptWorkbench({view,onView,examples,initial,initialProblem=nu
   };
   const activeLayer=spec&&nav.selection!=='none'?spec.layers.findIndex(l=>l.id===spec.nodes.find(n=>n.id===nav.selection)?.layer):nav.layer;
   const warnings=loaded?.warnings??[];
-  return <section className="aa cv" data-testid="concept-viewer" data-spec={spec?.id??''} data-view={view} data-selection={nav.selection} data-layer={nav.layer} data-source={loaded?.source??''} data-problem={problem?'true':'false'} data-warnings={warnings.length}>
+  const panelHidden=collapsible&&!panelOpen;
+  return <section className={'aa cv'+(embed?' cv-embed':'')+(collapsible?' cv-narrow':'')+(fit?' cv-fit':'')+(dark?' cv-dark':'')} data-testid="concept-viewer" data-chrome={chrome} data-fit={fit?'true':'false'} data-theme={dark?'dark':'light'} data-panel={panelHidden?'collapsed':'shown'} data-spec={spec?.id??''} data-view={view} data-selection={nav.selection} data-layer={nav.layer} data-source={loaded?.source??''} data-problem={problem?'true':'false'} data-warnings={warnings.length}>
     <header className="aa-top">
       <div className="aa-brand"><span className="aa-mark"><i/><i/><i/></span><span>{brand}<small>concept spec v1 · any app or cloud</small></span></div>
-      <nav className="aa-tabs" aria-label="Examples">{examples.map(x=><button key={x.key} aria-pressed={loaded?.source===x.key} onClick={()=>void open(x)}>{x.label}<small>{x.provenance}</small></button>)}
+      {!embed&&<nav className="aa-tabs" aria-label="Examples">{examples.map(x=><button key={x.key} aria-pressed={loaded?.source===x.key} onClick={()=>void open(x)}>{x.label}<small>{x.provenance}</small></button>)}
         <button onClick={()=>fileInput.current?.click()} title="Open a .json concept spec (or drop it anywhere)"><FolderOpen size={13}/> Open file</button>
         {openUrl&&<button aria-pressed={input==='url'} onClick={()=>{setInput(input==='url'?null:'url');setDraft('');}} title="Open a concept spec from an https:// URL"><Link size={13}/> URL</button>}
         {paste&&<button aria-pressed={input==='paste'} onClick={()=>{setInput(input==='paste'?null:'paste');setDraft('');}} title="Paste concept spec JSON"><ClipboardPaste size={13}/> Paste</button>}
-        <input ref={fileInput} type="file" accept=".json,application/json" hidden data-testid="concept-file" onChange={e=>{const f=e.target.files?.[0];if(f)void openFile(f);e.target.value='';}}/></nav>
+        <input ref={fileInput} type="file" accept=".json,application/json" hidden data-testid="concept-file" onChange={e=>{const f=e.target.files?.[0];if(f)void openFile(f);e.target.value='';}}/></nav>}
       <div className="aa-views" role="group" aria-label="Rendering">{RENDERINGS.map(r=><button key={r.id} aria-pressed={view===r.id} onClick={()=>onView(r.id)}>{r.label}</button>)}</div>
       <div className="aa-actions">
         <button disabled={!spec} onClick={()=>spec&&download(spec.id+'.isometric.svg',isometricSvg(spec))} title="Download the isometric SVG"><Download size={13}/> Isometric SVG</button>
         <button disabled={!spec} onClick={()=>spec&&download(spec.id+'.layered.svg',layerCakeSvg(spec))} title="Download the layer cake SVG"><Download size={13}/> Layer cake SVG</button>
         <button className="aa-play" disabled={!spec} onClick={()=>setFilm({start:0,autoplay:true,chrome:true})}><Play size={12}/> Film</button>
+        {collapsible&&<button aria-pressed={panelOpen} aria-controls="cv-panel" data-testid="concept-panel-toggle" onClick={()=>setPanelOpen(o=>!o)} title="Show or hide the details panel"><PanelRight size={13}/> Details</button>}
       </div>
     </header>
     <div className="aa-body">
@@ -120,10 +138,10 @@ export function ConceptWorkbench({view,onView,examples,initial,initialProblem=nu
       </nav>
       <div className="aa-stage">
         {!spec?<div className="aa-loading" role="status">{problem?'No valid spec loaded. Drop, open or paste a .concept.json file.':initial?'Loading…':'Drop a .concept.json file anywhere, or use Open file.'}</div>
-          :view==='3d'?<Suspense fallback={<div className="aa-loading" role="status">Raising the layers…</div>}><Stage spec={spec} nav={nav} reduced={reduced} onSelect={select} onStep={go}/></Suspense>
-          :view==='isometric'?<PanZoom svg={svg} resetKey={spec.id+'|'+(loaded?.source??'')} testId="concept-isometric" onClick={svgClick}/>
+          :view==='3d'?<Suspense fallback={<div className="aa-loading" role="status">Raising the layers…</div>}><Stage spec={spec} nav={nav} reduced={reduced} onSelect={select} onStep={go} whole={fit}/></Suspense>
+          :view==='isometric'?<PanZoom svg={svg} resetKey={spec.id+'|'+(loaded?.source??'')} testId="concept-isometric" onClick={svgClick} whole={fit}/>
           :<div className="aa-svg" data-testid={'concept-'+view} onClick={svgClick} dangerouslySetInnerHTML={{__html:svg}}/>}
-        <div className="aa-hint">{view==='3d'?'Scroll or ↑ ↓ between layers · ← → across domains · click a node':view==='isometric'?'Wheel to zoom · drag to pan · Fit for the full width · click a node · drop a .json spec anywhere':'Drop a .json concept spec anywhere · click a node · download as SVG'}</div>
+        <div className="aa-hint">{view==='3d'?'Scroll or ↑ ↓ between layers · ← → across domains · click a node':view==='isometric'?(embed?'Wheel to zoom · drag to pan · Fit for the whole diagram · click a node':'Wheel to zoom · drag to pan · Fit for the full width · click a node · drop a .json spec anywhere'):embed?'Click a node · download as SVG':'Drop a .json concept spec anywhere · click a node · download as SVG'}</div>
         {input&&<form className="cv-input" data-testid={'concept-'+input} onSubmit={e=>{e.preventDefault();void submit();}}>
           <b>{input==='url'?'Open a concept spec from a URL':'Paste concept spec JSON'}</b>
           {input==='url'?<input autoFocus type="url" value={draft} onChange={e=>setDraft(e.target.value)} placeholder="https://raw.githubusercontent.com/…/my-app.concept.json" aria-label="Concept spec URL"/>
@@ -145,9 +163,9 @@ export function ConceptWorkbench({view,onView,examples,initial,initialProblem=nu
         </div>}
         {dragging&&<div className="cv-drop" data-testid="concept-drop">Drop a concept spec (.json)</div>}
       </div>
-      <aside className="aa-panel" aria-label={nav.selection!=='none'?'Node properties':'Spec overview'}>
+      <aside className="aa-panel" id="cv-panel" hidden={panelHidden} aria-label={nav.selection!=='none'?'Node properties':'Spec overview'}>
         {spec&&(nav.selection!=='none'?<>
-          <button className="aa-close" onClick={()=>setNav(n=>({...n,selection:'none'}))} aria-label="Clear selection"><X size={14}/></button>
+          <button className="aa-close" onClick={()=>{setNav(n=>({...n,selection:'none'}));if(collapsible)setPanelOpen(false);}} aria-label="Clear selection"><X size={14}/></button>
           <NodeDetails spec={spec} id={nav.selection} onSelect={select}/>
         </>:<div className="aa-about">
           <span className="aa-eyebrow">{spec.provenance==='documented'?'DOCUMENTED FROM THE REPOSITORY':'SYNTHETIC ILLUSTRATION'}</span><code className="cv-source">{loaded?.source}</code>

@@ -51,9 +51,18 @@ addEventListener('message', e => {
   // First "ready": the viewer is listening. Later ones carry e.data.result for each spec you sent:
   // {ok: true, id, warnings: [{path, message}]} or {ok: false, issues: [{path, message}]}
 });
-frame.contentWindow.postMessage({type: 'datapass.concept-spec/load', spec}, '*'); // after the first "ready"
+frame.contentWindow.postMessage({type: 'datapass.concept-spec/load', spec,
+  options: {view: 'layered', fit: true, chrome: 'embed', theme: 'auto'}}, '*'); // after the first "ready"
 ```
 
+- `options` (since `studio-v0.8.1`, all optional; a load without them behaves as before). Each option keeps its last sent value, so later loads may omit them; invalid values are ignored.
+
+  | option | values | effect |
+  |---|---|---|
+  | `view` | `isometric`, `layered`, `3d` | Rendering to show (same as `?view=`). The reader can still switch. |
+  | `fit` | `true`, `false` (default) | Show the whole diagram in every view, on load and on every frame resize until the reader pans or zooms. Without it the isometric view starts at a readable zoom from the left edge (made for a full window). |
+  | `chrome` | `full` (default), `embed` | `embed` hides the example gallery, Open file, URL and Paste, and ignores dropped files. The view switcher, the SVG exports, the film and the details panel stay; below 1100 px of frame width the details panel collapses behind a **Details** button (selecting a node opens it). |
+  | `theme` | `light` (default), `dark`, `auto` | Viewer chrome colours; `auto` follows the frame's `prefers-color-scheme`. Diagrams keep their light paper card. |
 - `spec` is the concept object, or its JSON text. It goes through the same path as **Open file**: 256 KB bound, validation, errors listed as `path: message` in the viewer while the previous spec stays, warnings for unknown fields. Nothing in it is evaluated.
 - The viewer reads only messages from its direct parent whose `type` is exactly `datapass.concept-spec/load`; anything else is ignored without a reply. It answers `{type: 'datapass.concept-spec/ready', specVersion}` once it listens, and again after every load (with `result` only for specs the parent sent; files a visitor opens in the frame are not described to the parent).
 - Messages go to the parent with target origin `*` and hold only the result above. Keep the parent's own CSP `frame-src` open to the viewer's location.
