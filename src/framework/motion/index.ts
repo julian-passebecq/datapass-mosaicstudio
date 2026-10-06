@@ -4,5 +4,8 @@ export type {MotionSpec, MotionBlock, MotionState, MotionCommand, MotionEntity, 
 export {compileMotion, motionFrame, pointAlong, stationAnchor} from './compile.ts';
 export type {CompiledMotion, MotionFrame} from './compile.ts';
 export {motionSvg, motionReport} from './export.ts';
+export {registerMotionGlyphs, motionGlyphNames, hasMotionGlyph, BUILTIN_GLYPHS} from './glyphs.ts';
+export type {MotionGlyph, GlyphKit, GlyphPart} from './glyphs.ts';
+export type {MotionLayer, MotionGroup, MotionSceneOptions, MotionAttach} from './model.ts';
 export {timingProgress} from './timing.ts';
 export {migrateMotion} from './migrate.ts';
