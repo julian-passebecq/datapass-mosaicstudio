@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/julian-passebecq/datapass-mosaicstudio/main/spec/preview/v1/preview.schema.json",
+  "title": "DataPass preview descriptor (datapass.preview/1)",
+  "description": "Describes one built static app folder so that any viewer can list, check and open it. Inert metadata: it grants no access, holds no credentials and implies no deployment. Cross-reference rules enforced by scripts/preview-validate.mjs: file paths are unique; entry and every artifact path are listed in files with the same sha256; capability and artifact ids are unique.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "version", "app", "entry", "sdkVersion", "sourceCommit", "publication", "capabilities", "files", "artifacts", "open", "csp"],
+  "properties": {
+    "$schema": {"type": "string", "maxLength": 300},
+    "format": {"const": "datapass.preview"},
+    "version": {"const": 1},
+    "app": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title", "variant"],
+      "properties": {
+        "id": {"type": "string", "pattern": "^[a-z][a-z0-9-]{0,59}$"},
+        "title": {"type": "string", "minLength": 1, "maxLength": 160, "pattern": "^[^\\u0000-\\u001f]*$"},
+        "variant": {"enum": ["client", "workbench", "standalone"]}
+      }
+    },
+    "entry": {"$ref": "#/$defs/path"},
+    "sdkVersion": {"type": "string", "maxLength": 64, "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+(-[0-9A-Za-z.-]+)?$"},
+    "sourceCommit": {
+      "description": "Git commit the app was built from, or null when unknown or built from uncommitted changes.",
+      "anyOf": [{"type": "null"}, {"type": "string", "pattern": "^[0-9a-f]{40}([0-9a-f]{24})?$"}]
+    },
+    "publication": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "noindex"],
+      "properties": {
+        "mode": {"enum": ["preview", "public"]},
+        "noindex": {"type": "boolean"}
+      }
+    },
+    "capabilities": {
+      "type": "array",
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {"type": "string", "pattern": "^[a-z][a-z0-9-]{0,39}$"}
+    },
+    "files": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 2000,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "bytes", "sha256"],
+        "properties": {
+          "path": {"$ref": "#/$defs/path"},
+          "bytes": {"type": "integer", "minimum": 0, "maximum": 1073741824},
+          "sha256": {"$ref": "#/$defs/sha256"}
+        }
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "maxItems": 200,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "path", "sha256", "provenance"],
+        "properties": {
+          "id": {"type": "string", "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$"},
+          "path": {"$ref": "#/$defs/path"},
+          "sha256": {"$ref": "#/$defs/sha256"},
+          "provenance": {"enum": ["synthetic", "provided", "computed"]}
+        }
+      }
+    },
+    "open": {
+      "description": "How the folder can be opened: file = double-click from disk works; httpLoopback = a static server on 127.0.0.1 works.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["file", "httpLoopback"],
+      "properties": {
+        "file": {"type": "boolean"},
+        "httpLoopback": {"type": "boolean"}
+      }
+    },
+    "csp": {"type": "string", "minLength": 1, "maxLength": 4096, "pattern": "^[^\\u0000-\\u001f]*$"}
+  },
+  "$defs": {
+    "path": {
+      "description": "Relative POSIX path inside the app folder: no leading slash, no backslash, no drive, no empty, '.' or '..' segment.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 260,
+      "pattern": "^(?!.*(?:^|/)\\.{1,2}(?:/|$))[A-Za-z0-9._~@+-]+(?:/[A-Za-z0-9._~@+-]+)*$"
+    },
+    "sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"}
+  }
+}
