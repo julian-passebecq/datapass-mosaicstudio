@@ -5,7 +5,12 @@ import {useRoomStore} from '../store';
 import {identifier,literal,pageQuery} from '../core/queries';
 import {useLocalQuery} from '../adapters/query';
 import {Header,Results} from './Common';
-export default function Explore(){const selected=useRoomStore(s=>s.datapass.selectedTable);return <TableInspector key={selected} table={selected}/>;}
+export default function Explore(){const selected=useRoomStore(s=>s.datapass.selectedTable),exists=useRoomStore(s=>s.db.tables.some(t=>t.tableName===s.datapass.selectedTable));return selected&&exists?<TableInspector key={selected} table={selected}/>:<BlankData/>;}
+/** A blank workspace has no forced dataset: the sample is an explicit, labelled choice. */
+export function BlankData({purpose='Open a local CSV, JSON or Parquet file from the Assets panel, or load the synthetic sample to explore the workbench.'}:{purpose?:string}){
+ const load=useRoomStore(s=>s.datapass.loadSamples),loading=useRoomStore(s=>s.datapass.loadingSamples),ready=useRoomStore(s=>s.room.initialized),open=useRoomStore(s=>s.datapass.openModule);
+ return <section className="panel-content" data-testid="blank-data"><Header eyebrow="Explore / local data" title="No table open" detail={purpose}/><div className="blank-actions"><Button appearance="primary" disabled={!ready||loading} onClick={()=>void load()}>{loading?'Creating sample...':'Load synthetic sample (360 rows)'}</Button><Button onClick={()=>open('notebook')}>Open the notebook</Button></div><p className="footnote">The sample is deterministic synthetic data generated in this browser. It is not client data and is never loaded unless you choose it.</p></section>;
+}
 function TableInspector({table}:{table:string}){
  const info=useRoomStore(s=>s.datapass.datasets[table]),schema=useRoomStore(s=>s.db.tables.find(t=>t.tableName===table)),ready=useRoomStore(s=>s.room.initialized),open=useRoomStore(s=>s.datapass.openModule),ensure=useRoomStore(s=>s.sqlEditor.ensureQuery);
  const [tab,setTab]=useState('rows'),[offset,setOffset]=useState(0),[version,setVersion]=useState(0);

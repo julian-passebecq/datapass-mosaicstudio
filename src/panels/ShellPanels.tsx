@@ -3,7 +3,7 @@ import {Button,Input} from '../fluent';
 import {Database,FileUp,Search,ChevronRight,Table2} from 'lucide-react';
 import {useRoomStore} from '../store';
 import {PanelBoundary,Loading} from './Common';
-const panels={explore:lazy(()=>import('./Explore')),linked:lazy(()=>import('./Linked')),sql:lazy(()=>import('./Sql')),pipeline:lazy(()=>import('./Pipeline')),stories:lazy(()=>import('./Stories')),explain:lazy(()=>import('./Concepts')),board:lazy(()=>import('./Board')),architecture:lazy(()=>import('./Architecture'))};
+const panels={notebook:lazy(()=>import('./Notebook')),explore:lazy(()=>import('./Explore')),linked:lazy(()=>import('./Linked')),sql:lazy(()=>import('./Sql')),pipeline:lazy(()=>import('./Pipeline')),stories:lazy(()=>import('./Stories')),explain:lazy(()=>import('./Concepts')),board:lazy(()=>import('./Board')),architecture:lazy(()=>import('./Architecture'))};
 export function WorkspacePanel(){const module=useRoomStore(s=>s.datapass.module),Panel=panels[module as keyof typeof panels]||panels.explore;return <div className="workspace-panel"><PanelBoundary key={module}><Suspense fallback={<Loading/>}><Panel/></Suspense></PanelBoundary></div>;}
 export function CatalogPanel(){
   const tables=useRoomStore(s=>s.db.tables),assets=useRoomStore(s=>s.datapass.datasets),selected=useRoomStore(s=>s.datapass.selectedTable),select=useRoomStore(s=>s.datapass.selectTable),importFile=useRoomStore(s=>s.datapass.importFile),importing=useRoomStore(s=>s.datapass.importing),setError=useRoomStore(s=>s.datapass.setError);

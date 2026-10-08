@@ -1,12 +1,14 @@
 /** Deterministic demonstration data, never presented as a client's real results. */
 const extensionRepository=new URL('duckdb/extensions',new URL(import.meta.env.BASE_URL,location.href)).href.replaceAll("'","''");
-export const seedSql=`
+export const extensionSql=`
 SET custom_extension_repository = '${extensionRepository}';
 SET allow_community_extensions = false;
 INSTALL json;
 LOAD json;
 INSTALL parquet;
-LOAD parquet;
+LOAD parquet;`;
+/** Opt-in synthetic sample. A blank workspace never creates it. */
+export const sampleSql=`
 CREATE TABLE IF NOT EXISTS operations AS
 SELECT i::INTEGER AS id,
   (1 + (i % 30))::INTEGER AS day,
@@ -16,3 +18,6 @@ SELECT i::INTEGER AS id,
   round((25 + (i % 19) * 3.8 + sin(i * .45) * 12) * (64 + i % 12), 2) AS revenue_eur,
   round(91 + (i % 9) * .9, 1) AS availability_pct
 FROM range(360) t(i);`;
+
+export const SAMPLE_TABLE='operations';
+export const seedSql=extensionSql+sampleSql;

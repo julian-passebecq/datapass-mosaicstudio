@@ -13,7 +13,9 @@ test.afterEach(async({},info)=>{
  expect(errors,'Unhandled browser exceptions').toEqual([]);
  expect(externalRequests,'No CDN, telemetry or upload requests from the app').toEqual([]);
 });
+// These journeys exercise the opt-in synthetic sample; a blank workspace is covered by workbench-notebook.spec.ts.
 async function start(page:Page,url='/'){
+ url+=(url.includes('?')?'&':'?')+'sample=operations';
  await page.goto(url,{waitUntil:'domcontentloaded'});
  await expect(page.getByTestId('runtime-state')).toHaveText('DuckDB ready',{timeout:60000});
 }
