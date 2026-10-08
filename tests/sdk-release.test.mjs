@@ -49,9 +49,14 @@ test('every relative import of the archived sources resolves inside the archive'
   for(const p of files){
     if(!/^(src|scripts)\/.*\.(tsx?|mjs)$/.test(p))continue;
     const text=await readFile(path.join(repo,p),'utf8').catch(()=>'');
-    for(const m of text.matchAll(/(?:\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)['"](\.\.?\/[^'"]+)['"]/g)){
-      const base=path.posix.normalize(path.posix.join(path.posix.dirname(p),m[1]));
-      if(!exts.some(e=>files.has(base+e)))missing.push(p+' -> '+m[1]);
+    // Client templates hold the source of generated client files: their imports resolve inside the new client.
+    if(p==='scripts/scaffold-client.mjs'||p.startsWith('scripts/templates/'))continue;
+    for(const m of text.matchAll(/(\bfrom\s*|\bimport\s*\(\s*|\bimport\s+)['"](\.\.?\/[^'"]+)['"]/g)){
+      const base=path.posix.normalize(path.posix.join(path.posix.dirname(p),m[2]));
+      if(exts.some(e=>files.has(base+e)))continue;
+      // A lazy import of a reference client (only used to prepare the workbench's own assets) is not SDK surface.
+      if(m[1].startsWith('import')&&m[1].includes('(')&&base.startsWith('clients/'))continue;
+      missing.push(p+' -> '+m[2]);
     }
   }
   // Scripts that drive the repository's own acceptance (tests/, tools/, reference clients) may point outside the SDK.
