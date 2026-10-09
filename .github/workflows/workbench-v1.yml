@@ -1,0 +1,55 @@
+name: Workbench V1 contracts
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/workbench-v1/**'
+      - 'tests/workbench-v1*'
+      - 'docs/workbench-v1/**'
+      - '.github/workflows/workbench-v1.yml'
+permissions:
+  contents: read
+concurrency:
+  group: workbench-v1-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.16.0'
+          cache: npm
+      - name: Portable document invariants
+        run: node --experimental-strip-types --test tests/workbench-v1-model.test.mjs
+      - name: Exact source archive
+        run: |
+          mkdir -p v1-recovery
+          git archive --format=tar.gz --output=v1-recovery/source.tar.gz HEAD
+          git rev-parse HEAD > v1-recovery/revision.txt
+          sha256sum package-lock.json upstreams.lock.json > v1-recovery/lock-hashes.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: workbench-v1-source
+          path: v1-recovery
+          retention-days: 7
+      - run: npm ci --no-audit --no-fund
+      - run: npm run bootstrap
+      - name: Offline development dependencies
+        run: |
+          node --version > v1-recovery/environment.txt
+          npm --version >> v1-recovery/environment.txt
+          tar -czf v1-recovery/dependencies.tar.gz node_modules .upstream
+          sha256sum v1-recovery/dependencies.tar.gz > v1-recovery/dependencies.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: workbench-v1-offline-dependencies
+          path: |
+            v1-recovery/dependencies.tar.gz
+            v1-recovery/dependencies.sha256
+            v1-recovery/environment.txt
+          retention-days: 3
