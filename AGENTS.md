@@ -17,7 +17,7 @@ Start small: read `docs/recipes/START.md`, choose `client:families`, then run `c
 13. Responsive layout and reduced-motion/manual controls are release requirements. Inspect actual rendered screenshots; do not approve only source-level tests or generated mockups.
 14. Run unit tests, TypeScript, source/client contracts, production build and actual browser checks. Configured CI is not completed CI. Report actual counts and failures.
 15. Public website builds are not access control. Client data, documentation and public assets must be approved before publication.
-16. No automatic merge, deployment, package publication or branch replacement without explicit authorization. Work on an isolated branch and preserve prior checkpoints.
+16. Work on an isolated branch per package and open a PR. Merge on green CI per Claude Control dev rule (squash, delete the branch). No deployment, package publication or replacement of main/protected branches without explicit authorization. Preserve prior checkpoints.
 17. Public reference clients are `wind-reference`, `operations-reference`, `architecture-reference`, `experience-reference`, `energy-replay-reference`, `motion-reference`, `foundation-reference`, and `model-reference`. The default production workbench must not include arbitrary new clients.
 18. Read `docs/recipes/START.md` and the client-focused generated guide first. Use the longer AI/experience guides only for the capabilities actually needed.
 19. An explorer has one selected identity across Spatial, Map and Library. Context facets, camera targets and an explicit open-project action must remain separate concepts; do not duplicate content or selection state per renderer.
