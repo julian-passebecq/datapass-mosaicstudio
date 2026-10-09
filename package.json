@@ -1,6 +1,6 @@
 {
   "name": "datapass-mosaicstudio",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -40,7 +40,12 @@
     "test:artifact-watch": "node scripts/smoke-artifact-watch.mjs",
     "test:artifact-lineage": "node scripts/smoke-artifact-lineage.mjs",
     "test:coding-lab": "node --experimental-strip-types scripts/smoke-coding-lab.mjs",
-    "test:engine": "node --experimental-strip-types scripts/test-engine-consolidation.mjs"
+    "test:engine": "node --experimental-strip-types scripts/test-engine-consolidation.mjs",
+    "test:python-runtime": "python -m unittest discover -s py/service -p \"test_*.py\"",
+    "test:workbench": "node --experimental-strip-types --test tests/workbench-authoring.test.mjs && playwright test tests/browser/workbench-notebook.spec.ts",
+    "sdk:pack": "node scripts/sdk-pack.mjs",
+    "sdk:verify": "node scripts/sdk-verify.mjs",
+    "preview:validate": "node scripts/preview-validate.mjs"
   },
   "overrides": {
     "@duckdb/duckdb-wasm": "1.32.0"

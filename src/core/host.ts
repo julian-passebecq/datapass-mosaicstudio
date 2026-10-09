@@ -31,6 +31,7 @@ export interface StudioModule {
   engine: string;
 }
 export const modules: readonly StudioModule[] = [
+  {id:'notebook',title:'Notebook',description:'SQL and Python cells, explicit dependencies, results as artifacts',kind:'authoring',status:'implemented',engine:'DuckDB-WASM + local runtime adapter'},
   {id:'explore',title:'Data explorer',description:'Local files, schema, profile and rows',kind:'data',status:'implemented',engine:'SQLRooms / DuckDB-WASM'},
   {id:'linked',title:'Linked views',description:'Coordinated brushing and cross-filtering',kind:'data',status:'implemented',engine:'SQLRooms / UWData Mosaic'},
   {id:'sql',title:'SQL workspace',description:'Query editor and real local results',kind:'authoring',status:'implemented',engine:'SQLRooms SQL Editor'},

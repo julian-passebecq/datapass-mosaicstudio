@@ -41,3 +41,6 @@ docs/media/viz-gallery/.frames/
 
 # Bridge level 2.5 demo output (py/examples/live_slider.py)
 clients/python-wind-reference/public/artifacts/wind-aep-live-file.json
+
+# SDK release folder (npm run sdk:pack)
+dist-sdk/

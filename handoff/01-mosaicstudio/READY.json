@@ -1,0 +1,129 @@
+[
+  {
+    "template": false,
+    "state": "ISSUED",
+    "producer_repository": "https://github.com/julian-passebecq/datapass-mosaicstudio",
+    "producer_commit": "20ef865ea5f0981b40e99b3eda04e7b765c36af9",
+    "canonical_contract_id": "datapass.concept-spec/1",
+    "contract_version": "1.0.0",
+    "artifact_path": "spec/concept/v1/concept-spec.schema.json",
+    "artifact_sha256": "951197aab0c623e4603605c297e2a261b7551fdb6a088fcc1a2070b3d975782b",
+    "sha256_of": "git blob content at producer_commit (LF)",
+    "compatible_consumer_versions": [
+      "standalone viewer 0.8.1 (dist-standalone/concept-viewer.html sha256 7565fb296276ea82189911971ba384198e4207cde57ea004887a364b10970b6a)",
+      "clients/concept-viewer"
+    ],
+    "validation_evidence": [
+      "npm run contracts:check (strict validation of both published examples) at producer_commit",
+      "tests/concept-spec.test.mjs",
+      "tests/browser/concept-standalone.spec.ts 6/6"
+    ],
+    "source_omissions": [
+      "Unchanged since 8b22d9c. No DataPass React (176fcdd) or Contoso (5aaba31, a3b6a80) exporter or exported file exists, so no producer-consumer validation was possible."
+    ],
+    "author_surface": "CLAUDE CODE",
+    "native_session_id": null,
+    "consumers_not_automatically_started": true
+  },
+  {
+    "template": false,
+    "state": "ISSUED",
+    "producer_repository": "https://github.com/julian-passebecq/datapass-mosaicstudio",
+    "producer_commit": "20ef865ea5f0981b40e99b3eda04e7b765c36af9",
+    "canonical_contract_id": "datapass.artifact",
+    "contract_version": "1",
+    "artifact_path": "src/framework/foundation/artifact.ts",
+    "artifact_sha256": "73b36f0f6daa7b8081501194925aedef7e1d07ca46babb8a5c10b62831925845",
+    "sha256_of": "git blob content at producer_commit (LF)",
+    "compatible_consumer_versions": [
+      "py/datapass_artifact.py sha256 b49d63196728d054b64585cfcf3944cbedbc0940c790a5745771af499474a289",
+      "workbench SQL cells (src/workspace/sql-artifact.ts)",
+      "datapass.runtime/1 runs"
+    ],
+    "validation_evidence": [
+      "tests/python-artifact.test.mjs",
+      "py/service/test_runtime.py (artifacts validated by the TS validator in node)",
+      "tests/workbench-authoring.test.mjs",
+      "UX01/UX02 browser journeys"
+    ],
+    "source_omissions": [
+      "Contract unchanged (no schema change in 0.9)."
+    ],
+    "author_surface": "CLAUDE CODE",
+    "native_session_id": null,
+    "consumers_not_automatically_started": true
+  },
+  {
+    "template": false,
+    "state": "ISSUED",
+    "producer_repository": "https://github.com/julian-passebecq/datapass-mosaicstudio",
+    "producer_commit": "20ef865ea5f0981b40e99b3eda04e7b765c36af9",
+    "canonical_contract_id": "datapass.preview/1",
+    "contract_version": "1",
+    "artifact_path": "spec/preview/v1/preview.schema.json",
+    "artifact_sha256": "ede4a49842b47c76bada4d94c74bfb48adf0d2c887bfc43d000314f03bf194b2",
+    "sha256_of": "git blob content at producer_commit (LF)",
+    "compatible_consumer_versions": [
+      "any static host; T3 optional, no T3 consumer exists at t3code-datapass cbce712"
+    ],
+    "validation_evidence": [
+      "tests/preview-contract.test.mjs",
+      "UX03: preview-validate --check-files on a fresh content/motion client build"
+    ],
+    "source_omissions": [
+      "New, additive proposal. No consumer has accepted it yet."
+    ],
+    "author_surface": "CLAUDE CODE",
+    "native_session_id": null,
+    "consumers_not_automatically_started": true
+  },
+  {
+    "template": false,
+    "state": "ISSUED",
+    "producer_repository": "https://github.com/julian-passebecq/datapass-mosaicstudio",
+    "producer_commit": "20ef865ea5f0981b40e99b3eda04e7b765c36af9",
+    "canonical_contract_id": "datapass.runtime/1",
+    "contract_version": "1",
+    "artifact_path": "py/service/runtime.py",
+    "artifact_sha256": "c9123296401c4161f58a5c68fe58f071db9ca3bb50421f153412032288e3c795",
+    "sha256_of": "git blob content at producer_commit (LF)",
+    "compatible_consumer_versions": [
+      "browser adapter src/workspace/runtime.ts sha256 f43570f8300ee9feaf14d4dbb42ff00b05f6fe093e43dd62b64e9a895468bf76"
+    ],
+    "validation_evidence": [
+      "py/service/test_runtime.py",
+      "tests/workbench-authoring.test.mjs",
+      "UX02/UX04 browser journeys against the live service"
+    ],
+    "source_omissions": [
+      "Not the canonical datapass-mosaic-vscode runtime (df801e4): that runtime has no CORS and is extension-mediated; same X-Datapass-Token convention only."
+    ],
+    "author_surface": "CLAUDE CODE",
+    "native_session_id": null,
+    "consumers_not_automatically_started": true
+  },
+  {
+    "template": false,
+    "state": "ISSUED",
+    "producer_repository": "https://github.com/julian-passebecq/datapass-mosaicstudio",
+    "producer_commit": "20ef865ea5f0981b40e99b3eda04e7b765c36af9",
+    "canonical_contract_id": "datapass.workspace",
+    "contract_version": "1",
+    "artifact_path": "src/workspace/persist.ts",
+    "artifact_sha256": "841e21399359700c313f6bd5bc8cb4d496cbcf20a6aabce4a6824f1eee9687cb",
+    "sha256_of": "git blob content at producer_commit (LF)",
+    "compatible_consumer_versions": [
+      "MosaicStudio workbench 0.9.0"
+    ],
+    "validation_evidence": [
+      "tests/workbench-authoring.test.mjs",
+      "UX01/UX02 reload"
+    ],
+    "source_omissions": [
+      "Browser-local format; not a cross-repo contract."
+    ],
+    "author_surface": "CLAUDE CODE",
+    "native_session_id": null,
+    "consumers_not_automatically_started": true
+  }
+]

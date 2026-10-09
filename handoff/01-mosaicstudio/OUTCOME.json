@@ -1,0 +1,175 @@
+{
+  "template": false,
+  "state": "REVIEW_READY_PR_OPEN",
+  "repository": "https://github.com/julian-passebecq/datapass-mosaicstudio",
+  "actual_worktree": "D:/PROJ/datapass-mosaicstudio/.claude/worktrees/technical-site-sdk-authoring-80110b",
+  "branch": "feat/technical-site-sdk-0.9 (local claude/technical-site-sdk-authoring-80110b)",
+  "qualified_commit": "20ef865ea5f0981b40e99b3eda04e7b765c36af9",
+  "latest_written_commit": "see PR head (docs/receipts commit after 20ef865)",
+  "native_session_id": null,
+  "observed_model": "claude-opus-5-5",
+  "observed_tokens": null,
+  "accepted_selection_revision": "packet 01-mosaicstudio 2026-10-09, keys F01-F14/UX01-UX04 used as proposed canonical IDs",
+  "canonical_acceptance_results": [
+    {
+      "id": "F01",
+      "result": "done"
+    },
+    {
+      "id": "F02",
+      "result": "done"
+    },
+    {
+      "id": "F03",
+      "result": "done"
+    },
+    {
+      "id": "F04",
+      "result": "done_scoped_adapter",
+      "note": "in-repo allowlisted runtime; canonical vscode runtime not browser-reachable"
+    },
+    {
+      "id": "F05",
+      "result": "done"
+    },
+    {
+      "id": "F06",
+      "result": "done"
+    },
+    {
+      "id": "F07",
+      "result": "done"
+    },
+    {
+      "id": "F08",
+      "result": "preserved_cross_validation_blocked"
+    },
+    {
+      "id": "F09",
+      "result": "done"
+    },
+    {
+      "id": "F10",
+      "result": "done"
+    },
+    {
+      "id": "F11",
+      "result": "done"
+    },
+    {
+      "id": "F12",
+      "result": "done_proposal"
+    },
+    {
+      "id": "F13",
+      "result": "done"
+    },
+    {
+      "id": "F14",
+      "result": "done_review_ready"
+    },
+    {
+      "id": "UX01",
+      "result": "pass"
+    },
+    {
+      "id": "UX02",
+      "result": "pass"
+    },
+    {
+      "id": "UX03",
+      "result": "partial_pass"
+    },
+    {
+      "id": "UX04",
+      "result": "pass"
+    }
+  ],
+  "producer_vector": [
+    {
+      "repo": "datapass-mosaic-vscode",
+      "sha": "df801e4a9a4bb0cdcc4975878cc9b598b5fbe783",
+      "use": "read-only interface inspection"
+    },
+    {
+      "repo": "datapass-react",
+      "sha": "176fcddc8757945890ce694b9a46091eb1cb38fc",
+      "use": "searched, no concept exporter"
+    },
+    {
+      "repo": "contoso-data-studio",
+      "sha": "5aaba318b8c43152bce0aff99ad40aa26259dbb8",
+      "use": "searched, no concept exporter"
+    },
+    {
+      "repo": "Contoso_Data_Fabric",
+      "sha": "a3b6a8049814877ea29297a5ce0c53944f5685f7",
+      "use": "searched, no concept exporter"
+    },
+    {
+      "repo": "t3code-datapass",
+      "sha": "cbce7121446b7c75ac170d1fd7a2b1f0fada6c75",
+      "use": "searched, no preview consumer"
+    }
+  ],
+  "ci": {
+    "run_id": "37863555025",
+    "attempt": 1,
+    "runner": "GitHub-hosted (name not reported)",
+    "os": "ubuntu-latest",
+    "url": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/37863555025",
+    "status": "success",
+    "artifacts": [
+      "studio-web-evidence (11586854521)"
+    ]
+  },
+  "user_journeys": [
+    {
+      "id": "UX01",
+      "os": "Windows 11 Pro 10.0.26300",
+      "browser": "Chromium via Playwright 1.63",
+      "commit": "20ef865",
+      "result": "pass"
+    },
+    {
+      "id": "UX02",
+      "os": "Windows 11",
+      "runtime": "py/service at same commit, Python 3.14",
+      "result": "pass"
+    },
+    {
+      "id": "UX03",
+      "os": "Windows 11",
+      "result": "partial",
+      "evidence": "qa/UX03_JOURNEY_0.9.md"
+    },
+    {
+      "id": "UX04",
+      "os": "Windows 11",
+      "result": "pass"
+    },
+    {
+      "id": "UX01-UX04 notebook spec",
+      "os": "ubuntu-latest CI",
+      "result": "pass"
+    }
+  ],
+  "release_artifacts": [
+    "dist-sdk/ via npm run sdk:pack (CI artifact)",
+    "dist-standalone/concept-viewer.html sha256 7565fb296276ea82189911971ba384198e4207cde57ea004887a364b10970b6a",
+    "dist-clients/<id>/preview.json"
+  ],
+  "merge_state": "NOT_EXECUTED (no LAUNCH.txt authorization pasted; AGENTS.md rule 16)",
+  "cloud_runtime": "NOT_AUTHORIZED_UNAVAILABLE",
+  "blockers": [
+    "F08: no DataPass React or Contoso concept-spec export exists to validate",
+    "F04 canonical runtime: datapass-mosaic-vscode runtime lacks CORS/browser auth path; needs a change in that repo (not written)"
+  ],
+  "omissions": [
+    "Positron/native VS Code runtime gate not run",
+    "No .ipynb import",
+    "No LICENSE file; manifest states this",
+    "Full browser suite had one load-sensitive flake (concept-standalone embed fit) locally; passes alone and in CI"
+  ],
+  "next_safe_action": "Owner/PM reviews the PR and merges on green CI; optionally add a CORS+browser-consent path to datapass-mosaic-vscode runtime in its own lane"
+}
