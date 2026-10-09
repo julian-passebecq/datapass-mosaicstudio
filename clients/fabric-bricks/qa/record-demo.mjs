@@ -5,7 +5,7 @@ const browser=await chromium.launch();
 const context=await browser.newContext({viewport:{width:1280,height:800},recordVideo:{dir:out,size:{width:1280,height:800}}});
 const page=await context.newPage(),video=page.video();
 await page.goto((process.env.FABRIC_URL??'http://127.0.0.1:5178')+'/?app=fabric-bricks');
-await page.getByRole('button',{name:'Open Lakehouse',exact:true}).waitFor();await page.waitForTimeout(1500);
+await page.getByRole('button',{name:'Maquette en briques',exact:true}).click();await page.getByRole('button',{name:'Open Lakehouse',exact:true}).waitFor();await page.waitForTimeout(1500);
 await page.getByRole('button',{name:'3D collection',exact:true}).click();await page.locator('canvas').waitFor();await page.waitForTimeout(2200);
 await page.getByRole('button',{name:'Gallery',exact:true}).click();
 await page.getByRole('button',{name:'Open Lakehouse',exact:true}).click();await page.locator('canvas').waitFor();await page.waitForTimeout(2400);

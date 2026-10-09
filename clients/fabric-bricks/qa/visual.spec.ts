@@ -5,7 +5,7 @@ test.beforeAll(async()=>{await mkdir(out,{recursive:true});});
 test('gallery lazy-load, kit build, explode, semantic selection and keyboard',async({page})=>{
   const requests:string[]=[],errors:string[]=[];
   page.on('request',r=>requests.push(r.url()));page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('/?app=fabric-bricks');await expect(page.getByTestId('fabric-experience')).toHaveAttribute('data-screen','gallery');
+  await page.goto('/?app=fabric-bricks');await page.getByRole('button',{name:'Maquette en briques',exact:true}).click();await expect(page.getByTestId('fabric-experience')).toHaveAttribute('data-screen','gallery');
   await expect(page.locator('canvas')).toHaveCount(0);
   expect(requests.filter(u=>/KitModel|SceneViewport|three(?:\.js|[_-])/.test(u))).toEqual([]);
   await page.screenshot({path:out+'/gallery.png',fullPage:true,animations:'disabled'});
@@ -38,7 +38,7 @@ test('gallery lazy-load, kit build, explode, semantic selection and keyboard',as
   expect(errors).toEqual([]);
 });
 test('secondary concept kits open in the shared viewport and return to the gallery',async({page})=>{
-  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/?app=fabric-bricks');
+  const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));await page.goto('/?app=fabric-bricks');await page.getByRole('button',{name:'Maquette en briques',exact:true}).click();
   for(const title of ['OneLake','Power BI','Warehouse','Pipeline','Notebook']){
     await page.getByRole('button',{name:'Open '+title,exact:true}).click();await expect(page.locator('canvas[data-renderer=three-webgl2]')).toHaveCount(1);
     await expect(page.getByRole('heading',{name:title,exact:true})).toBeVisible();await page.getByRole('button',{name:'Back to all kits',exact:true}).click();
@@ -48,7 +48,7 @@ test('secondary concept kits open in the shared viewport and return to the galle
 });
 test('3D collection, individual piece identity, focus, zoom and reversible isolation',async({page})=>{
   const errors:string[]=[];page.on('pageerror',e=>errors.push(e.message));
-  await page.goto('/?app=fabric-bricks');await page.getByRole('button',{name:'3D collection',exact:true}).click();
+  await page.goto('/?app=fabric-bricks');await page.getByRole('button',{name:'Maquette en briques',exact:true}).click();await page.getByRole('button',{name:'3D collection',exact:true}).click();
   const canvas=page.locator('canvas[data-renderer=three-webgl2]');await expect(canvas).toBeVisible();await expect(canvas).toHaveAttribute('data-animating','false');
   const collection=JSON.parse((await canvas.getAttribute('data-part-positions'))!);expect(Object.keys(collection)).toHaveLength(6);
   await page.screenshot({path:out+'/collection-3d.png',fullPage:true});
@@ -71,7 +71,7 @@ test('3D collection, individual piece identity, focus, zoom and reversible isola
 });
 test('narrow responsive layout and reduced motion',async({page})=>{
   await page.setViewportSize({width:390,height:844});await page.emulateMedia({reducedMotion:'reduce'});
-  await page.goto('/?app=fabric-bricks');await page.getByRole('button',{name:'Open Lakehouse',exact:true}).click();
+  await page.goto('/?app=fabric-bricks');await page.getByRole('button',{name:'Maquette en briques',exact:true}).click();await page.getByRole('button',{name:'Open Lakehouse',exact:true}).click();
   await expect(page.getByTestId('fabric-experience')).toHaveAttribute('data-reduced-motion','true');
   const canvas=page.locator('canvas');await expect(canvas).toBeVisible();await page.locator('.fb-explode-toggle').click();await expect(canvas).toHaveAttribute('data-animating','false');
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);

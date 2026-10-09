@@ -8,6 +8,27 @@ import {kits,kitScenes,getBOM,kitCost,stepOffsets,pieceIds,collectionScene} from
 import {pose,validatePoseOffsets} from '../src/framework/scene.ts';
 import {loadClient} from '../scripts/load-client.mjs';
 import {SiteRuntime} from '../src/framework/runtime.ts';
+import {concepts,conceptScene,conceptEntities,conceptOffsets,conceptOwner,conceptRelations} from '../clients/fabric-bricks/concepts.ts';
+
+test('documented Fabric concepts have bounded semantic ownership and foreground offsets retain the complete plan',()=>{
+ const scene=validateScene(conceptScene);assert.equal(concepts.length,11);assert.equal(new Set(conceptEntities).size,44);
+ assert.ok(scene.parts.every(p=>p.entity===p.id));
+ for(const concept of concepts){
+  assert.ok(concept.source.startsWith('https://learn.microsoft.com/en-us/fabric/'));
+  for(const layer of concept.layers)assert.equal(conceptOwner(concept.id+'--'+layer.id),concept);
+  const offsets=validatePoseOffsets(scene,conceptOffsets(concept.id,1));assert.equal(Object.keys(offsets).length,44);
+  const part=scene.parts.find(p=>p.id===concept.id);assert.deepEqual(part.position.map((v,i)=>v+offsets[part.id].position[i]),[0,1,11]);
+ }
+ assert.deepEqual(conceptOffsets('none',1),{});assert.ok(conceptRelations.every(r=>conceptOwner(r.from)&&conceptOwner(r.to)));
+});
+test('concept component identity survives projection and decomposition while mode changes require an atomic reset',async()=>{
+ const runtime=new SiteRuntime(await loadClient('fabric-bricks'));
+ runtime.applyCue({'fabric-selection':'concept-lakehouse--tables','fabric-level':'detail','fabric-camera':'focus-a','fabric-explode':1});
+ const before=runtime.getSnapshot();assert.throws(()=>runtime.set('fabric-content','bricks'),/incompatible/);assert.strictEqual(runtime.getSnapshot(),before);
+ assert.throws(()=>runtime.set('fabric-piece','roof-0-0'),/incompatible/);assert.strictEqual(runtime.getSnapshot(),before);
+ runtime.set('fabric-representation','3d');runtime.set('fabric-explode',0);assert.equal(runtime.getSnapshot().values['fabric-selection'],'concept-lakehouse--tables');assert.equal(Object.keys(runtime.getSnapshot().tasks).length,0);
+ runtime.applyCue({'fabric-selection':'none','fabric-level':'overview','fabric-camera':'overview','fabric-content':'bricks'});assert.equal(runtime.getSnapshot().values['fabric-content'],'bricks');
+});
 
 test('fabric bricks fixture is explicit synthetic provenance with stable semantic IDs',()=>{
   assert.equal(SOURCE_STATUS,'synthetic/provisional');
@@ -31,6 +52,7 @@ test('reference kits retain semantic ownership, bounded scenes and reconciled sy
 });
 test('individual piece identity belongs jointly to its kit and type; invalid restoration stays atomic',async()=>{
   const runtime=new SiteRuntime(await loadClient('fabric-bricks'));
+  runtime.set('fabric-content','bricks');
   runtime.applyCue({'fabric-selection':'roof','fabric-piece':'roof-0-0','fabric-level':'detail','fabric-camera':'focus-a'});
   const before=runtime.getSnapshot();
   assert.throws(()=>runtime.set('fabric-kit','notebook'),/current kit/);assert.strictEqual(runtime.getSnapshot(),before);
@@ -54,6 +76,7 @@ test('kit progression and explosion are deterministic presentation offsets, with
 
 test('joint kit state rejects incompatible restored selections and fractional steps atomically',async()=>{
   const runtime=new SiteRuntime(await loadClient('fabric-bricks'));
+  runtime.set('fabric-content','bricks');
   runtime.applyCue({'fabric-screen':'detail','fabric-selection':'walls','fabric-level':'detail'});
   const before=runtime.getSnapshot();
   assert.throws(()=>runtime.set('fabric-kit','powerbi'),/current kit/);

@@ -4,6 +4,7 @@ import {useRuntime,useSiteState,useReducedMotion} from '../../src/framework/ui';
 import {kits,getKit,getBOM,kitCost,getBuildSteps,type KitId} from './kits';
 import {KitIllustration} from './KitIllustration';
 import './experience.css';
+import {ConceptExperience} from './ConceptExperience';
 
 const KitModel=lazy(()=>import('./KitModel'));
 const KitCollection=lazy(()=>import('./KitModel').then(m=>({default:m.KitCollection})));
@@ -22,10 +23,12 @@ export function FabricExperience(){
   const select=(id:string)=>runtime.applyCue({'fabric-selection':selection===id?'none':id,'fabric-piece':'none','fabric-camera':'overview','fabric-level':selection===id?'overview':'detail'});
   const selectPiece=(id:string)=>{const p=kit.parts.find(p=>p.id===id);if(!p)return;runtime.applyCue({'fabric-selection':piece===id?'none':p.lot,'fabric-piece':piece===id?'none':id,'fabric-camera':'overview','fabric-level':piece===id?'overview':'detail','fabric-step':Math.max(step,p.step)});};
   const showAll=()=>runtime.applyCue({'fabric-selection':'none','fabric-piece':'none','fabric-camera':'overview','fabric-level':'overview','fabric-isolate':false});
+  const changeContent=(content:string)=>runtime.applyCue({'fabric-content':content,'fabric-selection':'none','fabric-piece':'none','fabric-level':'overview','fabric-camera':'overview','fabric-screen':'gallery','fabric-representation':'2d','fabric-explode':0,'fabric-isolate':false});
+  if(values['fabric-content']==='concepts')return <ConceptExperience onBricks={()=>changeContent('bricks')}/>;
   return <section className="fb-experience" data-testid="fabric-experience" data-reduced-motion={reduced} data-source-status="synthetic/provisional" data-screen={gallery?'gallery':'detail'}>
     <header className="fb-header">
       <button className="fb-brand" onClick={back} aria-label="Fabric Bricks gallery"><span className="fb-brand-mark"><i/><i/><i/></span>FABRIC BRICKS<span className="fb-edition">STUDIES / 001</span></button>
-      <nav aria-label="Kit navigation"><button onClick={back} aria-current={gallery?'page':undefined}>Kits</button>{!gallery&&<><span className="fb-nav-slash">/</span><span className="fb-nav-current">{kit.title}</span></>}</nav>
+      <nav aria-label="Kit navigation"><button onClick={back} aria-current={gallery?'page':undefined}>Kits</button><button onClick={()=>changeContent('concepts')}>Concepts Fabric</button>{!gallery&&<><span className="fb-nav-slash">/</span><span className="fb-nav-current">{kit.title}</span></>}</nav>
       <button className="fb-about" onClick={()=>setAbout(!about)} aria-expanded={about}>About this study <span>↗</span></button>
     </header>
     {about&&<div className="fb-provenance"><strong>PROVISIONAL / SYNTHETIC</strong><p>A visual study inspired by the supplied Brickworks video. Procedural models and illustrative parts/costs are generated client content, not approved Microsoft, LEGO or BrickLink assets. The Lakehouse gallery image is AI generated. Selection, explode and build steps are presentation state in the shared MosaicStudio runtime.</p><button onClick={()=>setAbout(false)} aria-label="Close source information"><X size={15}/></button></div>}

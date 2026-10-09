@@ -1,0 +1,12 @@
+import {chromium} from '@playwright/test';
+const out='clients/fabric-bricks/qa/captures';
+const browser=await chromium.launch();const context=await browser.newContext({viewport:{width:1280,height:800},recordVideo:{dir:out,size:{width:1280,height:800}}});
+const page=await context.newPage(),video=page.video();
+await page.goto((process.env.FABRIC_URL??'http://127.0.0.1:5178')+'/?app=fabric-bricks');await page.getByTestId('fabric-concepts').waitFor();
+await page.getByRole('button',{name:'Plan 3D',exact:true}).click();await page.locator('canvas').waitFor();await page.waitForTimeout(1800);
+await page.locator('.fc-object-list').getByRole('button',{name:'Explorer Lakehouse',exact:true}).click();await page.waitForTimeout(1600);
+await page.locator('.fc-components').getByRole('button',{name:/^Tables Delta/}).click();await page.waitForTimeout(1700);
+await page.getByRole('button',{name:'Réassembler',exact:true}).click();await page.waitForTimeout(1000);
+await page.locator('.fc-object-list').getByRole('button',{name:'Explorer Warehouse',exact:true}).click();await page.waitForTimeout(1700);
+await page.getByRole('button',{name:'Vue d’ensemble',exact:true}).click();await page.waitForTimeout(1300);
+await context.close();await video.saveAs(out+'/fabric-concepts-demo.webm');await browser.close();console.log(out+'/fabric-concepts-demo.webm');
