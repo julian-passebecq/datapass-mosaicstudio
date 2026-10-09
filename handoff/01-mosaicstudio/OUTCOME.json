@@ -2,7 +2,7 @@
   "template": false,
   "state": "REVIEW_READY_PR_OPEN",
   "repository": "https://github.com/julian-passebecq/datapass-mosaicstudio",
-  "actual_worktree": "D:\\PROJ\\datapass-mosaicstudio\\.claude\\worktrees\technical-site-sdk-authoring-80110b",
+  "actual_worktree": "D:/PROJ/datapass-mosaicstudio/.claude/worktrees/technical-site-sdk-authoring-80110b",
   "branch": "feat/technical-site-sdk-0.9 (local claude/technical-site-sdk-authoring-80110b)",
   "qualified_commit": "20ef865ea5f0981b40e99b3eda04e7b765c36af9",
   "latest_written_commit": "see PR head (docs/receipts commit after 20ef865)",
