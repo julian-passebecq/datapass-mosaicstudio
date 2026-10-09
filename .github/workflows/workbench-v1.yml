@@ -4,8 +4,11 @@ on:
     branches: [main]
     paths:
       - 'src/workbench-v1/**'
+      - 'src/workspace/**'
+      - 'src/panels/Notebook.tsx'
       - 'tests/workbench-v1*'
       - 'docs/workbench-v1/**'
+      - 'scripts/prepare-python.mjs'
       - '.github/workflows/workbench-v1.yml'
 permissions:
   contents: read
@@ -36,6 +39,13 @@ jobs:
         with:
           name: workbench-v1-source
           path: v1-recovery
+          retention-days: 7
+      - name: Self-host pinned Python runtime
+        run: node scripts/prepare-python.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: workbench-v1-python-runtime
+          path: public/python
           retention-days: 7
       - run: npm ci --no-audit --no-fund
       - run: npm run bootstrap
