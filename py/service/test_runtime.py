@@ -293,3 +293,13 @@ class RuntimeTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class TokenPolicyTest(unittest.TestCase):
+    def test_short_or_unsafe_tokens_are_refused(self):
+        from runtime import resolve_token
+        for bad in ("short", "x" * 129, "has space in it!!"):
+            with self.assertRaises(ValueError):
+                resolve_token(bad)
+        self.assertEqual(resolve_token("a" * 16), "a" * 16)
+        self.assertGreaterEqual(len(resolve_token()), 16)

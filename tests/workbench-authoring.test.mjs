@@ -48,6 +48,9 @@ test('notebook: staleness follows source edits and newer dependency results, not
   assert.match(staleReason(edited,runs,'b'),/changed/);
   const charted=updateCell(nb,{...nb.cells[1],chart:{kind:'bar',x:'a',y:'b'}});
   assert.equal(staleReason(charted,runs,'b'),null);
+  const chain=validateNotebook({cells:[sql('a'),sql('b',['a']),sql('c',['b'])]});
+  const chainRuns={a:{cellId:'a',sequence:1,sourceKey:'edited-since',dependencySequences:{}},b:{cellId:'b',sequence:2,sourceKey:cellSourceKey(chain.cells[1]),dependencySequences:{a:1}},c:{cellId:'c',sequence:3,sourceKey:cellSourceKey(chain.cells[2]),dependencySequences:{b:2}}};
+  assert.match(staleReason(chain,chainRuns,'c'),/itself stale/);
 });
 
 test('SQL results become one validated artifact with typed columns, row identity and an optional chart',()=>{

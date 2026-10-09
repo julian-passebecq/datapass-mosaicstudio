@@ -3,7 +3,8 @@ import {Button} from '../fluent';
 import {ArrowDown,ArrowUp,Ban,Database,Download,FileUp,Play,Plug,RotateCcw,Trash2,Unplug} from 'lucide-react';
 import {roomStore,useRoomStore,MODULE_IDS} from '../store';
 import {Header,Results} from './Common';
-import {ArtifactView} from '../framework/foundation/ArtifactView';
+import {ArtifactView as FrameworkArtifactView} from '../framework/foundation/ArtifactView';
+import '../framework/site.css';
 import type {Artifact} from '../framework/foundation/artifact';
 import {createBrowserHost} from '../core/host';
 import {toCsv} from '../core/queries';
@@ -19,6 +20,8 @@ const TOKEN_KEY='datapass.runtime.token';
 const DEFAULT_ORIGIN='http://127.0.0.1:8765';
 function sessionToken(origin:string):string|null{try{const v=JSON.parse(sessionStorage.getItem(TOKEN_KEY)||'null');return v&&v.origin===origin&&validToken(v.token)?v.token:null;}catch{return null;}}
 function keepToken(origin:string,token:string|null){try{if(token)sessionStorage.setItem(TOKEN_KEY,JSON.stringify({origin,token}));else sessionStorage.removeItem(TOKEN_KEY);}catch{/* per-tab only */}}
+/** The framework's renderers style themselves under `.studio-site`; the workbench reuses them unchanged. */
+function ArtifactView({artifact}:{artifact:Artifact}){return <div className="studio-site notebook-artifact"><FrameworkArtifactView artifact={artifact}/></div>;}
 const time=(iso?:string|null)=>iso?new Date(iso).toLocaleTimeString():'';
 
 export default function Notebook(){
@@ -28,7 +31,7 @@ export default function Notebook(){
   const [runtime,setRuntime]=useState<Runtime>({status:'disconnected',origin:savedOrigin??DEFAULT_ORIGIN,models:[]});
   const [consent,setConsent]=useState<{origin:string;token:string}|null>(null);
   const [problem,setProblem]=useState<string|null>(null);
-  const client=useRef<RuntimeClient|null>(null),sequence=useRef(0),attempts=useRef<Record<string,number>>({}),controllers=useRef<Record<string,AbortController>>({}),activeRun=useRef<Record<string,string>>({}),sequences=useRef<Record<string,number>>({});
+  const client=useRef<RuntimeClient|null>(null),sequence=useRef(0),attempts=useRef<Record<string,number>>({}),controllers=useRef<Record<string,AbortController>>({}),activeRun=useRef<Record<string,string>>({}),cancelRequested=useRef<Record<string,boolean>>({}),sequences=useRef<Record<string,number>>({});
   const patch=useCallback((id:string,update:(r:Result|undefined)=>Result|undefined)=>setResults(all=>{const next=update(all[id]);const copy={...all};if(next)copy[id]=next;else delete copy[id];return copy;}),[]);
 
   const connect=useCallback(async(origin:string,token:string)=>{
@@ -46,12 +49,24 @@ export default function Notebook(){
   },[setRuntimeOrigin]);
   // A link printed by the runtime carries `#runtime=…&token=…`. It is removed from the address bar and needs explicit consent.
   useEffect(()=>{
-    try{const link=connectionFromHash(location.hash);if(link){history.replaceState(null,'',location.pathname+location.search);setConsent(link);return;}}
-    catch(error){history.replaceState(null,'',location.pathname+location.search);setProblem('The runtime link was refused: '+(error as Error).message);return;}
-    if(savedOrigin){const token=sessionToken(savedOrigin);if(token)void connect(savedOrigin,token);}
+    const readLink=()=>{
+      try{const link=connectionFromHash(location.hash);if(link){history.replaceState(null,'',location.pathname+location.search);setConsent(link);return true;}}
+      catch(error){history.replaceState(null,'',location.pathname+location.search);setProblem('The runtime link was refused: '+(error as Error).message);return true;}
+      return false;
+    };
+    if(!readLink()&&savedOrigin){const token=sessionToken(savedOrigin);if(token)void connect(savedOrigin,token);}
+    addEventListener('hashchange',readLink);
+    return()=>removeEventListener('hashchange',readLink);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[]);
-  useEffect(()=>()=>{for(const c of Object.values(controllers.current))c.abort();},[]);
+  /** Stop following a cell AND cancel its run on the runtime, so no abandoned run keeps a worker slot. */
+  const stop=useCallback((id:string)=>{
+    controllers.current[id]?.abort();
+    const runId=activeRun.current[id];delete activeRun.current[id];
+    if(runId&&client.current)void client.current.cancel(runId).catch(()=>{/* the runtime may already have finished it */});
+  },[]);
+  const stopAll=useCallback(()=>{for(const id of new Set([...Object.keys(controllers.current),...Object.keys(activeRun.current)]))stop(id);},[stop]);
+  useEffect(()=>()=>stopAll(),[stopAll]);
 
   function change(next:()=>NotebookDoc){try{setNotebook(next());setProblem(null);}catch(error){setProblem((error as Error).message);}}
   function add(kind:Cell['kind']){
@@ -65,7 +80,10 @@ export default function Notebook(){
     const db=roomStore.getState().db;
     const table=await db.connector.query(cell.sql,{signal});
     const total=table.numRows,limited=total>10000?table.slice(0,10000):table;
-    const preview:Preview={columns:table.schema.fields.map(f=>({name:f.name,type:String(f.type)})),rows:limited.toArray().map(r=>r.toJSON() as Record<string,unknown>),total};
+    // Arrow DECIMAL cells arrive as unscaled big numbers; apply the column scale so values stay numeric.
+    const decimals=table.schema.fields.flatMap(f=>{const scale=(f.type as {scale?:unknown}).scale;return /^Decimal/.test(String(f.type))&&typeof scale==='number'?[{name:f.name,scale}]:[];});
+    const rows=limited.toArray().map(r=>{const row=r.toJSON() as Record<string,unknown>;for(const d of decimals){const v=row[d.name];if(v!==null&&typeof v==='object'){const n=Number(v)/10**d.scale;row[d.name]=Number.isFinite(n)?n:String(v);}}return row;});
+    const preview:Preview={columns:table.schema.fields.map(f=>({name:f.name,type:String(f.type)})),rows,total};
     void db.refreshTableSchemas();
     let artifact:Artifact|undefined,artifactError:string|undefined;
     if(total>10000)artifactError=`The result has ${total.toLocaleString()} rows. Results above 10,000 rows stay as a preview; aggregate or add LIMIT to save, chart or export them as an artifact.`;
@@ -81,6 +99,8 @@ export default function Notebook(){
     const ref=(r:RunRecord):RunRef=>({runId:r.runId,cellId:cell.id,origin:c.origin,model:r.model,modelVersion:r.modelVersion,status:r.status,inputHash:r.inputHash,inputs:r.inputs,submittedAt:r.submittedAt,finishedAt:r.finishedAt,artifactId:r.artifactId,artifactSha256:r.artifactSha256});
     const submitted=await c.submit(model.id,inputs,signal);
     activeRun.current[cell.id]=submitted.runId;recordRun(ref(submitted));onUpdate(submitted);
+    // Cancel pressed while the submission was in flight: the run exists on the runtime, so cancel it there.
+    if(cancelRequested.current[cell.id]){delete cancelRequested.current[cell.id];try{onUpdate(await c.cancel(submitted.runId));}catch{/* the poll below reports the real terminal state */}}
     const final=await waitForRun(c,submitted,{signal,onUpdate:r=>{onUpdate(r);}});
     recordRun(ref(final));delete activeRun.current[cell.id];
     if(final.status==='cancelled')return {status:'cancelled',record:final,message:`Run ${final.runId} was cancelled on the runtime. No result was produced.`};
@@ -88,6 +108,8 @@ export default function Notebook(){
     const artifact=await c.artifact(final,signal);
     if(cell.outputTable&&artifact.payload.kind==='table'){
       const db=roomStore.getState().db;
+      if(Object.hasOwn(roomStore.getState().datapass.datasets,cell.outputTable))throw new Error(`Output table "${cell.outputTable}" is an opened dataset; choose another name.`);
+      signal.throwIfAborted(); // a cancelled or superseded run never replaces a table
       await db.connector.loadObjects(artifact.payload.rows as Record<string,unknown>[],cell.outputTable,{replace:true});
       await db.refreshTableSchemas();
     }
@@ -97,12 +119,12 @@ export default function Notebook(){
   async function run(target:string){
     let plan:string[];
     try{plan=executionPlan(notebook,target);}catch(error){setProblem((error as Error).message);return;}
-    const doc=notebook;
+    const doc=notebook,startAttempts=Object.fromEntries(plan.map(p=>[p,attempts.current[p]??0]));
     for(let i=0;i<plan.length;i++){
       const id=plan[i],cell=doc.cells.find(c=>c.id===id)!;
-      controllers.current[id]?.abort();
+      stop(id);
       const controller=new AbortController(),attempt=(attempts.current[id]??0)+1;
-      controllers.current[id]=controller;attempts.current[id]=attempt;
+      controllers.current[id]=controller;attempts.current[id]=attempt;delete cancelRequested.current[id];
       patch(id,prev=>({status:'running',previous:prev?.artifact&&prev.finishedAt?{artifact:prev.artifact,finishedAt:prev.finishedAt,label:'Previous result'}:prev?.previous}));
       let result:Result;
       try{
@@ -119,13 +141,14 @@ export default function Notebook(){
       if(attempts.current[id]!==attempt)return; // superseded by a newer run of the same cell: ignore this late result
       patch(id,prev=>({...result,record:result.record??prev?.record,previous:result.status==='done'?undefined:prev?.previous}));
       if(result.status!=='done'){
-        for(const rest of plan.slice(i+1))patch(rest,prev=>({...(prev??{}),status:'skipped',message:`Not run: dependency ${cell.title} (${id}) did not finish.`}));
+        for(const rest of plan.slice(i+1))if((attempts.current[rest]??0)===startAttempts[rest])patch(rest,prev=>({...(prev??{}),status:'skipped',message:`Not run: dependency ${cell.title} (${id}) did not finish.`}));
         return;
       }
     }
   }
   async function cancel(id:string){
-    const runId=activeRun.current[id];
+    const runId=activeRun.current[id],cell=notebook.cells.find(c=>c.id===id);
+    if(cell?.kind==='python'&&!runId){cancelRequested.current[id]=true;patch(id,prev=>prev&&{...prev,message:'Cancellation requested; waiting for the runtime to accept the run.'});return;}
     if(runId&&client.current){
       try{const record=await client.current.cancel(runId);patch(id,prev=>prev?{...prev,record}:prev);if(record.status!=='cancelled'&&record.status!=='queued'&&record.status!=='running')setProblem(`Run ${runId} had already finished (${record.status}) when the cancellation arrived.`);}
       catch(error){setProblem('Cancellation was not confirmed: '+(error as Error).message);}
@@ -137,10 +160,18 @@ export default function Notebook(){
     const c=client.current;
     if(!c||c.origin!==ref.origin){setProblem(`Connect the runtime at ${ref.origin} to fetch run ${ref.runId}.`);return;}
     try{
+      stop(cell.id);
+      const attempt=(attempts.current[cell.id]??0)+1;attempts.current[cell.id]=attempt;
       const record=await c.status(ref.runId);
+      if(attempts.current[cell.id]!==attempt)return;
       if(record.status!=='succeeded'){patch(cell.id,prev=>({...(prev??{}),status:'error',record,message:`Run ${ref.runId} is ${record.status}; it has no result.`}));return;}
       const artifact=await c.artifact(record);
-      patch(cell.id,()=>({status:'done',record,artifact,finishedAt:record.finishedAt??undefined,message:`Re-fetched result of earlier run ${ref.runId} (${time(record.finishedAt)}). It is not a new computation.`}));
+      if(attempts.current[cell.id]!==attempt)return; // a newer run or load started meanwhile
+      // Same model and inputs as the cell now: current. Otherwise it is shown, but flagged stale.
+      const matches=record.model===cell.model&&Object.keys(record.inputs).length===Object.keys(cell.inputs).length&&Object.entries(cell.inputs).every(([k,v])=>record.inputs[k]===v);
+      const seq=++sequence.current;if(matches)sequences.current[cell.id]=seq;else delete sequences.current[cell.id];
+      const runInfo={cellId:cell.id,sequence:seq,sourceKey:matches?cellSourceKey(cell):'reopened:'+record.runId,dependencySequences:Object.fromEntries(cell.dependsOn.map(d=>[d,sequences.current[d]??-1]))};
+      patch(cell.id,()=>({status:'done',record,artifact,run:runInfo,finishedAt:record.finishedAt??undefined,message:`Re-fetched result of earlier run ${ref.runId} (${time(record.finishedAt)}). It is not a new computation.`}));
     }catch(error){
       setProblem(error instanceof RuntimeError&&error.status===404?`The runtime no longer holds run ${ref.runId} (it keeps run results in memory only, and restarts clear them). Run the cell again.`:(error as Error).message);
     }
@@ -159,7 +190,7 @@ export default function Notebook(){
     try{
       if(file.size>1024*1024)throw new Error('The file is too large to be a workspace.');
       const {doc:imported,migratedFrom}=importWorkspace(await file.text(),MODULE_IDS);
-      for(const c of Object.values(controllers.current))c.abort();
+      stopAll();
       setResults({});applyWorkspace(imported,`Imported ${file.name}${migratedFrom?' (migrated from '+migratedFrom+')':''}. Nothing was run: run cells explicitly.`);
     }catch(error){setError('Workspace import refused, nothing changed: '+(error as Error).message);}
   }
@@ -169,14 +200,14 @@ export default function Notebook(){
       <Button size="small" icon={<Download size={14}/>} onClick={()=>createBrowserHost().saveDownload('mosaicstudio-workspace.json',new Blob([JSON.stringify(doc(),null,2)],{type:'application/json'}))}>Export workspace</Button>
       <Button size="small" icon={<FileUp size={14}/>} onClick={()=>picker.current?.click()}>Import workspace</Button>
       <input hidden ref={picker} type="file" accept=".json,application/json" aria-label="Import workspace file" onChange={e=>{const f=e.target.files?.[0];e.target.value='';if(f)void importFile(f);}}/>
-      {confirmReset?<><Button size="small" appearance="primary" onClick={()=>{for(const c of Object.values(controllers.current))c.abort();setResults({});reset();setConfirmReset(false);}}>Confirm reset</Button><Button size="small" onClick={()=>setConfirmReset(false)}>Keep workspace</Button></>:<Button size="small" icon={<RotateCcw size={14}/>} onClick={()=>setConfirmReset(true)}>Reset workspace</Button>}
+      {confirmReset?<><Button size="small" appearance="primary" onClick={()=>{stopAll();setResults({});reset();setConfirmReset(false);}}>Confirm reset</Button><Button size="small" onClick={()=>setConfirmReset(false)}>Keep workspace</Button></>:<Button size="small" icon={<RotateCcw size={14}/>} onClick={()=>setConfirmReset(true)}>Reset workspace</Button>}
     </Header>
     <p className="footnote">Saved in this browser: SQL text, cells, model inputs, layout and run references. Never saved: file contents, result rows or the runtime token. The workspace export contains your SQL and inputs; review it before sharing.</p>
     <RuntimeBar runtime={runtime} consent={consent} onConsent={accepted=>{const c=consent;setConsent(null);if(accepted&&c)void connect(c.origin,c.token);}} onConnect={(o,t)=>void connect(o,t)} onDisconnect={()=>{client.current=null;keepToken(runtime.origin,null);setRuntime(r=>({status:'disconnected',origin:r.origin,models:[]}));}}/>
     {problem&&<div className="notice error" role="alert"><span>{problem}</span> <Button size="small" onClick={()=>setProblem(null)}>Dismiss</Button></div>}
     {!notebook.cells.length&&<div className="empty notebook-empty" data-testid="notebook-empty"><h2>Blank notebook</h2><p>Add a SQL cell to query tables you open, or a Python cell to run a model on the local runtime. Nothing is preloaded.</p></div>}
     <ol className="cells">{notebook.cells.map((cell,index)=><CellCard key={cell.id} cell={cell} index={index} notebook={notebook} result={results[cell.id]} stale={staleReason(notebook,Object.fromEntries(Object.entries(results).map(([k,v])=>[k,v.run])),cell.id)} runtime={runtime} runs={runs.filter(r=>r.cellId===cell.id)} ready={ready}
-      onChange={next=>change(()=>updateCell(notebook,next))} onMove={d=>change(()=>moveCell(notebook,cell.id,d))} onRemove={()=>{controllers.current[cell.id]?.abort();delete sequences.current[cell.id];change(()=>removeCell(notebook,cell.id));patch(cell.id,()=>undefined);}}
+      onChange={next=>change(()=>updateCell(notebook,next))} onMove={d=>change(()=>moveCell(notebook,cell.id,d))} onRemove={()=>{stop(cell.id);delete sequences.current[cell.id];change(()=>removeCell(notebook,cell.id));patch(cell.id,()=>undefined);}}
       onRun={()=>void run(cell.id)} onCancel={()=>void cancel(cell.id)} onReopen={ref=>void reopen(cell as PythonCell,ref)} onChart={chart=>rechart(cell as SqlCell,chart)}/>)}</ol>
     <div className="cell-add" role="group" aria-label="Add a cell"><Button icon={<Database size={14}/>} onClick={()=>add('sql')}>Add SQL cell</Button><Button icon={<Play size={14}/>} onClick={()=>add('python')}>Add Python cell</Button><Button onClick={()=>add('note')}>Add note</Button></div>
   </section>;
@@ -213,11 +244,12 @@ function CellCard({cell,index,notebook,result,stale,runtime,runs,ready,onChange,
     <header>
       <span className="cell-kind">{cell.kind==='sql'?'SQL':cell.kind==='python'?'Python':'Note'}</span>
       <input className="cell-title" aria-label="Cell title" value={cell.title} maxLength={120} onChange={e=>onChange({...cell,title:e.target.value.trim()?e.target.value:'Untitled'})}/>
-      <span className="spacer"/>
-      {cell.kind!=='note'&&(running?<Button size="small" icon={<Ban size={14}/>} onClick={onCancel}>Cancel</Button>:<Button size="small" appearance="primary" icon={<Play size={14}/>} disabled={!ready} onClick={onRun} aria-label={`Run ${cell.title}`}>{plan.length>1?`Run (${plan.length} cells)`:'Run'}</Button>)}
+      <span className="cell-actions">
+      {cell.kind!=='note'&&(running?<Button size="small" icon={<Ban size={14}/>} onClick={onCancel}>Cancel</Button>:<Button size="small" appearance="primary" icon={<Play size={14}/>} disabled={!ready} onClick={onRun} aria-label={plan.length>1?`Run ${cell.title} after ${plan.length-1} dependenc${plan.length===2?'y':'ies'}`:`Run ${cell.title}`}>{plan.length>1?`Run (${plan.length} cells)`:'Run'}</Button>)}
       <Button size="small" aria-label="Move cell up" icon={<ArrowUp size={14}/>} disabled={index===0} onClick={()=>onMove(-1)}/>
       <Button size="small" aria-label="Move cell down" icon={<ArrowDown size={14}/>} disabled={index===notebook.cells.length-1} onClick={()=>onMove(1)}/>
       <Button size="small" aria-label="Delete cell" icon={<Trash2 size={14}/>} onClick={onRemove}/>
+      </span>
     </header>
     {cell.kind==='sql'&&<textarea className="cell-code" aria-label={`SQL for ${cell.title}`} spellCheck={false} value={cell.sql} rows={Math.min(14,Math.max(3,cell.sql.split('\n').length+1))} onChange={e=>onChange({...cell,sql:e.target.value})}/>}
     {cell.kind==='note'&&<textarea className="cell-note" aria-label={`Note ${cell.title}`} value={cell.text} rows={3} onChange={e=>onChange({...cell,text:e.target.value})}/>}
@@ -233,7 +265,7 @@ function CellCard({cell,index,notebook,result,stale,runtime,runs,ready,onChange,
 function PythonInputs({cell,runtime,onChange}:{cell:PythonCell;runtime:Runtime;onChange(c:Cell):void}){
   const model=runtime.models.find(m=>m.id===cell.model);
   return <div className="cell-python">
-    <label>Model<select value={cell.model} onChange={e=>{const m=runtime.models.find(x=>x.id===e.target.value);onChange({...cell,model:e.target.value,inputs:Object.fromEntries((m?.inputs??[]).map(i=>[i.id,i.default]))});}}>
+    <label>Model<select aria-label="Model" value={cell.model} onChange={e=>{const m=runtime.models.find(x=>x.id===e.target.value);onChange({...cell,model:e.target.value,inputs:Object.fromEntries((m?.inputs??[]).map(i=>[i.id,i.default]))});}}>
       {!model&&<option value={cell.model}>{cell.model} (not offered by a connected runtime)</option>}
       {runtime.models.map(m=><option key={m.id} value={m.id}>{m.title}</option>)}
     </select></label>

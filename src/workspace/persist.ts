@@ -38,7 +38,7 @@ function validateRunRef(v:unknown):RunRef{
   strict(v,['runId','cellId','origin','model','modelVersion','status','inputHash','inputs','submittedAt','finishedAt','artifactId','artifactSha256'],'run reference');
   if(typeof v.runId!=='string'||!/^run-[0-9a-f]{16}$/.test(v.runId))throw new Error('run reference: invalid run id');
   identifier(v.cellId,'run cell');identifier(v.model,'run model');text(v.modelVersion,'model version',80);
-  if(typeof v.origin!=='string'||!/^http:\/\/(127\.0\.0\.1|localhost|\[::1\]):\d{1,5}$/.test(v.origin))throw new Error('run reference: origin must be a loopback origin');
+  if(typeof v.origin!=='string'||!/^http:\/\/(127\.0\.0\.1|localhost):\d{1,5}$/.test(v.origin))throw new Error('run reference: origin must be a loopback origin');
   if(!['queued','running','succeeded','failed','cancelled'].includes(v.status as string))throw new Error('run reference: unknown status');
   if(typeof v.inputHash!=='string'||!/^[0-9a-f]{64}$/.test(v.inputHash))throw new Error('run reference: invalid input hash');
   if(v.artifactSha256!==null&&(typeof v.artifactSha256!=='string'||!/^[0-9a-f]{64}$/.test(v.artifactSha256)))throw new Error('run reference: invalid artifact hash');
@@ -78,7 +78,7 @@ export function validateWorkspace(input:unknown,knownModules:readonly string[]):
     if(s.bytes!==undefined&&(!Number.isSafeInteger(s.bytes)||(s.bytes as number)<0))throw new Error('source reference: bytes');
     return structuredClone(s) as SourceRef;
   });
-  if(raw.runtimeOrigin!==null&&(typeof raw.runtimeOrigin!=='string'||!/^http:\/\/(127\.0\.0\.1|localhost|\[::1\]):\d{1,5}$/.test(raw.runtimeOrigin)))throw new Error('workspace: runtime origin must be loopback');
+  if(raw.runtimeOrigin!==null&&(typeof raw.runtimeOrigin!=='string'||!/^http:\/\/(127\.0\.0\.1|localhost):\d{1,5}$/.test(raw.runtimeOrigin)))throw new Error('workspace: runtime origin must be loopback');
   const pipeline=raw.pipeline===null?null:validatePipeline(raw.pipeline);
   const cards=raw.cards===null?null:list(raw.cards,100,'board',c=>{
     strict(c,['id','title','lane'],'board card');if(typeof c.id!=='string'||!/^[A-Za-z0-9_-]{1,80}$/.test(c.id))throw new Error('board card: invalid id');text(c.title,'card title',160);

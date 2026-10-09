@@ -31,6 +31,8 @@ const storage=browserStorage();
 const restored=params.get('embed')==='1'?{doc:null,notice:null}:loadWorkspace(storage,MODULE_IDS);
 const saved=restored.doc;
 const samples=params.get('sample')==='operations'?true:params.get('workspace')==='blank'?false:saved?.samples??false;
+// URL overrides apply to this visit only; the saved choice changes only when the user loads the sample.
+let persistedSamples=saved?.samples??false;
 const initialModule=modules.some(m=>m.id===requestedModule)?requestedModule!:saved?.module??(samples?'explore':'notebook');
 const SAMPLE_QUERY={id:'overview',name:'Regional performance',query:'SELECT region, technology,\n       sum(energy_mwh) AS energy_mwh,\n       sum(revenue_eur) AS revenue_eur\nFROM operations\nGROUP BY region, technology\nORDER BY revenue_eur DESC;'};
 const BLANK_QUERY={id:'untitled',name:'Untitled',query:'-- Open a local file (Assets panel) or load the synthetic sample, then query it.\nSELECT 42 AS answer;'};
@@ -72,6 +74,7 @@ export const {roomStore,useRoomStore}=createRoomStore<RoomState>((set,get,store)
       try{
         await get().db.connector.query(sampleSql);
         await get().db.refreshTableSchemas();
+        persistedSamples=true;
         set(s=>({datapass:{...s.datapass,samples:true,datasets:{...s.datapass.datasets,[SAMPLE_TABLE]:SAMPLE_DATASET},selectedTable:s.datapass.selectedTable||SAMPLE_TABLE}}));
       }catch(error){get().datapass.setError('The synthetic sample could not be created: '+(error instanceof Error?error.message:String(error)));}
       finally{set(s=>({datapass:{...s.datapass,loadingSamples:false}}));}
@@ -84,7 +87,7 @@ export const {roomStore,useRoomStore}=createRoomStore<RoomState>((set,get,store)
       if(doc.samples&&!get().datapass.samples)void get().datapass.loadSamples();
     },
     resetWorkspace(){
-      clearSavedWorkspace(storage);
+      clearSavedWorkspace(storage);persistedSamples=false;
       const sqlEditor=get().sqlEditor;
       sqlEditor.setConfig({...sqlEditor.config,queries:[{...BLANK_QUERY}],selectedQueryId:BLANK_QUERY.id,openTabs:[BLANK_QUERY.id]});
       set(s=>({datapass:{...s.datapass,module:'notebook',notebook:{cells:[]},runs:[],runtimeOrigin:null,pipeline:structuredClone(demoPipeline),cards:DEMO_CARDS.map(c=>({...c})),missingSources:[],notice:'The saved workspace was reset. Tables already open in this tab stay until reload.'}}));
@@ -96,7 +99,7 @@ export const {roomStore,useRoomStore}=createRoomStore<RoomState>((set,get,store)
       const queries=s.sqlEditor.config.queries.slice(0,50).map(q=>({id:q.id.replace(/[^A-Za-z0-9_-]/g,'_').slice(0,80)||'query',name:(q.name||'Query').slice(0,120),query:q.query.slice(0,20000)}));
       const selected=queries.find(q=>q.id===s.sqlEditor.config.selectedQueryId)?.id??null;
       let collapsed=false;try{collapsed=s.layout.isCollapsed('catalog-area');}catch{/* layout not ready */}
-      return {format:'datapass.workspace',version:1,savedAt:new Date().toISOString(),samples:d.samples,module:d.module,catalogCollapsed:collapsed,queries,selectedQueryId:selected,notebook:d.notebook,runs:d.runs,sources:sources.slice(0,50),runtimeOrigin:d.runtimeOrigin,pipeline:d.pipeline,cards:d.cards};
+      return {format:'datapass.workspace',version:1,savedAt:new Date().toISOString(),samples:persistedSamples,module:d.module,catalogCollapsed:collapsed,queries,selectedQueryId:selected,notebook:d.notebook,runs:d.runs,sources:sources.slice(0,50),runtimeOrigin:d.runtimeOrigin,pipeline:d.pipeline,cards:d.cards};
     },
     async importFile(file){
       if(get().datapass.importing)return;

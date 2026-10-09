@@ -27,7 +27,7 @@
 .notebook-empty{border:1px dashed var(--line);border-radius:8px;padding:18px;text-align:left}
 .cell{border:1px solid var(--line);border-radius:8px;background:#fff;padding:10px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
 .cell[data-status=running]{border-color:#7fa9b8}.cell[data-status=error]{border-color:#e2b9b0}
-.cell>header{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.cell>header .spacer{flex:1}
+.cell>header{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px}.cell-actions{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .cell-kind{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:#eef1f4;color:#4f5b6b;border-radius:4px;padding:2px 6px}
 .cell-title{border:1px solid transparent;border-radius:4px;font-weight:600;font-size:13px;padding:3px 6px;min-width:0;flex:1 1 160px;background:transparent}.cell-title:focus,.cell-title:hover{border-color:var(--line)}
 .cell-code,.cell-note{width:100%;box-sizing:border-box;font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;border:1px solid var(--line);border-radius:6px;padding:8px;resize:vertical;background:#fbfcfd}
@@ -48,4 +48,5 @@
 .runtime-message{color:#9b473a;flex-basis:100%}
 .runtime-form{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;flex:1 1 100%}.runtime-form small{flex-basis:100%;color:#6b7686}
 .runtime-bar.consent{flex-direction:column;align-items:flex-start;border-color:#7fa9b8;background:#f2f8fa}.runtime-bar.consent h2{font-size:14px;margin:0}.runtime-bar.consent p{margin:0}.runtime-bar.consent div{display:flex;gap:8px}
-@media (max-width:700px){.cell>header{gap:4px}.cell-python label,.chart-choice label{flex:1 1 120px}}
+@media (max-width:700px){.cell>header{grid-template-columns:auto minmax(0,1fr)}.cell-actions{grid-column:1/-1;justify-content:flex-start}.cell-python label,.chart-choice label{flex:1 1 120px}}
+.notebook .studio-site.notebook-artifact{min-height:0;background:transparent}.notebook-artifact .foundation-artifact{margin:0}

@@ -97,7 +97,8 @@ export type CellRun={cellId:string;sequence:number;sourceKey:string;dependencySe
 export function cellSourceKey(cell:Cell):string{
   return JSON.stringify(cell.kind==='sql'?[cell.kind,cell.sql]:cell.kind==='python'?[cell.kind,cell.model,Object.entries(cell.inputs).sort(([a],[b])=>a<b?-1:1),cell.outputTable??null]:[cell.kind,cell.text]);
 }
-export function staleReason(notebook:Notebook,runs:Record<string,CellRun|undefined>,cellId:string):string|null{
+export function staleReason(notebook:Notebook,runs:Record<string,CellRun|undefined>,cellId:string,seen:Set<string>=new Set()):string|null{
+  if(seen.has(cellId))return null;seen.add(cellId);
   const cell=notebook.cells.find(c=>c.id===cellId),run=runs[cellId];
   if(!cell||!run)return null;
   if(run.sourceKey!==cellSourceKey(cell))return 'The cell changed after this result was produced.';
@@ -105,6 +106,7 @@ export function staleReason(notebook:Notebook,runs:Record<string,CellRun|undefin
     const dep=runs[d];
     if(!dep)return 'Dependency '+d+' has no current result.';
     if(dep.sequence!==run.dependencySequences[d])return 'Dependency '+d+' produced a newer result.';
+    if(staleReason(notebook,runs,d,seen))return 'Dependency '+d+' is itself stale.';
   }
   return null;
 }

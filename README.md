@@ -1,8 +1,16 @@
 # DataPass MosaicStudio
 
-**v0.8 alpha source SDK for AI-built technical websites.** Client content, approved data, domain calculations and page composition live under `clients/<id>/`; reusable state, contracts and rendering live under `src/framework/`.
+**v0.9 alpha source SDK for AI-built technical websites, with a browser authoring workbench.** Client content, approved data, domain calculations and page composition live under `clients/<id>/`; reusable state, contracts and rendering live under `src/framework/`. One repository, separate entry points: a lightweight presentation surface (selected client builds, the standalone concept viewer) and a traditional browser workbench at the root. T3 is an optional consumer, never a prerequisite.
 
-`main` carries DataPass Studio 0.8 (rc3 plus the night packages, PR #34; RC history in `docs/RELEASE_0.8_RC.md`). It extends qualified v0.7. No deployment, package publication or donor-repository modification is implied.
+0.9 extends 0.8 (rc3 plus the night packages, PR #34; RC history in `docs/RELEASE_0.8_RC.md`). Release notes, acceptance mapping and evidence: [`docs/RELEASE_0.9.md`](docs/RELEASE_0.9.md). No deployment, package publication or donor-repository modification is implied.
+
+## What's new in 0.9
+
+- **Blank-first workbench with a notebook** ([`docs/WORKBENCH_AUTHORING.md`](docs/WORKBENCH_AUTHORING.md)): `/` opens your saved workspace with no forced dataset; `?sample=operations` opts into the synthetic sample. SQL cells run real DuckDB-WASM queries; Python cells run allowlisted models on a trusted local runtime; dependencies are explicit; every result is one `datapass.artifact` v1 with table/chart/metric/JSON views that never recompute.
+- **Persistent workspace** (`datapass.workspace` v1 in browser storage): queries, cells, inputs, layout, file *names* and run *references* survive reload; file contents, result rows and tokens never do. Export/import (with migration of the old draft export), reset, and explicit rejection of newer/corrupt documents.
+- **Local runtime runs API** (`datapass.runtime/1`, `py/service/`): token-protected (`X-Datapass-Token`), loopback-only, origin-checked submit/status/cancel/artifact for allowlisted models. Not a generic Python executor; do not expose it.
+- **Stable consumption**: `npm run sdk:pack` / `sdk:verify` produce and check a hashed release archive with version, commit and license statement ([`docs/CONSUMING.md`](docs/CONSUMING.md)); pinned git-source consumers keep working.
+- **T3-neutral preview contract** (`datapass.preview/1`, [`spec/preview/v1/`](spec/preview/v1/)): every `build:client` writes `preview.json` with output hashes, artifacts and capabilities; `npm run preview:validate -- <file> --check-files`.
 
 ## What's in 0.8
 
@@ -77,7 +85,7 @@ Read `docs/recipes/models.md` and `docs/MODEL_ASSET_V0_7_QUALIFICATION.md`. A co
 
 ## Existing experiences remain available
 
-The root route is still the separate SQLRooms/DuckDB workbench. `?sites=1` lists synthetic reference applications. The integrated review build includes only these eight approved references:
+The root route is still the separate SQLRooms/DuckDB workbench (blank by default since 0.9; `?sample=operations` loads the synthetic sample). `?sites=1` lists synthetic reference applications. The integrated review build includes only these eight approved references:
 
 | Route | Purpose |
 | --- | --- |
@@ -98,6 +106,6 @@ There are now **19 block types**, ten optional capabilities and still five famil
 
 See `docs/MODEL_ASSET_V0_7_QUALIFICATION.md` for the latest qualified model-asset implementation and `docs/FOUNDATION_V0_6_QUALIFICATION.md` for the underlying foundation. Review `docs/CLIENT_READINESS_V0_7.md` for the five future clients.
 
-This remains an alpha source SDK. It does not implement a general Scenario Engine, full SemanticOverlay renderer, universal glTF/CAD pipeline, persistent cloud history, notebook execution, DuckLake or PDF/PPTX/video exports. The delivered model profile is intentionally static, local, bounded and opt-in. Real client data/assets, scientific tests, final design, deployment security and broader browser/device acceptance remain necessary.
+This remains an alpha source SDK. It does not implement a general Scenario Engine, full SemanticOverlay renderer, universal glTF/CAD pipeline, persistent cloud history, arbitrary notebook code execution (0.9 runs allowlisted local models only), DuckLake or PDF/PPTX/video exports. The delivered model profile is intentionally static, local, bounded and opt-in. Real client data/assets, scientific tests, final design, deployment security and broader browser/device acceptance remain necessary.
 
 No Rust rewrite or speculative toolchain upgrade was used to deliver these features.

@@ -1,5 +1,5 @@
 import {test,expect,type Page} from '@playwright/test';
-import {spawn,type ChildProcess} from 'node:child_process';
+import {spawn,spawnSync,type ChildProcess} from 'node:child_process';
 import {readFile} from 'node:fs/promises';
 import path from 'node:path';
 
@@ -11,6 +11,7 @@ const LINK=`/?workspace=blank#runtime=${encodeURIComponent(ORIGIN)}&token=${TOKE
 let service:ChildProcess|null=null,errors:string[]=[],external:string[]=[];
 
 async function startService(){
+  await stopService();
   service=spawn(process.env.PYTHON||'python',['py/service/app.py','--port',String(PORT),'--workbench-origin','http://127.0.0.1:4173'],{env:{...process.env,DATAPASS_RUNTIME_TOKEN:TOKEN},stdio:['ignore','ignore','pipe']});
   let log='';service.stderr!.on('data',d=>{log+=String(d);});
   for(let i=0;i<120;i++){
@@ -19,7 +20,13 @@ async function startService(){
   }
   throw new Error('The runtime did not start: '+log.slice(-800));
 }
-function stopService(){if(service&&service.exitCode===null)service.kill();service=null;}
+// On Windows `python` may be a launcher with a child interpreter: stop the whole tree, then confirm the port is closed.
+async function stopService(){
+  if(service&&service.exitCode===null){if(process.platform==='win32')spawnSync('taskkill',['/pid',String(service.pid),'/T','/F']);else service.kill();}
+  service=null;
+  for(let i=0;i<40;i++){try{await fetch(ORIGIN+'/health');}catch{return;}await new Promise(r=>setTimeout(r,250));}
+  throw new Error('The runtime is still answering after it was stopped.');
+}
 async function ready(page:Page,url:string){
   await page.goto(url,{waitUntil:'domcontentloaded'});
   await expect(page.getByTestId('runtime-state')).toHaveText('DuckDB ready',{timeout:60000});
@@ -30,7 +37,7 @@ test.beforeEach(async({page})=>{
   page.on('request',r=>{const u=r.url();if(/^https?:/.test(u)&&!u.startsWith('http://127.0.0.1:4173/')&&!u.startsWith(ORIGIN+'/'))external.push(u);});
 });
 test.afterEach(()=>{expect(errors,'Unhandled browser exceptions').toEqual([]);expect(external,'Only the page origin and the consented loopback runtime').toEqual([]);});
-test.afterAll(()=>stopService());
+test.afterAll(async()=>{await stopService();});
 
 test('UX01 blank workspace: no forced dataset, real SQL, chart, artifact export, reload',async({page},info)=>{
   await ready(page,'/');
@@ -106,15 +113,17 @@ test('UX02 Python through the real runtime: consent, run, representations, new r
   await sql.getByLabel(/^SQL for/).fill('SELECT count(*)::INTEGER AS cases, max(aep) AS best_aep FROM wind_runs');
   await sql.locator('.cell-deps summary').click();
   await sql.locator('.cell-deps').getByRole('checkbox').check();
-  await expect(sql.getByRole('button',{name:'Run (2 cells)'})).toBeVisible();
-  await sql.getByRole('button',{name:'Run (2 cells)'}).click();
+  const runAll=sql.getByRole('button',{name:/after 1 dependency$/});
+  await expect(runAll).toHaveText('Run (2 cells)');
+  await runAll.click();
   await expect(sql).toHaveAttribute('data-status','done',{timeout:30000});
   await expect(sql.getByTestId('artifact')).toContainText('cases');
+  await expect(sql.getByTestId('artifact').locator('tbody td').nth(2)).toHaveText(/^[0-9,]+(\.[0-9]+)?$/); // DECIMAL stays numeric
   await expect(py.locator('.cell-history summary')).toContainText('Run history (3)');
   // Cancel a long, real grid computation.
   await page.getByRole('button',{name:'Add Python cell'}).click();
   const grid=page.getByTestId('cell').nth(2);
-  await grid.getByLabel('Model').selectOption('wind-weibull-grid');
+  await grid.getByLabel('Model',{exact:true}).selectOption('wind-weibull-grid');
   await grid.getByLabel(/Grid points per axis/).fill('80');
   await grid.getByRole('button',{name:/^Run/}).click();
   await grid.getByRole('button',{name:'Cancel'}).click();
@@ -145,7 +154,7 @@ test('UX04 failures are explicit: stopped runtime, refused token, invalid import
   const py=page.getByTestId('cell').first();
   await py.getByRole('button',{name:/^Run/}).click();
   await expect(py).toHaveAttribute('data-status','done',{timeout:30000});
-  stopService();
+  await stopService();
   await py.getByRole('button',{name:/^Run/}).click();
   await expect(py).toHaveAttribute('data-status','error',{timeout:30000});
   await expect(py.locator('.notice.error').first()).toContainText('unreachable');

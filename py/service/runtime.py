@@ -95,8 +95,17 @@ class RuntimeModel:
                 "illustrative": True, "artifactId": self.artifact_id, "inputs": described}
 
 
+_TOKEN = re.compile(r"^[A-Za-z0-9_-]{16,128}$")
+
+
 def resolve_token(token: str | None = None) -> str:
-    return token or os.environ.get(TOKEN_ENV) or secrets.token_urlsafe(32)
+    """An explicit or env token must be 16-128 URL-safe characters (what the browser accepts); else a random one."""
+    chosen = token or os.environ.get(TOKEN_ENV)
+    if chosen is None:
+        return secrets.token_urlsafe(32)
+    if not _TOKEN.match(chosen):
+        raise ValueError(f"{TOKEN_ENV} must be 16-128 characters of A-Z, a-z, 0-9, '_' or '-'")
+    return chosen
 
 
 def _now() -> str:

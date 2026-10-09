@@ -6,7 +6,7 @@ import {identifier} from '../framework/guards.ts';
 
 export const RUNTIME_PROTOCOL='datapass.runtime/1';
 export const RUNTIME_REQUEST_BYTES=2048;
-const LOOPBACK=new Set(['127.0.0.1','localhost','[::1]']);
+const LOOPBACK=new Set(['127.0.0.1','localhost']); // [::1] is not reachable through the workbench CSP
 export type RunStatus='queued'|'running'|'succeeded'|'failed'|'cancelled';
 export type RuntimeInput={id:string;label:string;unit?:string|null;type:'number';min:number;max:number;default:number;step?:number|null};
 export type RuntimeModel={id:string;version:string;title:string;description:string;illustrative:boolean;artifactId:string;inputs:RuntimeInput[]};
@@ -19,7 +19,7 @@ export function runtimeOrigin(value:string):string{
   let url:URL;
   try{url=new URL(value);}catch{throw new Error('The runtime address is not a URL.');}
   if(url.protocol!=='http:')throw new Error('The local runtime must use http on the loopback interface.');
-  if(!LOOPBACK.has(url.hostname))throw new Error(`The runtime must be loopback (127.0.0.1, localhost or [::1]), not ${url.hostname}.`);
+  if(!LOOPBACK.has(url.hostname))throw new Error(`The runtime must be loopback (127.0.0.1 or localhost), not ${url.hostname}.`);
   if(url.username||url.password||url.search||url.hash||(url.pathname!=='/'&&url.pathname!==''))throw new Error('Give only the runtime origin, for example http://127.0.0.1:8765.');
   if(!url.port)throw new Error('The runtime origin needs an explicit port.');
   return url.origin;
@@ -101,6 +101,7 @@ export class RuntimeClient{
     this.#token=connection.token;this.#fetch=options.fetch??(globalThis.fetch.bind(globalThis) as unknown as FetchLike);this.#timeoutMs=options.timeoutMs??15000;
   }
   async #request(path:string,options:{method?:'GET'|'POST';body?:unknown;signal?:AbortSignal}={}):Promise<{json:unknown;text:string}>{
+    if(options.signal?.aborted)throw new RuntimeError('The request was aborted.','aborted');
     let body:string|undefined;
     if(options.body!==undefined){body=JSON.stringify(options.body);if(new TextEncoder().encode(body).byteLength>RUNTIME_REQUEST_BYTES)throw new RuntimeError(`The request is above ${RUNTIME_REQUEST_BYTES} bytes.`,'rejected');}
     const controller=new AbortController(),timer=setTimeout(()=>controller.abort(new DOMException('timeout','TimeoutError')),this.#timeoutMs);
