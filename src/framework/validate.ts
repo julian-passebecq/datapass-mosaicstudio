@@ -6,7 +6,7 @@ import {validateReplay,validateReplayBinding,validateReplayControllers} from './
 import {validateCustomCapabilities} from './capabilities.ts';
 import type {Manifest, Field, Scalar, Dataset, Rows, Block, AppDefinition, ValueRef, SavedState} from './types.ts';
 export const LIMITS = Object.freeze({fields: 100, datasets: 50, pages: 20, blocks: 200, rows: 10000, columns: 40, stateBytes: 65536});
-import {object, strict, text, identifier} from './guards.ts';
+import {object, strict, text, identifier, charLength} from './guards.ts';
 export {object, strict, text, identifier} from './guards.ts';
 import {validateExplorer, validateExplorerBinding} from './explorer/model.ts';
 import {validateExplanation} from './explanation.ts';
@@ -14,7 +14,7 @@ import {parseMulti, parseInterval, MULTI_SEPARATOR} from './selection.ts';
 function list(v: unknown, label: string, max: number, min = 0): asserts v is unknown[] {if (!Array.isArray(v) || v.length < min || v.length > max) throw new Error(label + ': array size limit');}
 function oneOf(v: unknown, choices: readonly string[], label: string): void {if (typeof v !== 'string' || !choices.includes(v)) throw new Error(label + ': invalid choice');}
 function number(v: unknown, min: number, max: number, label: string, integer = false): asserts v is number {if (typeof v !== 'number' || !Number.isFinite(v) || v < min || v > max || (integer && !Number.isSafeInteger(v))) throw new Error(label + ': invalid number');}
-export function scalar(v: unknown): v is Scalar {return v === null || typeof v === 'boolean' || (typeof v === 'string' && v.length <= 4000) || (typeof v === 'number' && Number.isFinite(v));}
+export function scalar(v: unknown): v is Scalar {return v === null || typeof v === 'boolean' || (typeof v === 'string' && (v.length <= 4000 || charLength(v) <= 4000)) || (typeof v === 'number' && Number.isFinite(v));}
 function unique(items: unknown[], label: string): Set<string> {const seen = new Set<string>(); for (const x of items) {identifier(x, label); if (seen.has(x)) throw new Error(label + ': duplicate id ' + x); seen.add(x);} return seen;}
 export function validateValue(field: Field, v: unknown): asserts v is Scalar {
   if (field.type === 'number') {number(v, field.min!, field.max!, field.id); const units=(v-field.min!)/field.step!; if(Math.abs(units-Math.round(units))>Math.max(1e-8,Math.abs(units)*Number.EPSILON*4))throw new Error(field.id+': value must follow the declared step');}

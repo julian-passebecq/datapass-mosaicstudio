@@ -68,7 +68,7 @@ The archive has no `.git` folder: builds then record `sourceCommit: null` in the
 | Contract | File | Readers must |
 |---|---|---|
 | `datapass.concept-spec/1` | `spec/concept/v1/concept-spec.schema.json` | accept any `1.y.z`; see the folder README |
-| `datapass.artifact/1` | `src/framework/foundation/artifact.ts` (`validateArtifact`) | reject unknown fields; JSON Schema copy in `docs/contracts/artifact.schema.json` |
+| `datapass.artifact/1` | `src/framework/foundation/artifact.ts` (`validateArtifact`) | reject unknown fields; the JSON Schema `docs/contracts/artifact.schema.json` is the exact structure gate (lineage fields included); semantic rules (references, duplicate ids, self-reference, row typing) and the 1 MiB envelope are separate validator gates. `py/datapass_artifact.py` mirrors all three; `tests/fixtures/artifact-corpus` is decided identically by all three (`npm run test:artifact-corpus`) |
 | `datapass.preview/1` | `spec/preview/v1/preview.schema.json` | reject unknown fields; validate with `scripts/preview-validate.mjs --check-files` |
 
 ## Upgrade

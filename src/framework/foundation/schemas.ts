@@ -1,3 +1,4 @@
+import {ARTIFACT_LIMITS,NON_BLANK,SAFE_EVIDENCE_PATH} from './artifact-limits.ts';
 /** Structural authoring aids. Cross-resource, field, byte and status rules live in validators. */
 const id={type:'string',pattern:'^[a-z][a-zA-Z0-9_-]{0,79}$',not:{enum:['constructor','prototype','__proto__']}};
 const string=(maxLength=2000)=>({type:'string',maxLength});
@@ -6,10 +7,21 @@ const list=(items:unknown,maxItems:number,minItems=0)=>({type:'array',items,maxI
 const nullable=(schema:unknown)=>({anyOf:[schema,{type:'null'}]});
 const scalar={type:['number','string','boolean','null'],maxLength:4000};
 const reference=obj({artifact:id,start:{type:'integer',minimum:1,maximum:2000},end:{type:'integer',minimum:1,maximum:2000},label:string(160)});
-const column=obj({id,label:string(120),type:{enum:['string','number','boolean']},unit:string(40),nullable:{type:'boolean'}},['id','label','type']);
-const representation=(kind:string,extra:Record<string,unknown>={},required:string[]=[])=>obj({id,title:string(160),kind:{const:kind},...extra},['id','title','kind',...required]);
-const reps=list({oneOf:[representation('table'),representation('text'),representation('json'),representation('chart',{chart:{enum:['bar','line','scatter']},x:id,y:id,unit:string(30)},['chart','x','y']),representation('metric',{row:string(160),column:id,unit:string(40),digits:{type:'integer',minimum:0,maximum:6}},['row','column'])]},12,1);
-const artifact=obj({format:{const:'datapass.artifact'},version:{const:1},id,title:string(160),provenance:obj({kind:{enum:['synthetic','provided','computed']},source:string(),runId:id},['kind','source']),payload:{oneOf:[obj({kind:{const:'table'},rowKey:id,columns:list(column,40,1),rows:list({type:'object',maxProperties:40,propertyNames:id,additionalProperties:scalar},10000)}),obj({kind:{const:'text'},text:string(20000)})]},representations:reps});
+// datapass.artifact v1 (structural gate). Mirrors checkArtifactStructure in artifact.ts and check_structure in
+// py/datapass_artifact.py exactly; envelope (finite JSON, 1 MiB) and semantic rules (references, duplicate
+// ids, self-reference, row typing) are separate validator gates that JSON Schema cannot express.
+const filled=(maxLength:number)=>({type:'string',maxLength,pattern:NON_BLANK.source});
+const idArray=(maxItems:number)=>({type:'array',items:id,maxItems,uniqueItems:true});
+const line={type:'integer',minimum:1,maximum:ARTIFACT_LIMITS.line};
+const evidence=obj({path:{type:'string',minLength:1,maxLength:ARTIFACT_LIMITS.path,pattern:SAFE_EVIDENCE_PATH.source},start:line,end:line,label:filled(160)});
+const evidenceList=list(evidence,ARTIFACT_LIMITS.evidence);
+const producer=obj({kind:{enum:['script','notebook','service']},name:filled(160),evidence:evidenceList},['kind','name']);
+const lineageInput=obj({id,label:filled(160),value:{type:['string','number','boolean'],maxLength:400},unit:string(40),evidence:evidenceList},['id','label']);
+const provenance=obj({kind:{enum:['synthetic','provided','computed']},source:filled(2000),runId:id,producer,inputHash:{type:'string',pattern:'^[0-9a-f]{64}$'},inputs:list(lineageInput,ARTIFACT_LIMITS.inputs),dependsOn:idArray(ARTIFACT_LIMITS.dependsOn)},['kind','source']);
+const column=obj({id,label:filled(120),type:{enum:['string','number','boolean']},unit:string(40),nullable:{type:'boolean'}},['id','label','type']);
+const representation=(kind:string,extra:Record<string,unknown>={},required:string[]=[])=>obj({id,title:filled(160),kind:{const:kind},inputs:idArray(ARTIFACT_LIMITS.inputs),...extra},['id','title','kind',...required]);
+const reps=list({oneOf:[representation('table'),representation('text'),representation('json'),representation('chart',{chart:{enum:['bar','line','scatter']},x:id,y:id,unit:string(30)},['chart','x','y']),representation('metric',{row:filled(160),column:id,unit:string(40),digits:{type:'integer',minimum:0,maximum:6}},['row','column'])]},ARTIFACT_LIMITS.representations,1);
+const artifact=obj({format:{const:'datapass.artifact'},version:{const:1},id,title:filled(160),provenance,payload:{oneOf:[obj({kind:{const:'table'},rowKey:id,columns:list(column,ARTIFACT_LIMITS.columns,1),rows:list({type:'object',maxProperties:ARTIFACT_LIMITS.columns,propertyNames:id,additionalProperties:scalar},ARTIFACT_LIMITS.rows)}),obj({kind:{const:'text'},text:string(20000)})]},representations:reps});
 const runSpec=obj({format:{const:'datapass.run-spec'},version:{const:1},taskId:id,modelId:id,modelVersion:string(80),providerId:id,source:string(),provenance:{enum:['synthetic','provided','computed']},representations:reps});
 const run=obj({format:{const:'datapass.run'},version:{const:1},id,taskId:id,appId:id,appVersion:string(80),modelId:id,modelVersion:string(80),providerId:id,parameters:{type:'object',maxProperties:100,propertyNames:id,additionalProperties:scalar},dependencies:{type:'object',maxProperties:50,propertyNames:id,additionalProperties:{type:'integer',minimum:1}},status:{enum:['running','succeeded','failed','cancelled','superseded','timed-out','unobserved']},startedAt:{type:'string',format:'date-time'},finishedAt:nullable({type:'string',format:'date-time'}),durationMs:{type:'number',minimum:0},artifact:nullable(artifact),retention:{enum:['pending','retained','none','omitted-budget','invalid-output']},message:string()});
 const named=obj({id,label:string(100)});

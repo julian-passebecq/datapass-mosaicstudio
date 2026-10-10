@@ -1,8 +1,17 @@
 """Write `datapass.artifact` v1 JSON from Python. Standard library only.
 
 The TypeScript validator (src/framework/foundation/artifact.ts, validateArtifact)
-stays the source of truth. This module mirrors its rules so a notebook fails early
-in Python instead of in the browser:
+stays the source of truth. This module mirrors its three gates so a notebook fails
+early in Python instead of in the browser:
+
+    envelope   inert finite JSON, depth, 1 MiB compact UTF-8      (check_envelope)
+    structure  exactly docs/contracts/artifact.schema.json        (check_structure)
+    semantic   references, duplicate ids, self-reference, rows    (check_semantics)
+
+A rejection is an ArtifactError with .gate and .path (JSON Pointer of the offending
+field). tests/fixtures/artifact-corpus is decided identically by JSON Schema, the
+TypeScript validator and this module (tests/artifact-corpus.test.mjs).
+Command line: python py/datapass_artifact.py [--set] FILE... (JSON lines, exit 1 on reject).
 
     from datapass_artifact import to_artifact, write_manifest
     to_artifact(rows, id="wind-aep", title="...", source="py/notebooks/x.py",
@@ -24,6 +33,7 @@ import os
 import re
 import tempfile
 import time
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -42,6 +52,7 @@ MAX_INPUTS = 24
 MAX_EVIDENCE = 8
 MAX_DEPENDS_ON = 12
 MAX_LINE = 100000
+MAX_PATH = 260
 _KINDS = {"table", "chart", "metric", "text", "json"}
 _REP_KEYS = {
     "table": {"id", "title", "kind", "inputs"},
@@ -53,19 +64,474 @@ _REP_KEYS = {
 
 
 class ArtifactError(ValueError):
-    """The artifact would be rejected by the Studio validator."""
+    """The artifact would be rejected by the Studio validator.
+
+    gate: "envelope" | "structure" | "semantic" (None for writer-side errors such as column inference).
+    path: JSON Pointer of the offending field ("" = the whole document), as reported by the TypeScript validator.
+    """
+
+    def __init__(self, message: str, gate: str | None = None, path: str | None = None):
+        self.gate, self.path, self.detail = gate, path, message
+        super().__init__(message if path is None else f"{path or '/'}: {message}")
+
+
+_RESERVED_KEYS = {"__proto__", "prototype", "constructor"}
+# ECMAScript WhiteSpace + LineTerminator (String.prototype.trim and RegExp \s); str.isspace() differs.
+_NON_BLANK = re.compile("[^\t\n\x0b\x0c\r    -     　﻿]")
+_UNSAFE_PATH_CHAR = re.compile(r"[\\:\x00-\x1f\x7f]")
+_REP_FIELDS = {"table": (), "text": (), "json": (), "chart": ("chart", "x", "y", "unit"),
+               "metric": ("row", "column", "unit", "digits")}
+_REP_REQUIRED = {"table": (), "text": (), "json": (), "chart": ("chart", "x", "y"), "metric": ("row", "column")}
+
+
+def _fail(gate: str, path: str, message: str):
+    raise ArtifactError(message, gate, path)
+
+
+def _ptr(base: str, key: Any) -> str:
+    return base + "/" + str(key).replace("~", "~0").replace("/", "~1")
+
+
+def _is_id(value: Any) -> bool:
+    return isinstance(value, str) and _ID.fullmatch(value) is not None and value not in _RESERVED
+
+
+def _is_number(value: Any) -> bool:
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
+def _is_integer(value: Any) -> bool:
+    """JSON integer: 3 and 3.0 are the same JSON number (JavaScript parses both to 3)."""
+    return (isinstance(value, int) and not isinstance(value, bool)) or (isinstance(value, float) and value.is_integer())
+
+
+def _js_number(value: int | float) -> str:
+    """Number formatting of ECMAScript Number::toString (String(n) and JSON.stringify)."""
+    if isinstance(value, int):
+        return str(value)
+    if value == 0:
+        return "0"
+    sign = "-" if value < 0 else ""
+    digits_t, exponent = Decimal(repr(abs(value))).normalize().as_tuple()[1:]
+    digits = "".join(map(str, digits_t))
+    k, n = len(digits), len(digits) + exponent
+    if k <= n <= 21:
+        body = digits + "0" * (n - k)
+    elif 0 < n <= 21:
+        body = digits[:n] + "." + digits[n:]
+    elif -6 < n <= 0:
+        body = "0." + "0" * (-n) + digits
+    else:
+        e = n - 1
+        body = digits[0] + ("." + digits[1:] if k > 1 else "") + "e" + ("+" if e > 0 else "-") + str(abs(e))
+    return sign + body
+
+
+def _js_string(value: Any) -> str:
+    """String(value) in JavaScript for a row key (string or number)."""
+    return _js_number(value) if _is_number(value) else str(value)
 
 
 def _identifier(value: Any, label: str) -> str:
-    if not isinstance(value, str) or not _ID.match(value) or value in _RESERVED:
+    if not _is_id(value):
         raise ArtifactError(f"{label}: invalid id {value!r} (use ^[a-z][a-zA-Z0-9_-]{{0,79}}$)")
     return value
 
 
 def _text(value: Any, label: str, max_len: int, required: bool = True) -> str:
-    if not isinstance(value, str) or len(value) > max_len or (required and not value.strip()):
+    if not isinstance(value, str) or len(value) > max_len or (required and not _NON_BLANK.search(value)):
         raise ArtifactError(f"{label}: invalid text (string, <= {max_len} chars{', not blank' if required else ''})")
     return value
+
+
+# ---- Gate 1: envelope ------------------------------------------------------------------------------------------
+def _js_json(value: Any) -> Any:
+    if isinstance(value, float) and _is_integer(value) and abs(value) < 1e21:
+        return int(value)
+    if isinstance(value, Mapping):
+        return {k: _js_json(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_js_json(v) for v in value]
+    return value
+
+
+def encode(artifact: Mapping[str, Any]) -> bytes:
+    """Compact UTF-8 JSON, the encoding the 1 MiB budget is measured on (numbers formatted like JSON.stringify)."""
+    try:
+        text = json.dumps(_js_json(artifact), ensure_ascii=False, separators=(",", ":"), allow_nan=False)
+    except (TypeError, ValueError) as error:
+        raise ArtifactError(f"JSON requires finite numbers and inert values: {error}", "envelope", "") from error
+    return text.encode("utf-8", "surrogatepass")
+
+
+def check_envelope(artifact: Any) -> None:
+    """Mirror of boundedJson: inert JSON values, finite numbers, depth <= 24, <= 500 000 nodes, no prototype keys, 1 MiB."""
+    nodes = 0
+
+    def walk(value: Any, depth: int) -> None:
+        nonlocal nodes
+        nodes += 1
+        if nodes > 500000 or depth > 24:
+            _fail("envelope", "", "JSON structure budget exceeded")
+        if value is None or isinstance(value, (bool, str)):
+            return
+        if _is_number(value):
+            if isinstance(value, float) and not math.isfinite(value):
+                _fail("envelope", "", "JSON requires finite numbers")
+            return
+        if isinstance(value, Mapping):
+            for key, entry in value.items():
+                if not isinstance(key, str):
+                    _fail("envelope", "", "Expected inert JSON values")
+                if key in _RESERVED_KEYS:
+                    _fail("envelope", "", "Unsafe JSON property")
+                walk(entry, depth + 1)
+            return
+        if isinstance(value, list):
+            for entry in value:
+                walk(entry, depth + 1)
+            return
+        _fail("envelope", "", "Expected inert JSON values")
+
+    walk(artifact, 0)
+    size = len(encode(artifact))
+    if size > ARTIFACT_BYTES:
+        _fail("envelope", "", f"artifact byte budget exceeded ({size} > {ARTIFACT_BYTES} bytes, compact UTF-8). "
+                              "Aggregate in Python or use parquet_sidecar for the full data")
+
+
+# ---- Gate 2: structure (exactly docs/contracts/artifact.schema.json) ------------------------------------------
+def _shape(value: Any, path: str, label: str, allowed: Sequence[str], required: Sequence[str] | None = None) -> None:
+    if not isinstance(value, Mapping):
+        _fail("structure", path, f"{label}: expected an object")
+    for key in value:
+        if key not in allowed:
+            _fail("structure", _ptr(path, key), f"{label}: unexpected fields ({key})")
+    for key in (allowed if required is None else required):
+        if key not in value:
+            _fail("structure", _ptr(path, key), f"{label}: missing required field {key}")
+
+
+def _s_id(value: Any, path: str, label: str) -> None:
+    if not _is_id(value):
+        _fail("structure", path, f"{label}: invalid id {value!r} (^[a-z][a-zA-Z0-9_-]{{0,79}}$, not reserved)")
+
+
+def _s_text(value: Any, path: str, label: str, max_len: int, filled: bool) -> None:
+    if not isinstance(value, str) or len(value) > max_len or (filled and not _NON_BLANK.search(value)):
+        _fail("structure", path, f"{label}: invalid text (string, at most {max_len} characters{', not blank' if filled else ''})")
+
+
+def _s_int(value: Any, path: str, label: str, low: int, high: int) -> None:
+    if not _is_integer(value) or not low <= value <= high:
+        _fail("structure", path, f"{label}: integer {low}..{high} required")
+
+
+def _s_enum(value: Any, path: str, label: str, choices: Sequence[str]) -> None:
+    if not isinstance(value, str) or value not in choices:
+        _fail("structure", path, f"{label}: must be one of {', '.join(choices)}")
+
+
+def _s_list(value: Any, path: str, label: str, high: int, low: int = 0) -> None:
+    if not isinstance(value, list):
+        _fail("structure", path, f"{label}: expected an array")
+    if not low <= len(value) <= high:
+        _fail("structure", path, f"{label}: list budget ({low}..{high} items)")
+
+
+def _s_id_array(value: Any, path: str, label: str, high: int) -> None:
+    _s_list(value, path, label, high)
+    for i, item in enumerate(value):
+        _s_id(item, _ptr(path, i), label)
+    if len(set(value)) != len(value):
+        _fail("structure", path, f"{label}: duplicate id")
+
+
+def _safe_path(value: Any) -> bool:
+    return (isinstance(value, str) and 0 < len(value) <= MAX_PATH and not _UNSAFE_PATH_CHAR.search(value)
+            and all(part not in ("", ".", "..") for part in value.split("/")))
+
+
+def _s_evidence(refs: Any, path: str, label: str) -> None:
+    _s_list(refs, path, f"{label} evidence", MAX_EVIDENCE)
+    for i, ref in enumerate(refs):
+        at = _ptr(path, i)
+        _shape(ref, at, f"{label} evidence", ("path", "start", "end", "label"))
+        if not _safe_path(ref["path"]):
+            _fail("structure", _ptr(at, "path"), f"{label} evidence: path must be a safe relative path "
+                                                 f"(forward slashes, no drive, no '..', at most {MAX_PATH} characters)")
+        _s_int(ref["start"], _ptr(at, "start"), f"{label} evidence: invalid line range start", 1, MAX_LINE)
+        _s_int(ref["end"], _ptr(at, "end"), f"{label} evidence: invalid line range end", 1, MAX_LINE)
+        _s_text(ref["label"], _ptr(at, "label"), f"{label} evidence label", 160, True)
+
+
+def _s_provenance(prov: Any, path: str) -> None:
+    _shape(prov, path, "artifact provenance", ("kind", "source", "runId", "producer", "inputHash", "inputs", "dependsOn"),
+           ("kind", "source"))
+    _s_enum(prov["kind"], _ptr(path, "kind"), "unknown artifact provenance kind", ("synthetic", "provided", "computed"))
+    _s_text(prov["source"], _ptr(path, "source"), "artifact source", 2000, True)
+    if "runId" in prov:
+        _s_id(prov["runId"], _ptr(path, "runId"), "artifact run")
+    if "producer" in prov:
+        at = _ptr(path, "producer")
+        _shape(prov["producer"], at, "artifact producer", ("kind", "name", "evidence"), ("kind", "name"))
+        _s_enum(prov["producer"]["kind"], _ptr(at, "kind"), "artifact producer kind", sorted(_PRODUCERS))
+        _s_text(prov["producer"]["name"], _ptr(at, "name"), "artifact producer name", 160, True)
+        if "evidence" in prov["producer"]:
+            _s_evidence(prov["producer"]["evidence"], _ptr(at, "evidence"), "producer")
+    if "inputHash" in prov and (not isinstance(prov["inputHash"], str) or not _HEX64.fullmatch(prov["inputHash"])):
+        _fail("structure", _ptr(path, "inputHash"), "artifact inputHash must be 64 lowercase hex characters (sha256)")
+    if "inputs" in prov:
+        at = _ptr(path, "inputs")
+        _s_list(prov["inputs"], at, "artifact inputs", MAX_INPUTS)
+        for i, item in enumerate(prov["inputs"]):
+            ip = _ptr(at, i)
+            _shape(item, ip, "artifact input", ("id", "label", "value", "unit", "evidence"), ("id", "label"))
+            _s_id(item["id"], _ptr(ip, "id"), "artifact input id")
+            _s_text(item["label"], _ptr(ip, "label"), "artifact input label", 160, True)
+            if "value" in item:
+                v = item["value"]
+                if not (isinstance(v, bool) or _is_number(v) or (isinstance(v, str) and len(v) <= 400)):
+                    _fail("structure", _ptr(ip, "value"), "artifact input value must be a finite number, boolean or short string (at most 400 characters)")
+            if "unit" in item:
+                _s_text(item["unit"], _ptr(ip, "unit"), "artifact input unit", 40, False)
+            if "evidence" in item:
+                _s_evidence(item["evidence"], _ptr(ip, "evidence"), "input")
+    if "dependsOn" in prov:
+        _s_id_array(prov["dependsOn"], _ptr(path, "dependsOn"), "artifact dependsOn", MAX_DEPENDS_ON)
+
+
+def _s_payload(payload: Any, path: str) -> None:
+    if not isinstance(payload, Mapping):
+        _fail("structure", path, "artifact payload: expected an object")
+    kind = payload.get("kind")
+    if kind == "table":
+        _shape(payload, path, "table payload", ("kind", "rowKey", "columns", "rows"))
+        _s_id(payload["rowKey"], _ptr(path, "rowKey"), "rowKey")
+        cp = _ptr(path, "columns")
+        _s_list(payload["columns"], cp, "columns", MAX_COLUMNS, 1)
+        for i, c in enumerate(payload["columns"]):
+            at = _ptr(cp, i)
+            _shape(c, at, "column", ("id", "label", "type", "unit", "nullable"), ("id", "label", "type"))
+            _s_id(c["id"], _ptr(at, "id"), "column.id")
+            _s_text(c["label"], _ptr(at, "label"), "column.label", 120, True)
+            _s_enum(c["type"], _ptr(at, "type"), "column.type", ("string", "number", "boolean"))
+            if "unit" in c:
+                _s_text(c["unit"], _ptr(at, "unit"), "column.unit", 40, False)
+            if "nullable" in c and not isinstance(c["nullable"], bool):
+                _fail("structure", _ptr(at, "nullable"), "column.nullable must be a boolean")
+        rp = _ptr(path, "rows")
+        _s_list(payload["rows"], rp, "rows", MAX_ROWS)
+        for i, row in enumerate(payload["rows"]):
+            at = _ptr(rp, i)
+            if not isinstance(row, Mapping):
+                _fail("structure", at, "row: expected an object")
+            if len(row) > MAX_COLUMNS:
+                _fail("structure", at, f"row: more than {MAX_COLUMNS} cells")
+            for key, v in row.items():
+                if not _is_id(key):
+                    _fail("structure", _ptr(at, key), "row: cell name must be a column id")
+                if not (v is None or isinstance(v, bool) or _is_number(v) or (isinstance(v, str) and len(v) <= 4000)):
+                    _fail("structure", _ptr(at, key), "row: cells are null, boolean, finite number or string (at most 4000 characters)")
+        return
+    if kind == "text":
+        _shape(payload, path, "text payload", ("kind", "text"))
+        _s_text(payload["text"], _ptr(path, "text"), "text payload", 20000, False)
+        return
+    _fail("structure", _ptr(path, "kind"), "unknown payload kind (table or text)")
+
+
+def _s_representations(reps: Any, path: str) -> None:
+    _s_list(reps, path, "artifact representation budget", MAX_REPRESENTATIONS, 1)
+    for i, rep in enumerate(reps):
+        at = _ptr(path, i)
+        if not isinstance(rep, Mapping):
+            _fail("structure", at, "representation: expected an object")
+        kind = rep.get("kind")
+        if not isinstance(kind, str) or kind not in _REP_FIELDS:
+            _fail("structure", _ptr(at, "kind"), f"unsupported representation kind {kind!r}")
+        _shape(rep, at, "representation", ("id", "title", "kind", "inputs", *_REP_FIELDS[kind]),
+               ("id", "title", "kind", *_REP_REQUIRED[kind]))
+        _s_id(rep["id"], _ptr(at, "id"), "representation id")
+        _s_text(rep["title"], _ptr(at, "title"), "representation title", 160, True)
+        if "inputs" in rep:
+            _s_id_array(rep["inputs"], _ptr(at, "inputs"), "representation inputs", MAX_INPUTS)
+        if kind == "chart":
+            _s_enum(rep["chart"], _ptr(at, "chart"), "chart", ("bar", "line", "scatter"))
+            _s_id(rep["x"], _ptr(at, "x"), "chart x")
+            _s_id(rep["y"], _ptr(at, "y"), "chart y")
+            if "unit" in rep:
+                _s_text(rep["unit"], _ptr(at, "unit"), "chart unit", 30, False)
+        if kind == "metric":
+            _s_text(rep["row"], _ptr(at, "row"), "metric row", 160, True)
+            _s_id(rep["column"], _ptr(at, "column"), "metric column")
+            if "unit" in rep:
+                _s_text(rep["unit"], _ptr(at, "unit"), "metric unit", 40, False)
+            if "digits" in rep:
+                _s_int(rep["digits"], _ptr(at, "digits"), "metric digits", 0, 6)
+
+
+def check_structure(artifact: Any) -> None:
+    """Gate 2: the exact JSON Schema structure (types, required/unknown fields, enums, lengths, patterns, list bounds)."""
+    _shape(artifact, "", "artifact", ("format", "version", "id", "title", "provenance", "payload", "representations"))
+    if artifact["format"] != FORMAT:
+        _fail("structure", "/format", "unsupported artifact format")
+    if not _is_number(artifact["version"]) or artifact["version"] != VERSION:
+        _fail("structure", "/version", "unsupported artifact version")
+    _s_id(artifact["id"], "/id", "artifact id")
+    _s_text(artifact["title"], "/title", "artifact title", 160, True)
+    _s_provenance(artifact["provenance"], "/provenance")
+    _s_payload(artifact["payload"], "/payload")
+    _s_representations(artifact["representations"], "/representations")
+
+
+# ---- Gate 3: semantics ------------------------------------------------------------------------------------------
+def _m_evidence(refs: Any, path: str, label: str) -> None:
+    seen = set()
+    for i, ref in enumerate(refs or []):
+        if ref["end"] < ref["start"]:
+            _fail("semantic", _ptr(_ptr(path, i), "end"), f"{label} evidence: invalid line range (end before start)")
+        key = (ref["path"], ref["start"], ref["end"])
+        if key in seen:
+            _fail("semantic", _ptr(path, i), f"{label} evidence: duplicate range")
+        seen.add(key)
+
+
+def check_semantics(artifact: Mapping[str, Any]) -> None:
+    """Gate 3: references, duplicate ids, self-reference, payload/representation compatibility and row typing."""
+    prov = artifact["provenance"]
+    _m_evidence(prov.get("producer", {}).get("evidence"), "/provenance/producer/evidence", "producer")
+    input_ids: set[str] = set()
+    for i, item in enumerate(prov.get("inputs", [])):
+        at = _ptr("/provenance/inputs", i)
+        if item["id"] in input_ids:
+            _fail("semantic", _ptr(at, "id"), f"artifact inputs: duplicate id {item['id']}")
+        input_ids.add(item["id"])
+        _m_evidence(item.get("evidence"), _ptr(at, "evidence"), f"input {item['id']}")
+    for i, dep in enumerate(prov.get("dependsOn", [])):
+        if dep == artifact["id"]:
+            _fail("semantic", _ptr("/provenance/dependsOn", i), "artifact dependsOn: an artifact cannot depend on itself")
+    payload = artifact["payload"]
+    columns: dict[str, Mapping[str, Any]] = {}
+    if payload["kind"] == "table":
+        for i, c in enumerate(payload["columns"]):
+            if c["id"] in columns:
+                _fail("semantic", _ptr(_ptr("/payload/columns", i), "id"), f"duplicate column {c['id']}")
+            columns[c["id"]] = c
+        if payload["rowKey"] not in columns:
+            _fail("semantic", "/payload/rowKey", "rowKey must be a declared column")
+        keys: set[Any] = set()
+        for i, row in enumerate(payload["rows"]):
+            at = _ptr("/payload/rows", i)
+            for key in row:
+                if key not in columns:
+                    _fail("semantic", _ptr(at, key), f"row: undeclared cell {key}")
+            for c in columns.values():
+                if c["id"] not in row:
+                    _fail("semantic", _ptr(at, c["id"]), f"row: missing cell {c['id']}")
+                v = row[c["id"]]
+                if v is None and c.get("nullable"):
+                    continue
+                if _cell_type(v) != c["type"]:
+                    _fail("semantic", _ptr(at, c["id"]), f"invalid cell: expected {c['type']}" + (" (column is not nullable)" if v is None else ""))
+            k = row[payload["rowKey"]]
+            if not (isinstance(k, str) or _is_number(k)) or k in keys:
+                _fail("semantic", _ptr(at, payload["rowKey"]), f"missing/duplicate row key {k!r}")
+            keys.add(k)
+    rep_ids: set[str] = set()
+    for i, rep in enumerate(artifact["representations"]):
+        if rep["id"] in rep_ids:
+            _fail("semantic", _ptr(_ptr("/representations", i), "id"), f"duplicate id {rep['id']}")
+        rep_ids.add(rep["id"])
+    for i, rep in enumerate(artifact["representations"]):
+        at = _ptr("/representations", i)
+        for j, used in enumerate(rep.get("inputs", [])):
+            if used not in input_ids:
+                _fail("semantic", _ptr(_ptr(at, "inputs"), j), f"representation {rep['id']} uses an undeclared input {used!r}")
+        kind = rep["kind"]
+        if kind == "json":
+            continue
+        if kind == "text":
+            if payload["kind"] != "text":
+                _fail("semantic", _ptr(at, "kind"), "text representation needs a text payload")
+            continue
+        if payload["kind"] != "table":
+            _fail("semantic", _ptr(at, "kind"), f"{kind} representation requires a table payload")
+        if kind == "chart":
+            x, y = columns.get(rep["x"]), columns.get(rep["y"])
+            if x is None:
+                _fail("semantic", _ptr(at, "x"), "invalid chart encoding: unknown x column")
+            if y is None or y["type"] != "number":
+                _fail("semantic", _ptr(at, "y"), "invalid chart encoding: y must be a number column")
+            if rep["chart"] != "bar" and x["type"] != "number":
+                _fail("semantic", _ptr(at, "x"), "invalid chart encoding: line/scatter x must be a number column")
+        if kind == "metric":
+            if rep["column"] not in columns:
+                _fail("semantic", _ptr(at, "column"), f"metric {rep['id']}: unknown column {rep['column']!r}")
+            if not any(_js_string(r[payload["rowKey"]]) == rep["row"] for r in payload["rows"]):
+                _fail("semantic", _ptr(at, "row"), f"metric {rep['id']}: references an absent row {rep['row']!r}")
+
+
+def validate(artifact: Any) -> dict[str, Any]:
+    """Mirror of validateArtifact: envelope, structure, then semantic gate. Returns the artifact."""
+    check_envelope(artifact)
+    check_structure(artifact)
+    check_semantics(artifact)
+    return dict(artifact)
+
+
+def decide(artifact: Any) -> dict[str, Any]:
+    """Non-throwing decision: {"ok": True} or {"ok": False, "gate", "path", "message"} (mirror of artifactDecision)."""
+    try:
+        validate(artifact)
+    except ArtifactError as error:
+        return {"ok": False, "gate": error.gate, "path": error.path, "message": str(error)}
+    return {"ok": True}
+
+
+def validate_set(artifacts: Sequence[Any]) -> list[dict[str, Any]]:
+    """Mirror of validateArtifactSet: every member valid, unique ids, no dependsOn cycle among members."""
+    for i, artifact in enumerate(artifacts):
+        try:
+            validate(artifact)
+        except ArtifactError as error:
+            raise ArtifactError(error.detail, error.gate, f"/{i}{error.path or ''}") from error
+    index: dict[str, int] = {}
+    for i, artifact in enumerate(artifacts):
+        if artifact["id"] in index:
+            _fail("semantic", f"/{i}/id", f"duplicate artifact id {artifact['id']} in the set")
+        index[artifact["id"]] = i
+    state: dict[int, int] = {}
+
+    def visit(i: int) -> None:
+        state[i] = 1
+        for k, dep in enumerate(artifacts[i]["provenance"].get("dependsOn", [])):
+            j = index.get(dep)
+            if j is None:
+                continue
+            if state.get(j) == 1:
+                _fail("semantic", f"/{i}/provenance/dependsOn/{k}", f"artifact dependsOn cycle through {artifacts[i]['id']} -> {dep}")
+            if j not in state:
+                visit(j)
+        state[i] = 2
+
+    for i in range(len(artifacts)):
+        if i not in state:
+            visit(i)
+    return [dict(a) for a in artifacts]
+
+
+def _reject_constant(name: str) -> Any:
+    raise ArtifactError(f"{name} is not JSON", "envelope", "")
+
+
+def loads(text: str | bytes) -> Any:
+    """Parse JSON like JSON.parse: NaN/Infinity literals are rejected (1e400 still parses to inf, refused by the envelope)."""
+    return json.loads(text, parse_constant=_reject_constant)
+
+
+def load(path: str | os.PathLike[str]) -> Any:
+    return loads(Path(path).read_text(encoding="utf-8"))
 
 
 def _cell_type(value: Any) -> str | None:
@@ -121,126 +587,6 @@ def infer_columns(rows: Sequence[Mapping[str, Any]], labels: Mapping[str, str] |
     return columns
 
 
-def _validate_table(row_key: str, columns: list[dict[str, Any]], rows: list[dict[str, Any]]) -> None:
-    if not isinstance(columns, list) or not 1 <= len(columns) <= MAX_COLUMNS:
-        raise ArtifactError(f"1..{MAX_COLUMNS} columns required")
-    seen: set[str] = set()
-    for c in columns:
-        extra = set(c) - {"id", "label", "type", "unit", "nullable"}
-        if extra:
-            raise ArtifactError(f"column: unexpected fields {sorted(extra)}")
-        _identifier(c.get("id"), "column.id")
-        _text(c.get("label"), "column.label", 120)
-        if c.get("type") not in ("string", "number", "boolean"):
-            raise ArtifactError(f"column {c['id']}: type must be string, number or boolean")
-        if "unit" in c:
-            _text(c["unit"], "column.unit", 40, False)
-        if "nullable" in c and not isinstance(c["nullable"], bool):
-            raise ArtifactError("column.nullable must be a boolean")
-        if c["id"] in seen:
-            raise ArtifactError(f"duplicate column {c['id']}")
-        seen.add(c["id"])
-    _identifier(row_key, "rowKey")
-    if row_key not in seen:
-        raise ArtifactError("rowKey must be a declared column")
-    if len(rows) > MAX_ROWS:
-        raise ArtifactError(f"{len(rows)} rows exceed the {MAX_ROWS}-row limit; aggregate in Python first")
-    keys = set()
-    for i, row in enumerate(rows):
-        if set(row) != seen:
-            raise ArtifactError(f"row {i}: keys must equal the declared columns")
-        for c in columns:
-            v = row[c["id"]]
-            if v is None and c.get("nullable"):
-                continue
-            if _cell_type(v) != c["type"]:
-                raise ArtifactError(f"row {i}.{c['id']}: expected {c['type']}, got {v!r}")
-            if isinstance(v, float) and not math.isfinite(v):
-                raise ArtifactError(f"row {i}.{c['id']}: numbers must be finite")
-            if isinstance(v, str) and len(v) > 4000:
-                raise ArtifactError(f"row {i}.{c['id']}: string longer than 4000 chars")
-        k = row[row_key]
-        if not isinstance(k, (str, int, float)) or isinstance(k, bool) or k in keys:
-            raise ArtifactError(f"row {i}: missing or duplicate row key {k!r}")
-        keys.add(k)
-
-
-def _safe_path(value: Any) -> bool:
-    return (isinstance(value, str) and 0 < len(value) <= 260 and not re.search(r"[\\\0:\x00-\x1f\x7f]", value)
-            and not value.startswith("/") and all(part not in ("", ".", "..") for part in value.split("/")))
-
-
-def _id_list(value: Any, limit: int, label: str) -> list[str]:
-    if not isinstance(value, list) or len(value) > limit:
-        raise ArtifactError(f"{label}: list of at most {limit} ids")
-    for item in value:
-        _identifier(item, label)
-    if len(set(value)) != len(value):
-        raise ArtifactError(f"{label}: duplicate id")
-    return value
-
-
-def _validate_evidence(refs: Any, label: str) -> None:
-    if refs is None:
-        return
-    if not isinstance(refs, list) or len(refs) > MAX_EVIDENCE:
-        raise ArtifactError(f"{label}: at most {MAX_EVIDENCE} evidence links")
-    seen = set()
-    for ref in refs:
-        if not isinstance(ref, Mapping) or set(ref) - {"path", "start", "end", "label"} or not {"path", "start", "end", "label"} <= set(ref):
-            raise ArtifactError(f"{label} evidence: needs exactly path, start, end, label")
-        if not _safe_path(ref["path"]):
-            raise ArtifactError(f"{label} evidence: path must be a safe relative path (forward slashes, no ..)")
-        start, end = ref["start"], ref["end"]
-        if any(not isinstance(n, int) or isinstance(n, bool) for n in (start, end)) or not 1 <= start <= end <= MAX_LINE:
-            raise ArtifactError(f"{label} evidence: invalid line range {start!r}..{end!r}")
-        _text(ref["label"], f"{label} evidence label", 160)
-        key = (ref["path"], start, end)
-        if key in seen:
-            raise ArtifactError(f"{label} evidence: duplicate range")
-        seen.add(key)
-
-
-def _validate_lineage(prov: Mapping[str, Any], artifact_id: str) -> set[str]:
-    """Optional, additive lineage metadata (mirror of validateLineage in artifact.ts)."""
-    if "producer" in prov:
-        producer = prov["producer"]
-        if not isinstance(producer, Mapping) or set(producer) - {"kind", "name", "evidence"}:
-            raise ArtifactError("artifact producer: unexpected fields")
-        if producer.get("kind") not in _PRODUCERS:
-            raise ArtifactError("artifact producer kind must be script, notebook or service")
-        _text(producer.get("name"), "artifact producer name", 160)
-        _validate_evidence(producer.get("evidence"), "producer")
-    if "inputHash" in prov and (not isinstance(prov["inputHash"], str) or not _HEX64.match(prov["inputHash"])):
-        raise ArtifactError("artifact inputHash must be 64 lowercase hex characters (sha256)")
-    ids: set[str] = set()
-    if "inputs" in prov:
-        inputs = prov["inputs"]
-        if not isinstance(inputs, list) or len(inputs) > MAX_INPUTS:
-            raise ArtifactError(f"artifact inputs: at most {MAX_INPUTS}")
-        for item in inputs:
-            if not isinstance(item, Mapping) or set(item) - {"id", "label", "value", "unit", "evidence"}:
-                raise ArtifactError("artifact input: unexpected fields")
-            _identifier(item.get("id"), "artifact input id")
-            if item["id"] in ids:
-                raise ArtifactError("artifact inputs: duplicate id")
-            ids.add(item["id"])
-            _text(item.get("label"), "artifact input label", 160)
-            if "value" in item:
-                v = item["value"]
-                ok = isinstance(v, bool) or (isinstance(v, (int, float)) and math.isfinite(v)) or (isinstance(v, str) and len(v) <= 400)
-                if not ok:
-                    raise ArtifactError("artifact input value must be a finite number, boolean or short string")
-            if "unit" in item:
-                _text(item["unit"], "artifact input unit", 40, False)
-            _validate_evidence(item.get("evidence"), f"input {item['id']}")
-    if "dependsOn" in prov:
-        _id_list(prov["dependsOn"], MAX_DEPENDS_ON, "artifact dependsOn")
-        if artifact_id in prov["dependsOn"]:
-            raise ArtifactError("artifact dependsOn: an artifact cannot depend on itself")
-    return ids
-
-
 def input_hash(inputs: Iterable[Mapping[str, Any]]) -> str:
     """sha256 of the canonical [{id, value}] list sorted by id (compact UTF-8 JSON)."""
     canonical = sorted(({"id": i["id"], "value": i.get("value")} for i in inputs), key=lambda i: i["id"])
@@ -288,94 +634,6 @@ def write_sources(artifact: Mapping[str, Any], root: str | os.PathLike[str], out
         target.write_text(text, encoding="utf-8", newline="\n")
         written.append(target)
     return written
-
-
-def _validate_representations(reps: Any, payload: dict[str, Any], input_ids: set[str] | None = None) -> None:
-    if not isinstance(reps, list) or not 1 <= len(reps) <= MAX_REPRESENTATIONS:
-        raise ArtifactError(f"1..{MAX_REPRESENTATIONS} representations required")
-    ids: set[str] = set()
-    columns = {c["id"]: c for c in payload.get("columns", [])}
-    for rep in reps:
-        kind = rep.get("kind") if isinstance(rep, Mapping) else None
-        if kind not in _KINDS:
-            raise ArtifactError(f"unsupported representation kind {kind!r}")
-        extra = set(rep) - _REP_KEYS[kind]
-        if extra:
-            raise ArtifactError(f"representation {rep.get('id')}: unexpected fields {sorted(extra)}")
-        _identifier(rep.get("id"), "representation id")
-        _text(rep.get("title"), "representation title", 160)
-        if rep["id"] in ids:
-            raise ArtifactError(f"duplicate representation id {rep['id']}")
-        ids.add(rep["id"])
-        if "inputs" in rep:
-            for used in _id_list(rep["inputs"], MAX_INPUTS, "representation inputs"):
-                if used not in (input_ids or set()):
-                    raise ArtifactError(f"representation {rep['id']}: uses an undeclared input {used!r}")
-        if kind == "text":
-            if payload["kind"] != "text":
-                raise ArtifactError("text representation needs a text payload")
-            continue
-        if kind == "json":
-            continue
-        if payload["kind"] != "table":
-            raise ArtifactError(f"{kind} representation requires a table payload")
-        if kind == "metric":
-            col = columns.get(rep.get("column"))
-            if col is None:
-                raise ArtifactError(f"metric {rep['id']}: unknown column {rep.get('column')!r}")
-            _text(rep.get("row"), "metric row", 160)
-            if not any(str(r[payload["rowKey"]]) == rep["row"] for r in payload["rows"]):
-                raise ArtifactError(f"metric {rep['id']}: references an absent row {rep['row']!r}")
-            if "digits" in rep and (not isinstance(rep["digits"], int) or isinstance(rep["digits"], bool) or not 0 <= rep["digits"] <= 6):
-                raise ArtifactError("metric digits must be an integer 0..6")
-            if "unit" in rep:
-                _text(rep["unit"], "metric unit", 40, False)
-        if kind == "chart":
-            if rep.get("chart") not in ("bar", "line", "scatter"):
-                raise ArtifactError("chart must be bar, line or scatter")
-            x, y = columns.get(rep.get("x")), columns.get(rep.get("y"))
-            if not x or not y or y["type"] != "number" or (rep["chart"] != "bar" and x["type"] != "number"):
-                raise ArtifactError(f"chart {rep['id']}: invalid x/y encoding")
-            if "unit" in rep:
-                _text(rep["unit"], "chart unit", 30, False)
-
-
-def encode(artifact: Mapping[str, Any]) -> bytes:
-    """Compact UTF-8 JSON, the encoding the 1 MB budget is measured on."""
-    return json.dumps(artifact, ensure_ascii=False, separators=(",", ":"), allow_nan=False).encode("utf-8")
-
-
-def validate(artifact: Mapping[str, Any]) -> dict[str, Any]:
-    """Mirror of validateArtifact (structure, ids, budgets). Returns the artifact."""
-    if set(artifact) != {"format", "version", "id", "title", "provenance", "payload", "representations"}:
-        raise ArtifactError("artifact: unexpected or missing top-level fields")
-    if artifact["format"] != FORMAT or artifact["version"] != VERSION:
-        raise ArtifactError("unsupported artifact format")
-    _identifier(artifact["id"], "artifact id")
-    _text(artifact["title"], "artifact title", 160)
-    prov = artifact["provenance"]
-    if not isinstance(prov, Mapping) or set(prov) - {"kind", "source", "runId", "producer", "inputHash", "inputs", "dependsOn"}:
-        raise ArtifactError("artifact provenance: unexpected fields")
-    if prov.get("kind") not in ("synthetic", "provided", "computed"):
-        raise ArtifactError("unknown artifact provenance")
-    _text(prov.get("source"), "artifact source", 2000)
-    if "runId" in prov:
-        _identifier(prov["runId"], "artifact run")
-    input_ids = _validate_lineage(prov, artifact["id"])
-    payload = artifact["payload"]
-    if payload.get("kind") == "table":
-        if set(payload) != {"kind", "rowKey", "columns", "rows"}:
-            raise ArtifactError("table payload: unexpected fields")
-        _validate_table(payload["rowKey"], payload["columns"], payload["rows"])
-    elif payload.get("kind") == "text" and set(payload) == {"kind", "text"}:
-        _text(payload["text"], "text payload", 20000, False)
-    else:
-        raise ArtifactError("unknown payload kind")
-    _validate_representations(artifact["representations"], payload, input_ids)
-    size = len(encode(artifact))
-    if size > ARTIFACT_BYTES:
-        raise ArtifactError(f"artifact is {size} bytes; the browser budget is {ARTIFACT_BYTES}. Aggregate in Python or use parquet_sidecar for the full data")
-    return dict(artifact)
 
 
 def to_artifact(rows: Any = None, *, id: str, title: str, source: str,
@@ -487,7 +745,7 @@ def write_manifest(out_dir: str | os.PathLike[str]) -> Path:
     for path in sorted(folder.glob("*.json")):
         if path.name == MANIFEST_NAME:
             continue
-        artifact = validate(json.loads(path.read_text(encoding="utf-8")))
+        artifact = validate(load(path))
         if path.stem != artifact["id"]:
             raise ArtifactError(f"{path.name}: file name must equal the artifact id {artifact['id']}")
         raw = path.read_bytes()
@@ -502,3 +760,42 @@ def write_manifest(out_dir: str | os.PathLike[str]) -> Path:
     target.write_text(json.dumps({"format": "datapass.artifact-manifest", "version": 1, "artifacts": entries},
                                  ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
     return target
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Validate artifact files; print one JSON decision per file (or one for the whole --set). Exit 1 on any rejection."""
+    import sys
+    args = list(sys.argv[1:] if argv is None else argv)
+    as_set = "--set" in args
+    files = [a for a in args if a != "--set"]
+    if not files:
+        print("usage: python py/datapass_artifact.py [--set] FILE...", file=sys.stderr)
+        return 2
+    results = []
+    loaded = []
+    for name in files:
+        try:
+            loaded.append(load(name))
+            results.append({"file": name, **({"ok": True} if as_set else decide(loaded[-1]))})
+        except ArtifactError as error:
+            loaded.append(None)
+            results.append({"file": name, "ok": False, "gate": error.gate, "path": error.path, "message": str(error)})
+        except ValueError as error:
+            loaded.append(None)
+            results.append({"file": name, "ok": False, "gate": "envelope", "path": "", "message": f"not JSON: {error}"})
+    if as_set:
+        if all(r["ok"] for r in results):
+            try:
+                validate_set(loaded)
+                results = [{"set": files, "ok": True}]
+            except ArtifactError as error:
+                results = [{"set": files, "ok": False, "gate": error.gate, "path": error.path, "message": str(error)}]
+        else:
+            results = [{"set": files, "ok": False, **{k: v for k, v in next(r for r in results if not r["ok"]).items() if k != "file"}}]
+    for result in results:
+        print(json.dumps(result, ensure_ascii=False))
+    return 0 if all(r["ok"] for r in results) else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

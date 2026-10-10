@@ -1,0 +1,647 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "corpus-lineage",
+  "title": "TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT",
+  "provenance": {
+    "kind": "computed",
+    "source": "SYNTHETIC fixture for the datapass.artifact differential corpus. Values are invented; not real data.",
+    "runId": "run-0001",
+    "producer": {
+      "kind": "script",
+      "name": "synthetic/producer.py",
+      "evidence": [
+        {
+          "path": "synthetic/producer.py",
+          "start": 1,
+          "end": 1,
+          "label": "Line 1"
+        },
+        {
+          "path": "synthetic/producer.py",
+          "start": 2,
+          "end": 2,
+          "label": "Line 2"
+        },
+        {
+          "path": "synthetic/producer.py",
+          "start": 3,
+          "end": 3,
+          "label": "Line 3"
+        },
+        {
+          "path": "synthetic/producer.py",
+          "start": 4,
+          "end": 4,
+          "label": "Line 4"
+        },
+        {
+          "path": "synthetic/producer.py",
+          "start": 5,
+          "end": 5,
+          "label": "Line 5"
+        },
+        {
+          "path": "synthetic/producer.py",
+          "start": 6,
+          "end": 6,
+          "label": "Line 6"
+        },
+        {
+          "path": "synthetic/producer.py",
+          "start": 7,
+          "end": 7,
+          "label": "Line 7"
+        },
+        {
+          "path": "synthetic/producer.py",
+          "start": 8,
+          "end": 8,
+          "label": "Line 8"
+        }
+      ]
+    },
+    "inputHash": "a2ca83d1c08727f161a6fa8d107820a3d511bec8d6a1db86ecc2415a87ee3e17",
+    "inputs": [
+      {
+        "id": "in0",
+        "label": "Input 0",
+        "value": 0
+      },
+      {
+        "id": "in1",
+        "label": "Input 1",
+        "value": 1
+      },
+      {
+        "id": "in2",
+        "label": "Input 2",
+        "value": 2
+      },
+      {
+        "id": "in3",
+        "label": "Input 3",
+        "value": 3
+      },
+      {
+        "id": "in4",
+        "label": "Input 4",
+        "value": 4
+      },
+      {
+        "id": "in5",
+        "label": "Input 5",
+        "value": 5
+      },
+      {
+        "id": "in6",
+        "label": "Input 6",
+        "value": 6
+      },
+      {
+        "id": "in7",
+        "label": "Input 7",
+        "value": 7
+      },
+      {
+        "id": "in8",
+        "label": "Input 8",
+        "value": 8
+      },
+      {
+        "id": "in9",
+        "label": "Input 9",
+        "value": 9
+      },
+      {
+        "id": "in10",
+        "label": "Input 10",
+        "value": 10
+      },
+      {
+        "id": "in11",
+        "label": "Input 11",
+        "value": 11
+      },
+      {
+        "id": "in12",
+        "label": "Input 12",
+        "value": 12
+      },
+      {
+        "id": "in13",
+        "label": "Input 13",
+        "value": 13
+      },
+      {
+        "id": "in14",
+        "label": "Input 14",
+        "value": 14
+      },
+      {
+        "id": "in15",
+        "label": "Input 15",
+        "value": 15
+      },
+      {
+        "id": "in16",
+        "label": "Input 16",
+        "value": 16
+      },
+      {
+        "id": "in17",
+        "label": "Input 17",
+        "value": 17
+      },
+      {
+        "id": "in18",
+        "label": "Input 18",
+        "value": 18
+      },
+      {
+        "id": "in19",
+        "label": "Input 19",
+        "value": 19
+      },
+      {
+        "id": "in20",
+        "label": "Input 20",
+        "value": 20
+      },
+      {
+        "id": "in21",
+        "label": "Input 21",
+        "value": 21
+      },
+      {
+        "id": "in22",
+        "label": "Input 22",
+        "value": 22
+      },
+      {
+        "id": "in23",
+        "label": "Input 23",
+        "value": 23
+      }
+    ],
+    "dependsOn": [
+      "up0",
+      "up1",
+      "up2",
+      "up3",
+      "up4",
+      "up5",
+      "up6",
+      "up7",
+      "up8",
+      "up9",
+      "up10",
+      "up11"
+    ]
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "id",
+    "columns": [
+      {
+        "id": "id",
+        "label": "ID",
+        "type": "string"
+      },
+      {
+        "id": "value",
+        "label": "Value",
+        "type": "number",
+        "unit": "kW",
+        "nullable": true
+      },
+      {
+        "id": "time",
+        "label": "Time",
+        "type": "number",
+        "unit": "s"
+      },
+      {
+        "id": "flag",
+        "label": "Flag",
+        "type": "boolean"
+      },
+      {
+        "id": "c0",
+        "label": "Column 0",
+        "type": "number"
+      },
+      {
+        "id": "c1",
+        "label": "Column 1",
+        "type": "number"
+      },
+      {
+        "id": "c2",
+        "label": "Column 2",
+        "type": "number"
+      },
+      {
+        "id": "c3",
+        "label": "Column 3",
+        "type": "number"
+      },
+      {
+        "id": "c4",
+        "label": "Column 4",
+        "type": "number"
+      },
+      {
+        "id": "c5",
+        "label": "Column 5",
+        "type": "number"
+      },
+      {
+        "id": "c6",
+        "label": "Column 6",
+        "type": "number"
+      },
+      {
+        "id": "c7",
+        "label": "Column 7",
+        "type": "number"
+      },
+      {
+        "id": "c8",
+        "label": "Column 8",
+        "type": "number"
+      },
+      {
+        "id": "c9",
+        "label": "Column 9",
+        "type": "number"
+      },
+      {
+        "id": "c10",
+        "label": "Column 10",
+        "type": "number"
+      },
+      {
+        "id": "c11",
+        "label": "Column 11",
+        "type": "number"
+      },
+      {
+        "id": "c12",
+        "label": "Column 12",
+        "type": "number"
+      },
+      {
+        "id": "c13",
+        "label": "Column 13",
+        "type": "number"
+      },
+      {
+        "id": "c14",
+        "label": "Column 14",
+        "type": "number"
+      },
+      {
+        "id": "c15",
+        "label": "Column 15",
+        "type": "number"
+      },
+      {
+        "id": "c16",
+        "label": "Column 16",
+        "type": "number"
+      },
+      {
+        "id": "c17",
+        "label": "Column 17",
+        "type": "number"
+      },
+      {
+        "id": "c18",
+        "label": "Column 18",
+        "type": "number"
+      },
+      {
+        "id": "c19",
+        "label": "Column 19",
+        "type": "number"
+      },
+      {
+        "id": "c20",
+        "label": "Column 20",
+        "type": "number"
+      },
+      {
+        "id": "c21",
+        "label": "Column 21",
+        "type": "number"
+      },
+      {
+        "id": "c22",
+        "label": "Column 22",
+        "type": "number"
+      },
+      {
+        "id": "c23",
+        "label": "Column 23",
+        "type": "number"
+      },
+      {
+        "id": "c24",
+        "label": "Column 24",
+        "type": "number"
+      },
+      {
+        "id": "c25",
+        "label": "Column 25",
+        "type": "number"
+      },
+      {
+        "id": "c26",
+        "label": "Column 26",
+        "type": "number"
+      },
+      {
+        "id": "c27",
+        "label": "Column 27",
+        "type": "number"
+      },
+      {
+        "id": "c28",
+        "label": "Column 28",
+        "type": "number"
+      },
+      {
+        "id": "c29",
+        "label": "Column 29",
+        "type": "number"
+      },
+      {
+        "id": "c30",
+        "label": "Column 30",
+        "type": "number"
+      },
+      {
+        "id": "c31",
+        "label": "Column 31",
+        "type": "number"
+      },
+      {
+        "id": "c32",
+        "label": "Column 32",
+        "type": "number"
+      },
+      {
+        "id": "c33",
+        "label": "Column 33",
+        "type": "number"
+      },
+      {
+        "id": "c34",
+        "label": "Column 34",
+        "type": "number"
+      },
+      {
+        "id": "c35",
+        "label": "Column 35",
+        "type": "number"
+      }
+    ],
+    "rows": [
+      {
+        "id": "a",
+        "value": 2,
+        "time": 0,
+        "flag": true,
+        "c0": 0,
+        "c1": 1,
+        "c2": 2,
+        "c3": 3,
+        "c4": 4,
+        "c5": 5,
+        "c6": 6,
+        "c7": 7,
+        "c8": 8,
+        "c9": 9,
+        "c10": 10,
+        "c11": 11,
+        "c12": 12,
+        "c13": 13,
+        "c14": 14,
+        "c15": 15,
+        "c16": 16,
+        "c17": 17,
+        "c18": 18,
+        "c19": 19,
+        "c20": 20,
+        "c21": 21,
+        "c22": 22,
+        "c23": 23,
+        "c24": 24,
+        "c25": 25,
+        "c26": 26,
+        "c27": 27,
+        "c28": 28,
+        "c29": 29,
+        "c30": 30,
+        "c31": 31,
+        "c32": 32,
+        "c33": 33,
+        "c34": 34,
+        "c35": 35
+      },
+      {
+        "id": "b",
+        "value": 3.5,
+        "time": 1,
+        "flag": false,
+        "c0": 1,
+        "c1": 2,
+        "c2": 3,
+        "c3": 4,
+        "c4": 5,
+        "c5": 6,
+        "c6": 7,
+        "c7": 8,
+        "c8": 9,
+        "c9": 10,
+        "c10": 11,
+        "c11": 12,
+        "c12": 13,
+        "c13": 14,
+        "c14": 15,
+        "c15": 16,
+        "c16": 17,
+        "c17": 18,
+        "c18": 19,
+        "c19": 20,
+        "c20": 21,
+        "c21": 22,
+        "c22": 23,
+        "c23": 24,
+        "c24": 25,
+        "c25": 26,
+        "c26": 27,
+        "c27": 28,
+        "c28": 29,
+        "c29": 30,
+        "c30": 31,
+        "c31": 32,
+        "c32": 33,
+        "c33": 34,
+        "c34": 35,
+        "c35": 36
+      },
+      {
+        "id": "c",
+        "value": null,
+        "time": 2,
+        "flag": true,
+        "c0": 2,
+        "c1": 3,
+        "c2": 4,
+        "c3": 5,
+        "c4": 6,
+        "c5": 7,
+        "c6": 8,
+        "c7": 9,
+        "c8": 10,
+        "c9": 11,
+        "c10": 12,
+        "c11": 13,
+        "c12": 14,
+        "c13": 15,
+        "c14": 16,
+        "c15": 17,
+        "c16": 18,
+        "c17": 19,
+        "c18": 20,
+        "c19": 21,
+        "c20": 22,
+        "c21": 23,
+        "c22": 24,
+        "c23": 25,
+        "c24": 26,
+        "c25": 27,
+        "c26": 28,
+        "c27": 29,
+        "c28": 30,
+        "c29": 31,
+        "c30": 32,
+        "c31": 33,
+        "c32": 34,
+        "c33": 35,
+        "c34": 36,
+        "c35": 37
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "Rows",
+      "kind": "table",
+      "inputs": [
+        "in0",
+        "in1",
+        "in2",
+        "in3",
+        "in4",
+        "in5",
+        "in6",
+        "in7",
+        "in8",
+        "in9",
+        "in10",
+        "in11",
+        "in12",
+        "in13",
+        "in14",
+        "in15",
+        "in16",
+        "in17",
+        "in18",
+        "in19",
+        "in20",
+        "in21",
+        "in22",
+        "in23"
+      ]
+    },
+    {
+      "id": "m0",
+      "title": "Metric 0",
+      "kind": "metric",
+      "row": "a",
+      "column": "c0"
+    },
+    {
+      "id": "m1",
+      "title": "Metric 1",
+      "kind": "metric",
+      "row": "a",
+      "column": "c1"
+    },
+    {
+      "id": "m2",
+      "title": "Metric 2",
+      "kind": "metric",
+      "row": "a",
+      "column": "c2"
+    },
+    {
+      "id": "m3",
+      "title": "Metric 3",
+      "kind": "metric",
+      "row": "a",
+      "column": "c3"
+    },
+    {
+      "id": "m4",
+      "title": "Metric 4",
+      "kind": "metric",
+      "row": "a",
+      "column": "c4"
+    },
+    {
+      "id": "m5",
+      "title": "Metric 5",
+      "kind": "metric",
+      "row": "a",
+      "column": "c5"
+    },
+    {
+      "id": "m6",
+      "title": "Metric 6",
+      "kind": "metric",
+      "row": "a",
+      "column": "c6"
+    },
+    {
+      "id": "m7",
+      "title": "Metric 7",
+      "kind": "metric",
+      "row": "a",
+      "column": "c7"
+    },
+    {
+      "id": "m8",
+      "title": "Metric 8",
+      "kind": "metric",
+      "row": "a",
+      "column": "c8"
+    },
+    {
+      "id": "m9",
+      "title": "Metric 9",
+      "kind": "metric",
+      "row": "a",
+      "column": "c9"
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "kind": "json"
+    }
+  ]
+}

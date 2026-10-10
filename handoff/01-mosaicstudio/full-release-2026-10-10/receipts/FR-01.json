@@ -1,0 +1,61 @@
+{
+  "fr": "01-mosaicstudio/FR-01",
+  "title": "Repair all Artifact contract drift",
+  "source_sha": "01f4e158ce039baddc21f4c36883f9e8e615f007",
+  "baseline_sha": "6f45dd06e95ee66d693fc08fb4369c2a6379e84c",
+  "branch": "claude/artifact-contract-parity",
+  "pr": "https://github.com/julian-passebecq/datapass-mosaicstudio/pull/46",
+  "tests": [
+    {"cmd": "npm test (node --test tests/*.test.mjs), local Windows 11", "pass": 616, "fail": 0, "skip": 1},
+    {"cmd": "npm test, CI ubuntu-latest run 38013310533", "pass": 615, "fail": 0, "skip": 2},
+    {"cmd": "node --experimental-strip-types --test tests/artifact-corpus.test.mjs (Ajv 2020 + TypeScript + Python over 108 fixtures and 3 sets)", "pass": 6, "fail": 0, "skip": 0},
+    {"cmd": "npm run test:python (python -m unittest discover -s py), local", "pass": 20, "fail": 0, "skip": 0},
+    {"cmd": "npm run test:python, CI", "pass": 20, "fail": 0, "skip": 0},
+    {"cmd": "npm run test:python-runtime, CI", "pass": 24, "fail": 0, "skip": 0},
+    {"cmd": "npx tsc --noEmit (typecheck), local", "pass": 1, "fail": 0, "skip": 0},
+    {"cmd": "npm run build (bootstrap, assets, typecheck, vite build), local", "pass": 1, "fail": 0, "skip": 0},
+    {"cmd": "npm run contracts:check (schemas + concept examples + corpus generator), local and CI", "pass": 1, "fail": 0, "skip": 0},
+    {"cmd": "npx playwright test tests/browser/artifact-contract.spec.ts (local config, ports 21473/21797)", "pass": 1, "fail": 0, "skip": 0},
+    {"cmd": "npm run test:browser (full Playwright suite incl. artifact-contract.spec.ts), CI", "pass": 105, "fail": 0, "skip": 0},
+    {"cmd": "npm run test:client-builds, CI", "pass": 19, "fail": 0, "skip": 0}
+  ],
+  "journeys": [
+    "Real Python runtime run in the workbench; tampered artifact refused at the structure gate (/provenance/inputHash) and the semantic gate (/provenance/dependsOn/0); previous valid result kept as stale; untampered run accepted (screenshot inspected).",
+    "Actual Contoso ExportService (contoso-data-studio f2d0c75, 7 Gold marts) and actual FOIL exported artifacts (datapass-factory-foil adcb9e6, 4 files): accepted by the new schema, TypeScript and Python; rejected by the baseline schema."
+  ],
+  "os": "Windows 11 Pro 10.0.26300 (local); ubuntu-latest (CI)",
+  "browser": "Playwright-managed Chromium (Playwright 1.63.0) locally; CI browser recorded in qa/browser-version.txt of the CI artifact",
+  "ci_run": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38013310533",
+  "private_evidence": [
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-01/SHA256SUMS.txt", "sha256": "ec8a21f674150e001bf6ce01becf3e0cdd7595a6049d13086002df4245211f56"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-01/real-ts-schema.jsonl", "sha256": "d727fc56ee8c89f6ed0993490d563314f9b5f34bc0d7af84f583dc34da6705b3"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-01/real-python.jsonl", "sha256": "ed50abab7bc0c6137daa6b5e0c512bd11857496c04619bd43f85d04fb61dac98"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-01/real-baseline-schema.jsonl", "sha256": "93daf760c9069c9cb6b0235756a0a8adbdb061c8c6f04646a2535dc4be5ca08d"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-01/baseline-python-corpus.json", "sha256": "f17f5a9596e8961c594e8f0b2ab046d6316a4090c75a01e3cf70eaeb660320e7"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-01/baseline-schema-corpus.json", "sha256": "7dfa70523d1c2286f1f2bff9ff77f0c51cabe9ee5461e228b94cd0c3452c9a11"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-01/contoso-run.log", "sha256": "494412d09f4fe14e12931bed0389fe2200a357be6d1adbd382040e72d790b136"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-01/artifact-structure-refusal.png", "sha256": "bf62de4e3e0835658fab5e1030b5427903a9e835c8908d3a9790541712e2d61c"}
+  ],
+  "gates": {
+    "schema_ts_python_differential": "PASS",
+    "old_v1_files_valid": "PASS",
+    "structural_semantic_gates_separate": "PASS",
+    "source_bound_diagnostics": "PASS",
+    "actual_contoso_exports": "PASS",
+    "actual_foil_exports": "PASS",
+    "contracts_check": "PASS",
+    "typecheck": "PASS",
+    "unit_tests": "PASS",
+    "python_tests": "PASS",
+    "browser_journey": "PASS",
+    "ci": "PASS"
+  },
+  "omissions": [
+    "Byte budget: Python counts a lone surrogate as 3 UTF-8 bytes where JSON.stringify writes a 6-byte escape; no fixture sits on the 1 MiB boundary.",
+    "Integers beyond 2^53 parse exactly in Python but lose precision in JavaScript; not covered by the corpus.",
+    "FOIL exporter not re-run; its committed exporter outputs at adcb9e6 were validated.",
+    "Existing browser specs that hard-code port 4173 were run only in CI, not locally (local ports must be above 20000).",
+    "ci_run is the run for source_sha 01f4e15; the follow-up commit adding this receipt, the QA note and the spec origin fix has its own CI run on PR #46.",
+    "Python unittest discover errored once locally (1 of 20, under 100 % CPU from other sessions, test not captured); two later local runs and CI passed 20/20."
+  ]
+}

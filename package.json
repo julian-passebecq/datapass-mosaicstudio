@@ -17,7 +17,8 @@
     "test:browser": "playwright test",
     "test:fixtures": "python scripts/make-test-fixtures.py",
     "contracts": "node --experimental-strip-types scripts/export-contracts.mjs",
-    "contracts:check": "node --experimental-strip-types scripts/export-contracts.mjs --check && node scripts/concept-validate.mjs --strict spec/concept/v1/example.minimal.concept.json spec/concept/v1/example.forecast-app.concept.json",
+    "contracts:check": "node --experimental-strip-types scripts/export-contracts.mjs --check && node scripts/concept-validate.mjs --strict spec/concept/v1/example.minimal.concept.json spec/concept/v1/example.forecast-app.concept.json && node scripts/make-artifact-corpus.mjs --check",
+    "test:artifact-corpus": "node --experimental-strip-types --test tests/artifact-corpus.test.mjs && python -m unittest discover -s py -p \"test_artifact_corpus.py\"",
     "concept:validate": "node scripts/concept-validate.mjs",
     "build:concept-standalone": "node --experimental-strip-types scripts/build-concept-standalone.mjs",
     "client:capture": "node --experimental-strip-types scripts/capture-client.mjs",
@@ -81,6 +82,7 @@
     "typescript": "5.9.2",
     "vite": "7.1.5",
     "esbuild": "0.25.12",
-    "@types/three": "0.180.0"
+    "@types/three": "0.180.0",
+    "ajv": "8.17.1"
   }
 }
