@@ -133,9 +133,16 @@ test('embed options: chrome "embed" hides the gallery and inputs, fit shows the 
   await expect(frame.locator('#cv-panel')).toContainText(fixture.title);
   await frame.getByTestId('concept-panel-toggle').click();
   await expect(inner).toHaveAttribute('data-panel','collapsed');
+  // PanZoom renders the SVG from a string, so the element is replaced while a load settles (also on 6f45dd0); a box
+  // measured on a node detached between resolve and measure is null, which means "not rendered yet", not a failure.
   const inside=async(selector:string)=>{
-    const box=await frame.locator(selector).first().boundingBox(),stage=await frame.locator('.aa-stage').boundingBox(),host=await page.locator('#v').boundingBox();
-    expect(box&&stage&&host).toBeTruthy();
+    type Box={x:number;y:number;width:number;height:number};
+    const seen:{m:{box:Box;stage:Box;host:Box}|null}={m:null};
+    await expect.poll(async()=>{
+      const [box,stage,host]=await Promise.all([frame.locator(selector).first().boundingBox(),frame.locator('.aa-stage').boundingBox(),page.locator('#v').boundingBox()]);
+      seen.m=box&&stage&&host?{box,stage,host}:null;return seen.m!==null;
+    },{message:'measurable '+selector}).toBe(true);
+    const {box,stage,host}=seen.m!;
     expect(host!.width).toBe(1000);expect(host!.height).toBe(600);
     for(const b of [stage!,box!]){
       expect(b.x).toBeGreaterThanOrEqual(host!.x-.5);expect(b.y).toBeGreaterThanOrEqual(host!.y-.5);

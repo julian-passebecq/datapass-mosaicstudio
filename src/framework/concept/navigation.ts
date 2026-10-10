@@ -18,6 +18,17 @@ export function mixPose(a:Pose,b:Pose,k:number):Pose{
   return {target:[0,1,2].map(i=>lerp(a.target[i],b.target[i],k)) as Vec3,distance:lerp(a.distance,b.distance,k),azimuth:lerp(a.azimuth,b.azimuth,k),elevation:lerp(a.elevation,b.elevation,k),fov:lerp(a.fov,b.fov,k),shift:lerp(a.shift??0,b.shift??0,k)};
 }
 export const TRANSITION_MS=950;
+/** Ambient (settled) 3D frames may use at most 1/AMBIENT_SHARE of the main thread and run at most AMBIENT_MAX_FPS. */
+export const AMBIENT_SHARE=4,AMBIENT_MAX_FPS=30,AMBIENT_MAX_INTERVAL_MS=8000;
+/**
+ * Next ambient frame interval from the measured cost of the last frame (its script time, or the delay before the next
+ * animation frame when the browser was still busy presenting it): a slow (software) GPU gets fewer ambient frames
+ * instead of a saturated main thread. Camera transitions, resizes and selection changes are never throttled.
+ */
+export function ambientInterval(frameCostMs:number):number{
+  const cost=Number.isFinite(frameCostMs)&&frameCostMs>0?frameCostMs:0;
+  return Math.min(AMBIENT_MAX_INTERVAL_MS,Math.max(1000/AMBIENT_MAX_FPS,cost*AMBIENT_SHARE));
+}
 /** Eased transition sample; `elapsed` comes from whoever owns time (rAF live, or a virtual clock in tests). */
 export const transition=(from:Pose,to:Pose,elapsedMs:number,reduced=false)=>reduced?to:mixPose(from,to,easeInOutCubic(elapsedMs/TRANSITION_MS));
 

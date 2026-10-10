@@ -1,14 +1,19 @@
 import {useEffect,useRef,useState} from 'react';
 import type {ConceptSpec} from '../schema.ts';
 import {createStage,type Stage} from '../three/world.ts';
-import {navPose,transition,TRANSITION_MS,type Nav,type Pose} from '../navigation.ts';
+import {ambientInterval,navPose,transition,TRANSITION_MS,type Nav,type Pose} from '../navigation.ts';
 
 declare global{interface Window{__conceptStage?:{settled():boolean;pose():Pose;pick(x:number,y:number):string|null}}}
 
+/** One display refresh (or a little more) between two animation frames is normal, not a cost. */
+const FRAME_SLACK_MS=20;
 /**
  * Live 3D concept scene (load it lazily: it pulls Three.js). Camera transitions are pure samples of
  * (from, to, elapsed); the rAF loop only supplies elapsed time and the icon clock. With reduced motion the
  * camera jumps and icons hold still.
+ * Frames are drawn on demand: every frame during a camera transition, once after a resize or a selection/layer change,
+ * and otherwise only for the ambient icon/bead motion at a budgeted rate (none with reduced motion). Rendering every
+ * animation frame regardless of cost starved the page (and its host, when embedded) on software WebGL.
  */
 export default function ConceptStage({spec,nav,reduced,onSelect,onStep,whole=false}:{spec:ConceptSpec;nav:Nav;reduced:boolean;onSelect(id:string):void;onStep(dir:'up'|'down'|'left'|'right'):void;whole?:boolean}){
   const host=useRef<HTMLDivElement>(null),overlay=useRef<HTMLDivElement>(null),stage=useRef<Stage|null>(null);
@@ -18,16 +23,30 @@ export default function ConceptStage({spec,nav,reduced,onSelect,onStep,whole=fal
   const targetKey=JSON.stringify(target);
   const viewRef=useRef({selection:nav.selection,layer:nav.layer});
   viewRef.current={selection:nav.selection,layer:nav.selection!=='none'?spec.layers.findIndex(l=>l.id===spec.nodes.find(n=>n.id===nav.selection)?.layer):nav.layer};
+  /** Set when the next frame must be drawn even if nothing moves (new size, selection or layer). */
+  const dirty=useRef(true);
+  useEffect(()=>{dirty.current=true;},[viewRef.current.selection,viewRef.current.layer]);
   useEffect(()=>{
+    // A new stage starts unsettled: the previous stage's flag must not describe labels that have not been placed yet.
+    host.current!.dataset.settled='false';dirty.current=true;
     try{stage.current=createStage(host.current!,overlay.current!,spec,{fitAspect:whole?2:1.5});}catch(e){setError(e instanceof Error?e.message:String(e));return;}
     const pose=navPose(spec,nav);current.current=pose;motion.current={from:pose,to:pose,start:-1e9};
-    const observer=new ResizeObserver(()=>{stage.current?.resize();});observer.observe(host.current!);
-    let frame=0;
+    const observer=new ResizeObserver(()=>{stage.current?.resize();dirty.current=true;});observer.observe(host.current!);
+    let frame=0,last=-Infinity,interval=0,wasMoving=true,drewPrevious=false,previous=0;
     const tick=(now:number)=>{
-      const m=motion.current!,pose=transition(m.from,m.to,now-m.start,reduced);current.current=pose;
-      stage.current?.render(reduced?0:now/1000,pose,viewRef.current);
-      host.current!.dataset.settled=String(now-m.start>=TRANSITION_MS||reduced);
       frame=requestAnimationFrame(tick);
+      // A frame's real cost includes compositing and GPU work after the script returns: a late next animation frame shows it.
+      if(drewPrevious)interval=Math.max(interval,ambientInterval(now-previous-FRAME_SLACK_MS));
+      previous=now;drewPrevious=false;
+      const m=motion.current!,moving=!reduced&&now-m.start<TRANSITION_MS;
+      // The frame that ends a transition is drawn at the final pose before the stage reports itself settled.
+      const due=moving||wasMoving||dirty.current||(!reduced&&now-last>=interval);
+      if(!due)return;
+      const started=performance.now(),pose=transition(m.from,m.to,now-m.start,reduced);current.current=pose;
+      dirty.current=false;
+      stage.current?.render(reduced?0:now/1000,pose,viewRef.current);
+      last=now;interval=ambientInterval(performance.now()-started);wasMoving=moving;drewPrevious=true;
+      host.current!.dataset.settled=String(!moving);
     };
     frame=requestAnimationFrame(tick);
     window.__conceptStage={settled:()=>host.current?.dataset.settled==='true',pose:()=>current.current!,pick:(x,y)=>stage.current?.pick(x,y)??null};
@@ -37,7 +56,7 @@ export default function ConceptStage({spec,nav,reduced,onSelect,onStep,whole=fal
   },[spec,reduced,whole]);
   useEffect(()=>{
     if(!motion.current||!current.current)return;
-    motion.current={from:current.current,to:target,start:performance.now()};
+    motion.current={from:current.current,to:target,start:performance.now()};dirty.current=true;
     if(host.current)host.current.dataset.settled='false';
     // eslint-disable-next-line react-hooks/exhaustive-deps
   },[targetKey]);

@@ -3,3 +3,5 @@ docs/contracts/*.json text eol=lf
 spec/**/*.json text eol=lf
 # The standalone viewer's CSP holds a hash of its inline script: never convert its line endings.
 dist-standalone/*.html -text
+# datapass.preview/1 consumer fixtures are hashed byte for byte in their preview.json: never convert line endings.
+spec/preview/v1/fixtures/** -text

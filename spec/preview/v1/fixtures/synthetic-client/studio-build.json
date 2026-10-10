@@ -1,0 +1,10 @@
+{
+  "format": "datapass.client-build",
+  "version": 1,
+  "client": "synthetic-client",
+  "capabilities": [
+    "charts"
+  ],
+  "containsThree": false,
+  "note": "SYNTHETIC fixture shaped like build evidence; not runtime health or access control."
+}
