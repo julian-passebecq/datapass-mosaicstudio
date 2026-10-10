@@ -1,0 +1,80 @@
+{
+  "fr": "01-mosaicstudio/FR-07",
+  "title": "Ship the SDK and browser application (local release 0.10.0)",
+  "source_sha": "ec8d1f3c85a10d3ad943fc5deecb939c20439d0c (release commit: code, docs and every artifact); later branch commits touch only qa/ and handoff/",
+  "base_sha": "4a723bb7576ee6b6a3ef9c4133696bccc2320892",
+  "branch": "claude/full-release-packaging",
+  "tests": [
+    {"cmd": "npm test (node --test tests/*.test.mjs), local Windows 11 at 0e36ac6", "pass": 653, "fail": 0, "skip": 0},
+    {"cmd": "node --test tests/release-0.10.test.mjs, local", "pass": 6, "fail": 0, "skip": 0},
+    {"cmd": "node --test tests/sdk-release.test.mjs, local", "pass": 6, "fail": 0, "skip": 0},
+    {"cmd": "npm run build (bootstrap, assets, tsc --noEmit, vite build), local, worktree and fresh clone", "pass": 2, "fail": 0, "skip": 0},
+    {"cmd": "npm run contracts:check, local", "pass": 1, "fail": 0, "skip": 0},
+    {"cmd": "npm run test:python (venv), local", "pass": 20, "fail": 0, "skip": 0},
+    {"cmd": "npm run test:python-runtime (venv), local", "pass": 38, "fail": 0, "skip": 0},
+    {"cmd": "npm run sdk:pack + sdk:verify, worktree and fresh clone", "pass": 2, "fail": 0, "skip": 0},
+    {"cmd": "npm run build:client for the 8 public reference clients, worktree and fresh clone", "pass": 16, "fail": 0, "skip": 0},
+    {"cmd": "release-manifest --compare fresh clone vs worktree (11 outputs)", "pass": 11, "fail": 0, "skip": 0},
+    {"cmd": "playwright release-qualification.spec.ts in the fresh clone (own server :24175)", "pass": 2, "fail": 0, "skip": 0},
+    {"cmd": "playwright 5 specs (release-qualification, concept-standalone, consumer-interop, workbench-notebook, workbench-jupyter), Chromium, first run", "pass": 17, "fail": 2, "skip": 1},
+    {"cmd": "workbench-notebook.spec.ts Chromium rerun with DATAPASS_SERVICE_ORIGINS set for the rewritten port", "pass": 3, "fail": 0, "skip": 0},
+    {"cmd": "playwright same 5 specs, Microsoft Edge 154 (PW_CHANNEL=msedge)", "pass": 18, "fail": 1, "skip": 1},
+    {"cmd": "workbench-jupyter.spec.ts -g E2E-01, Edge rerun", "pass": 1, "fail": 0, "skip": 0},
+    {"cmd": "playwright same 5 specs, Chromium, final run", "pass": 18, "fail": 1, "skip": 1},
+    {"cmd": "consumer-interop.spec.ts -g 'embed fit', Chromium rerun", "pass": 2, "fail": 0, "skip": 1},
+    {"cmd": "scripts/release-upgrade-check.mjs 0.9.0 (6f45dd0) <-> 0.10.0, Chromium, 6 steps", "pass": 6, "fail": 0, "skip": 0},
+    {"cmd": "scripts/qualify-positron.mjs, Positron 2026.10.0 Viewer", "pass": 1, "fail": 0, "skip": 0}
+  ],
+  "journeys": [
+    "Clean install: fresh git clone of ec8d1f3 in %TEMP% -> npm ci -> npm run build -> sdk:pack/verify -> 8 client builds -> all 11 outputs byte-identical to the worktree build -> vite preview :24175 -> blank workbench, DuckDB SQL cell (42), autosave, reload; standalone viewer over file:// with no network request.",
+    "Upgrade/rollback: 0.9.0 author -> 0.10.0 restores and reruns -> 0.9.0 restores SQL-only workspace -> 0.10.0 adds a Jupyter cell -> 0.9.0 refuses it, keeps the bytes under datapass.workspace.rejected (same sha256), opens blank -> 0.10.0 re-imports it with both cells.",
+    "Positron: fresh profile, empty extensions folder -> Viewer: Open URL in Viewer -> workbench in the Viewer frame, DuckDB ready, SQL cell returns 42; no DataPass/Mosaic extension present.",
+    "E2E-01 (workbench-jupyter.spec.ts) on Windows: Chromium pass; Edge pass on rerun."
+  ],
+  "artifacts": {
+    "sdk_archive": {"name": "datapass-mosaicstudio-sdk-0.10.0.tar.gz", "bytes": 659948, "sha256": "b90dfab704f9d9af41729b44afc1c9faf303fff63db8de7352346cff959e45fd"},
+    "workbench_tree_sha256": "f840b4cadee594cce236764f7d6febad1e5065887750804b8145460886be0f99",
+    "concept_viewer_sha256": "9fd78f03cf8f7c1a2a59af68c16ad044590c401fa7a63eb81a5678205239a4e7",
+    "clients": "8 tree hashes in READY.json"
+  },
+  "os": "Windows 11 Pro 10.0.26300 (local); ubuntu-latest (CI)",
+  "browser": "Playwright Chromium 153.0.8010.12 (Playwright 1.63.0), Microsoft Edge 154.0.4258.62, Positron 2026.10.0 build 297 Viewer (Electron)",
+  "ci_run": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38029440996 (PR #50, check 'web' SUCCESS on 61990ed: npm test 651 pass / 0 fail / 2 skip; test:python 20 OK; test:python-runtime 38 OK; Playwright 119 passed)",
+  "private_evidence": [
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-07/SHA256SUMS.txt", "sha256": "fd9754ea94cfa57758504cb45242d6542c221de6e834f7649acabde3fa92399b", "covers": "295 files: outputs (SDK folder, workbench dist, 8 client builds, viewer), manifests, logs, screenshots, upgrade and Positron records"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-07/manifest-worktree/release-manifest.json", "sha256": "f8b25c83f5908425eaeb2e5f1dc492cc4ead289b6f5d3ae314c3fd39508a07a9"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-07/manifest-clean/release-manifest.json", "sha256": "212fbbd216e80ff9511f5e5e3328e09943fe7d272c145033bcc52abe6d808a40"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-07/upgrade-chromium/upgrade-rollback.json", "sha256": "c7783adefc1bf051caab67ca222670e4d96b035cd6f6398ca9a1bfe62a79a726"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-07/positron/positron-viewer.json", "sha256": "07a1d4c7c7da38c6083d0224fe82adb1704f75442090c49a96f03931f414c689"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-07/logs/qual-msedge.log", "sha256": "65fdd0ce4a30f1db58cd13388d883efd1cb943d027e98b80e3dcb7e03af00704"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-07/logs/qual-chromium-final.log", "sha256": "a6557acd123165b9695b1d0871c971fb74f6e1a244b2bbe5db2a191776b30be0"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-07/logs/clean-run.log", "sha256": "c13dc99a0dd87b4da64ccf5ecdcb80d0ac253e83ed252bdb6ac0a83927ff97a7"}
+  ],
+  "gates": {
+    "version_0_10_0": "PASS",
+    "sdk_archive_reproducible": "PASS",
+    "browser_build": "PASS",
+    "standalone_viewer": "PASS",
+    "reference_client_builds": "PASS",
+    "hashed_build_manifest": "PASS",
+    "clean_install_run": "PASS",
+    "upgrade_from_0_9_0": "PASS",
+    "rollback_to_0_9_0": "PASS",
+    "license_intent_recovered": "PASS",
+    "dependency_license_inventory": "PASS",
+    "public_sdk_publication": "BLOCKED",
+    "windows_chromium": "PASS",
+    "windows_edge": "PASS",
+    "positron_viewer_no_vsix": "PASS",
+    "release_doc_and_handoff": "PASS",
+    "ci": "PASS"
+  },
+  "omissions": [
+    "public_sdk_publication BLOCKED: no license exists; the owner must decide one (NOT_AUTHORIZED).",
+    "Builds compared on one Windows machine only; no cross-OS byte comparison.",
+    "Local browser specs ran from port-rewritten copies (4173 -> 24173); CI runs the originals.",
+    "Intermittent: Edge E2E-01 interrupt step and Chromium 3D embed-fit probe each failed once and passed on rerun; causes not established.",
+    "UX03 full journey not re-executed (PARTIAL from 0.9). E2E-05/07/08 not executed; E2E-06 blocked on T3.",
+    "final_main_sha and post-merge CI belong to the verify step."
+  ]
+}

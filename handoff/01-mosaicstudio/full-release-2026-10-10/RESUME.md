@@ -1,0 +1,32 @@
+# Resume: 01-mosaicstudio full release (MosaicStudio 0.10.0, 2026-10-10)
+
+- **State:** FR-01..FR-06 merged on main (PRs #46-#49, last merge `4a723bb`). FR-07 (release packaging) is the open PR from `claude/full-release-packaging`; the verify step merges it on green CI. Local release 0.10.0 is ARTIFACT_READY; nothing tagged, published or deployed.
+- **Exact SHAs:**
+  - baseline `6f45dd0` (0.9.0);
+  - release commit `ec8d1f3c85a10d3ad943fc5deecb939c20439d0c` (all code and docs; every artifact hash in `READY.json` is from it);
+  - later branch commits: `qa/` and `handoff/` only;
+  - final main SHA: set by the verify step.
+- **Gates:** see `OUTCOME.json`. All F01-F14, UX01, UX02, UX04 and FR-01..FR-07 PASS within this repository's scope. UX03 is PARTIAL (carried from 0.9). E2E-01 PASS. E2E-05/07/08 were not executed and E2E-06 is BLOCKED (peers).
+- **Artifacts:**
+  - The SDK archive (sha256 `b90dfab7…`), the workbench, the standalone viewer and 8 reference client builds are hashed in `READY.json` and `qa/FR-07-release-packaging.md`.
+  - The binaries are in the owner's local evidence folder only.
+  - Rebuild with `docs/RELEASE_0.10.md` → *Install*; check with `node scripts/release-manifest.mjs --out <dir> --compare <manifest>`.
+- **How to verify again:**
+  - `npm ci && npm run build && npm run sdk:pack && npm run sdk:verify -- dist-sdk`;
+  - `node --test tests/release-0.10.test.mjs`;
+  - `node scripts/release-upgrade-check.mjs --old <0.9.0 checkout> --new . --port 24180`;
+  - `node scripts/qualify-positron.mjs --url http://127.0.0.1:<port>/` (with `npm run preview -- --port <port>` running).
+- **Pending dependencies (peer gates, not this repository's work):**
+  - T3 reading `preview.json` (08-t3);
+  - the Contoso dbt pipeline plus the React field trace for E2E-05 (07, 02);
+  - the ConceptMotion demo for E2E-07 (09);
+  - all lane packages for E2E-08.
+- **Owner gates:**
+  - the project license (no license exists, so public SDK publication is NOT_AUTHORIZED);
+  - whether the local Fabric concepts map becomes a public client;
+  - any tag, release, site or Fabric action.
+- **Known intermittent local failures:**
+  - Jupyter interrupt step: Edge, once;
+  - 3D embed-fit probe: Chromium, once.
+  - Both passed on rerun under a shared, saturated CPU. The causes were not established, and both were also seen once by FR-02 and FR-04.
+- **Processes:** none left running. Temporary checkouts are under `%TEMP%\mosaic-fr07` (0.9.0 baseline, fresh clone, Python venv) and can be deleted by the owner.

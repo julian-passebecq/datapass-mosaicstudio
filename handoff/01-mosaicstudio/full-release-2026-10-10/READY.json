@@ -1,0 +1,93 @@
+{
+  "template": false,
+  "state": "ARTIFACT_READY",
+  "state_note": "Local release 0.10.0: artifact bytes exist with hashes, a byte-identical rebuild from a fresh clone, executed install/upgrade/rollback and Windows browser + Positron qualification. Not MERGED until the verify step merges the PR; not PUBLISHED (no license, not authorized).",
+  "producer_repository": "https://github.com/julian-passebecq/datapass-mosaicstudio",
+  "registry_id": "mosaicstudio",
+  "package_version": "0.10.0",
+  "native_session_id": null,
+  "observed_model": "claude-opus-5-5",
+  "source_sha": "ec8d1f3c85a10d3ad943fc5deecb939c20439d0c",
+  "source_sha_note": "Release commit: all code and docs/ content of every artifact below. Later branch commits touch only qa/ and handoff/.",
+  "baseline_sha": "6f45dd06e95ee66d693fc08fb4369c2a6379e84c",
+  "contract_versions": [
+    {
+      "id": "datapass.artifact/1",
+      "version": "1",
+      "change_since_0.9.0": "Optional lineage fields (provenance.producer, inputs, inputHash, dependsOn, representation.inputs) with shared bounds; every 0.9.0-valid file stays valid (FR-01)",
+      "sha256_of": "git blob content at source_sha",
+      "files": [
+        {"path": "docs/contracts/artifact.schema.json", "role": "JSON Schema (structure gate)", "sha256": "74aee5fe7d5b4fc7bab2e51620e9a5948aefa793a59b14c08ae221bf5fb4cb05"},
+        {"path": "src/framework/foundation/artifact.ts", "role": "TypeScript validator", "sha256": "cfcbb43700034148d71a21079063e41b313f1819b04fb550bf888035f1b8856f"},
+        {"path": "src/framework/foundation/artifact-limits.ts", "role": "shared bounds", "sha256": "82c2a4ecc2621d6efa7d384c079d6c22e20afbe9c676f54bd9024b43457f5b8e"},
+        {"path": "py/datapass_artifact.py", "role": "Python mirror", "sha256": "0d97f515e7ab88ea327cf494e4211d7293afaf740121f62a27e89fc4a0990ef9"}
+      ]
+    },
+    {
+      "id": "datapass.concept-spec/1",
+      "version": "1.0.0",
+      "change_since_0.9.0": "none (schema bytes identical to the 0.9 READY)",
+      "sha256_of": "git blob content at source_sha",
+      "files": [
+        {"path": "spec/concept/v1/concept-spec.schema.json", "role": "JSON Schema", "sha256": "951197aab0c623e4603605c297e2a261b7551fdb6a088fcc1a2070b3d975782b"},
+        {"path": "src/framework/concept/schema.ts", "role": "validator (CONCEPT_SPEC_VERSION 1.0.0)", "sha256": "53e88952c15e4d8a0902cf32f21cdbc63b19a6499860e7beea49ef99195d3846"}
+      ]
+    },
+    {
+      "id": "datapass.preview/1",
+      "version": "1",
+      "change_since_0.9.0": "none to the schema; consumer fixture added in spec/preview/v1/fixtures/ (FR-04)",
+      "sha256_of": "git blob content at source_sha",
+      "files": [
+        {"path": "spec/preview/v1/preview.schema.json", "role": "JSON Schema", "sha256": "ede4a49842b47c76bada4d94c74bfb48adf0d2c887bfc43d000314f03bf194b2"},
+        {"path": "scripts/preview-validate.mjs", "role": "validator (--check-files)", "sha256": "ca3d41dff82c2f5ad884cf011570b92cd0a41782ad8ce0153137f0bae5d1a1a3"}
+      ]
+    },
+    {
+      "id": "datapass.workspace/1",
+      "version": "1",
+      "change_since_0.9.0": "format unchanged; 0.10.0 may save jupyter and inert cells, which 0.9.0 refuses and keeps aside (executed, see qa/FR-07-release-packaging.md)",
+      "sha256_of": "git blob content at source_sha",
+      "files": [
+        {"path": "src/workspace/persist.ts", "role": "validator", "sha256": "841e21399359700c313f6bd5bc8cb4d496cbcf20a6aabce4a6824f1eee9687cb"}
+      ]
+    }
+  ],
+  "artifacts": [
+    {"id": "sdk-archive", "name": "datapass-mosaicstudio-sdk-0.10.0.tar.gz", "bytes": 659948, "sha256": "b90dfab704f9d9af41729b44afc1c9faf303fff63db8de7352346cff959e45fd", "files_inside": 335, "produced_by": "npm run sdk:pack (verified by npm run sdk:verify)"},
+    {"id": "sdk-release-folder", "path": "dist-sdk/", "files": 3, "bytes": 1691271, "tree_sha256": "d484d1d8c036f897c9388d8f08ab2b60d5fc39911695545e6ee42bea3bec50ce"},
+    {"id": "workbench", "path": "dist/", "files": 112, "bytes": 90672787, "tree_sha256": "f840b4cadee594cce236764f7d6febad1e5065887750804b8145460886be0f99", "produced_by": "npm run build"},
+    {"id": "concept-viewer", "path": "dist-standalone/concept-viewer.html", "bytes": 974316, "sha256": "9fd78f03cf8f7c1a2a59af68c16ad044590c401fa7a63eb81a5678205239a4e7", "produced_by": "npm run build:concept-standalone (committed)"},
+    {"id": "client:architecture-reference", "files": 18, "bytes": 778699, "tree_sha256": "0491473fa99c7fb06d17ab65e950544e8305174e72cfd0d303992c28b78f958e"},
+    {"id": "client:energy-replay-reference", "files": 20, "bytes": 1154507, "tree_sha256": "55ba762c6c34115b97d0dec270d67768486ffffc4d9a5b1794033e713ed7c7be"},
+    {"id": "client:experience-reference", "files": 28, "bytes": 1543646, "tree_sha256": "f447ac427bb3651ce11242794cee6e9b397a3cd6e5695930829e8d68f762eed7"},
+    {"id": "client:foundation-reference", "files": 18, "bytes": 678537, "tree_sha256": "8df40efa27b37ec78bd0ed05606091bcbfca2b5c6b78609bf1d8dd73225653bf"},
+    {"id": "client:model-reference", "files": 17, "bytes": 1219675, "tree_sha256": "2a687a83dddf37ec8522b058cf69651e3134c1fcef7ad7e43d317cb7e99b5efe"},
+    {"id": "client:motion-reference", "files": 14, "bytes": 543368, "tree_sha256": "68aaf1b97b0b68fed3e092f63f72e21bb0fd25ac95163b745cb8d600d6a44ced"},
+    {"id": "client:operations-reference", "files": 13, "bytes": 612708, "tree_sha256": "99e443f2338fa73d06c4d288ccd86da9465e395da5663f05c0db04dfa989c54a"},
+    {"id": "client:wind-reference", "files": 16, "bytes": 1143307, "tree_sha256": "a60913a0bc68ac6ed4e9d2c3153b2de9697efb9d63d01aad145971def90289d5"}
+  ],
+  "artifact_hash_rule": "tree_sha256 = sha256 of the sorted lines '<file sha256>  <relative path>' of every file in the output (scripts/release-manifest.mjs).",
+  "artifact_location": "Owner's local evidence folder (FR-07/outputs); binaries are not committed or uploaded.",
+  "reproducibility": "A fresh clone of the release commit rebuilt all 11 outputs byte-identical on the same Windows 11 machine (npm ci, build, sdk:pack, 8 client builds).",
+  "qualified_environments": [
+    {"os": "Windows 11 Pro 10.0.26300", "runtime": "Node 26.9.0, npm 11.19.1, Python 3.14.7 venv", "browser": "Playwright Chromium 153.0.8010.12 (Playwright 1.63.0)", "result": "PASS (two intermittent failures, each passed on rerun; see qa)"},
+    {"os": "Windows 11 Pro 10.0.26300", "browser": "Microsoft Edge 154.0.4258.62 (PW_CHANNEL=msedge)", "result": "PASS (E2E-01 interrupt step failed once, passed on rerun)"},
+    {"os": "Windows 11 Pro 10.0.26300", "host": "Positron 2026.10.0 build 297 Viewer, fresh profile, no DataPass/Mosaic VSIX", "result": "PASS"},
+    {"os": "ubuntu-latest (GitHub Actions)", "browser": "CI-selected Chromium", "result": "see receipts/FR-07.json ci_run"}
+  ],
+  "evidence": [
+    "qa/FR-07-release-packaging.md",
+    "handoff/01-mosaicstudio/full-release-2026-10-10/receipts/FR-07.json",
+    "docs/RELEASE_0.10.md",
+    "docs/licenses/THIRD_PARTY_INVENTORY.md"
+  ],
+  "omissions": [
+    "No cross-OS byte comparison of the builds.",
+    "T3 consumption of preview.json is UNKNOWN (T3 3dfcecd does not read it).",
+    "Public distribution NOT_AUTHORIZED: no license exists."
+  ],
+  "visibility": "PRIVATE_OR_LOCAL_UNTIL_APPROVED",
+  "public_distribution": "NOT_AUTHORIZED",
+  "rules": "Do not assert READY until artifact bytes, hashes and applicable qualification exist."
+}

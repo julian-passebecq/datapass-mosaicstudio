@@ -32,7 +32,7 @@ export const SDK_EXCLUDE=Object.freeze(['docs/media']);
 /** Paths that must never appear in a release (dependencies, upstream checkouts, client sources/data, builds, secrets). */
 export const SDK_FORBIDDEN=Object.freeze([/(^|\/)node_modules\//,/^\.upstream\//,/^\.tmp-upstream\//,/^\.generated\//,/^clients\//,/^dist(-[a-z]+)?\//,/^qa\//,/^py\//,
   /(^|\/)\.env(\.(?!example$)[^/]*)?$/,/\.(pem|key|p12|pfx|keystore)$/i,/(^|\/)id_(rsa|ed25519|ecdsa)/,/(^|\/)\.npmrc$/,/(^|\/)credentials?(\.[a-z]+)?$/i]);
-export const SDK_LICENSE=Object.freeze({spdx:null,statement:'No open-source license file is present; private repository, all rights reserved by the owner. Third-party notices: THIRD_PARTY_NOTICES.md.'});
+export const SDK_LICENSE=Object.freeze({spdx:null,statement:'No license file or package license field exists, so no license is granted: the source is publicly visible, but all rights reserved by the owner. Public SDK publication is NOT_AUTHORIZED pending the owner\'s license decision. Third-party notices: THIRD_PARTY_NOTICES.md; inventory: docs/licenses/THIRD_PARTY_INVENTORY.md.'});
 export const SDK_STANDALONE=Object.freeze([{source:'dist-standalone/concept-viewer.html',path:'concept-viewer.html'}]);
 export const SDK_CONTRACTS=Object.freeze([
   {id:'datapass.concept-spec/1',path:'spec/concept/v1/concept-spec.schema.json'},

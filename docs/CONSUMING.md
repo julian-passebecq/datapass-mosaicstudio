@@ -1,8 +1,8 @@
 # Consuming DataPass MosaicStudio
 
-This is a **private, source-consumed** framework. Nothing is published to npm, no tag is created and nothing is deployed by the commands below. There are three supported ways to use it; pick one per consumer and pin it exactly.
+This is a **source-consumed** framework (public GitHub repository, no license granted). Nothing is published to npm, no tag is created and nothing is deployed by the commands below. There are three supported ways to use it; pick one per consumer and pin it exactly.
 
-**License.** No open-source license file is present: this is a private repository, all rights reserved by the owner. Third-party components keep their own licenses, listed in `THIRD_PARTY_NOTICES.md`. Do not redistribute an archive or a built site outside the owner's approval.
+**License.** No license file or package license field exists, in the tree or in its Git history. The repository is publicly visible on GitHub, but visibility is not a license: all rights are reserved by the owner and public SDK publication is **NOT_AUTHORIZED** until the owner decides a license. Third-party components keep their own licenses: prose notices in `THIRD_PARTY_NOTICES.md`, the generated per-package inventory in [`licenses/THIRD_PARTY_INVENTORY.md`](licenses/THIRD_PARTY_INVENTORY.md). Do not redistribute an archive or a built site outside the owner's approval.
 
 ## 1. Pinned Git source at an exact SHA (current method, unchanged)
 
@@ -81,6 +81,12 @@ The archive has no `.git` folder: builds then record `sourceCommit: null` in the
 6. `npm run build:client -- <your-client>`, then `node scripts/preview-validate.mjs dist-clients/<your-client>/preview.json --check-files`, then the client's real browser checks.
 7. Record the new SHA (and archive sha256) only when all of the above pass.
 
+### 0.9.0 → 0.10.0
+
+No format version changed. `datapass.artifact/1` gained optional lineage fields (`provenance.producer`, `inputs`, `inputHash`, `dependsOn`, `representation.inputs`); every file valid in 0.9.0 stays valid. The saved browser workspace stays `datapass.workspace` v1 and is restored unchanged by 0.10.0. The upgrade and both rollback cases below were executed with `scripts/release-upgrade-check.mjs` (record in `qa/FR-07-release-packaging.md`).
+
 ## Rollback
+
+From 0.10.0 to 0.9.0: a workspace that holds only SQL and note cells is restored by 0.9.0. A workspace that holds a 0.10.0-only cell kind (`jupyter` or `inert`) is refused by 0.9.0 with a notice; its bytes are kept, unchanged, under the browser storage key `datapass.workspace.rejected` and a blank workspace opens. Nothing is deleted. Before rolling back, use **Export workspace** (or copy that key) and, after returning to 0.10.0, bring it back with **Import workspace**. The optional 0.10.0 result store (`py/service/app.py --results-dir <folder>`) is a folder outside Git that 0.9.0 does not read; it is left as it is.
 
 Go back to the previous pinned SHA (`git checkout --detach <previous-sha>`) or the previous verified release folder, run `npm ci` and `npm run bootstrap` again, and rebuild the client. Client folders are owned by the consumer and are never overwritten by an upgrade, so a rollback only changes the framework. Saved user states follow the format rules in the migration policy: a state saved by a newer client version may be refused by the older one.

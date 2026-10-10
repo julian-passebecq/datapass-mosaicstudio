@@ -1,6 +1,8 @@
 # DataPass MosaicStudio
 
-**v0.9 alpha source SDK for AI-built technical websites, with a browser authoring workbench.** Client content, approved data, domain calculations and page composition live under `clients/<id>/`; reusable state, contracts and rendering live under `src/framework/`. One repository, separate entry points: a lightweight presentation surface (selected client builds, the standalone concept viewer) and a traditional browser workbench at the root. T3 is an optional consumer, never a prerequisite.
+**v0.10 alpha source SDK for AI-built technical websites, with a browser authoring workbench.** Client content, approved data, domain calculations and page composition live under `clients/<id>/`; reusable state, contracts and rendering live under `src/framework/`. One repository, separate entry points: a lightweight presentation surface (selected client builds, the standalone concept viewer) and a traditional browser workbench at the root. T3 is an optional consumer, never a prerequisite.
+
+**0.10.0** (local release, no tag or publication) completes the full-release packet of 2026-10-10: Artifact contract parity (Schema/TypeScript/Python), an opt-in Jupyter kernel adapter, `.ipynb` exchange and a durable result store, real React/Contoso consumer interop, the finished coding/architecture explanations, the recovery record and a hashed, install-tested package set. Install, upgrade from 0.9.0, rollback, license status and acceptance mapping: [`docs/RELEASE_0.10.md`](docs/RELEASE_0.10.md). No license is granted (see [`docs/licenses/THIRD_PARTY_INVENTORY.md`](docs/licenses/THIRD_PARTY_INVENTORY.md)); public SDK publication is not authorized.
 
 0.9 extends 0.8 (rc3 plus the night packages, PR #34; RC history in `docs/RELEASE_0.8_RC.md`). Release notes, acceptance mapping and evidence: [`docs/RELEASE_0.9.md`](docs/RELEASE_0.9.md). No deployment, package publication or donor-repository modification is implied.
 
