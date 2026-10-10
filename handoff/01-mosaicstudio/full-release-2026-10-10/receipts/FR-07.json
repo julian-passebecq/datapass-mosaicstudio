@@ -39,7 +39,7 @@
   },
   "os": "Windows 11 Pro 10.0.26300 (local); ubuntu-latest (CI)",
   "browser": "Playwright Chromium 153.0.8010.12 (Playwright 1.63.0), Microsoft Edge 154.0.4258.62, Positron 2026.10.0 build 297 Viewer (Electron)",
-  "ci_run": "PR checks of claude/full-release-packaging (recorded after the run finishes)",
+  "ci_run": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38029440996 (PR #50, check 'web' SUCCESS on 61990ed: npm test 651 pass / 0 fail / 2 skip; test:python 20 OK; test:python-runtime 38 OK; Playwright 119 passed)",
   "private_evidence": [
     {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-07/SHA256SUMS.txt", "sha256": "fd9754ea94cfa57758504cb45242d6542c221de6e834f7649acabde3fa92399b", "covers": "295 files: outputs (SDK folder, workbench dist, 8 client builds, viewer), manifests, logs, screenshots, upgrade and Positron records"},
     {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-07/manifest-worktree/release-manifest.json", "sha256": "f8b25c83f5908425eaeb2e5f1dc492cc4ead289b6f5d3ae314c3fd39508a07a9"},
@@ -67,7 +67,7 @@
     "windows_edge": "PASS",
     "positron_viewer_no_vsix": "PASS",
     "release_doc_and_handoff": "PASS",
-    "ci": "UNKNOWN"
+    "ci": "PASS"
   },
   "omissions": [
     "public_sdk_publication BLOCKED: no license exists; the owner must decide one (NOT_AUTHORIZED).",

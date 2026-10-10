@@ -59,14 +59,14 @@
     {"id": "E2E-08", "status": "NOT_EXECUTED", "needs": "packages of all lanes; this lane's clean install, upgrade and rollback were executed"}
   ],
   "ci": {
-    "run_id": null,
-    "attempt": null,
+    "run_id": 38029440996,
+    "attempt": 1,
     "runner": "GitHub-hosted ubuntu-latest",
     "os": "ubuntu-latest",
-    "head_sha": null,
-    "status": "UNKNOWN",
+    "head_sha": "61990ed6e8cf04d20b1cbfaf916ae30805b3fc91",
+    "status": "SUCCESS",
     "artifacts": [],
-    "note": "Filled from the PR checks in receipts/FR-07.json once CI has finished."
+    "note": "PR #50 check 'web' on 61990ed (all branch content before this CI record): npm test 651 pass / 0 fail / 2 skip; test:python 20 OK; test:python-runtime 38 OK; Playwright 119 passed. The commit that records this run is re-checked by the PR checks."
   },
   "adopted_source_vector": [
     {"repository": "datapass-mosaicstudio", "sha": "ec8d1f3c85a10d3ad943fc5deecb939c20439d0c", "role": "producer (this release)"},
