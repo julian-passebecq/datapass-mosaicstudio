@@ -1,0 +1,54 @@
+{
+  "$schema": "https://raw.githubusercontent.com/julian-passebecq/datapass-mosaicstudio/main/spec/concept/v1/concept-spec.schema.json",
+  "format": "datapass.concept-spec",
+  "version": 1,
+  "specVersion": "1.0.0",
+  "id": "orchard-planner-synthetic",
+  "title": "Orchard harvest planner (SYNTHETIC, Contoso-exporter shape)",
+  "subtitle": "Independently authored test fixture that mirrors the shape of a Contoso Data Studio app export: fractional layer heights, a side access domain and repository source paths on every node.",
+  "provenance": "synthetic",
+  "note": "SYNTHETIC. Written by hand for MosaicStudio interoperability tests (FR-04). Invented app, invented paths; not real business data and not a Contoso export.",
+  "layers": [
+    {"id": "lake", "label": "Shared lake", "height": 0, "role": "storage", "description": "One storage layer for raw and curated tables."},
+    {"id": "stores", "label": "App stores", "height": 1, "role": "data", "description": "The operational store the app writes to."},
+    {"id": "sync", "label": "Sync and transform", "height": 1.9, "role": "compute", "description": "Mirror worker and transformation models."},
+    {"id": "service", "label": "Service", "height": 2.9, "role": "serving", "description": "Data API and semantic model."},
+    {"id": "app", "label": "App", "height": 4.1, "role": "experience", "description": "Planner screens and the yield report."},
+    {"id": "people", "label": "People", "height": 5.1, "role": "users", "description": "Planners and growers."}
+  ],
+  "domains": [
+    {"id": "operational", "label": "Operational", "description": "Edits made in the planner."},
+    {"id": "analytics", "label": "Analytics", "description": "Lake, models and the report."},
+    {"id": "access", "label": "Access", "description": "Sign-in and role checks.", "placement": "side"}
+  ],
+  "nodes": [
+    {"id": "shared-lake", "kind": "lake", "layer": "lake", "domain": "analytics", "label": "Lake (raw + curated)", "description": "Single storage layer; one snapshot per sync batch (synthetic).", "sources": [{"path": "api/services/lake.py"}]},
+    {"id": "planner-store", "kind": "sql-db", "layer": "stores", "domain": "operational", "label": "Planner store", "description": "Local SQL store for harvest plans.", "sources": [{"path": "api/services/store.py"}, {"path": "planner/entities/plan.json", "note": "entity definition"}]},
+    {"id": "raw-tables", "kind": "lakehouse", "layer": "stores", "domain": "analytics", "label": "Raw tables", "description": "Mirrored copies of the planner tables.", "sources": [{"path": "api/services/mirror.py"}]},
+    {"id": "mirror", "kind": "stream", "layer": "sync", "domain": "operational", "label": "Mirror worker", "description": "Copies committed plan changes into the lake.", "sources": [{"path": "api/services/mirror.py"}]},
+    {"id": "curate", "kind": "pipeline", "layer": "sync", "domain": "analytics", "label": "Curated model", "description": "Transformation that builds monthly yield rows.", "sources": [{"path": "models/curated/monthly_yield.sql"}, {"path": "models/sources.yml"}]},
+    {"id": "yield-model", "kind": "semantic-model", "layer": "service", "domain": "analytics", "label": "Yield model", "description": "Measures over the curated rows.", "sources": [{"path": "planner/generated/model.json"}]},
+    {"id": "data-api", "kind": "api", "layer": "service", "domain": "operational", "label": "Data API", "description": "REST endpoints over the planner entities.", "sources": [{"path": "api/routers/planner.py"}]},
+    {"id": "role-policy", "kind": "identity", "layer": "service", "domain": "access", "label": "Role policy", "description": "Which role may edit which plan.", "sources": [{"path": "api/services/policy.py"}]},
+    {"id": "planner-app", "kind": "web-app", "layer": "app", "domain": "operational", "label": "Planner app", "description": "Screens to edit harvest plans.", "sources": [{"path": "web/src/pages/PlannerPage.tsx"}]},
+    {"id": "yield-report", "kind": "report", "layer": "app", "domain": "analytics", "label": "Yield report", "description": "Monthly yield chart.", "sources": [{"path": "web/src/planner/YieldChart.tsx"}]},
+    {"id": "planner", "kind": "user", "layer": "people", "domain": "operational", "label": "Planner", "description": "Edits plans (synthetic persona)."}
+  ],
+  "flows": [
+    {"id": "f-planner-app", "from": "planner", "to": "planner-app", "kind": "control", "label": "Edit plan"},
+    {"id": "f-app-api", "from": "planner-app", "to": "data-api", "kind": "data", "label": "REST", "direction": "both"},
+    {"id": "f-api-policy", "from": "data-api", "to": "role-policy", "kind": "auth", "label": "Check role"},
+    {"id": "f-api-store", "from": "data-api", "to": "planner-store", "kind": "data", "label": "Write plan"},
+    {"id": "f-store-mirror", "from": "planner-store", "to": "mirror", "kind": "data", "label": "Committed changes"},
+    {"id": "f-mirror-raw", "from": "mirror", "to": "raw-tables", "kind": "data", "label": "Append batch"},
+    {"id": "f-raw-lake", "from": "raw-tables", "to": "shared-lake", "kind": "data", "label": "Snapshot"},
+    {"id": "f-lake-curate", "from": "shared-lake", "to": "curate", "kind": "data", "label": "Build curated rows"},
+    {"id": "f-curate-model", "from": "curate", "to": "yield-model", "kind": "data", "label": "Monthly yield"},
+    {"id": "f-model-report", "from": "yield-model", "to": "yield-report", "kind": "data", "label": "Measures"}
+  ],
+  "annotations": [
+    {"id": "synthetic-note", "text": "SYNTHETIC fixture: shape mirrors a Contoso export, content is invented."},
+    {"id": "mirror-note", "target": "mirror", "text": "Only committed changes are mirrored; a failed write never reaches the lake."},
+    {"id": "policy-note", "target": "role-policy", "text": "The policy decides edits; it is not shown as a data flow."}
+  ]
+}

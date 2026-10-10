@@ -6,6 +6,7 @@ A `preview.json` file sits at the root of one built static app folder and descri
 |---|---|
 | `preview.schema.json` | JSON Schema 2020-12 (structure and bounds). `$id`: `https://raw.githubusercontent.com/julian-passebecq/datapass-mosaicstudio/main/spec/preview/v1/preview.schema.json` |
 | `scripts/preview-validate.mjs` | Dependency-free validator that mirrors the schema and adds the cross-reference rules; `--check-files` re-hashes the folder |
+| `fixtures/synthetic-client/` | Versioned synthetic consumer fixture (descriptor + folder) with T3 compatibility notes in `fixtures/README.md` |
 
 Producer today: `npm run build:client -- <id>` writes `dist-clients/<id>/preview.json` after a successful build.
 

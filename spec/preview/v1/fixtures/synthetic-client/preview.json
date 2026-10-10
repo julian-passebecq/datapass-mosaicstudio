@@ -1,0 +1,54 @@
+{
+  "format": "datapass.preview",
+  "version": 1,
+  "app": {
+    "id": "synthetic-client",
+    "title": "Synthetic client (datapass.preview/1 consumer fixture)",
+    "variant": "client"
+  },
+  "entry": "index.html",
+  "sdkVersion": "0.9.0",
+  "sourceCommit": null,
+  "publication": {
+    "mode": "preview",
+    "noindex": true
+  },
+  "capabilities": [
+    "charts"
+  ],
+  "files": [
+    {
+      "path": "_headers",
+      "bytes": 254,
+      "sha256": "ca9daa08c7f9180b43150c3b21d34340cec6934327ba2060479a573c94f9471f"
+    },
+    {
+      "path": "artifacts/orchard-monthly-yield.json",
+      "bytes": 8595,
+      "sha256": "ed6fc2a319837ca68066b12a05f97c80d4d7095bca9f5f899a60fde0f05cba41"
+    },
+    {
+      "path": "index.html",
+      "bytes": 518,
+      "sha256": "10d2b6f869cc398ecc72c858fe92b391643f84c2890150287a410efa61e8ff8a"
+    },
+    {
+      "path": "studio-build.json",
+      "bytes": 249,
+      "sha256": "3b23de2d0dd8313951fb31f6f010473047b9e9c912b3dea92c1c8b637bb4cd18"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "orchard-monthly-yield",
+      "path": "artifacts/orchard-monthly-yield.json",
+      "sha256": "ed6fc2a319837ca68066b12a05f97c80d4d7095bca9f5f899a60fde0f05cba41",
+      "provenance": "synthetic"
+    }
+  ],
+  "open": {
+    "file": false,
+    "httpLoopback": true
+  },
+  "csp": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+}
