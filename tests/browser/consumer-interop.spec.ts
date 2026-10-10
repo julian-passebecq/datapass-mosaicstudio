@@ -37,19 +37,31 @@ const msgs=(page:Page)=>page.evaluate(()=>(window as unknown as {msgs:Msg[]}).ms
 const send=(page:Page,data:unknown)=>page.evaluate(d=>(document.getElementById('v') as HTMLIFrameElement).contentWindow!.postMessage(d,'*'),data);
 const frameSize=(page:Page,w:number,h:number)=>page.evaluate(([w,h])=>{document.body.style.setProperty('--w',w+'px');document.body.style.setProperty('--h',h+'px');},[w,h]);
 
-/** Every corner of the element, of the stage and of the frame lies inside the page viewport; the element lies inside the stage. */
-async function fitsInside(page:Page,frame:FrameLocator,selector:string){
+type Box={x:number;y:number;width:number;height:number};
+type Fit={ok:true;el:Box;stage:Box}|{ok:false;reason:string};
+/**
+ * Every corner of the element, of the stage and of the frame lies inside the page viewport; the element lies inside the stage.
+ * Used inside expect.poll: PanZoom renders the SVG from a string, so the element is replaced while a load or resize settles
+ * (also on 6f45dd0) and a node detached between resolve and measure has no box. That is "not settled yet", not a pass.
+ */
+async function fitsInside(page:Page,frame:FrameLocator,selector:string):Promise<Fit>{
   const vp=page.viewportSize()!;
   const [el,stage,host]=await Promise.all([frame.locator(selector).first().boundingBox(),frame.locator('.aa-stage').boundingBox(),page.locator('#v').boundingBox()]);
-  if(!el||!stage||!host)throw new Error('missing box for '+selector);
-  const within=(b:{x:number;y:number;width:number;height:number},o:{x:number;y:number;width:number;height:number},what:string)=>{
-    if(b.x<o.x-.5||b.y<o.y-.5||b.x+b.width>o.x+o.width+.5||b.y+b.height>o.y+o.height+.5)throw new Error(`${what} clipped: ${JSON.stringify(b)} not inside ${JSON.stringify(o)}`);};
-  within(host,{x:0,y:0,width:vp.width,height:vp.height},'frame');within(stage,host,'stage');within(el,stage,selector);
-  return {el,stage};
+  if(!el||!stage||!host)return {ok:false,reason:'no box yet for '+selector};
+  const outside=(b:Box,o:Box)=>b.x<o.x-.5||b.y<o.y-.5||b.x+b.width>o.x+o.width+.5||b.y+b.height>o.y+o.height+.5;
+  for(const [b,o,what] of [[host,{x:0,y:0,width:vp.width,height:vp.height},'frame'],[stage,host,'stage'],[el,stage,selector]] as [Box,Box,string][])
+    if(outside(b,o))return {ok:false,reason:`${what} clipped: ${JSON.stringify(b)} not inside ${JSON.stringify(o)}`};
+  return {ok:true,el,stage};
 }
-/** Whole-diagram fit leaves room for the zoom tools and hint, so small frames fill less of the stage. */
+/** Whole-diagram fit leaves room for the zoom tools and hint, so small frames fill less of the stage. Not settled -> the reason. */
 const MIN_FILL=.55;
-const fillRatio=({el,stage}:{el:{width:number;height:number};stage:{width:number;height:number}})=>Math.max(el.width/stage.width,el.height/stage.height);
+const filled=(f:Fit)=>{if(!f.ok)return f.reason;const r=Math.max(f.el.width/f.stage.width,f.el.height/f.stage.height);return r>MIN_FILL?'ok':'fill '+r.toFixed(3);};
+/** expect.poll until the probe says 'ok'; a timeout reports the probe's last verdict. */
+async function pollOk(probe:()=>Promise<string>,message:string,timeout?:number){
+  let last='(not run)';
+  try{await expect.poll(async()=>(last=await probe()),{message,timeout}).toBe('ok');}
+  catch(e){throw new Error(message+' - last verdict: '+last+'\n'+(e instanceof Error?e.message:String(e)));}
+}
 
 test('synthetic React- and Contoso-shape concept exports open over file:// with no warnings, all entities and evidence',async({page})=>{
   const errors=errorsOf(page);
@@ -86,24 +98,25 @@ test('embed fit: no corner of the diagram, stage or frame is clipped after each 
   const sizes:[number,number][]=[[1000,600],[640,420],[1280,760],[480,360],[900,560]];
   for(const [w,h] of sizes){
     await frameSize(page,w,h);
-    await expect.poll(async()=>fillRatio(await fitsInside(page,frame,'[data-testid=concept-isometric] svg')),{message:`isometric ${w}x${h}`}).toBeGreaterThan(MIN_FILL);
+    await pollOk(async()=>filled(await fitsInside(page,frame,'[data-testid=concept-isometric] svg')),`isometric ${w}x${h}`);
   }
   await shot(page,'embed-isometric-900x560.png');
   await send(page,{type:'datapass.concept-spec/load',spec,options:{view:'layered'}});
   await expect(inner).toHaveAttribute('data-view','layered');
-  for(const [w,h] of sizes)await (async()=>{await frameSize(page,w,h);await expect.poll(async()=>(await fitsInside(page,frame,'[data-testid=concept-layered] svg')).el.width,{message:`layered ${w}x${h}`}).toBeGreaterThan(0);})();
+  for(const [w,h] of sizes)await (async()=>{await frameSize(page,w,h);await pollOk(async()=>{const f=await fitsInside(page,frame,'[data-testid=concept-layered] svg');return !f.ok?f.reason:f.el.width>0?'ok':'empty';},`layered ${w}x${h}`);})();
   await frame.getByRole('button',{name:'3D scene'}).click();
   await expect(inner).toHaveAttribute('data-view','3d');
   for(const [w,h] of [[1000,600],[640,420],[1280,760]] as [number,number][]){
     await frameSize(page,w,h);
-    await expect.poll(async()=>{
-      const {el:canvas}=await fitsInside(page,frame,'[data-testid=atlas-3d] canvas');
-      if(Math.abs(canvas.width-(await frame.locator('.aa-stage').boundingBox())!.width)>1)return 'canvas not resized';
+    await pollOk(async()=>{
+      const f=await fitsInside(page,frame,'[data-testid=atlas-3d] canvas');if(!f.ok)return f.reason;const canvas=f.el;
+      if(Math.abs(canvas.width-f.stage.width)>1)return `canvas ${canvas.width} not resized to stage ${f.stage.width}`;
       const labels=await frame.locator('[data-testid=atlas-3d] .aa-label[data-node], [data-testid=atlas-3d] .aa-layer-label').all();
       if(labels.length!==spec.nodes.length+spec.layers.length)return 'labels '+labels.length;
-      for(const l of labels){const b=(await l.boundingBox())!;if(b.x<canvas.x-.5||b.y<canvas.y-.5||b.x+b.width>canvas.x+canvas.width+.5||b.y+b.height>canvas.y+canvas.height+.5)return 'label clipped '+JSON.stringify(b);}
-      return (await frame.locator('[data-testid=atlas-3d] .aa-canvas').getAttribute('data-settled'))==='true'?'ok':'moving';
-    },{message:`3d ${w}x${h}`,timeout:30000}).toBe('ok');
+      for(const l of labels){const b=await l.boundingBox();if(!b)return 'label not measurable';if(b.x<canvas.x-.5||b.y<canvas.y-.5||b.x+b.width>canvas.x+canvas.width+.5||b.y+b.height>canvas.y+canvas.height+.5)return 'label clipped '+JSON.stringify(b)+' in '+JSON.stringify(canvas);}
+      const settled=await frame.locator('[data-testid=atlas-3d] .aa-canvas').getAttribute('data-settled');
+      return settled==='true'?'ok':'not settled ('+settled+')';
+    },`3d ${w}x${h}`,30000);
   }
   await shot(page,'embed-3d-1280x760.png');
   // Window resize with a fluid frame.
@@ -111,7 +124,7 @@ test('embed fit: no corner of the diagram, stage or frame is clipped after each 
   await send(page,{type:'datapass.concept-spec/load',spec,options:{view:'isometric'}});
   for(const [w,h] of [[1100,700],[760,560],[1400,900]] as [number,number][]){
     await page.setViewportSize({width:w,height:h});
-    await expect.poll(async()=>fillRatio(await fitsInside(page,frame,'[data-testid=concept-isometric] svg')),{message:`window ${w}x${h}`}).toBeGreaterThan(MIN_FILL);
+    await pollOk(async()=>filled(await fitsInside(page,frame,'[data-testid=concept-isometric] svg')),`window ${w}x${h}`);
   }
 });
 
@@ -215,7 +228,7 @@ test('private qualification: real exports in FR04_REAL_DIR open in the concept v
     await expect(inner).toHaveAttribute('data-spec',spec.id);
     for(const [w,h] of [[1000,600],[640,420],[1280,760]] as [number,number][]){
       await frameSize(page,w,h);
-      await expect.poll(async()=>fillRatio(await fitsInside(page,frame,'[data-testid=concept-isometric] svg'))).toBeGreaterThan(MIN_FILL);
+      await pollOk(async()=>filled(await fitsInside(page,frame,'[data-testid=concept-isometric] svg')),'real isometric fit');
     }
     await shot(page,name.replace(/\.json$/,'')+'.embed.png');
     await page.unrouteAll({behavior:'ignoreErrors'});

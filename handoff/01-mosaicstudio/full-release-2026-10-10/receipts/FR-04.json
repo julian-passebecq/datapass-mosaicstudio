@@ -24,6 +24,7 @@
     {"cmd": "PW_PORT=24273 npx playwright test tests/browser/consumer-interop.spec.ts (rebased on f3a02bc, after npm run build)", "pass": 4, "fail": 0, "skip": 1},
     {"cmd": "PW_PORT=24173 npx playwright test tests/browser/consumer-interop.spec.ts tests/browser/concept-standalone.spec.ts (on 6f45dd0)", "pass": 9, "fail": 1, "skip": 1, "note": "the failure is concept-standalone 'validation errors' timing out in page.goto(file://) after the 3D test; it fails identically with the baseline viewer on this loaded PC and passes with its predecessor alone; cause UNKNOWN"},
     {"cmd": "FR04_REAL_DIR=<private> npx playwright test tests/browser/consumer-interop.spec.ts -g 'private qualification'", "pass": 1, "fail": 0, "skip": 0},
+    {"cmd": "PW_PORT=24273 npx playwright test tests/browser/consumer-interop.spec.ts -g \"embed fit\" --repeat-each=4 (after the null-box poll fix)", "pass": 4, "fail": 0, "skip": 0},
     {"cmd": "baseline viewer: npx playwright test concept-standalone.spec.ts -g 'embed options' --repeat-each=8", "pass": 6, "fail": 2, "skip": 0, "note": "baseline reproduction of the FR-05 failure (90 s timeouts)"}
   ],
   "journeys": [
@@ -33,7 +34,7 @@
   ],
   "os": "Windows 11 Pro 10.0.26300",
   "browser": "Playwright 1.63.0 Chromium, software WebGL (--use-angle=swiftshader)",
-  "ci_run": "pending (PR checks)",
+  "ci_run": "run 1 https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38020459333 failed (2 embed tests, isometric svg replaced between resolve and measure; tests fixed); later run: see PR #48 checks",
   "private_evidence": [
     {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-04/exports/react-on-contoso.concept.json", "sha256": "77bd4d1e77eb7357c26a4b6a8ead7e32c72e819dfba238033ecdd3307aace031"},
     {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-04/exports/react-on-mosaicstudio.concept.json", "sha256": "f52b948f3d5f245decf4176aa91358fbef311960f48d47e6808e1c4688ce7a83"},

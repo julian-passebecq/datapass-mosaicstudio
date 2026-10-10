@@ -54,6 +54,13 @@ Result: `concept-standalone` "embed options" passes with the fixed viewer in bot
 - `npm run preview:validate -- spec/preview/v1/fixtures/synthetic-client/preview.json --check-files`: valid, 4 files, 1 artifact, re-hashed.
 - Playwright (`PW_PORT=24173`, preview server above 20000), `consumer-interop.spec.ts` + `concept-standalone.spec.ts`: 9 passed, 1 skipped (private), 1 failed: `concept-standalone` "validation errors ..." timed out in `page.goto(file://)` right after the 3D file:// test. The same test fails the same way with the **baseline** viewer on this PC under the same load (baseline run: 2 failed, that one and "embed options"), passes when run with its predecessor alone (2 passed), and passed in baseline CI. Cause not established (UNKNOWN; suspected GPU-process contention on a machine shared with other builds). Not changed by this package.
 
+### CI run 1 (PR #48, run 38020459333): 2 failed, test race fixed
+- Failures: `concept-standalone` "embed options" and `consumer-interop` "embed fit". Both failed within 2-3 s at the first isometric box: the locator resolved to a visible `<svg>`, then `boundingBox()` returned null.
+- Cause: PanZoom renders the isometric SVG from a string, so the element is replaced while a load settles. A local MutationObserver probe saw 3 distinct `<svg>` elements in the first ~360 ms after a load, on the `6f45dd0` viewer and on this branch alike.
+- The tests then treated a box measured on a detached node as fatal inside `expect.poll`.
+- Fix (tests only, no timeout changed): a null box now means "not rendered yet" and the existing poll keeps measuring. Clipping and fill are returned as verdicts, and a poll timeout reports the last verdict (`pollOk`).
+- Local rerun: `consumer-interop` "embed fit" `--repeat-each=4`, 4 passed. In an earlier `--repeat-each=3`, before `pollOk` existed, 1 run hit the 30 s 3D poll timeout at 1280x760 with no recorded verdict; its screenshot shows every label inside the canvas.
+
 ## Omissions
 
 - T3 was not run and not changed; preview fixture compatibility is a source reading of `3dfcecd`.
