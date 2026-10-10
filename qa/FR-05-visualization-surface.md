@@ -75,4 +75,6 @@ For context against `qa/PAYLOAD_0.9.md`: motion-reference was 155,613 there, and
 - Browser: `explanations.spec.ts` 4/4, plus the affected existing specs `motion`, `motion-pro`, `motion-visual`, `architecture`, `framework`, `framework-restore` and `framework-responsive`: **40 passed, 0 failed** (local preview on port 24173, specs copied with the port rewritten; CI runs them unchanged on 4173).
 - Screenshots inspected at 1440 px and 390 px (no horizontal overflow) are stored privately with hashes (see the receipt).
 
-CI: `timeout-minutes` raised from 24 (value after FR-02/03) to 28, because the new spec builds two selected clients.
+CI: run [38021360810](https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38021360810) at `3f5c120` passed: `npm test` 635/0/2 skipped, browser suite 113 passed (explanations 4/4), all 19 selected-client budgets passed with the same byte counts as measured locally. After the rebase on `0143e58`, local `npm test` gives 637 pass, 0 fail.
+
+`timeout-minutes` raised from 24 (value after FR-02/03) to 28, because the new spec builds two selected clients.
