@@ -1,3 +1,5 @@
+> **Newer:** the 0.10.0 full-release resume point (2026-10-10) is [`full-release-2026-10-10/RESUME.md`](full-release-2026-10-10/RESUME.md); this file is the 0.9.0 record, kept unchanged below.
+
 # Resume: 01-mosaicstudio (MosaicStudio 0.9.0)
 
 - **State:** review-ready PR from `feat/technical-site-sdk-0.9`; qualified commit `20ef865`, CI run 37863555025 green. Not merged: no LAUNCH.txt merge authorization was given in the session.

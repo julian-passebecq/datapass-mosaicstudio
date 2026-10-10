@@ -1,0 +1,100 @@
+{
+  "template": false,
+  "state": "LOCAL_RELEASE_READY_PR_OPEN",
+  "packet": "galaxy-full-release-2026-10-10/01-mosaicstudio",
+  "repository": "https://github.com/julian-passebecq/datapass-mosaicstudio",
+  "actual_worktree": "D:/PROJ/datapass-mosaicstudio/.claude/worktrees/wf_dd2fcdb4-ebc-9 (branch claude/full-release-packaging)",
+  "package_version": "0.10.0",
+  "baseline_sha": "6f45dd06e95ee66d693fc08fb4369c2a6379e84c",
+  "source_sha": "ec8d1f3c85a10d3ad943fc5deecb939c20439d0c",
+  "source_sha_note": "Release commit. Later branch commits add only qa/ and handoff/ receipts.",
+  "final_main_sha": null,
+  "final_main_note": "Set by the verify step's post-merge receipt (squash merge of the FR-07 PR); not known to this package.",
+  "merged_packages": [
+    {"fr": "01-mosaicstudio/FR-01", "pr": 46, "merge_sha": "f3a02bca98efb56ac219db46edb6275088a20192"},
+    {"fr": "01-mosaicstudio/FR-02", "pr": 47, "merge_sha": "0143e581b68b13ec1f0e5fa6cd1a44abb306a526"},
+    {"fr": "01-mosaicstudio/FR-03", "pr": 47, "merge_sha": "0143e581b68b13ec1f0e5fa6cd1a44abb306a526"},
+    {"fr": "01-mosaicstudio/FR-04", "pr": 48, "merge_sha": "dc271227be620f5f020e079edc8ba904d3281e88"},
+    {"fr": "01-mosaicstudio/FR-05", "pr": 49, "merge_sha": "4a723bb7576ee6b6a3ef9c4133696bccc2320892"},
+    {"fr": "01-mosaicstudio/FR-06", "pr": 49, "merge_sha": "4a723bb7576ee6b6a3ef9c4133696bccc2320892"}
+  ],
+  "native_session_id": null,
+  "requested_model": "Opus",
+  "observed_model": "claude-opus-5-5",
+  "result_vocabulary": "PASS, FAIL, BLOCKED, UNKNOWN; PARTIAL = some steps observed, the rest not executed",
+  "features": [
+    {"key": "01-mosaicstudio/F01", "result": "PASS", "deltas": ["FR-05", "FR-06"], "evidence": "inventory diff test; recovery disposition docs/RECOVERY_2026-10-10.md; legacy Bricks route kept"},
+    {"key": "01-mosaicstudio/F02", "result": "PASS", "deltas": [], "evidence": "unchanged since 0.9; release-qualification.spec.ts asserts the blank start"},
+    {"key": "01-mosaicstudio/F03", "result": "PASS", "deltas": [], "evidence": "UX01 on Windows Chromium and Edge; SQL cell inside the Positron Viewer"},
+    {"key": "01-mosaicstudio/F04", "result": "PASS", "deltas": ["FR-02"], "evidence": "receipts/FR-02.json; E2E-01 against real jupyter_server 2.21.1"},
+    {"key": "01-mosaicstudio/F05", "result": "PASS", "deltas": ["FR-02", "FR-03"], "evidence": "receipts/FR-02.json, FR-03.json"},
+    {"key": "01-mosaicstudio/F06", "result": "PASS", "deltas": ["FR-01"], "evidence": "receipts/FR-01.json: Schema/TS/Python differential corpus; 11 real exports"},
+    {"key": "01-mosaicstudio/F07", "result": "PASS", "deltas": ["FR-03"], "evidence": "receipts/FR-03.json; executed 0.9.0 <-> 0.10.0 workspace upgrade/rollback"},
+    {"key": "01-mosaicstudio/F08", "result": "PASS", "deltas": ["FR-01", "FR-04"], "evidence": "receipts/FR-04.json: real React 2e922ea and Contoso f2d0c75 concept exports validated and opened"},
+    {"key": "01-mosaicstudio/F09", "result": "PASS", "deltas": ["FR-05"], "evidence": "receipts/FR-05.json"},
+    {"key": "01-mosaicstudio/F10", "result": "PASS", "deltas": ["FR-05"], "evidence": "19-target emitted-JS budget gate (CI)"},
+    {"key": "01-mosaicstudio/F11", "result": "PASS", "deltas": ["FR-06", "FR-07"], "scope": "local consumption", "evidence": "SDK archive with version, commit, hashes and license statement; byte-identical rebuild from a fresh clone", "note": "public consumption BLOCKED: no license"},
+    {"key": "01-mosaicstudio/F12", "result": "PASS", "deltas": ["FR-04"], "scope": "producer side", "evidence": "preview.json per client build, preview:validate, FR-04 consumer fixture; browser and Positron use without T3", "note": "T3 consuming preview.json UNKNOWN (08-t3)"},
+    {"key": "01-mosaicstudio/F13", "result": "PASS", "deltas": [], "evidence": "UX04 on Windows Chromium and Edge; 0.9 evidence otherwise unchanged"},
+    {"key": "01-mosaicstudio/F14", "result": "PASS", "deltas": ["FR-06", "FR-07"], "scope": "local release", "evidence": "docs/RELEASE_0.10.md; qa/FR-07-release-packaging.md", "note": "final-main CI and post-merge receipt belong to the verify step"},
+    {"key": "01-mosaicstudio/FR-01", "result": "PASS", "evidence": "receipts/FR-01.json"},
+    {"key": "01-mosaicstudio/FR-02", "result": "PASS", "evidence": "receipts/FR-02.json"},
+    {"key": "01-mosaicstudio/FR-03", "result": "PASS", "evidence": "receipts/FR-03.json"},
+    {"key": "01-mosaicstudio/FR-04", "result": "PASS", "evidence": "receipts/FR-04.json", "note": "gate t3_consumes_preview_json UNKNOWN"},
+    {"key": "01-mosaicstudio/FR-05", "result": "PASS", "evidence": "receipts/FR-05.json"},
+    {"key": "01-mosaicstudio/FR-06", "result": "PASS", "evidence": "receipts/FR-06.json", "note": "viz PNG regeneration UNKNOWN (reviewed stills already on main)"},
+    {"key": "01-mosaicstudio/FR-07", "result": "PASS", "scope": "local packaging", "evidence": "receipts/FR-07.json", "note": "public SDK publication NOT_AUTHORIZED (no license)"}
+  ],
+  "ux": [
+    {"key": "01-mosaicstudio/UX01", "result": "PASS", "evidence": "workbench-notebook.spec.ts UX01, Windows 11 Chromium + Edge, CI"},
+    {"key": "01-mosaicstudio/UX02", "result": "PASS", "evidence": "workbench-notebook.spec.ts UX02 against live py/service"},
+    {"key": "01-mosaicstudio/UX03", "result": "PARTIAL", "evidence": "qa/UX03_JOURNEY_0.9.md; standalone viewer and client builds re-qualified", "note": "full new-client concept+motion journey not re-executed"},
+    {"key": "01-mosaicstudio/UX04", "result": "PASS", "evidence": "workbench-notebook.spec.ts UX04"}
+  ],
+  "journeys": [
+    {"id": "E2E-01", "status": "PASS", "evidence": "workbench-jupyter.spec.ts: Windows Chromium pass; Edge 1 fail at interrupt then pass on rerun; CI"},
+    {"id": "E2E-05", "status": "NOT_EXECUTED", "needs": "07-contoso dbt/DuckLake pipeline and 02-datapass-react field trace"},
+    {"id": "E2E-06", "status": "BLOCKED", "needs": "authenticated native agent in T3 (08-t3); T3 3dfcecd does not read preview.json"},
+    {"id": "E2E-07", "status": "NOT_EXECUTED", "needs": "09-conceptmotion-demo lane"},
+    {"id": "E2E-08", "status": "NOT_EXECUTED", "needs": "packages of all lanes; this lane's clean install, upgrade and rollback were executed"}
+  ],
+  "ci": {
+    "run_id": null,
+    "attempt": null,
+    "runner": "GitHub-hosted ubuntu-latest",
+    "os": "ubuntu-latest",
+    "head_sha": null,
+    "status": "UNKNOWN",
+    "artifacts": [],
+    "note": "Filled from the PR checks in receipts/FR-07.json once CI has finished."
+  },
+  "adopted_source_vector": [
+    {"repository": "datapass-mosaicstudio", "sha": "ec8d1f3c85a10d3ad943fc5deecb939c20439d0c", "role": "producer (this release)"},
+    {"repository": "datapass-react (GitLab, private)", "sha": "2e922ea", "role": "concept exporter, read-only (FR-04)"},
+    {"repository": "contoso-data-studio", "sha": "f2d0c75", "role": "concept and artifact exporter, read-only (FR-01, FR-04)"},
+    {"repository": "datapass-factory-foil", "sha": "adcb9e6", "role": "committed artifact exports, read-only (FR-01)"},
+    {"repository": "t3code-datapass", "sha": "3dfcecd", "role": "preview consumer, read-only source check (FR-04)"},
+    {"repository": "julian-passebecq/Fluent2_J_Viz (VizForge)", "sha": "7aaa8fa601c5fa2c9f8acfd7a4d4eb54b887b9ef", "role": "pinned upstream engine"},
+    {"repository": "julian-passebecq/react_ms_fluent_2_framework (ConceptMotion)", "sha": "30e69639bfc3929c348fd8f9c6c38a2cb61984d8", "role": "pinned upstream engine"}
+  ],
+  "release_artifacts": [
+    {"id": "sdk-archive", "name": "datapass-mosaicstudio-sdk-0.10.0.tar.gz", "sha256": "b90dfab704f9d9af41729b44afc1c9faf303fff63db8de7352346cff959e45fd"},
+    {"id": "workbench", "tree_sha256": "f840b4cadee594cce236764f7d6febad1e5065887750804b8145460886be0f99"},
+    {"id": "concept-viewer", "sha256": "9fd78f03cf8f7c1a2a59af68c16ad044590c401fa7a63eb81a5678205239a4e7"},
+    {"id": "reference-clients", "count": 8, "hashes": "READY.json artifacts"}
+  ],
+  "public_distribution": "NOT_AUTHORIZED",
+  "public_distribution_reason": "No license exists in the repository or its history; the owner must decide one before any SDK or site publication.",
+  "fabric_runtime": "NOT_AUTHORIZED",
+  "blockers": [
+    "Owner decision: project license (gates public SDK publication).",
+    "Owner decision: whether the local Fabric concepts map becomes a public client (FR-06)."
+  ],
+  "omissions": [
+    "No tag, release, publication, upload or deployment.",
+    "No cross-OS byte comparison of builds.",
+    "Two intermittent local failures (Jupyter interrupt in Edge, 3D embed-fit probe in Chromium), each passed on rerun; causes not established.",
+    "UX03 full journey not re-executed; E2E-05/07/08 not executed; E2E-06 blocked on T3."
+  ],
+  "next_safe_action": "Verify step: check PR CI on the branch head, merge (squash) and append a post-merge receipt with final_main_sha and the final-main CI run."
+}
