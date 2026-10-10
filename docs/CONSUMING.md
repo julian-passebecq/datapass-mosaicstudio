@@ -1,8 +1,8 @@
 # Consuming DataPass MosaicStudio
 
-This is a **private, source-consumed** framework. Nothing is published to npm, no tag is created and nothing is deployed by the commands below. There are three supported ways to use it; pick one per consumer and pin it exactly.
+This is a **source-consumed** framework (public GitHub repository, no license granted). Nothing is published to npm, no tag is created and nothing is deployed by the commands below. There are three supported ways to use it; pick one per consumer and pin it exactly.
 
-**License.** No open-source license file is present: this is a private repository, all rights reserved by the owner. Third-party components keep their own licenses, listed in `THIRD_PARTY_NOTICES.md`. Do not redistribute an archive or a built site outside the owner's approval.
+**License.** No license file or package license field exists, in the tree or in its Git history. The repository is publicly visible on GitHub, but visibility is not a license: all rights are reserved by the owner and public SDK publication is **NOT_AUTHORIZED** until the owner decides a license. Third-party components keep their own licenses: prose notices in `THIRD_PARTY_NOTICES.md`, the generated per-package inventory in [`licenses/THIRD_PARTY_INVENTORY.md`](licenses/THIRD_PARTY_INVENTORY.md). Do not redistribute an archive or a built site outside the owner's approval.
 
 ## 1. Pinned Git source at an exact SHA (current method, unchanged)
 
