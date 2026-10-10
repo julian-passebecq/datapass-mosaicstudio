@@ -1,0 +1,10 @@
+# OPTIONAL trusted-local Python authoring (FR-02/FR-03). Not needed for SQL, client sites or the
+# allowlisted datapass.runtime/1 models. Install into a venv you own, never globally:
+#   python -m venv .venv && .venv/Scripts/python -m pip install -r py/service/requirements.txt -r py/service/requirements-jupyter.txt
+# Versions checked against PyPI on 2026-10-10 (each released at least two weeks earlier):
+#   jupyter_server 2.21.1 (2026-09-15)  REST API + kernel channels websocket, token auth, Host/origin checks
+#   ipykernel 7.3.0 (2026-06-10)        the python3 kernel the server starts
+#   nbformat 5.11.1 (2026-08-17)        .ipynb read/validate/write used by py/service/notebook_io.py
+jupyter_server==2.21.1
+ipykernel==7.3.0
+nbformat==5.11.1

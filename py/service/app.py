@@ -42,6 +42,8 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator  # noqa: E402
 
 from datapass_artifact import ArtifactError, to_artifact, validate  # noqa: E402
 from wind_reference_model import HOURS, RATED_KW, annual_energy_mwh, power_kw  # noqa: E402
+from result_store import (DEFAULT_MAX_BYTES as DEFAULT_RESULTS_MAX_BYTES, MAX_BODY_BYTES as NOTEBOOK_BODY_BYTES,  # noqa: E402
+                          NOTEBOOK_PREFIX, NotebookGuard, ResultStore, StoreError, create_notebook_router)
 from runtime import (Cancelled, InputSpec, ModelResult, RunStore, RuntimeGuard, RuntimeModel,  # noqa: E402
                      ShouldCancel, create_router, resolve_token)
 
@@ -236,18 +238,20 @@ RUNTIME_MODELS: dict[str, RuntimeModel] = {
 class _BodyLimit:
     """Pure ASGI guard: POST bodies need a Content-Length <= MAX_BODY_BYTES."""
 
-    def __init__(self, app: Any, limit: int = MAX_BODY_BYTES) -> None:
-        self.app, self.limit = app, limit
+    def __init__(self, app: Any, limit: int = MAX_BODY_BYTES, prefixes: dict[str, int] | None = None) -> None:
+        self.app, self.limit, self.prefixes = app, limit, dict(prefixes or {})
 
     async def __call__(self, scope: dict, receive: Any, send: Any) -> None:
         if scope["type"] == "http" and scope["method"] in ("POST", "PUT", "PATCH"):
             headers = dict(scope.get("headers") or [])
             raw = headers.get(b"content-length")
+            path = scope.get("path", "")
+            limit = next((n for p, n in self.prefixes.items() if path == p or path.startswith(p + "/")), self.limit)
             status, detail = None, ""
             if raw is None:
                 status, detail = 411, "Content-Length required"
-            elif not raw.isdigit() or int(raw) > self.limit:
-                status, detail = 413, f"Request body above {self.limit} bytes"
+            elif not raw.isdigit() or int(raw) > limit:
+                status, detail = 413, f"Request body above {limit} bytes"
             if status:
                 await JSONResponse({"detail": detail}, status_code=status)(scope, receive, send)
                 return
@@ -256,7 +260,9 @@ class _BodyLimit:
 
 def create_app(*, origins: tuple[str, ...] | None = None, allowed_hosts: tuple[str, ...] = LOOPBACK_HOSTS,
                artifact_dir: Path = ARTIFACT_DIR, models: dict[str, RuntimeModel] | None = None,
-               token: str | None = None) -> FastAPI:
+               token: str | None = None, results_dir: Path | str | None = None,
+               results_max_bytes: int = DEFAULT_RESULTS_MAX_BYTES) -> FastAPI:
+    """`results_dir` (opt-in) enables the durable result store; the nbformat routes need `nbformat` installed."""
     env_origins = os.environ.get("DATAPASS_SERVICE_ORIGINS")
     origins = origins or (tuple(o.strip() for o in env_origins.split(",") if o.strip()) if env_origins else DEFAULT_ORIGINS)
     app = FastAPI(title="DataPass artifact service (prototype)", version=MODEL_VERSION, docs_url="/docs", redoc_url=None)
@@ -265,10 +271,11 @@ def create_app(*, origins: tuple[str, ...] | None = None, allowed_hosts: tuple[s
     app.state.runtime_token = runtime_token
     app.state.runs = store
     app.add_middleware(RuntimeGuard, token=runtime_token, origins=tuple(origins))
+    app.add_middleware(NotebookGuard, token=runtime_token, origins=tuple(origins))
     app.add_middleware(CORSMiddleware, allow_origins=list(origins), allow_methods=["GET", "POST"],
                        allow_headers=["Content-Type", "X-Datapass-Token"], allow_credentials=False, max_age=600)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(allowed_hosts))
-    app.add_middleware(_BodyLimit)
+    app.add_middleware(_BodyLimit, prefixes={NOTEBOOK_PREFIX: NOTEBOOK_BODY_BYTES})
 
     @app.middleware("http")
     async def no_store(request: Any, call_next: Any) -> Any:
@@ -301,6 +308,20 @@ def create_app(*, origins: tuple[str, ...] | None = None, allowed_hosts: tuple[s
         return compute_wind_reference(inputs)
 
     app.include_router(create_router(store, SERVICE_NAME, SERVICE_VERSION))
+    # Optional notebook routes (FR-02/FR-03): .ipynb exchange through nbformat, and the result store only
+    # when a folder was chosen. Missing nbformat leaves the routes out; the runtime above is unchanged.
+    result_store = None
+    if results_dir is not None:
+        result_store = ResultStore(results_dir, results_max_bytes)
+        result_store.secrets = (runtime_token.encode("utf-8"),)
+    app.state.result_store = result_store
+    try:
+        app.include_router(create_notebook_router(result_store))
+        app.state.notebook_routes = True
+    except ImportError:
+        if result_store is not None:
+            raise
+        app.state.notebook_routes = False
     return app
 
 
@@ -318,13 +339,25 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--port", type=int, default=int(os.environ.get("DATAPASS_SERVICE_PORT", DEFAULT_PORT)))
     parser.add_argument("--workbench-origin", default=DEFAULT_WORKBENCH_ORIGIN,
                         help=f"origin printed in the connect line (default {DEFAULT_WORKBENCH_ORIGIN})")
+    parser.add_argument("--results-dir", default=None,
+                        help="OPT-IN durable result store: a folder you choose, outside any version-controlled work tree")
+    parser.add_argument("--results-max-bytes", type=int, default=DEFAULT_RESULTS_MAX_BYTES,
+                        help=f"bound for the result store (default {DEFAULT_RESULTS_MAX_BYTES} bytes)")
     args = parser.parse_args(argv)
     import uvicorn
-    print(connect_line(args.port, app.state.runtime_token, args.workbench_origin), file=sys.stderr, flush=True)
+    application = app
+    if args.results_dir is not None:
+        try:
+            application = create_app(token=app.state.runtime_token, results_dir=args.results_dir, results_max_bytes=args.results_max_bytes)
+        except StoreError as error:
+            raise SystemExit(f"Result store refused: {error}") from None
+        app.state.runs.shutdown()  # the default app is replaced, not served
+        print(f"Result store: {application.state.result_store.root} (limit {args.results_max_bytes:,} bytes).", file=sys.stderr, flush=True)
+    print(connect_line(args.port, application.state.runtime_token, args.workbench_origin), file=sys.stderr, flush=True)
     try:
-        uvicorn.run(app, host="127.0.0.1", port=args.port, log_level="warning")
+        uvicorn.run(application, host="127.0.0.1", port=args.port, log_level="warning")
     finally:
-        app.state.runs.shutdown()
+        application.state.runs.shutdown()
 
 
 if __name__ == "__main__":

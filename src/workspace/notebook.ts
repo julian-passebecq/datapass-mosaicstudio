@@ -9,9 +9,18 @@ export type SqlCell={id:string;kind:'sql';title:string;sql:string;dependsOn:stri
 /** A Python cell names an allowlisted model on the trusted local runtime and its declared inputs. It never carries code. */
 export type PythonCell={id:string;kind:'python';title:string;model:string;inputs:Record<string,InputValue>;dependsOn:string[];outputTable?:string};
 export type NoteCell={id:string;kind:'note';title:string;text:string;dependsOn:string[]};
-export type Cell=SqlCell|PythonCell|NoteCell;
+/** Editable trusted-local Python source, run explicitly on a Jupyter kernel the user paired (FR-02).
+ * The optional output table names a variable the kernel publishes as a bounded table for SQL cells. */
+export type JupyterCell={id:string;kind:'jupyter';title:string;code:string;dependsOn:string[];outputTable?:string};
+/** A notebook cell the workbench does not run (raw, other kernel languages, attachments). Its original
+ * nbformat JSON is kept verbatim and exported back unchanged; it is never executed or rendered as HTML. */
+export type InertCell={id:string;kind:'inert';title:string;source:string;original:string;reason:string;dependsOn:string[]};
+export type Cell=SqlCell|PythonCell|NoteCell|JupyterCell|InertCell;
 export type Notebook={cells:Cell[]};
-export const NOTEBOOK_LIMITS=Object.freeze({cells:50,sql:20000,note:8000,title:120,inputs:24,dependsOn:12});
+export const NOTEBOOK_LIMITS=Object.freeze({cells:50,sql:20000,code:20000,note:8000,title:120,inputs:24,dependsOn:12,original:64*1024,reason:200});
+/** Cells that a Run can execute. Notes and inert cells never run. */
+export const RUNNABLE_KINDS:readonly Cell['kind'][]=Object.freeze(['sql','python','jupyter']);
+export function runnable(cell:Cell):boolean{return RUNNABLE_KINDS.includes(cell.kind);}
 
 const TABLE=/^[a-z][a-z0-9_]{0,62}$/;
 export function validateCell(input:unknown):Cell{
@@ -20,6 +29,8 @@ export function validateCell(input:unknown):Cell{
   if(kind==='sql')strict(input,['id','kind','title','sql','dependsOn','chart'],'sql cell');
   else if(kind==='python')strict(input,['id','kind','title','model','inputs','dependsOn','outputTable'],'python cell');
   else if(kind==='note')strict(input,['id','kind','title','text','dependsOn'],'note cell');
+  else if(kind==='jupyter')strict(input,['id','kind','title','code','dependsOn','outputTable'],'jupyter cell');
+  else if(kind==='inert')strict(input,['id','kind','title','source','original','reason','dependsOn'],'inert cell');
   else throw new Error('cell: unknown kind');
   identifier(input.id,'cell id');text(input.title,'cell title',NOTEBOOK_LIMITS.title);
   const deps=input.dependsOn;
@@ -44,6 +55,15 @@ export function validateCell(input:unknown):Cell{
       if(!(typeof value==='boolean'||(typeof value==='number'&&Number.isFinite(value))||(typeof value==='string'&&value.length<=400)))throw new Error('python cell input '+key+': finite number, boolean or short text required');
     }
     if(input.outputTable!==undefined&&(typeof input.outputTable!=='string'||!TABLE.test(input.outputTable)))throw new Error('python cell output table: lowercase SQL name required');
+  }else if(input.kind==='jupyter'){
+    text(input.code,'python code',NOTEBOOK_LIMITS.code,false);
+    if(input.outputTable!==undefined&&(typeof input.outputTable!=='string'||!TABLE.test(input.outputTable)))throw new Error('jupyter cell output table: lowercase SQL name required');
+  }else if(input.kind==='inert'){
+    text(input.source,'inert source',NOTEBOOK_LIMITS.code,false);text(input.reason,'inert reason',NOTEBOOK_LIMITS.reason);
+    text(input.original,'inert original',NOTEBOOK_LIMITS.original);
+    let original:unknown;try{original=JSON.parse(input.original as string);}catch{throw new Error('inert cell '+input.id+': original is not JSON');}
+    if(!original||typeof original!=='object'||Array.isArray(original))throw new Error('inert cell '+input.id+': original is not a notebook cell');
+    if(deps.length)throw new Error('inert cell '+input.id+': inert cells have no dependencies');
   }else text(input.text,'note text',NOTEBOOK_LIMITS.note,false);
   return structuredClone(input) as Cell;
 }
@@ -55,8 +75,11 @@ export function validateNotebook(input:unknown):Notebook{
   const cells=input.cells.map(validateCell),ids=new Set<string>(),tables=new Set<string>();
   for(const c of cells){if(ids.has(c.id))throw new Error('notebook: duplicate cell '+c.id);ids.add(c.id);}
   for(const c of cells){
-    for(const d of c.dependsOn)if(!ids.has(d))throw new Error('cell '+c.id+' depends on unknown cell '+d);
-    if(c.kind==='python'&&c.outputTable){if(tables.has(c.outputTable))throw new Error('notebook: duplicate output table '+c.outputTable);tables.add(c.outputTable);}
+    for(const d of c.dependsOn){
+      if(!ids.has(d))throw new Error('cell '+c.id+' depends on unknown cell '+d);
+      if(cells.find(x=>x.id===d)!.kind==='inert')throw new Error('cell '+c.id+' depends on inert cell '+d+', which never runs');
+    }
+    if((c.kind==='python'||c.kind==='jupyter')&&c.outputTable){if(tables.has(c.outputTable))throw new Error('notebook: duplicate output table '+c.outputTable);tables.add(c.outputTable);}
   }
   const cycle=findCycle(cells);
   if(cycle)throw new Error('notebook: dependency cycle '+cycle.join(' -> '));
@@ -89,13 +112,13 @@ export function executionPlan(notebook:Notebook,target:string):string[]{
     if(!ready.length)throw new Error('notebook: dependency cycle');
     done.add(ready[0]);order.push(ready[0]);
   }
-  return order.filter(id=>byId.get(id)!.kind!=='note');
+  return order.filter(id=>runnable(byId.get(id)!));
 }
 
 /** A result is stale when the cell changed after it ran, or a dependency produced a newer result since. */
 export type CellRun={cellId:string;sequence:number;sourceKey:string;dependencySequences:Record<string,number>};
 export function cellSourceKey(cell:Cell):string{
-  return JSON.stringify(cell.kind==='sql'?[cell.kind,cell.sql]:cell.kind==='python'?[cell.kind,cell.model,Object.entries(cell.inputs).sort(([a],[b])=>a<b?-1:1),cell.outputTable??null]:[cell.kind,cell.text]);
+  return JSON.stringify(cell.kind==='sql'?[cell.kind,cell.sql]:cell.kind==='python'?[cell.kind,cell.model,Object.entries(cell.inputs).sort(([a],[b])=>a<b?-1:1),cell.outputTable??null]:cell.kind==='jupyter'?[cell.kind,cell.code,cell.outputTable??null]:cell.kind==='inert'?[cell.kind,cell.original]:[cell.kind,cell.text]);
 }
 export function staleReason(notebook:Notebook,runs:Record<string,CellRun|undefined>,cellId:string,seen:Set<string>=new Set()):string|null{
   if(seen.has(cellId))return null;seen.add(cellId);
