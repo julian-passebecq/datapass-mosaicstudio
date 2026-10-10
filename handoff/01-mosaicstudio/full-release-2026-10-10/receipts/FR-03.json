@@ -1,0 +1,105 @@
+{
+  "source_sha": "d557ca591f3d845d3c981d91ed2dee2630daaedb",
+  "baseline_sha": "6f45dd06e95ee66d693fc08fb4369c2a6379e84c",
+  "branch": "claude/jupyter-notebook-store",
+  "os": "Windows 11 Pro 10.0.26300 (local); ubuntu-latest (CI)",
+  "browser": "Playwright-managed Chromium (local); CI per its run",
+  "ci_run": "pending",
+  "tests": [
+    {
+      "cmd": "python -m unittest discover -s py/service -p \"test_*.py\" (venv with requirements.txt + requirements-jupyter.txt, DATAPASS_REQUIRE_JUPYTER=1), local Windows 11",
+      "pass": 38,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "node --experimental-strip-types --test tests/*.test.mjs, local before rebase on f3a02bc",
+      "pass": 618,
+      "fail": 0,
+      "skip": 1
+    },
+    {
+      "cmd": "node --experimental-strip-types --test tests/workbench-*.test.mjs, local after rebase",
+      "pass": 23,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "npx tsc --noEmit, local",
+      "pass": 1,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "npx vite build (after bootstrap + prepare-assets), local",
+      "pass": 1,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "PW_PORT=24273 DATAPASS_REQUIRE_JUPYTER=1 npx playwright test tests/browser/workbench-jupyter.spec.ts (real jupyter_server 2.21.1 + ipykernel 7.3.0, loopback 28888, generated token), local run 3 of 3",
+      "pass": 4,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "same spec, local runs 1-2 under saturated CPU (timeouts; refused-token mapping bug fixed in 118bca1)",
+      "pass": 4,
+      "fail": 4,
+      "skip": 0
+    }
+  ],
+  "qa": "qa/FR-02-FR-03-jupyter-notebook-store.md",
+  "fr": "01-mosaicstudio/FR-03",
+  "title": ".ipynb exchange and durable result store",
+  "journeys": [
+    "E2E-01 export .ipynb (nbformat 4.5) + save results -> restart service and browser with Jupyter stopped -> reopen with identical hashes, no recomputation -> delete -> missing + Run again -> 1024-byte quota -> store full, state byte-identical",
+    "Corrupt/invalid .ipynb refused with nothing changed; synthetic notebook script output shown as text/refused; raw cell inert, in loss report, round-trips"
+  ],
+  "private_evidence": [
+    {
+      "path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-03/SHA256SUMS.txt",
+      "sha256": "c343192e9b45e2445c08969d5669673c880c1e61a01aa54c4e19ce9fb06fc0b8"
+    },
+    {
+      "path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-03/e2e01-export.ipynb",
+      "sha256": "0fd7e0d2888897ca3482fc8e9760cd3c81e642a2ec908fcbb5f4c5761d4d94f8"
+    },
+    {
+      "path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-03/e2e01-hashes.json",
+      "sha256": "187dff7a598efaac19c96870ab06f24d9ee71d1a8741e7a0ae8826967a260824"
+    },
+    {
+      "path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-03/e2e01-reopened.png",
+      "sha256": "ef72ab3eb336dc77ff1a6f6a2524b134f7e528ae519c19c606380602ed9a53f9"
+    }
+  ],
+  "gates": {
+    "pinned_nbformat_mapping": "PASS",
+    "inert_preservation_loss_report": "PASS",
+    "corrupt_rejected_state_unchanged": "PASS",
+    "untrusted_outputs": "PASS",
+    "store_outside_repo": "PASS",
+    "atomic_immutable_hash_named": "PASS",
+    "manifest_inputs_hashes_runs": "PASS",
+    "no_silent_pruning": "PASS",
+    "storage_full_previous_intact": "PASS",
+    "no_token_in_store": "PASS",
+    "reopen_without_recompute": "PASS",
+    "interrupted_unknown_after_restart": "PASS",
+    "missing_relink_or_rerun": "PASS",
+    "typecheck": "PASS",
+    "unit_tests": "PASS",
+    "python_tests": "PASS",
+    "browser_journey": "PASS",
+    "ci": "UNKNOWN"
+  },
+  "omissions": [
+    "Interrupt step timed out once locally under 100% CPU (no interrupt request in the trace, cause not established); passed on rerun with a 60 s budget.",
+    "Browser specs hard-coding port 4173 (incl. workbench-notebook.spec.ts) not run locally; CI runs the full suite.",
+    "Responsive/mobile layout of the new controls not inspected in a screenshot.",
+    "Kernel heap restore, remote/multi-user Jupyter, widgets and JavaScript outputs are not supported or claimed.",
+    "ci_run pending at the time this receipt was written; see the PR checks.",
+    "Kernel variables are not restored after restart; only saved outputs/tables reopen (stated in the UI)."
+  ]
+}
