@@ -72,7 +72,7 @@ The skipped test is FR-04's private qualification, which needs the owner's local
 
 ## Unit, contract and Python tests (local, release code)
 
-- `npm test`: 653 tests, 650 pass, 1 skipped, 2 fail. The 2 failures are the READY/OUTCOME checks of `tests/release-0.10.test.mjs`, run before those hand-off files were written. The rerun after they were committed is in `receipts/FR-07.json`.
+- `npm test` at `0e36ac6` (release code plus the hand-off files): 653 tests, 653 pass, 0 fail, 0 skipped. An earlier run at `ec8d1f3`, before the hand-off files existed, gave 650 pass, 1 skipped and 2 expected failures, which were the READY/OUTCOME checks of `tests/release-0.10.test.mjs`.
 - `npm run typecheck` (inside `npm run build`): clean. `npm run contracts:check`: no drift.
 - `npm run test:python`: 20 OK. `npm run test:python-runtime`: 38 OK.
 
