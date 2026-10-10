@@ -1,0 +1,135 @@
+{
+  "source_sha": "fd4ec3f2338bfdc8f58eb5cccac1f2df09a36c99",
+  "baseline_sha": "6f45dd06e95ee66d693fc08fb4369c2a6379e84c",
+  "branch": "claude/jupyter-notebook-store",
+  "os": "Windows 11 Pro 10.0.26300 (local); ubuntu-latest (CI)",
+  "browser": "Playwright-managed Chromium (local); CI per its run",
+  "ci_run": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38018684351",
+  "tests": [
+    {
+      "cmd": "python -m unittest discover -s py/service -p \"test_*.py\" (venv with requirements.txt + requirements-jupyter.txt, DATAPASS_REQUIRE_JUPYTER=1), local Windows 11",
+      "pass": 38,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "node --experimental-strip-types --test tests/*.test.mjs, local before rebase on f3a02bc",
+      "pass": 618,
+      "fail": 0,
+      "skip": 1
+    },
+    {
+      "cmd": "node --experimental-strip-types --test tests/workbench-*.test.mjs, local after rebase",
+      "pass": 23,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "npx tsc --noEmit, local",
+      "pass": 1,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "npx vite build (after bootstrap + prepare-assets), local",
+      "pass": 1,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "PW_PORT=24273 DATAPASS_REQUIRE_JUPYTER=1 npx playwright test tests/browser/workbench-jupyter.spec.ts (real jupyter_server 2.21.1 + ipykernel 7.3.0, loopback 28888, generated token), local run 3 of 3",
+      "pass": 4,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "same spec, local runs 1-2 under saturated CPU (timeouts; refused-token mapping bug fixed in 118bca1)",
+      "pass": 4,
+      "fail": 4,
+      "skip": 0
+    },
+    {
+      "cmd": "npm test, CI ubuntu-latest run 38018684351",
+      "pass": 623,
+      "fail": 0,
+      "skip": 2
+    },
+    {
+      "cmd": "npm run test:python, CI",
+      "pass": 20,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "npm run test:python-runtime (py/service incl. test_notebook.py, DATAPASS_REQUIRE_JUPYTER=1), CI",
+      "pass": 38,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "npm run test:browser (full Playwright suite incl. workbench-jupyter.spec.ts 4/4 with real Jupyter Server), CI",
+      "pass": 109,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "test:browser, first CI run 38017950061 on head 7ed4911: 5 failed (orphaned jupyter_server after SIGTERM on Linux; 'Previous result' label regression vs FR-01 spec), fixed in fd4ec3f",
+      "pass": 104,
+      "fail": 5,
+      "skip": 0
+    }
+  ],
+  "qa": "qa/FR-02-FR-03-jupyter-notebook-store.md",
+  "fr": "01-mosaicstudio/FR-02",
+  "title": "Opt-in adapter to a user-installed Jupyter Server",
+  "journeys": [
+    "E2E-01 pair -> Python -> SQL on its published table -> chart -> interrupt keeps stale previous output (real Jupyter Server, synthetic data)",
+    "Pairing refusals: remote URL, wrong token (denied), foreign Origin/Host, websocket Origin, notebook routes 403/401/400",
+    "Light client and blank workbench with no Python service and no kernel"
+  ],
+  "private_evidence": [
+    {
+      "path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-02/SHA256SUMS.txt",
+      "sha256": "78a76dd85d903e4a59e1bba4be3fb896da11e737cc4076c0dba2a7645d9ecef1"
+    },
+    {
+      "path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-02/e2e01-authoring.png",
+      "sha256": "47e608fc91fc319747af41d9ea4a616cc1a5c8f1384f8a0c2a93798d1fb61486"
+    },
+    {
+      "path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-02/e2e01-hashes.json",
+      "sha256": "187dff7a598efaac19c96870ab06f24d9ee71d1a8741e7a0ae8826967a260824"
+    },
+    {
+      "path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-02/e2e01-reopened.png",
+      "sha256": "ef72ab3eb336dc77ff1a6f6a2524b134f7e528ae519c19c606380602ed9a53f9"
+    },
+    {
+      "path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-02/playwright-workbench-jupyter.log",
+      "sha256": "2337efdd0fc2301fab214173934801e0612669ff50ebe084752851cdc1ed414b"
+    }
+  ],
+  "gates": {
+    "runtime_producer_unchanged": "PASS",
+    "pinned_requirements": "PASS",
+    "explicit_loopback_pairing": "PASS",
+    "token_memory_only": "PASS",
+    "host_origin_checks": "PASS",
+    "explicit_run_import_never_executes": "PASS",
+    "python_table_to_sql": "PASS",
+    "dependency_staleness_model": "PASS",
+    "interrupt_distinct_states": "PASS",
+    "untrusted_outputs": "PASS",
+    "typecheck": "PASS",
+    "unit_tests": "PASS",
+    "python_tests": "PASS",
+    "browser_journey": "PASS",
+    "ci": "PASS"
+  },
+  "omissions": [
+    "Interrupt step timed out once locally under 100% CPU (no interrupt request in the trace, cause not established); passed on rerun with a 60 s budget.",
+    "Browser specs hard-coding port 4173 (incl. workbench-notebook.spec.ts) not run locally; CI runs the full suite.",
+    "Responsive/mobile layout of the new controls not inspected in a screenshot.",
+    "Kernel heap restore, remote/multi-user Jupyter, widgets and JavaScript outputs are not supported or claimed."
+  ]
+}

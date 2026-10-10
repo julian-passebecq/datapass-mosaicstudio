@@ -13,9 +13,10 @@ concurrency:
 jobs:
   web:
     runs-on: ubuntu-latest
-    timeout-minutes: 18
+    timeout-minutes: 24
     env:
       NODE_OPTIONS: --max-old-space-size=4096
+      DATAPASS_REQUIRE_JUPYTER: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -128,7 +129,7 @@ jobs:
           npm run test:visual-contracts
       - name: Prepare synthetic file fixtures
         run: |
-          python -m pip install duckdb==1.4.3 -r py/service/requirements.txt
+          python -m pip install duckdb==1.4.3 -r py/service/requirements.txt -r py/service/requirements-jupyter.txt
           npm run test:fixtures
       - name: Python artifact contract and runtime runs API
         run: |
