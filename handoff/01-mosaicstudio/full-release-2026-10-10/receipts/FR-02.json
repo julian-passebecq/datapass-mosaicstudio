@@ -1,10 +1,10 @@
 {
-  "source_sha": "d557ca591f3d845d3c981d91ed2dee2630daaedb",
+  "source_sha": "fd4ec3f2338bfdc8f58eb5cccac1f2df09a36c99",
   "baseline_sha": "6f45dd06e95ee66d693fc08fb4369c2a6379e84c",
   "branch": "claude/jupyter-notebook-store",
   "os": "Windows 11 Pro 10.0.26300 (local); ubuntu-latest (CI)",
   "browser": "Playwright-managed Chromium (local); CI per its run",
-  "ci_run": "pending",
+  "ci_run": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38018684351",
   "tests": [
     {
       "cmd": "python -m unittest discover -s py/service -p \"test_*.py\" (venv with requirements.txt + requirements-jupyter.txt, DATAPASS_REQUIRE_JUPYTER=1), local Windows 11",
@@ -46,6 +46,36 @@
       "cmd": "same spec, local runs 1-2 under saturated CPU (timeouts; refused-token mapping bug fixed in 118bca1)",
       "pass": 4,
       "fail": 4,
+      "skip": 0
+    },
+    {
+      "cmd": "npm test, CI ubuntu-latest run 38018684351",
+      "pass": 623,
+      "fail": 0,
+      "skip": 2
+    },
+    {
+      "cmd": "npm run test:python, CI",
+      "pass": 20,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "npm run test:python-runtime (py/service incl. test_notebook.py, DATAPASS_REQUIRE_JUPYTER=1), CI",
+      "pass": 38,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "npm run test:browser (full Playwright suite incl. workbench-jupyter.spec.ts 4/4 with real Jupyter Server), CI",
+      "pass": 109,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "cmd": "test:browser, first CI run 38017950061 on head 7ed4911: 5 failed (orphaned jupyter_server after SIGTERM on Linux; 'Previous result' label regression vs FR-01 spec), fixed in fd4ec3f",
+      "pass": 104,
+      "fail": 5,
       "skip": 0
     }
   ],
@@ -94,13 +124,12 @@
     "unit_tests": "PASS",
     "python_tests": "PASS",
     "browser_journey": "PASS",
-    "ci": "UNKNOWN"
+    "ci": "PASS"
   },
   "omissions": [
     "Interrupt step timed out once locally under 100% CPU (no interrupt request in the trace, cause not established); passed on rerun with a 60 s budget.",
     "Browser specs hard-coding port 4173 (incl. workbench-notebook.spec.ts) not run locally; CI runs the full suite.",
     "Responsive/mobile layout of the new controls not inspected in a screenshot.",
-    "Kernel heap restore, remote/multi-user Jupyter, widgets and JavaScript outputs are not supported or claimed.",
-    "ci_run pending at the time this receipt was written; see the PR checks."
+    "Kernel heap restore, remote/multi-user Jupyter, widgets and JavaScript outputs are not supported or claimed."
   ]
 }

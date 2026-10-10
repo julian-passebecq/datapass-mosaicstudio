@@ -75,6 +75,12 @@ Packet galaxy-full-release-2026-10-10 / 01-mosaicstudio. Baseline main `6f45dd0`
   3. **Notebook files:** a corrupt or invalid .ipynb changes nothing. A synthetic notebook's script output is shown as text or refused. The raw cell stays inert, appears in the loss report and survives the round trip.
   4. **Light client:** the blank workbench and `motion-reference` start with no Python service and no kernel, and make no request off the page origin.
   5. **Logs:** after the suite, the Jupyter token is absent from both service logs.
+- **CI (ubuntu-latest), run 38018684351 on `fd4ec3f`:**
+  - `npm test`: 623 pass, 0 fail, 2 skipped.
+  - `test:python`: 20 tests, OK.
+  - `test:python-runtime`: 38 tests, OK.
+  - Full Playwright suite: 109 passed, including the 4 `workbench-jupyter` tests against a real Jupyter Server.
+- **First CI run (38017950061), 5 failures.** On Linux, SIGTERM orphaned `jupyter_server`. The launcher now stops its server on SIGTERM, and the spec signals the process group. The second failure was the FR-01 "Previous result" label, now restored for runtime artifacts.
 - I inspected the screenshots from the passing run (authoring and reopened). Both match the asserted states.
 
 ## Omissions and limits
