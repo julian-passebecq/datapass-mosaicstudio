@@ -1,0 +1,44 @@
+{
+  "fr": "01-mosaicstudio/FR-06",
+  "title": "Recover old work without public publication",
+  "source_sha": "see PR head (branch claude/explanations-recovery); code commit 3b2ae7d",
+  "base_sha": "f3a02bc",
+  "branch": "claude/explanations-recovery",
+  "tests": [
+    {"cmd": "sha256sum -c ARTIFACTS.sha256 (fabric-bricks 3 + viz-n1 4)", "pass": 7, "fail": 0, "skip": 0},
+    {"cmd": "sha256sum -c files.sha256 / eol-only-raw.sha256 on extracted copies (23 + 2 + 18)", "pass": 43, "fail": 0, "skip": 0},
+    {"cmd": "tests/fabric-bricks.test.mjs within npm test, local", "pass": 1, "fail": 0, "skip": 0},
+    {"cmd": "playwright explanations.spec.ts: legacy Fabric Bricks route (selected-client build), local", "pass": 1, "fail": 0, "skip": 0}
+  ],
+  "journeys": [
+    "Open ?app=fabric-bricks (draft route): gallery opens, synthetic/provisional status, no canvas or 3D chunk before 3D is chosen."
+  ],
+  "snapshots": [
+    {"item": "mosaic-fabric-bricks", "original_sha": "9203dc73bd798b2423a809e3b55a6c8d000e6d91", "snapshot_ref": "recovery/2026-10-10/mosaic-fabric-bricks = e2deb36f6b3d9f68da74d3303d3ba5b2aefc32a0", "bundle_sha256": "e95f6edff9741f3ff96f5cc2dd68b5e231c0580afc18061d6d98bae2f1de521b", "files_tar_sha256": "6021e7542ab8e34206dd1011967d892cdff05353a12f91d14577aa52dbb23d66", "files": 23, "equivalent_on_main": 0, "superseded": 7, "unique_adopted": 0, "unique_kept_local": 16},
+    {"item": "mosaic-viz-n1", "original_sha": "3fd3628eab2984ced8cdc2e69a5a21963660eb9d", "snapshot_ref": "recovery/2026-10-10/mosaic-viz-n1 = b8e410e76b0b5e1a13d5b2eb1ddeb983f7ebe284", "bundle_sha256": "357700a7b8c1a88f18e3d497b37e8fae40bbfcf936ac3309696b010c9a137249", "files_tar_sha256": "addf37e277e6b568b1df75f18afb5551be192cbd13c18a29cfe46665478039b5", "eol_only_raw_tar_sha256": "cf74bbdfb49d5d346c198373419df87b25b6bc80daf1f6828998adb1bc51d5c3", "files": 20, "equivalent_on_main": 18, "superseded": 2, "unique_adopted": 0, "unique_kept_local": 0}
+  ],
+  "os": "Windows 11 Pro 10.0.26300 (local); ubuntu-latest (CI)",
+  "browser": "Playwright-managed Chromium (Playwright 1.63.0) locally",
+  "ci_run": "recorded on the PR checks (Studio web gate); see the PR description",
+  "private_evidence": [
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-06/SHA256SUMS", "sha256": "b38beeb29a4683ba811fcbaafc4ab7351036e1c3a2c1d43deb0376953b3b4887"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-06/verify.log", "sha256": "d5c035b8060964fd7d8789018e02d1a3a6e6415221b10456514ccf7ec6c5bef9"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-06/compare-vs-main.txt", "sha256": "5a0b3a6adc7967e28079fa63a5dd3e0fcad791151de7b5801d20a1b79cbd1161"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-06/compare-vs-base.txt", "sha256": "e8fd63815078718379b6a8b3d1ee7519da26543e3db67984648b848ce0f8e3d7"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-06/semantic-diff-fabric-bricks-vs-9203dc7.txt", "sha256": "556f0456e5397b6545c6a0cc0454917856af756c96cf2ded215a307f0f8223d3"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-06/recovery-MANIFEST.copy.md", "sha256": "9838da8f5825097e1ca162ebe71e2e1e544313889b38dd652349aaaa0beb8a1b"}
+  ],
+  "gates": {
+    "manifest_hashes_verified": "PASS",
+    "per_item_disposition": "PASS",
+    "original_bytes_preserved": "PASS",
+    "no_snapshot_content_published": "PASS",
+    "legacy_bricks_route": "PASS",
+    "interactions_reimplemented_in_architecture_client": "PASS",
+    "viz_png_regenerated": "UNKNOWN"
+  },
+  "omissions": [
+    "The viz PNGs were not regenerated: equivalent reviewed stills are already on main (docs/media/viz-gallery); npm run test:viz-gallery regenerates the captures.",
+    "Open product decision: whether the documented Fabric concepts map should become a public client. It stays local until then."
+  ]
+}
