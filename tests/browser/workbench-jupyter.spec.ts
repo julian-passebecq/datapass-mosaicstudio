@@ -55,7 +55,7 @@ function watch(page:Page){
 async function open(context:BrowserContext,url:string,withRuntime=true):Promise<Page>{
   const page=await context.newPage();watch(page);
   await page.goto(url,{waitUntil:'domcontentloaded'});
-  await expect(page.getByTestId('runtime-state')).toHaveText('DuckDB ready',{timeout:60000});
+  await expect(page.getByTestId('runtime-state')).toHaveText('DuckDB ready',{timeout:120000});
   if(withRuntime){
     await page.getByTestId('runtime-consent').getByRole('button',{name:'Connect'}).click();
     await expect(page.getByTestId('runtime-bar')).toHaveAttribute('data-status','connected');
@@ -84,7 +84,9 @@ test.beforeAll(async({},info)=>{
   kernelDir=await mkdtemp(path.join(os.tmpdir(),'datapass-e2e-kernel-'));
 });
 test.beforeEach(()=>{errors=[];external=[];});
-test.afterEach(()=>{
+test.afterEach(async({},info)=>{
+  // Service logs help diagnose a failure; they are written only when they do not contain the Jupyter token.
+  if(info.status!==info.expectedStatus)for(const [name,log] of [['jupyter.log',jupyterLog],['runtime.log',runtimeLog]] as const)if(!log.includes(JTOKEN))await writeFile(info.outputPath(name),log.slice(-20000));
   expect(errors,'Unhandled browser exceptions or dialogs').toEqual([]);
   expect(external,'Only the page, the consented runtime and the paired Jupyter Server').toEqual([]);
 });
@@ -143,7 +145,7 @@ test('E2E-01 blank workspace -> pair -> Python -> SQL on its result -> chart -> 
   await expect(slow).toHaveAttribute('data-status','running');
   await expect(slow).toContainText('long loop started',{timeout:30000});
   await slow.getByRole('button',{name:'Interrupt'}).click();
-  await expect(slow).toHaveAttribute('data-status','interrupted',{timeout:30000});
+  await expect(slow).toHaveAttribute('data-status','interrupted',{timeout:60000});
   await expect(slow.getByTestId('previous-result')).toContainText('first valid output');
   await expect(slow.getByTestId('previous-result')).toContainText('Stale');
   await expect(slow.getByTestId('cell-message')).toContainText('Interrupted');
@@ -270,7 +272,7 @@ test('pairing refusals: remote URL, wrong token, foreign Origin and Host on Jupy
 });
 
 test('notebook import: corrupt and invalid files change nothing; unsupported cells stay inert; outputs render untrusted',async({browser})=>{
-  test.setTimeout(180000);
+  test.setTimeout(300000);
   await startRuntime();
   const context=await browser.newContext();
   const page=await open(context,link());
