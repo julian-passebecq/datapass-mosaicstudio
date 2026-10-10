@@ -81,6 +81,12 @@ The archive has no `.git` folder: builds then record `sourceCommit: null` in the
 6. `npm run build:client -- <your-client>`, then `node scripts/preview-validate.mjs dist-clients/<your-client>/preview.json --check-files`, then the client's real browser checks.
 7. Record the new SHA (and archive sha256) only when all of the above pass.
 
+### 0.9.0 → 0.10.0
+
+No format version changed. `datapass.artifact/1` gained optional lineage fields (`provenance.producer`, `inputs`, `inputHash`, `dependsOn`, `representation.inputs`); every file valid in 0.9.0 stays valid. The saved browser workspace stays `datapass.workspace` v1 and is restored unchanged by 0.10.0. The upgrade and both rollback cases below were executed with `scripts/release-upgrade-check.mjs` (record in `qa/FR-07-release-packaging.md`).
+
 ## Rollback
+
+From 0.10.0 to 0.9.0: a workspace that holds only SQL and note cells is restored by 0.9.0. A workspace that holds a 0.10.0-only cell kind (`jupyter` or `inert`) is refused by 0.9.0 with a notice; its bytes are kept, unchanged, under the browser storage key `datapass.workspace.rejected` and a blank workspace opens. Nothing is deleted. Before rolling back, use **Export workspace** (or copy that key) and, after returning to 0.10.0, bring it back with **Import workspace**. The optional 0.10.0 result store (`py/service/app.py --results-dir <folder>`) is a folder outside Git that 0.9.0 does not read; it is left as it is.
 
 Go back to the previous pinned SHA (`git checkout --detach <previous-sha>`) or the previous verified release folder, run `npm ci` and `npm run bootstrap` again, and rebuild the client. Client folders are owned by the consumer and are never overwritten by an upgrade, so a rollback only changes the framework. Saved user states follow the format rules in the migration policy: a state saved by a newer client version may be refused by the older one.
