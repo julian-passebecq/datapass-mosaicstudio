@@ -34,14 +34,21 @@ function ColumnTable({node}: {node: ArchitectureNode}) {
   const changes = compareColumns(node);
   return <><p className="arch-muted">{changes.state === 'compared' ? `${changes.changes.length} differences / ${changes.unknown} unknown type or nullability comparisons` : changes.state === 'no-design' ? 'No declared design schema. No drift conclusion is possible.' : 'No catalog schema. Missing evidence is not a match.'}</p><div className="arch-table-scroll"><table><caption className="arch-sr">Design and catalog columns for {node.label}</caption><thead><tr><th>Column</th><th>Design</th><th>Snapshot</th></tr></thead><tbody>{columns.map(name => {const a = node.logical?.find(c => c.name === name), b = node.physical?.find(c => c.name === name);return <tr className={changes.changes.some(c => c.column === name) ? 'changed' : ''} key={name}><th scope="row">{name}</th><td>{a?.type || (node.logical === null ? 'Not supplied' : 'Absent')}</td><td>{b?.type || (node.physical === null ? 'Not supplied' : 'Absent')}</td></tr>;})}</tbody></table></div></>;
 }
-export default function Architecture({initialDocument}: {initialDocument?: ArchitectureDocument} = {}) {
+/**
+ * `selection` / `onSelectionChange` / `selectable` let a host share one selected node with other views (a site view field).
+ * The shared value is used only while every node of the current document is selectable; an imported document with other ids keeps a local selection.
+ */
+export default function Architecture({initialDocument, selection, onSelectionChange, selectable}: {initialDocument?: ArchitectureDocument; selection?: string | null; onSelectionChange?: (id: string | null) => void; selectable?: readonly string[]} = {}) {
   const [current, setCurrent] = useState<Pending>(() => initialDocument ? {doc: validateArchitecture(initialDocument)} : session), [pending, setPending] = useState<Pending | null>(null), [error, setError] = useState(''), [busy, setBusy] = useState(false);
   const [generation, setGeneration] = useState(0);
-  const [selected, setSelected] = useState<string | null>(null), [query, setQuery] = useState(''), [direction, setDirection] = useState<'all' | 'upstream' | 'downstream'>('all');
+  const [localSelected, setLocalSelected] = useState<string | null>(null), [query, setQuery] = useState(''), [direction, setDirection] = useState<'all' | 'upstream' | 'downstream'>('all');
   const [tab, setTab] = useState<'map' | 'drift' | 'matrix'>('map'), [mode, setMode] = useState<'design' | 'snapshot'>('design');
   const [present, setPresent] = useState(() => new URLSearchParams(location.search).get('present') === '1'), [chapter, setChapter] = useState(0), [includeSource, setIncludeSource] = useState(false), [matrixPage, setMatrixPage] = useState(0);
   const filePicker = useRef<HTMLInputElement>(null), catalogPicker = useRef<HTMLInputElement>(null);
   const doc = current.doc, facts = useMemo(() => graphFacts(doc), [doc]), positions = useMemo(() => layoutArchitecture(doc), [doc]);
+  const shared = selection !== undefined && !!onSelectionChange && !!selectable && doc.nodes.every(n => selectable.includes(n.id));
+  const selected = shared ? selection : localSelected;
+  function setSelected(id: string | null) {setLocalSelected(id); if (shared) onSelectionChange!(id);}
   const node = doc.nodes.find(n => n.id === selected) || null;
   const upstream = useMemo(() => selected ? neighborhood(doc, selected, 'upstream') : new Set<string>(), [doc, selected]);
   const downstream = useMemo(() => selected ? neighborhood(doc, selected, 'downstream') : new Set<string>(), [doc, selected]);

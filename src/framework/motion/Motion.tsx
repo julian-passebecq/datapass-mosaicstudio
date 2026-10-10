@@ -3,7 +3,7 @@ import {useRuntime, useSiteState, useReducedMotion} from '../hooks';
 import {WorkspaceShell} from '../workspace/WorkspaceShell';
 import {SourceReader} from '../evidence/SourceReader';
 import type {EvidenceRef} from '../evidence/model';
-import {readMotionState, motionStepEvidence, type MotionBlock, type MotionStep, type MotionSpec} from './model';
+import {readMotionState, motionStepEvidence, MOTION_KEYS, type MotionBlock, type MotionStep, type MotionSpec} from './model';
 import {useMotionController} from './Scope';
 import MotionViewport from './Viewport';
 import {motionSvg, motionReport} from './export';
@@ -28,6 +28,12 @@ export default function Motion({block}: {block: MotionBlock}) {
   function select(id: string) {player.pause(); runtime.set(block.selection, id);}
   function openEvidence(ref: EvidenceRef) {player.pause(); runtime.patch({[block.panel]: 'source', [block.source]: ref.artifact});}
   function panel(id: string) {player.pause(); runtime.set(block.panel, id);}
+  /** Back to the authored start: one atomic view-only cue with the declared defaults of this block's own fields. Never touches model inputs or tasks. */
+  function reset() {
+    player.pause();
+    const fields = runtime.definition.manifest.fields;
+    runtime.applyCue(Object.fromEntries(MOTION_KEYS.map(key => [block[key], fields.find(f => f.id === block[key])!.default])));
+  }
   useEffect(() => {
     const observer = new IntersectionObserver(entries => controller.setVisible(block.id, entries.some(e => e.isIntersecting)));
     if (root.current) observer.observe(root.current);
@@ -52,7 +58,7 @@ export default function Motion({block}: {block: MotionBlock}) {
   return <section ref={root} className="site-motion" data-testid="motion" data-step-index={state.step} data-step-id={step.id} data-selection={state.selection} data-panel={state.panel}>
     <WorkspaceShell title={block.title || spec.title} rail={rail} sidebar={outline} sidebarLabel="Motion objects" inspector={inspector} inspectorLabel="Motion context" tabs={[{id: 'scene', label: 'Scene'}, {id: 'source', label: 'Sources'}, {id: 'transcript', label: 'Steps'}]} activeTab={state.panel} onTab={panel} status={<><span>{spec.provenance} / {spec.entities.length} objects / {spec.steps.length} authored steps</span><span>SVG + D3 / no WebGL / source text is never executed</span></>}>
       {state.panel === 'scene' ? <>
-        <div className="motion-transport" role="group" aria-label="Motion playback"><button type="button" disabled={state.step === 0} onClick={() => player.previous()} aria-label="Previous motion step">Previous</button><button type="button" disabled={reduced || !playback.playing && state.step === spec.steps.length - 1} onClick={() => playback.playing ? player.pause() : controller.play()}>{playback.playing ? 'Pause motion' : 'Play motion'}</button><button type="button" disabled={state.step === spec.steps.length - 1} onClick={() => player.next()} aria-label="Next motion step">Next</button><span>{state.step + 1} / {spec.steps.length}</span><label>Step<select aria-label="Motion step" value={state.step} onChange={e => player.seek(Number(e.target.value))}>{spec.steps.map((s, index) => <option key={s.id} value={index}>{index + 1}. {s.title}</option>)}</select></label></div>
+        <div className="motion-transport" role="group" aria-label="Motion playback"><button type="button" disabled={state.step === 0} onClick={() => player.previous()} aria-label="Previous motion step">Previous</button><button type="button" disabled={reduced || !playback.playing && state.step === spec.steps.length - 1} onClick={() => playback.playing ? player.pause() : controller.play()}>{playback.playing ? 'Pause motion' : 'Play motion'}</button><button type="button" disabled={state.step === spec.steps.length - 1} onClick={() => player.next()} aria-label="Next motion step">Next</button><span>{state.step + 1} / {spec.steps.length}</span><button type="button" data-testid="motion-reset" onClick={reset} aria-label="Reset explanation to the first step">Reset</button><label>Step<select aria-label="Motion step" value={state.step} onChange={e => player.seek(Number(e.target.value))}>{spec.steps.map((s, index) => <option key={s.id} value={index}>{index + 1}. {s.title}</option>)}</select></label></div>
         <MotionViewport compiled={compiled} view={{index: state.step, selection: state.selection, projection: state.projection, reduced, advance: playback.index === state.step && ['next', 'tick'].includes(playback.reason)}} onSelect={select}/>
         <div className="motion-caption" aria-live={playback.playing ? 'off' : 'polite'}><span className="motion-eyebrow">Step {String(state.step + 1).padStart(2, '0')}</span><h3>{step.title}</h3><p>{step.caption}</p><AnnotationText step={step} spec={spec}/></div>
         {reduced && <p className="motion-notice">Reduced motion: automatic playback is disabled. Steps and both projections remain available.</p>}

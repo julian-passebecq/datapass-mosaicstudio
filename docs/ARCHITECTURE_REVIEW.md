@@ -39,6 +39,10 @@ The HTML report is script-free, includes the same semantic map, findings and exp
 
 Imports live in browser memory only and survive switching SQLRooms modules. Reloading discards them. No file upload, network source lookup, repository cloning, database execution or automatic publication happens in this module. The full-workspace draft export does not include architecture documents; use this module's export menu.
 
+## Shared selection in a site (FR-05, 2026-10-10)
+
+A client `architecture` block may declare `selection: <field id>`, naming a view `select` field that has a `none` option. The review canvas then reads and writes that field, so another block bound to the same field (for example a motion walkthrough whose stations use the node ids) shows the same selected component. The shared value is used only while every node of the current document is one of the field's options. After an import with other ids, the canvas falls back to its own local selection. Without `selection`, the block behaves as before. Consumer: `clients/architecture-reference` page `walkthrough`.
+
 ## Deliberately not in this pass
 
 Apache Hop/Tomcat embedding, Hop XML import, an architecture authoring IDE, live source analysis, schema write-back, Jupyter/Python execution, DuckLake, a byte-level Parquet X-ray port, physical relationship inference, PPTX/PDF export, authentication and deployments.

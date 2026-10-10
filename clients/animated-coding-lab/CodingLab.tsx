@@ -5,11 +5,11 @@ import {loadEvidenceSources} from '../../src/framework/foundation/lineage/source
 import type {Artifact} from '../../src/framework/foundation/artifact.ts';
 import {MotionViewport, createMotionController, type MotionController} from '../../src/framework/motion/react.ts';
 import {SourceReader} from '../../src/framework/evidence/react.ts';
-import {parseTrace, labMotion, stepView, lineSteps, nextStepAtLine, formatValue, SPEEDS, type LabTrace, type Speed, type TraceValue} from './trace.ts';
+import {parseTrace, labMotion, stepView, lineSteps, nextStepAtLine, relatedSteps, formatValue, SPEEDS, type LabTrace, type Speed, type TraceValue} from './trace.ts';
 import './lab.css';
 
 export const SNIPPET = 'py/examples/normalize_rows.py';
-export const FIELDS = {step: 'lab-step', projection: 'lab-projection', speed: 'lab-speed', reduced: 'lab-reduced'} as const;
+export const FIELDS = {step: 'lab-step', projection: 'lab-projection', speed: 'lab-speed', reduced: 'lab-reduced', selection: 'lab-selection'} as const;
 const KEYWORDS = new Set(['def', 'return', 'for', 'in', 'if', 'else', 'elif', 'while', 'import', 'from', 'as', 'and', 'or', 'not', 'None', 'True', 'False', 'lambda', 'with', 'class', 'pass']);
 const BUILTINS = new Set(['round', 'min', 'max', 'len', 'sum', 'range', 'print', 'abs']);
 
@@ -65,6 +65,12 @@ function Lab({trace, artifact}: {trace: LabTrace; artifact: Artifact}) {
   const playback = useSyncExternalStore(controller.player.subscribe, controller.player.getState, controller.player.getState);
   const syncing = useRef(false), root = useRef<HTMLElement>(null);
   const view = stepView(trace, index), step = view.step, hits = useMemo(() => lineSteps(trace), [trace]);
+  // One selected identity shared by the visual, the code pane, the explanation and the transcript (a view field, never a recomputation).
+  const spec = controller.compiled.spec, entity = spec.entities.find(e => e.id === values[FIELDS.selection]), selection = entity ? entity.id : 'none';
+  const related = useMemo(() => relatedSteps(trace, spec, selection), [trace, spec, selection]);
+  const relatedSet = useMemo(() => new Set(related), [related]);
+  const highlights = useMemo(() => [...new Set(related.map(i => trace.steps[i].line))].map(line => ({artifact: 'snippet', start: line, end: line, label: 'Line ' + line})), [trace, related]);
+  const tokens = spec.entities.filter(e => e.kind === 'token');
 
   // One clock: the pinned StoryPlayer. Its index is mirrored into the view field; field changes seek it.
   useEffect(() => {
@@ -92,13 +98,16 @@ function Lab({trace, artifact}: {trace: LabTrace; artifact: Artifact}) {
   }, [controller]);
 
   const seek = (target: number) => {controller.player.pause(); runtime.set(FIELDS.step, Math.min(Math.max(0, target), last));};
+  const select = (id: string) => runtime.set(FIELDS.selection, id === selection ? 'none' : id);
+  /** Back to the start in one atomic view-only cue: the declared defaults of the lab's own view fields. */
+  const reset = () => {controller.player.pause(); const fields = runtime.definition.manifest.fields; runtime.applyCue(Object.fromEntries(Object.values(FIELDS).map(id => [id, fields.find(f => f.id === id)!.default])));};
   const focusLine = (line: number) => {const target = nextStepAtLine(trace, line, index); if (target !== null) seek(target);};
   const advance = playback.index === index && (playback.reason === 'next' || playback.reason === 'tick');
   const playing = playback.playing;
   const prov = artifact.provenance;
   const table = (rows: [string, TraceValue][], empty: string) => rows.length ? <dl className="lab-io">{rows.map(([k, v]) => <div key={k}><dt>{k}</dt><dd>{formatValue(v)}</dd></div>)}</dl> : <p className="lab-muted">{empty}</p>;
 
-  return <section ref={root} className="lab" data-testid="coding-lab" data-step={index} data-line={step.line} data-event={step.event} data-playing={String(playing)} data-reduced={String(reduced)} data-capture-state="ready" aria-label="Animated coding lab">
+  return <section ref={root} className="lab" data-testid="coding-lab" data-step={index} data-line={step.line} data-event={step.event} data-playing={String(playing)} data-reduced={String(reduced)} data-selection={selection} data-capture-state="ready" aria-label="Animated coding lab">
     <div className="lab-transport" role="group" aria-label="Trace playback">
       <button type="button" className="lab-play" data-testid="lab-play" disabled={reduced || !playing && index === last} onClick={() => playing ? controller.player.pause() : controller.play()}>{playing ? 'Pause' : 'Play'}</button>
       <button type="button" aria-label="Previous step" data-testid="lab-prev" disabled={index === 0} onClick={() => {controller.player.pause(); controller.player.previous();}}>&#8592;</button>
@@ -107,6 +116,7 @@ function Lab({trace, artifact}: {trace: LabTrace; artifact: Artifact}) {
         <input type="range" data-testid="lab-scrubber" min={0} max={last} step={1} value={index} aria-valuetext={`Step ${index + 1} of ${last + 1}, line ${step.line}`} onChange={e => seek(Number(e.currentTarget.value))}/>
       </label>
       <span className="lab-counter" data-testid="lab-counter">{index + 1} / {last + 1}</span>
+      <button type="button" data-testid="lab-reset" onClick={reset} aria-label="Reset the lab to the first step">Reset</button>
       <label className="lab-select">Speed<select data-testid="lab-speed" value={speed} onChange={e => runtime.set(FIELDS.speed, e.currentTarget.value)}>{SPEEDS.map(s => <option key={s} value={s}>{s}x</option>)}</select></label>
       <div className="lab-toggle" role="group" aria-label="Projection">
         <button type="button" aria-pressed={projection === 'diagram'} onClick={() => runtime.set(FIELDS.projection, 'diagram')}>2D</button>
@@ -119,7 +129,7 @@ function Lab({trace, artifact}: {trace: LabTrace; artifact: Artifact}) {
       <section className="lab-pane lab-code" aria-label="Code">
         <header><span className="lab-eyebrow">Code</span><code>{trace.sourcePath}</code></header>
         <div className="lab-lines" data-testid="lab-code">
-          <SourceReader compact sources={controller.compiled.spec.sources} selected="snippet" onSelect={() => {}} currentLine={step.line} renderLine={highlight} onLineClick={focusLine}
+          <SourceReader compact sources={controller.compiled.spec.sources} selected="snippet" onSelect={() => {}} currentLine={step.line} highlights={highlights} renderLine={highlight} onLineClick={focusLine}
             lineInfo={line => {const ran = hits.get(line), text = trace.lines[line - 1] || ''; return ran ? {badge: ran.length + 'x', label: `Focus line ${line}: ${text.trim() || 'blank'} (ran ${ran.length} times)`} : {disabled: true, label: `Line ${line} did not run`};}}/>
         </div>
         <p className="lab-hint">Select a line to jump to the next time it ran.</p>
@@ -132,7 +142,8 @@ function Lab({trace, artifact}: {trace: LabTrace; artifact: Artifact}) {
           <div><span>total</span><strong data-testid="kpi-total">{formatValue(view.kpi.total)}</strong></div>
           <div><span>mean</span><strong data-testid="kpi-mean">{formatValue(view.kpi.mean)}</strong></div>
         </div>
-        <MotionViewport compiled={controller.compiled} view={{index, selection: 'none', projection, reduced, advance, speed: Number(speed)}} onSelect={() => {}}/>
+        <MotionViewport compiled={controller.compiled} view={{index, selection, projection, reduced, advance, speed: Number(speed)}} onSelect={select}/>
+        <div className="lab-chips" role="group" aria-label="Select an input row">{tokens.map((t, i) => <button type="button" key={t.id} data-testid={'lab-pick-' + t.id} aria-pressed={selection === t.id} onClick={() => select(t.id)}>rows[{i}]</button>)}</div>
       </section>
 
       <section className="lab-pane lab-explain" aria-label="Explanation" aria-live={playing ? 'off' : 'polite'}>
@@ -148,6 +159,16 @@ function Lab({trace, artifact}: {trace: LabTrace; artifact: Artifact}) {
         <table className="lab-vars" data-testid="lab-vars"><tbody>{Object.entries(step.vars).map(([name, value]) => <tr key={name} data-changed={step.changed.includes(name)}><th scope="row">{name}</th><td>{formatValue(value)}</td></tr>)}</tbody></table>
         {!Object.keys(step.vars).length && <p className="lab-muted">No data variables yet.</p>}
         </div><div className="lab-ex-prov">
+        <section className="lab-selected" data-testid="lab-selected" data-selection={selection}>
+          <h4>Selected</h4>
+          {entity ? <>
+            <p><strong>{entity.label}</strong> <span className="lab-muted">{entity.id}</span></p>
+            <p className="lab-muted">{entity.description}</p>
+            <p className="lab-muted" data-testid="lab-related-count">{related.length} related steps. Jump to one:</p>
+            <div className="lab-chips" role="group" aria-label="Steps related to the selection">{related.map(i => <button type="button" key={i} aria-current={i === index ? 'step' : undefined} onClick={() => seek(i)}>{i + 1}</button>)}</div>
+            <button type="button" className="lab-link" data-testid="lab-clear-selection" onClick={() => runtime.set(FIELDS.selection, 'none')}>Clear selection</button>
+          </> : <p className="lab-muted">Nothing selected. Pick a value or a box in the visual, or a row button below it; the code lines, these steps and the transcript follow the same selection.</p>}
+        </section>
         <h4>Provenance</h4>
         <dl className="lab-prov" data-testid="lab-provenance">
           <div><dt>Artifact</dt><dd><code>{artifact.id}</code></dd></div>
@@ -163,7 +184,7 @@ function Lab({trace, artifact}: {trace: LabTrace; artifact: Artifact}) {
 
     <details className="lab-transcript" data-testid="lab-transcript" open>
       <summary>Full transcript · {trace.steps.length} recorded steps</summary>
-      <ol>{trace.steps.map(s => {const v = stepView(trace, s.index); return <li key={s.index} data-step={s.index} aria-current={s.index === index ? 'step' : undefined}>
+      <ol>{trace.steps.map(s => {const v = stepView(trace, s.index); return <li key={s.index} data-step={s.index} data-related={relatedSet.has(s.index) || undefined} aria-current={s.index === index ? 'step' : undefined}>
         <button type="button" onClick={() => seek(s.index)}><span className="lab-t-line">L{s.line}</span><strong>{v.title}</strong><span className="lab-t-caption">{v.caption}</span></button>
       </li>;})}</ol>
     </details>

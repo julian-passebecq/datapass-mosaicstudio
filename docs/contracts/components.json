@@ -136,7 +136,7 @@
       "resource"
     ],
     "engine": "Existing architecture module / React Flow",
-    "limits": "Static artifact; not a live analyzer or orchestrator"
+    "limits": "Static artifact; not a live analyzer or orchestrator. Optional selection names a view select field shared with other blocks"
   },
   {
     "type": "explorer",

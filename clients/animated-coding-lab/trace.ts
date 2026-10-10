@@ -225,3 +225,33 @@ export function labMotion(trace: LabTrace): MotionSpec {
     provenance: 'recorded', note: 'Positions and timings are presentation. Every value, line and step order comes from the recorded trace artifact; Studio does not run Python.',
     entities, links, steps, sources};
 }
+
+/** Selectable identities of the lab: the four stations of labMotion and one token per input row (bounded like traceValue lists). */
+export const LAB_STATIONS = ['input', 'fn', 'output', 'kpi'] as const;
+export const MAX_LAB_ROWS = 32;
+export const LAB_SELECTIONS: readonly string[] = ['none', ...LAB_STATIONS, ...Array.from({length: MAX_LAB_ROWS}, (_, i) => 'row-' + i)];
+
+/** Steps of each loop iteration: from the `for` visit that takes row i up to the next `for` visit (pure, from the trace only). */
+export function rowSteps(trace: LabTrace): number[][] {
+  const out: number[][] = [];
+  let current = -1;
+  for (const step of trace.steps) {
+    if (step.scope === '<module>' && /^for\s/.test(step.code)) {
+      if (loopExhausted(trace, step.index)) {current = -1; continue;}
+      current = out.length; out.push([]);
+    }
+    if (current >= 0) out[current].push(step.index);
+  }
+  return out;
+}
+
+/**
+ * Steps related to one selected identity: a row token owns its loop iteration; a station owns the steps whose
+ * motion focus is that station. Unknown identities (for example row-9 in a 4-row trace) relate to nothing.
+ */
+export function relatedSteps(trace: LabTrace, spec: MotionSpec, selection: string): number[] {
+  const row = /^row-(\d+)$/.exec(selection);
+  if (row) return rowSteps(trace)[Number(row[1])] ?? [];
+  if (!(LAB_STATIONS as readonly string[]).includes(selection)) return [];
+  return spec.steps.flatMap((s, i) => s.focus === selection ? [i] : []);
+}
