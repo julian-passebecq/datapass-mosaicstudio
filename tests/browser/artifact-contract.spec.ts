@@ -10,7 +10,7 @@ const TOKEN='contract-token-'+Math.random().toString(36).slice(2,14).padEnd(12,'
 let service:ChildProcess|null=null,errors:string[]=[];
 
 async function startService(workbenchOrigin:string){
-  service=spawn(process.env.PYTHON||'python',['py/service/app.py','--port',String(PORT),'--workbench-origin',workbenchOrigin],{env:{...process.env,DATAPASS_RUNTIME_TOKEN:TOKEN},stdio:['ignore','ignore','pipe']});
+  service=spawn(process.env.PYTHON||'python',['py/service/app.py','--port',String(PORT),'--workbench-origin',workbenchOrigin],{env:{...process.env,DATAPASS_RUNTIME_TOKEN:TOKEN,DATAPASS_SERVICE_ORIGINS:workbenchOrigin},stdio:['ignore','ignore','pipe']});
   let log='';service.stderr!.on('data',d=>{log+=String(d);});
   for(let i=0;i<120;i++){try{if((await fetch(ORIGIN+'/health')).ok)return;}catch{/* starting */}await new Promise(r=>setTimeout(r,250));}
   throw new Error('The runtime did not start: '+log.slice(-800));
