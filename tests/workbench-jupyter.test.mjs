@@ -53,6 +53,9 @@ function fakeServer({badToken=false,interruptible=true}={}){
     requests.push({url,method:init.method,auth:init.headers.Authorization,credentials:init.credentials});
     const path=new URL(url).pathname;
     const reply=(status,body)=>({ok:status<300,status,text:async()=>body===undefined?'':JSON.stringify(body)});
+    if(path==='/api')return reply(200,{version:'2.21.1'});
+    // A real Jupyter Server answers a refused token with 403 and no CORS headers: the browser only sees a TypeError.
+    if(badToken==='cors')throw new TypeError('Failed to fetch');
     if(badToken)return reply(403,{message:'Forbidden'});
     if(path==='/api/status')return reply(200,{started:'x',kernels:0});
     if(path==='/api')return reply(200,{version:'2.21.1'});
@@ -120,10 +123,15 @@ test('jupyter adapter: pair, execute, publish a bounded table, interrupt, failur
 });
 
 test('jupyter adapter: a refused token is reported as denied and starts no kernel',async()=>{
-  const server=fakeServer({badToken:true});
-  const client=new JupyterClient({origin:'http://127.0.0.1:28888',token:TOKEN},server);
-  await assert.rejects(client.connect(),e=>e instanceof JupyterError&&e.kind==='denied'&&/refused the token/.test(e.message));
-  assert.ok(!server.requests.some(r=>r.method==='POST'));
+  for(const badToken of [true,'cors']){
+    const server=fakeServer({badToken});
+    const client=new JupyterClient({origin:'http://127.0.0.1:28888',token:TOKEN},server);
+    await assert.rejects(client.connect(),e=>e instanceof JupyterError&&e.kind==='denied'&&/refused the token/.test(e.message));
+    assert.ok(!server.requests.some(r=>r.method==='POST'));
+  }
+  // Unreachable, or this page's origin not allowed (the version probe itself fails): unavailable, not denied.
+  const down=new JupyterClient({origin:'http://127.0.0.1:28888',token:TOKEN},{fetch:async()=>{throw new TypeError('Failed to fetch');},socket:()=>{throw new Error('unused');}});
+  await assert.rejects(down.connect(),e=>e instanceof JupyterError&&e.kind==='unavailable');
 });
 
 test('outputs: bounded collection; HTML/SVG shown as text, scripts refused, other MIME preserved not displayed',()=>{

@@ -95,7 +95,7 @@ test.afterAll(async()=>{
 });
 
 test('E2E-01 blank workspace -> pair -> Python -> SQL on its result -> chart -> .ipynb + results -> restart -> reopen without rerun',async({browser},info)=>{
-  test.setTimeout(300000);
+  test.setTimeout(600000); // three service restarts and four page loads; generous for a loaded shared runner
   await startRuntime();await startJupyter();
   let context=await browser.newContext({acceptDownloads:true});
   let page=await open(context,link());

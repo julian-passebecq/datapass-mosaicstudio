@@ -157,7 +157,7 @@ type Pending={collector:OutputCollector;reply:Record<string,unknown>|null;idle:b
 export type KernelInfo={kernelId:string;kernelName:string;serverVersion:string;language:string};
 
 export class JupyterClient{
-  readonly origin:string;readonly #token:string;readonly #fetch:FetchLike;readonly #socket:SocketFactory;readonly #timeoutMs:number;
+  readonly origin:string;readonly #token:string;readonly #fetch:FetchLike;readonly #socket:SocketFactory;readonly #timeoutMs:number;#reachable=false;
   #ws:SocketLike|null=null;#kernel:KernelInfo|null=null;#session=crypto.randomUUID();#pending=new Map<string,Pending>();#closed=false;
   onDisconnect:((reason:string)=>void)|null=null;
   constructor(connection:{origin:string;token:string},options:{fetch?:FetchLike;socket?:SocketFactory;timeoutMs?:number}={}){
@@ -177,6 +177,9 @@ export class JupyterClient{
     try{
       response=await this.#fetch(this.origin+path,{method,headers:{Authorization:'token '+this.#token,...(body===undefined?{}:{'Content-Type':'application/json'})},...(body===undefined?{}:{body:JSON.stringify(body)}),credentials:'omit',cache:'no-store',mode:'cors',signal:controller.signal});
     }catch{
+      // The unauthenticated version probe succeeded, so the server is up and allows this origin. A refused token is
+      // answered 403 without CORS headers, which the browser reports only as a blocked request.
+      if(this.#reachable&&!controller.signal.aborted)throw new JupyterError('The Jupyter Server refused the token. Paste the token printed when it started.','denied');
       throw new JupyterError(`The Jupyter Server at ${this.origin} is unreachable, or it refused this page's origin. Start it with "python py/service/jupyter_local.py --workbench-origin ${typeof location==='undefined'?'<this page origin>':location.origin}".`,'unavailable');
     }finally{clearTimeout(timer);}
     const text=await response.text();
@@ -189,9 +192,12 @@ export class JupyterClient{
 
   /** Check the server, pick its Python kernelspec and start one kernel owned by this page. */
   async connect():Promise<KernelInfo>{
+    this.#reachable=false;
+    const version=await this.#request('/api');
+    if(!isObject(version)||typeof version.version!=='string')throw new JupyterError(`The service at ${this.origin} does not look like a Jupyter Server.`,'malformed');
+    this.#reachable=true;
     const status=await this.#request('/api/status');
     if(!isObject(status))throw new JupyterError(`The service at ${this.origin} does not look like a Jupyter Server.`,'malformed');
-    const version=await this.#request('/api').catch(()=>null);
     const specs=await this.#request('/api/kernelspecs');
     if(!isObject(specs)||!isObject(specs.kernelspecs))throw new JupyterError('The Jupyter Server returned malformed kernelspecs.','malformed');
     const entries=Object.entries(specs.kernelspecs).filter(([,v])=>isObject(v)&&isObject(v.spec)&&String((v.spec as Record<string,unknown>).language).toLowerCase()==='python');
