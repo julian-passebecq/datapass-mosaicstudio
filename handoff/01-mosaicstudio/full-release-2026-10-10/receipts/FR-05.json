@@ -1,15 +1,15 @@
 {
   "fr": "01-mosaicstudio/FR-05",
   "title": "Finish and preserve the visualization surface",
-  "source_sha": "3f5c120b00d8e5a1b2f25fad39896632e406f1ac (code and evidence; this receipt update is the only later commit)",
+  "source_sha": "72891e04e39ed54e9692ca27b4cdaa5a86cefc2c (code and evidence; this receipt update is the only later commit)",
   "base_sha": "0143e58",
   "branch": "claude/explanations-recovery",
   "tests": [
     {"cmd": "npm test (node --test tests/*.test.mjs), local Windows 11, before rebase on 0143e58", "pass": 628, "fail": 0, "skip": 1},
     {"cmd": "npm test, local Windows 11, after rebase on 0143e58", "pass": 637, "fail": 0, "skip": 0},
-    {"cmd": "npm test, CI ubuntu-latest run 38021360810", "pass": 635, "fail": 0, "skip": 2},
-    {"cmd": "npm run test:browser (full Playwright suite incl. explanations.spec.ts 4/4), CI run 38021360810", "pass": 113, "fail": 0, "skip": 0},
-    {"cmd": "npm run test:client-builds + 19-target emitted-JS budget gate, CI run 38021360810 (architecture-reference 223749, animated-coding-lab 169200, motion-reference 157425)", "pass": 19, "fail": 0, "skip": 0},
+    {"cmd": "npm test, CI ubuntu-latest run 38023964607", "pass": 645, "fail": 0, "skip": 2},
+    {"cmd": "npm run test:browser (full Playwright suite incl. explanations.spec.ts 4/4), CI run 38023964607", "pass": 117, "fail": 0, "skip": 0},
+    {"cmd": "npm run test:client-builds + 19-target emitted-JS budget gate, CI run 38023964607 (architecture-reference 223749, animated-coding-lab 169200, motion-reference 157425)", "pass": 19, "fail": 0, "skip": 0},
     {"cmd": "node --test tests/explanations.test.mjs, local", "pass": 7, "fail": 0, "skip": 0},
     {"cmd": "node --test tests/product-inventory.test.mjs, local", "pass": 5, "fail": 0, "skip": 0},
     {"cmd": "npx tsc --noEmit, local", "pass": 1, "fail": 0, "skip": 0},
@@ -30,7 +30,7 @@
   },
   "os": "Windows 11 Pro 10.0.26300 (local); ubuntu-latest (CI)",
   "browser": "Playwright-managed Chromium (Playwright 1.63.0) locally; CI browser recorded in qa/browser-version.txt of the CI artifact",
-  "ci_run": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38021360810 (PR #49, job web success in 14m25s at 3f5c120)",
+  "ci_run": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38023964607 (PR #49, job web success in 11m16s at 72891e0)",
   "private_evidence": [
     {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-05/SHA256SUMS", "sha256": "6922afe0fbe47dc9d395ae959b16aecf1168a0fb40b41bbe15515c533050f254"},
     {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-05/arch-walkthrough-desktop.png", "sha256": "a58544d2bb31d3c725e37d6cad26dcbf8b6247c1e7d39da66ab619e222529711"},

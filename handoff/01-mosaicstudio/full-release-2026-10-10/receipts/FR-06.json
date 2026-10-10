@@ -1,7 +1,7 @@
 {
   "fr": "01-mosaicstudio/FR-06",
   "title": "Recover old work without public publication",
-  "source_sha": "3f5c120b00d8e5a1b2f25fad39896632e406f1ac (code and evidence; this receipt update is the only later commit)",
+  "source_sha": "72891e04e39ed54e9692ca27b4cdaa5a86cefc2c (code and evidence; this receipt update is the only later commit)",
   "base_sha": "0143e58",
   "branch": "claude/explanations-recovery",
   "tests": [
@@ -9,7 +9,7 @@
     {"cmd": "sha256sum -c files.sha256 / eol-only-raw.sha256 on extracted copies (23 + 2 + 18)", "pass": 43, "fail": 0, "skip": 0},
     {"cmd": "tests/fabric-bricks.test.mjs within npm test, local", "pass": 1, "fail": 0, "skip": 0},
     {"cmd": "playwright explanations.spec.ts: legacy Fabric Bricks route (selected-client build), local", "pass": 1, "fail": 0, "skip": 0},
-    {"cmd": "same check inside npm run test:browser, CI run 38021360810", "pass": 1, "fail": 0, "skip": 0}
+    {"cmd": "same check inside npm run test:browser, CI run 38023964607", "pass": 1, "fail": 0, "skip": 0}
   ],
   "journeys": [
     "Open ?app=fabric-bricks (draft route): gallery opens, synthetic/provisional status, no canvas or 3D chunk before 3D is chosen."
@@ -20,7 +20,7 @@
   ],
   "os": "Windows 11 Pro 10.0.26300 (local); ubuntu-latest (CI)",
   "browser": "Playwright-managed Chromium (Playwright 1.63.0) locally",
-  "ci_run": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38021360810 (PR #49, job web success at 3f5c120)",
+  "ci_run": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38023964607 (PR #49, job web success at 72891e0)",
   "private_evidence": [
     {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-06/SHA256SUMS", "sha256": "b38beeb29a4683ba811fcbaafc4ab7351036e1c3a2c1d43deb0376953b3b4887"},
     {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-06/verify.log", "sha256": "d5c035b8060964fd7d8789018e02d1a3a6e6415221b10456514ccf7ec6c5bef9"},
