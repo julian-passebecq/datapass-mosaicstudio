@@ -5,7 +5,7 @@ import tailwind from '@tailwindcss/vite';
 import path from 'node:path';
 import {clientRegistryPlugin} from './scripts/client-plugin';
 const base=path.resolve('.upstream/conceptmotion/project/conceptmotion_studio/packages');
-const csp="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' blob: http://127.0.0.1:* http://localhost:*; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'";
+const csp="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' blob: http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'";
 export default defineConfig(({command})=>({
   base:'./',define:capabilityDefines(CAPABILITY_IDS),plugins:[react(),tailwind(),clientRegistryPlugin(undefined)],
   resolve:{alias:[...(command==='serve'?[{find:/^node-sql-parser$/,replacement:path.resolve('public/vendor/sql-parser.mjs')}]:[]),{find:/^@fluentui\/react-icons$/,replacement:path.resolve('.generated/fluent-icons.js')},{find:'@vizforge',replacement:path.resolve('.upstream/vizforge/src')},...['core','svg','react'].map(name=>({find:'@conceptmotion/'+name,replacement:base+'/'+name+'/src/index.ts'})),{find:'@datapass/content',replacement:base+'/content/src/index.ts'}],dedupe:['react','react-dom']},
