@@ -35,7 +35,15 @@ async function hostPage(page:Page,extra=''){
 }
 const msgs=(page:Page)=>page.evaluate(()=>(window as unknown as {msgs:Msg[]}).msgs);
 const send=(page:Page,data:unknown)=>page.evaluate(d=>(document.getElementById('v') as HTMLIFrameElement).contentWindow!.postMessage(d,'*'),data);
-const frameSize=(page:Page,w:number,h:number)=>page.evaluate(([w,h])=>{document.body.style.setProperty('--w',w+'px');document.body.style.setProperty('--h',h+'px');},[w,h]);
+/** Resizes the frame and returns only once the viewer itself sees the new size and has painted it:
+ *  measuring or clicking earlier uses the previous layout (a click on stale coordinates misses its button). */
+const frameSize=async(page:Page,w:number,h:number)=>{
+  await page.evaluate(([w,h])=>{document.body.style.setProperty('--w',w+'px');document.body.style.setProperty('--h',h+'px');},[w,h]);
+  const viewer=page.frames().find(f=>f.url().includes('concept-viewer.html'));
+  if(!viewer)throw new Error('viewer frame not found');
+  await viewer.waitForFunction(([w,h])=>innerWidth===w&&innerHeight===h,[w,h]);
+  await viewer.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(()=>r(null)))));
+};
 
 type Box={x:number;y:number;width:number;height:number};
 type Fit={ok:true;el:Box;stage:Box}|{ok:false;reason:string};

@@ -1,3 +1,5 @@
+> **Post-merge (2026-10-10):** FR-07 merged as PR #50 → final main `64d05c0`; main CI run 38030864652 attempt 1 SUCCESS. Contoso can pin the artifact schema from `f3a02bc` (unchanged through `64d05c0`). See [`POST-MERGE.json`](POST-MERGE.json).
+
 # Resume: 01-mosaicstudio full release (MosaicStudio 0.10.0, 2026-10-10)
 
 - **State:** FR-01..FR-06 merged on main (PRs #46-#49, last merge `4a723bb`). FR-07 (release packaging) is the open PR from `claude/full-release-packaging`; the verify step merges it on green CI. Local release 0.10.0 is ARTIFACT_READY; nothing tagged, published or deployed.

@@ -1,0 +1,45 @@
+{
+  "receipt": "post-merge",
+  "appends_to": ["OUTCOME.json", "READY.json"],
+  "note": "Appended after the FR-07 squash merge. OUTCOME.json and READY.json stay as the pre-merge qualification record.",
+  "state": "MERGED",
+  "package_version": "0.10.0",
+  "final_main_sha": "64d05c0b6b9aa235ddabcc3eed89cba5d62c7591",
+  "source_sha": "ec8d1f3c85a10d3ad943fc5deecb939c20439d0c",
+  "merged_packages": [
+    {"fr": "01-mosaicstudio/FR-01", "pr": 46, "merge_sha": "f3a02bca98efb56ac219db46edb6275088a20192"},
+    {"fr": "01-mosaicstudio/FR-02", "pr": 47, "merge_sha": "0143e581b68b13ec1f0e5fa6cd1a44abb306a526"},
+    {"fr": "01-mosaicstudio/FR-03", "pr": 47, "merge_sha": "0143e581b68b13ec1f0e5fa6cd1a44abb306a526"},
+    {"fr": "01-mosaicstudio/FR-04", "pr": 48, "merge_sha": "dc271227be620f5f020e079edc8ba904d3281e88"},
+    {"fr": "01-mosaicstudio/FR-05", "pr": 49, "merge_sha": "4a723bb7576ee6b6a3ef9c4133696bccc2320892"},
+    {"fr": "01-mosaicstudio/FR-06", "pr": 49, "merge_sha": "4a723bb7576ee6b6a3ef9c4133696bccc2320892"},
+    {"fr": "01-mosaicstudio/FR-07", "pr": 50, "merge_sha": "64d05c0b6b9aa235ddabcc3eed89cba5d62c7591"}
+  ],
+  "final_main_ci": {
+    "run_id": 38030864652,
+    "url": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38030864652",
+    "attempt": 1,
+    "workflow": "Studio web gate",
+    "job": "web",
+    "runner": "GitHub-hosted (name not reported)",
+    "os": "ubuntu-latest",
+    "head_sha": "64d05c0b6b9aa235ddabcc3eed89cba5d62c7591",
+    "status": "SUCCESS",
+    "started": "2026-10-10T06:25:16Z",
+    "completed": "2026-10-10T06:37:00Z"
+  },
+  "consumer_pins": [
+    {
+      "consumer": "07-contoso",
+      "contract": "datapass.artifact/1 (lineage fields: provenance.producer, inputs, inputHash, dependsOn, representation.inputs)",
+      "first_sha": "f3a02bca98efb56ac219db46edb6275088a20192",
+      "unchanged_through": "64d05c0b6b9aa235ddabcc3eed89cba5d62c7591",
+      "file": "docs/contracts/artifact.schema.json",
+      "git_blob": "46cca85cfeef7c511fe0c587cd3ce8e849e9e6db",
+      "sha256": "74aee5fe7d5b4fc7bab2e51620e9a5948aefa793a59b14c08ae221bf5fb4cb05"
+    }
+  ],
+  "tag": null,
+  "public_distribution": "NOT_AUTHORIZED",
+  "fabric_runtime": "NOT_AUTHORIZED"
+}
