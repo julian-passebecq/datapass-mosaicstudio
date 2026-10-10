@@ -13,7 +13,7 @@ concurrency:
 jobs:
   web:
     runs-on: ubuntu-latest
-    timeout-minutes: 24
+    timeout-minutes: 28
     env:
       NODE_OPTIONS: --max-old-space-size=4096
       DATAPASS_REQUIRE_JUPYTER: '1'
