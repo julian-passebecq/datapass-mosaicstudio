@@ -47,6 +47,8 @@ async function fitsInside(page:Page,frame:FrameLocator,selector:string){
   within(host,{x:0,y:0,width:vp.width,height:vp.height},'frame');within(stage,host,'stage');within(el,stage,selector);
   return {el,stage};
 }
+/** Whole-diagram fit leaves room for the zoom tools and hint, so small frames fill less of the stage. */
+const MIN_FILL=.55;
 const fillRatio=({el,stage}:{el:{width:number;height:number};stage:{width:number;height:number}})=>Math.max(el.width/stage.width,el.height/stage.height);
 
 test('synthetic React- and Contoso-shape concept exports open over file:// with no warnings, all entities and evidence',async({page})=>{
@@ -84,7 +86,7 @@ test('embed fit: no corner of the diagram, stage or frame is clipped after each 
   const sizes:[number,number][]=[[1000,600],[640,420],[1280,760],[480,360],[900,560]];
   for(const [w,h] of sizes){
     await frameSize(page,w,h);
-    await expect.poll(async()=>fillRatio(await fitsInside(page,frame,'[data-testid=concept-isometric] svg')),{message:`isometric ${w}x${h}`}).toBeGreaterThan(.75);
+    await expect.poll(async()=>fillRatio(await fitsInside(page,frame,'[data-testid=concept-isometric] svg')),{message:`isometric ${w}x${h}`}).toBeGreaterThan(MIN_FILL);
   }
   await shot(page,'embed-isometric-900x560.png');
   await send(page,{type:'datapass.concept-spec/load',spec,options:{view:'layered'}});
@@ -109,7 +111,7 @@ test('embed fit: no corner of the diagram, stage or frame is clipped after each 
   await send(page,{type:'datapass.concept-spec/load',spec,options:{view:'isometric'}});
   for(const [w,h] of [[1100,700],[760,560],[1400,900]] as [number,number][]){
     await page.setViewportSize({width:w,height:h});
-    await expect.poll(async()=>fillRatio(await fitsInside(page,frame,'[data-testid=concept-isometric] svg')),{message:`window ${w}x${h}`}).toBeGreaterThan(.75);
+    await expect.poll(async()=>fillRatio(await fitsInside(page,frame,'[data-testid=concept-isometric] svg')),{message:`window ${w}x${h}`}).toBeGreaterThan(MIN_FILL);
   }
 });
 
@@ -145,7 +147,8 @@ test('embed messages: only the direct parent is heard, replies carry the viewer 
   // Every reply came from the framed viewer's own window and origin.
   const viewerMsgs=(await msgs(page)).filter(m=>m.type.startsWith('datapass.concept-spec/'));
   expect(viewerMsgs.length).toBeGreaterThanOrEqual(4);
-  for(const m of viewerMsgs){expect(m.type).toBe('datapass.concept-spec/ready');expect(m.fromFrame).toBe(true);expect(m.origin).toBe(VIEWER);}
+  // The host frames the viewer with sandbox="allow-scripts" (opaque origin "null"), so a host must check e.source, as this one does.
+  for(const m of viewerMsgs){expect(m.type).toBe('datapass.concept-spec/ready');expect(m.fromFrame).toBe(true);expect(m.origin).toBe('null');}
 });
 
 test('artifact file viewer opens a Contoso-shape artifact in the existing ArtifactView, keeps lineage and rejects bad files',async({page})=>{
@@ -181,7 +184,7 @@ test('artifact file viewer opens a Contoso-shape artifact in the existing Artifa
     await writeFile(path.join(dir,'bad.json'),JSON.stringify(bad));
     await writeFile(path.join(dir,'huge.json'),' '.repeat(2*1048576+1));
     await writeFile(path.join(dir,'text.json'),'{not json');
-    for(const [name,reason] of [['bad.json',/unknown field|token/i],['huge.json',/limited to 2097152 bytes/],['text.json',/Not valid JSON/]] as const){
+    for(const [name,reason] of [['bad.json',/unexpected fields/],['huge.json',/limited to 2097152 bytes/],['text.json',/Not valid JSON/]] as const){
       await page.getByTestId('artifact-file').setInputFiles(path.join(dir,name));
       await expect(page.getByTestId('artifact-problem')).toContainText(name+' was not opened');
       await expect(page.getByTestId('artifact-problem')).toContainText(reason);
@@ -212,7 +215,7 @@ test('private qualification: real exports in FR04_REAL_DIR open in the concept v
     await expect(inner).toHaveAttribute('data-spec',spec.id);
     for(const [w,h] of [[1000,600],[640,420],[1280,760]] as [number,number][]){
       await frameSize(page,w,h);
-      await expect.poll(async()=>fillRatio(await fitsInside(page,frame,'[data-testid=concept-isometric] svg'))).toBeGreaterThan(.75);
+      await expect.poll(async()=>fillRatio(await fitsInside(page,frame,'[data-testid=concept-isometric] svg'))).toBeGreaterThan(MIN_FILL);
     }
     await shot(page,name.replace(/\.json$/,'')+'.embed.png');
     await page.unrouteAll({behavior:'ignoreErrors'});

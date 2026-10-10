@@ -5,6 +5,8 @@ import {ambientInterval,navPose,transition,TRANSITION_MS,type Nav,type Pose} fro
 
 declare global{interface Window{__conceptStage?:{settled():boolean;pose():Pose;pick(x:number,y:number):string|null}}}
 
+/** One display refresh (or a little more) between two animation frames is normal, not a cost. */
+const FRAME_SLACK_MS=20;
 /**
  * Live 3D concept scene (load it lazily: it pulls Three.js). Camera transitions are pure samples of
  * (from, to, elapsed); the rAF loop only supplies elapsed time and the icon clock. With reduced motion the
@@ -30,9 +32,12 @@ export default function ConceptStage({spec,nav,reduced,onSelect,onStep,whole=fal
     try{stage.current=createStage(host.current!,overlay.current!,spec,{fitAspect:whole?2:1.5});}catch(e){setError(e instanceof Error?e.message:String(e));return;}
     const pose=navPose(spec,nav);current.current=pose;motion.current={from:pose,to:pose,start:-1e9};
     const observer=new ResizeObserver(()=>{stage.current?.resize();dirty.current=true;});observer.observe(host.current!);
-    let frame=0,last=-Infinity,interval=0,wasMoving=true;
+    let frame=0,last=-Infinity,interval=0,wasMoving=true,drewPrevious=false,previous=0;
     const tick=(now:number)=>{
       frame=requestAnimationFrame(tick);
+      // A frame's real cost includes compositing and GPU work after the script returns: a late next animation frame shows it.
+      if(drewPrevious)interval=Math.max(interval,ambientInterval(now-previous-FRAME_SLACK_MS));
+      previous=now;drewPrevious=false;
       const m=motion.current!,moving=!reduced&&now-m.start<TRANSITION_MS;
       // The frame that ends a transition is drawn at the final pose before the stage reports itself settled.
       const due=moving||wasMoving||dirty.current||(!reduced&&now-last>=interval);
@@ -40,7 +45,7 @@ export default function ConceptStage({spec,nav,reduced,onSelect,onStep,whole=fal
       const started=performance.now(),pose=transition(m.from,m.to,now-m.start,reduced);current.current=pose;
       dirty.current=false;
       stage.current?.render(reduced?0:now/1000,pose,viewRef.current);
-      last=now;interval=ambientInterval(performance.now()-started);wasMoving=moving;
+      last=now;interval=ambientInterval(performance.now()-started);wasMoving=moving;drewPrevious=true;
       host.current!.dataset.settled=String(!moving);
     };
     frame=requestAnimationFrame(tick);

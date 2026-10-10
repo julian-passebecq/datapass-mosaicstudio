@@ -19,9 +19,10 @@ export function mixPose(a:Pose,b:Pose,k:number):Pose{
 }
 export const TRANSITION_MS=950;
 /** Ambient (settled) 3D frames may use at most 1/AMBIENT_SHARE of the main thread and run at most AMBIENT_MAX_FPS. */
-export const AMBIENT_SHARE=4,AMBIENT_MAX_FPS=30,AMBIENT_MAX_INTERVAL_MS=500;
+export const AMBIENT_SHARE=4,AMBIENT_MAX_FPS=30,AMBIENT_MAX_INTERVAL_MS=8000;
 /**
- * Next ambient frame interval from the measured cost of the last frame: a slow (software) GPU gets fewer ambient frames
+ * Next ambient frame interval from the measured cost of the last frame (its script time, or the delay before the next
+ * animation frame when the browser was still busy presenting it): a slow (software) GPU gets fewer ambient frames
  * instead of a saturated main thread. Camera transitions, resizes and selection changes are never throttled.
  */
 export function ambientInterval(frameCostMs:number):number{
