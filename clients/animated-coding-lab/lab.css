@@ -83,3 +83,10 @@
   .lab-select,.lab-check{font-size:10px}
 }
 @media(prefers-reduced-motion:reduce){.lab *{scroll-behavior:auto!important}}
+/* Shared selection (FR-05): row picker, related steps and transcript marks follow one view field. */
+.lab-chips{display:flex;flex-wrap:wrap;gap:4px;margin:6px 0}
+.lab .lab-chips button{font:500 10px/1.4 var(--lab-mono);padding:3px 7px;border:1px solid var(--lab-line);border-radius:4px;background:#fff;color:var(--lab-ink)}
+.lab .lab-chips button[aria-pressed=true],.lab .lab-chips button[aria-current=step]{background:var(--lab-active);border-color:var(--lab-accent)}
+.lab-selected{border-top:1px solid var(--lab-line);margin-top:8px;padding-top:6px}
+.lab-selected p{margin:2px 0;overflow-wrap:anywhere}
+.lab-transcript li[data-related] button{box-shadow:inset 3px 0 0 var(--lab-accent)}

@@ -1,0 +1,58 @@
+{
+  "fr": "01-mosaicstudio/FR-05",
+  "title": "Finish and preserve the visualization surface",
+  "source_sha": "72891e04e39ed54e9692ca27b4cdaa5a86cefc2c (code and evidence; this receipt update is the only later commit)",
+  "base_sha": "0143e58",
+  "branch": "claude/explanations-recovery",
+  "tests": [
+    {"cmd": "npm test (node --test tests/*.test.mjs), local Windows 11, before rebase on 0143e58", "pass": 628, "fail": 0, "skip": 1},
+    {"cmd": "npm test, local Windows 11, after rebase on 0143e58", "pass": 637, "fail": 0, "skip": 0},
+    {"cmd": "npm test, CI ubuntu-latest run 38023964607", "pass": 645, "fail": 0, "skip": 2},
+    {"cmd": "npm run test:browser (full Playwright suite incl. explanations.spec.ts 4/4), CI run 38023964607", "pass": 117, "fail": 0, "skip": 0},
+    {"cmd": "npm run test:client-builds + 19-target emitted-JS budget gate, CI run 38023964607 (architecture-reference 223749, animated-coding-lab 169200, motion-reference 157425)", "pass": 19, "fail": 0, "skip": 0},
+    {"cmd": "node --test tests/explanations.test.mjs, local", "pass": 7, "fail": 0, "skip": 0},
+    {"cmd": "node --test tests/product-inventory.test.mjs, local", "pass": 5, "fail": 0, "skip": 0},
+    {"cmd": "npx tsc --noEmit, local", "pass": 1, "fail": 0, "skip": 0},
+    {"cmd": "npm run contracts (regenerated) and drift check, local", "pass": 1, "fail": 0, "skip": 0},
+    {"cmd": "npm run build, local", "pass": 1, "fail": 0, "skip": 0},
+    {"cmd": "npm run client:check -- animated-coding-lab and architecture-reference, local", "pass": 2, "fail": 0, "skip": 0},
+    {"cmd": "playwright explanations + motion + motion-pro + motion-visual + architecture + framework + framework-restore + framework-responsive specs, local preview on :24173", "pass": 40, "fail": 0, "skip": 0}
+  ],
+  "journeys": [
+    "Coding lab (selected-client build, production CSP): select rows[1] -> 6 related steps, 6 code lines marked, 6 transcript steps marked; jump to its call step (selection kept); select the kpi box in the SVG; ISO keeps the selection; Reset returns to step 1, no selection, 2D, paused; no database/kernel/WebGL/T3 request and no WebGL context.",
+    "Architecture walkthrough (workbench preview): step 6 focus site_performance selects the same node in the React Flow review canvas; the inspector opens the inert models/site_performance.sql excerpt; selecting Turbine telemetry in the canvas outline selects it in the walkthrough; Reset clears both views."
+  ],
+  "payload": {
+    "metric": "sum of individually gzipped emitted JS (scripts/check-client-performance.mjs)",
+    "architecture-reference": {"main_f3a02bc": 183190, "branch": 223749, "budget": 230400},
+    "animated-coding-lab": {"main_f3a02bc": 168210, "branch": 169200, "budget": 189440},
+    "motion-reference": {"main_f3a02bc": 157254, "branch": 157425, "budget": 184320}
+  },
+  "os": "Windows 11 Pro 10.0.26300 (local); ubuntu-latest (CI)",
+  "browser": "Playwright-managed Chromium (Playwright 1.63.0) locally; CI browser recorded in qa/browser-version.txt of the CI artifact",
+  "ci_run": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38023964607 (PR #49, job web success in 11m16s at 72891e0)",
+  "private_evidence": [
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-05/SHA256SUMS", "sha256": "6922afe0fbe47dc9d395ae959b16aecf1168a0fb40b41bbe15515c533050f254"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-05/arch-walkthrough-desktop.png", "sha256": "a58544d2bb31d3c725e37d6cad26dcbf8b6247c1e7d39da66ab619e222529711"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-05/arch-walkthrough-mobile.png", "sha256": "122a4c4673200458e626b092877ac2a523a359663e815575db029261875b52f4"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-05/coding-lab-selected-desktop.png", "sha256": "b3476ade028cc60ba5315ac717e9af1914327d27bd7cef6b0de788fd5ff8653d"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-05/coding-lab-selected-mobile.png", "sha256": "241ecf25abdc61943f8099b44d78404215a2884a8302135127dd0b5e6f3789ce"}
+  ],
+  "gates": {
+    "inventory_diff": "PASS",
+    "coding_explanation_shared_selection_reset": "PASS",
+    "architecture_walkthrough_evidence_selection_reset": "PASS",
+    "light_outputs_no_db_kernel_webgl_t3": "PASS",
+    "payload_within_budgets": "PASS",
+    "responsive_screenshots_inspected": "PASS",
+    "concept_standalone_embed_fit": "UNKNOWN",
+    "ci": "PASS"
+  },
+  "omissions": [
+    "The concept-standalone embed-fit fix is owned by the FR-04 package (the concept viewer was not touched).",
+    "Payload was measured locally with build:client; the authoritative 19-target gate is the CI test:client-builds step.",
+    "Existing specs were run locally from port-rewritten copies (4173 -> 24173); CI runs the originals.",
+    "smoke-coding-lab (npm run test:coding-lab) was not run; its committed stills were not regenerated.",
+    "architecture-reference now uses most of its emitted-JS headroom (6,651 B left)."
+  ]
+}

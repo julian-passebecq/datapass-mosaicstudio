@@ -28,7 +28,7 @@ export type Block = {id: string; span?: number; title?: string} & (
   | {type: 'scene3d'; resource: string; explode: string; phase: string; camera: string; selection: string}
   | {type: 'story-controls'; resource: string}
   | {type: 'story-figure'; resource: string}
-  | {type: 'architecture'; resource: string}
+  | {type: 'architecture'; resource: string; selection?: string}
   | {type: 'explorer'; resource: string; focus: string; facet: string; view: string; level: string; group: string; document: string; scroll?: boolean}
   | {type: 'explanation'; resource: string}
   | {type: 'replay'; resource: string; frame: string; selection: string; channel: string; view: string; speed: string}

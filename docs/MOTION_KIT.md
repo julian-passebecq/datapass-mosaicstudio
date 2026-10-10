@@ -44,6 +44,8 @@ Flat 2D and isometric are orthographic views of the same world coordinates. Neit
 
 Canonical geometry also drives SVG/HTML exports. The renderer's local layout is not a CAD model. Clients with dense graphs must still review label density and provide sensible station placement; the framework does not invent domain topology.
 
+**Reset (FR-05, 2026-10-10).** The transport has a Reset button. It pauses the player and applies one atomic view-only cue with the declared defaults of the block's own five fields (step, selection, projection, panel, source). It never touches model inputs, tasks or other blocks' fields.
+
 ## Reusable workspace and evidence primitives
 
 `src/framework/workspace` exports WorkspaceShell with optional rail, collapsible object sidebar, controlled tabs, main content, inspector and status. Keyboard tab traversal supports left/right/home/end. On narrow screens the view rail becomes horizontal and source/context use the full content width. The shell contains no editor, file system, query engine or project lifecycle state.

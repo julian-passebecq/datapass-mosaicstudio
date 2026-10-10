@@ -8,6 +8,8 @@ The page validates the trace against the published source text (each row's `code
 - VISUAL EXECUTION: each input row is a stable semantic object that enters `normalize()` and is replaced by its returned value, which lands in `results`; KPI strip (processed, total, mean) read from the recorded variables.
 - EXPLANATION: step text, source line, input/output, variables (changed ones marked), provenance (artifact, run, producer, input hash) and a link to the Lineage page.
 - Controls: play/pause, step -1/+1, scrubber, speed (0.5x/1x/2x: the controller's playback rate on the same clock, never the snapshot), projection, reduced motion (also follows the OS preference). Full transcript. Step, speed, projection and reduced motion are view fields, so saved state and `client:capture` restore an exact step.
+- Shared selection (`lab-selection`, a view field): pick a value or a box in the visual, or a `rows[i]` button. The code pane marks the lines it ran, the explanation lists its related steps (jump to any of them), and the transcript marks them. A row owns its loop iteration, a box owns the steps it is the focus of. Changing the selection never changes the step or reruns anything.
+- Reset: one atomic view-only cue back to the declared defaults (step 1, no selection, 2D, 1x, motion on). Playback pauses.
 
 Regenerate: `python py/coding_lab_trace.py`. Check: `npm run client:check -- animated-coding-lab`, `node --experimental-strip-types --test tests/coding-lab.test.mjs`, `npm run build:client -- animated-coding-lab && npm run test:coding-lab` (browser qualification, budget, two stable captures; writes `stills/`). `stills/demo.mp4` is a 25 s recording at 2x.
 
