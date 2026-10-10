@@ -25,6 +25,7 @@ import os
 import re
 import secrets
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -95,6 +96,13 @@ def main(argv: list[str] | None = None) -> int:
     else:
         print(f"DataPass: paste into the workbench -> URL http://127.0.0.1:{args.port}  token {token}", file=sys.stderr, flush=True)
     child = subprocess.Popen(server_args(args.port, origin, root), env=env)
+
+    def stop_on_term(_signum, _frame):
+        # SIGTERM to this launcher stops the server it started instead of orphaning it.
+        raise KeyboardInterrupt
+
+    if hasattr(signal, "SIGTERM"):
+        signal.signal(signal.SIGTERM, stop_on_term)
     try:
         return child.wait()
     except KeyboardInterrupt:

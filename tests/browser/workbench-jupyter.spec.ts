@@ -28,21 +28,28 @@ async function waitFor(url:string,headers:Record<string,string>,what:()=>string)
   for(let i=0;i<240;i++){try{const r=await fetch(url,{headers});if(r.ok)return;}catch{/* starting */}await pause(250);}
   throw new Error('Did not start: '+what().slice(-1500));
 }
+// Services start in their own process group on POSIX, so the whole tree (launcher + jupyter_server + kernels) stops.
+const DETACHED=process.platform!=='win32';
+function signalTree(p:ChildProcess,sig:NodeJS.Signals){try{process.kill(-p.pid!,sig);}catch{try{p.kill(sig);}catch{/* already gone */}}}
 async function stopTree(p:ChildProcess|null,probe:string){
-  if(p&&p.exitCode===null){if(process.platform==='win32')spawnSync('taskkill',['/pid',String(p.pid),'/T','/F']);else p.kill('SIGTERM');}
-  for(let i=0;i<60;i++){try{await fetch(probe);}catch{return;}await pause(250);}
+  if(p&&p.exitCode===null&&p.signalCode===null){if(process.platform==='win32')spawnSync('taskkill',['/pid',String(p.pid),'/T','/F']);else signalTree(p,'SIGTERM');}
+  for(let i=0;i<120;i++){
+    try{await fetch(probe);}catch{return;}
+    if(i===40&&p&&DETACHED)signalTree(p,'SIGKILL');
+    await pause(250);
+  }
   throw new Error('Still answering after stop: '+probe);
 }
 async function startJupyter(){
   await stopTree(jupyter,JORIGIN+'/api/status');
-  jupyter=spawn(PY,['py/service/jupyter_local.py','--port',String(JPORT),'--workbench-origin',PAGE,'--root-dir',kernelDir,'--no-print-token'],{env:{...process.env,DATAPASS_JUPYTER_TOKEN:JTOKEN},stdio:['ignore','pipe','pipe']});
+  jupyter=spawn(PY,['py/service/jupyter_local.py','--port',String(JPORT),'--workbench-origin',PAGE,'--root-dir',kernelDir,'--no-print-token'],{env:{...process.env,DATAPASS_JUPYTER_TOKEN:JTOKEN},stdio:['ignore','pipe','pipe'],detached:DETACHED});
   jupyter.stdout!.on('data',d=>{jupyterLog+=String(d);});jupyter.stderr!.on('data',d=>{jupyterLog+=String(d);});
   await waitFor(JORIGIN+'/api/status',{Authorization:'token '+JTOKEN},()=>jupyterLog);
 }
 async function startRuntime(maxBytes?:number){
   await stopTree(runtime,RORIGIN+'/health');
   rtoken='nb-e2e-'+randomBytes(12).toString('hex');
-  runtime=spawn(PY,['py/service/app.py','--port',String(RPORT),'--workbench-origin',PAGE,'--results-dir',storeDir,...(maxBytes?['--results-max-bytes',String(maxBytes)]:[])],{env:{...process.env,DATAPASS_RUNTIME_TOKEN:rtoken,DATAPASS_SERVICE_ORIGINS:PAGE},stdio:['ignore','pipe','pipe']});
+  runtime=spawn(PY,['py/service/app.py','--port',String(RPORT),'--workbench-origin',PAGE,'--results-dir',storeDir,...(maxBytes?['--results-max-bytes',String(maxBytes)]:[])],{env:{...process.env,DATAPASS_RUNTIME_TOKEN:rtoken,DATAPASS_SERVICE_ORIGINS:PAGE},stdio:['ignore','pipe','pipe'],detached:DETACHED});
   runtime.stdout!.on('data',d=>{runtimeLog+=String(d);});runtime.stderr!.on('data',d=>{runtimeLog+=String(d);});
   await waitFor(RORIGIN+'/health',{},()=>runtimeLog);
 }

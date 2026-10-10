@@ -214,7 +214,7 @@ export default function Notebook(){
       stop(id);
       const controller=new AbortController(),attempt=(attempts.current[id]??0)+1;
       controllers.current[id]=controller;attempts.current[id]=attempt;delete cancelRequested.current[id];
-      patch(id,prev=>({status:'running',previous:prev&&prev.status==='done'&&prev.finishedAt&&(prev.artifact||prev.outputs)?{artifact:prev.artifact,outputs:prev.outputs,table:prev.table,finishedAt:prev.finishedAt,label:prev.stored?'Last saved result':'Last valid output'}:prev?.previous}));
+      patch(id,prev=>({status:'running',previous:prev&&prev.status==='done'&&prev.finishedAt&&(prev.artifact||prev.outputs)?{artifact:prev.artifact,outputs:prev.outputs,table:prev.table,finishedAt:prev.finishedAt,label:prev.stored?'Last saved result':prev.artifact?'Previous result':'Last valid output'}:prev?.previous}));
       let result:Result;
       try{
         result=cell.kind==='sql'?await runSql(cell,controller.signal):cell.kind==='jupyter'?await runJupyter(cell,controller.signal,outputs=>{if(attempts.current[id]===attempt)patch(id,prev=>({...(prev??{status:'running'}),status:'running',outputs}));}):await runPython(cell as PythonCell,controller.signal,record=>{if(attempts.current[id]===attempt)patch(id,prev=>({...(prev??{status:'running'}),status:'running',record}));});
