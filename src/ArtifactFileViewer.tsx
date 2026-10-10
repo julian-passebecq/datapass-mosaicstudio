@@ -44,7 +44,7 @@ export default function ArtifactFileViewer(){
     <header className="site-page-heading"><span className="site-kicker">DataPass / artifact file</span><h1>Open a datapass.artifact file</h1>
       <p>Validated as datapass.artifact v1 (structure and references) before it is shown. Nothing in the file runs. Lineage below is what the producer declared, not something this page observed.</p></header>
     <div style={{display:'flex',gap:8,flexWrap:'wrap',alignItems:'center'}}>
-      <label className="site-button" style={{cursor:'pointer'}}>Open artifact file<input type="file" accept=".json,application/json" hidden data-testid="artifact-file" aria-label="Open artifact file" onChange={e=>{const f=e.target.files?.[0];e.target.value='';if(f)void openFile(f);}}/></label>
+      <label style={{cursor:'pointer',padding:'6px 12px',border:'1px solid #286f89',borderRadius:6,background:'#286f89',color:'#fff',fontWeight:600}}>Open artifact file<input type="file" accept=".json,application/json" hidden data-testid="artifact-file" aria-label="Open artifact file" onChange={e=>{const f=e.target.files?.[0];e.target.value='';if(f)void openFile(f);}}/></label>
       <button type="button" aria-pressed={paste} onClick={()=>{setPaste(v=>!v);setDraft('');}}>Paste JSON</button>
       <small>or drop a file anywhere · at most {ARTIFACT_FILE_BYTES.toLocaleString()} bytes</small>
     </div>
