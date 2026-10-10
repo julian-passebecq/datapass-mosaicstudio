@@ -10,7 +10,9 @@ import {clientCspFor} from '../../scripts/client-csp.mjs';
 // Reference clients run on the workbench preview (baseURL). Non-reference clients are not in the default production
 // workbench (AGENTS.md rule 17), so they are built as selected clients and served with their production CSP.
 let errors: string[] = [], requests: string[] = [], origin = '';
-const HEAVY = /\.wasm(?:\?|$)|\/duckdb\/|duckdb-|three(?:\.module)?[-.]|SceneViewport-|Scene3D-|ModelBlock-|GLTFLoader|engine-[^/]*\.js$|\/t3code|[?&/]t3[=/]/i;
+// Code that would bring a database, WebGL or 3D renderer: wasm and JS chunks only. A shared stylesheet such as
+// scene3d-*.css carries no renderer; the WebGL-context spy and the canvas count below cover the runtime side.
+const HEAVY = /\.wasm(?:\?|$)|\/duckdb\/|duckdb-[^/]*\.js|\/(?:three(?:\.module)?|SceneViewport|Scene3D|ModelBlock|GLTFLoader|engine)-[^/]*\.js(?:\?|$)|\/t3code|[?&/]t3[=/]/i;
 test.beforeEach(async({page}, info) => {
   errors = []; requests = []; origin = new URL(info.project.use.baseURL || 'http://127.0.0.1:4173').origin + '/';
   page.on('pageerror', e => errors.push(e.message));
