@@ -1,0 +1,66 @@
+{
+  "fr": "01-mosaicstudio/FR-04",
+  "also_closes": "01-mosaicstudio/FR-05 known load-sensitive embed-fit failure (cause: unbounded per-frame 3D rendering)",
+  "source_sha": "1afee91b22ced52b84376217736c6178eebc50dd",
+  "base_sha": "6f45dd06e95ee66d693fc08fb4369c2a6379e84c",
+  "branch": "claude/consumer-interop",
+  "producer_consumer_vector": [
+    {"role": "producer", "repo": "datapass-react (GitLab, private)", "ref": "gitlab/main", "sha": "2e922ea4fc4d991ba809e1d3d78a23da2fb586be", "exporter": "apps/vscode-react/src/model/conceptExport.ts", "format": "datapass.concept-spec 1.0.0",
+      "targets": [{"repo": "contoso-data-studio", "sha": "f2d0c759b2362b94db0cd73c3a9d901ed4aed9f0"}, {"repo": "datapass-mosaicstudio", "sha": "6f45dd06e95ee66d693fc08fb4369c2a6379e84c"}]},
+    {"role": "producer", "repo": "contoso-data-studio", "ref": "origin/main", "sha": "f2d0c759b2362b94db0cd73c3a9d901ed4aed9f0", "exporter": "apps/api/app/services/fabric_apps/concept.py; apps/api/app/services/exports.py", "format": "datapass.concept-spec 1.0.0; datapass.artifact 1"},
+    {"role": "consumer", "repo": "datapass-mosaicstudio", "sha": "1afee91b22ced52b84376217736c6178eebc50dd", "surfaces": ["scripts/concept-validate.mjs --strict", "validateArtifact (TS)", "py/datapass_artifact.py", "docs/contracts/artifact.schema.json", "dist-standalone/concept-viewer.html (file:// and embed)", "?artifact=1 artifact file viewer"]},
+    {"role": "consumer (read only, not run)", "repo": "t3code-datapass", "ref": "origin/main", "sha": "3dfcecdfa169b8da1fadd6408ccb2765f73adaaf", "compatibility": "preview fixture compatible with what it inspects; it does not read preview.json; false 'missing provenance' for every concept spec (T3-side gap)"}
+  ],
+  "tests": [
+    {"cmd": "npm test", "pass": 620, "fail": 0, "skip": 1},
+    {"cmd": "npx tsc --noEmit", "pass": 1, "fail": 0, "skip": 0},
+    {"cmd": "node --experimental-strip-types --test tests/consumer-interop.test.mjs", "pass": 8, "fail": 0, "skip": 0},
+    {"cmd": "node --experimental-strip-types --test tests/concept-stage-budget.test.mjs", "pass": 2, "fail": 0, "skip": 0},
+    {"cmd": "node scripts/concept-validate.mjs --strict <2 synthetic fixtures + 3 real exports>", "pass": 5, "fail": 0, "skip": 0},
+    {"cmd": "npm run preview:validate -- spec/preview/v1/fixtures/synthetic-client/preview.json --check-files", "pass": 1, "fail": 0, "skip": 0},
+    {"cmd": "PW_PORT=24173 npx playwright test tests/browser/consumer-interop.spec.ts tests/browser/concept-standalone.spec.ts", "pass": 9, "fail": 1, "skip": 1, "note": "the failure is concept-standalone 'validation errors' timing out in page.goto(file://) after the 3D test; it fails identically with the baseline viewer on this loaded PC and passes with its predecessor alone; cause UNKNOWN"},
+    {"cmd": "FR04_REAL_DIR=<private> npx playwright test tests/browser/consumer-interop.spec.ts -g 'private qualification'", "pass": 1, "fail": 0, "skip": 0},
+    {"cmd": "baseline viewer: npx playwright test concept-standalone.spec.ts -g 'embed options' --repeat-each=8", "pass": 6, "fail": 2, "skip": 0, "note": "baseline reproduction of the FR-05 failure (90 s timeouts)"}
+  ],
+  "journeys": [
+    "React 2.1 exporter on contoso-data-studio and on datapass-mosaicstudio -> strict validation -> standalone viewer file:// (all entities, 0 warnings) -> embed with fit at 1000x600, 640x420, 1280x760 with no corner clipped",
+    "Contoso concept exporter -> strict validation (bytes equal Contoso READY-concept hash d653d94f...) -> standalone viewer file:// and embed fit",
+    "Contoso generate -> DuckLake Bronze -> dbt build -> ExportService artifact -> TS + Python validation -> ?artifact=1 artifact file viewer (table, chart, JSON, declared lineage)"
+  ],
+  "os": "Windows 11 Pro 10.0.26300",
+  "browser": "Playwright 1.63.0 Chromium, software WebGL (--use-angle=swiftshader)",
+  "ci_run": "pending (PR checks)",
+  "private_evidence": [
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-04/exports/react-on-contoso.concept.json", "sha256": "77bd4d1e77eb7357c26a4b6a8ead7e32c72e819dfba238033ecdd3307aace031"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-04/exports/react-on-mosaicstudio.concept.json", "sha256": "f52b948f3d5f245decf4176aa91358fbef311960f48d47e6808e1c4688ce7a83"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-04/exports/contoso-sales-forecasting.concept.json", "sha256": "d653d94f80738bdb5d66c5068e6158d5d6c1b1bab894d1935ccebe7c5bddc5db"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-04/exports/contoso-monthly-sales.artifact.json", "sha256": "9250740ba69a3bb626c9defd1fa7bb74bc96b8034aa8e59488ba4906b42cbb5b"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-04/exports/contoso-artifact-export/manifest.json", "sha256": "e60763c7c88cfcfa7d869503825f275e748f5478116b5ea8d43aa26ff4ca3de8"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-04/exports/contoso-artifact-export/contoso-monthly-sales.full.parquet", "sha256": "08625ae0808e71c42f8f0f5c76e307e79f3a06195c7c70c12d0db2c3de3cdeac"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-04/screenshots/react-on-contoso.concept.embed.png", "sha256": "36a85a6dc491cf5a0d94e0356f535b181f53cef7839c854c8f05efb99a84a662"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-04/screenshots/contoso-sales-forecasting.concept.embed.png", "sha256": "4f0273b61ce98242b23345672cf0685f3ffaa1b3786d311ba21a2eb576629fbb"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-04/screenshots/contoso-monthly-sales.artifact.artifact.png", "sha256": "03f73ce1b156b16730f0363ca192c4333d8f438b7f6f61bbccf81f3f8d0eb1dc"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-04/logs/playwright-real-exports.log", "sha256": "3d12eea3d9b687d6690efc7942e7b114e5d5b709e76ea1a27f64dca932665e8c"},
+    {"path": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-04/SHA256SUMS.txt", "sha256": "see file; lists all 31 evidence files"}
+  ],
+  "gates": {
+    "producer_consumer_sha_vector": "PASS",
+    "real_ui_import_concept_viewer": "PASS",
+    "real_ui_import_artifact_ui": "PASS",
+    "embed_fit_no_corner_clipping": "PASS",
+    "embed_origin_source_checks_bounded_payload": "PASS",
+    "strict_concept_schema_and_semantic_validation": "PASS",
+    "artifact_ts_and_python_validation": "PASS",
+    "artifact_json_schema_validation": "FAIL",
+    "preview_v1_consumer_fixture": "PASS",
+    "t3_consumes_preview_json": "UNKNOWN",
+    "fr05_embed_fit_cause_fixed": "PASS",
+    "ci": "UNKNOWN"
+  },
+  "omissions": [
+    "artifact_json_schema_validation FAIL is the docs/contracts/artifact.schema.json lineage drift owned by FR-01 (rejects provenance.producer/inputs/inputHash that TS and Python accept); not repaired here",
+    "T3 at 3dfcecd does not read preview.json and lists a false 'missing provenance' for concept specs; T3 was read only, not run and not changed",
+    "concept-standalone 'validation errors' local timeout after the 3D file:// test also fails with the baseline viewer on this PC; cause UNKNOWN; passed in baseline CI",
+    "No native Positron host; Playwright Chromium only"
+  ]
+}
