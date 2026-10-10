@@ -1,0 +1,763 @@
+{
+  "format": "datapass.artifact-corpus",
+  "version": 1,
+  "note": "Every fixture is SYNTHETIC (invented values; Contoso/FOIL entries are look-alikes of the export shape only). Decisions are asserted for JSON Schema (docs/contracts/artifact.schema.json), the TypeScript validator and py/datapass_artifact.py. gate/path: which validator gate refuses the file and the JSON Pointer of the offending field. JSON Schema decides only the structure gate: it accepts envelope and semantic fixtures.",
+  "generator": "scripts/make-artifact-corpus.mjs",
+  "fixtures": [
+    {
+      "file": "valid/legacy-v1-wind-aep-6e97cae.json",
+      "expect": "accept",
+      "note": "Plain v1 file exactly as committed at 6e97cae (before lineage fields existed). Illustrative synthetic wind reference."
+    },
+    {
+      "file": "valid/legacy-v1-table.json",
+      "expect": "accept",
+      "note": "Plain v1 table without any lineage field."
+    },
+    {
+      "file": "valid/legacy-v1-text.json",
+      "expect": "accept",
+      "note": "Plain v1 text payload with text and JSON views."
+    },
+    {
+      "file": "valid/lineage-full.json",
+      "expect": "accept",
+      "note": "producer + evidence, inputs (number/string/boolean/no value), inputHash, dependsOn, representation inputs."
+    },
+    {
+      "file": "valid/contoso-shaped-gold-export.json",
+      "expect": "accept",
+      "note": "SYNTHETIC look-alike of a Contoso Gold export (service producer, units, nine lineage inputs, dbt evidence)."
+    },
+    {
+      "file": "valid/foil-shaped-capture-series.json",
+      "expect": "accept",
+      "note": "SYNTHETIC look-alike of a FOIL capture series (numeric row key, nullable power)."
+    },
+    {
+      "file": "valid/foil-shaped-capture-summary.json",
+      "expect": "accept",
+      "note": "SYNTHETIC look-alike of a FOIL capture summary that dependsOn the series."
+    },
+    {
+      "file": "valid/foil-shaped-campaign-designs.json",
+      "expect": "accept",
+      "note": "SYNTHETIC look-alike of a FOIL campaign export (bar + scatter charts)."
+    },
+    {
+      "file": "valid/edge-empty-rows.json",
+      "expect": "accept",
+      "note": "A table with zero rows and only table/JSON views."
+    },
+    {
+      "file": "valid/edge-empty-text.json",
+      "expect": "accept",
+      "note": "An empty text payload is allowed (text is not required to be filled)."
+    },
+    {
+      "file": "valid/edge-input-values.json",
+      "expect": "accept",
+      "note": "Input values 0, false and the empty string are declared values, not missing ones."
+    },
+    {
+      "file": "valid/edge-astral-title.json",
+      "expect": "accept",
+      "note": "160 astral characters (320 UTF-16 units): lengths are Unicode code points, as in JSON Schema."
+    },
+    {
+      "file": "valid/edge-nel-title.json",
+      "expect": "accept",
+      "note": "U+0085 is not ECMAScript whitespace, so this title is not blank (Python str.isspace() disagrees)."
+    },
+    {
+      "file": "valid/edge-safe-paths.json",
+      "expect": "accept",
+      "note": "Evidence paths with \"...\", dot-files and dotted directory names are safe; a 260-character path is the limit."
+    },
+    {
+      "file": "valid/edge-integral-floats.json",
+      "expect": "accept",
+      "note": "version 1.0, digits 1.0 and evidence line 5.0 are the same JSON numbers as 1, 1 and 5."
+    },
+    {
+      "file": "valid/edge-numeric-row-keys.json",
+      "expect": "accept",
+      "note": "Numeric row keys; metric rows use JavaScript String(): 2.0 -> \"2\", 1e-7 -> \"1e-7\"."
+    },
+    {
+      "file": "valid/edge-bounds-max.json",
+      "expect": "accept",
+      "note": "Every list at its maximum: 12 representations, 40 columns, 24 inputs, 8 evidence links, 12 dependsOn, 24 representation inputs; title at 160."
+    },
+    {
+      "file": "invalid/s-top-extra-field.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/eval",
+      "note": "Unknown top-level command field."
+    },
+    {
+      "file": "invalid/s-format.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/format",
+      "note": "Wrong format."
+    },
+    {
+      "file": "invalid/s-version-2.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/version",
+      "note": "Unsupported version."
+    },
+    {
+      "file": "invalid/s-version-true.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/version",
+      "note": "true is not the number 1 (Python True == 1 used to pass)."
+    },
+    {
+      "file": "invalid/s-id-trailing-newline.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/id",
+      "note": "\"$\" must not accept a trailing newline (Python re.match used to)."
+    },
+    {
+      "file": "invalid/s-id-reserved.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/id",
+      "note": "Reserved prototype id."
+    },
+    {
+      "file": "invalid/s-title-blank.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/title",
+      "note": "Blank title."
+    },
+    {
+      "file": "invalid/s-title-js-whitespace.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/title",
+      "note": "U+3000 and U+FEFF are ECMAScript whitespace (Python str.strip() kept U+FEFF)."
+    },
+    {
+      "file": "invalid/s-title-161-astral.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/title",
+      "note": "161 code points exceed 160."
+    },
+    {
+      "file": "invalid/s-provenance-missing-source.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/source",
+      "note": "source is required."
+    },
+    {
+      "file": "invalid/s-provenance-kind.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/kind",
+      "note": "Unknown provenance kind."
+    },
+    {
+      "file": "invalid/s-provenance-extra.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/secret",
+      "note": "Unknown provenance field."
+    },
+    {
+      "file": "invalid/s-run-id.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/runId",
+      "note": "runId is an id."
+    },
+    {
+      "file": "invalid/s-producer-kind.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/producer/kind",
+      "note": "Unknown producer kind."
+    },
+    {
+      "file": "invalid/s-producer-extra.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/producer/extra",
+      "note": "Unknown producer field."
+    },
+    {
+      "file": "invalid/s-producer-missing-name.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/producer/name",
+      "note": "Producer name is required."
+    },
+    {
+      "file": "invalid/s-input-hash-uppercase.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputHash",
+      "note": "Hash syntax is lowercase hex."
+    },
+    {
+      "file": "invalid/s-input-hash-prefixed.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputHash",
+      "note": "No algorithm prefix: exactly 64 hex characters."
+    },
+    {
+      "file": "invalid/s-input-hash-63.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputHash",
+      "note": "63 characters."
+    },
+    {
+      "file": "invalid/s-input-hash-newline.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputHash",
+      "note": "Trailing newline (Python re.match used to accept it)."
+    },
+    {
+      "file": "invalid/s-inputs-25.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs",
+      "note": "At most 24 inputs."
+    },
+    {
+      "file": "invalid/s-input-value-null.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/1/value",
+      "note": "null is not a declared value (omit value instead)."
+    },
+    {
+      "file": "invalid/s-input-value-array.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/1/value",
+      "note": "Arrays are not input values."
+    },
+    {
+      "file": "invalid/s-input-value-401.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/1/value",
+      "note": "Input strings are at most 400 characters."
+    },
+    {
+      "file": "invalid/s-input-unit-41.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/0/unit",
+      "note": "Units are at most 40 characters."
+    },
+    {
+      "file": "invalid/s-input-extra.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/0/secret",
+      "note": "Unknown input field."
+    },
+    {
+      "file": "invalid/s-input-label-blank.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/2/label",
+      "note": "Input labels are filled."
+    },
+    {
+      "file": "invalid/s-evidence-path-dotdot.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/0/evidence/0/path",
+      "note": "Parent traversal."
+    },
+    {
+      "file": "invalid/s-evidence-path-drive.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/0/evidence/0/path",
+      "note": "Drive letter."
+    },
+    {
+      "file": "invalid/s-evidence-path-absolute.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/0/evidence/0/path",
+      "note": "Absolute path."
+    },
+    {
+      "file": "invalid/s-evidence-path-empty-segment.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/0/evidence/0/path",
+      "note": "Empty segment."
+    },
+    {
+      "file": "invalid/s-evidence-path-backslash.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/0/evidence/0/path",
+      "note": "Backslash."
+    },
+    {
+      "file": "invalid/s-evidence-path-dot-segment.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/0/evidence/0/path",
+      "note": "\".\" segment."
+    },
+    {
+      "file": "invalid/s-evidence-path-control.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/0/evidence/0/path",
+      "note": "Control character."
+    },
+    {
+      "file": "invalid/s-evidence-path-trailing-slash.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/0/evidence/0/path",
+      "note": "Trailing slash (empty last segment)."
+    },
+    {
+      "file": "invalid/s-evidence-path-empty.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/0/evidence/0/path",
+      "note": "Empty path."
+    },
+    {
+      "file": "invalid/s-evidence-path-261.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/inputs/0/evidence/0/path",
+      "note": "261 characters."
+    },
+    {
+      "file": "invalid/s-evidence-9.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/producer/evidence",
+      "note": "At most 8 evidence links."
+    },
+    {
+      "file": "invalid/s-evidence-start-0.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/producer/evidence/0/start",
+      "note": "Lines start at 1."
+    },
+    {
+      "file": "invalid/s-evidence-start-fraction.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/producer/evidence/0/start",
+      "note": "Lines are integers."
+    },
+    {
+      "file": "invalid/s-evidence-start-true.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/producer/evidence/0/start",
+      "note": "true is not an integer."
+    },
+    {
+      "file": "invalid/s-evidence-end-100001.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/producer/evidence/0/end",
+      "note": "Lines are at most 100000."
+    },
+    {
+      "file": "invalid/s-evidence-missing-label.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/producer/evidence/1/label",
+      "note": "Evidence label is required."
+    },
+    {
+      "file": "invalid/s-depends-on-duplicate.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/dependsOn",
+      "note": "dependsOn is a set of ids (uniqueItems)."
+    },
+    {
+      "file": "invalid/s-depends-on-13.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/dependsOn",
+      "note": "At most 12 dependencies."
+    },
+    {
+      "file": "invalid/s-depends-on-bad-id.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance/dependsOn/0",
+      "note": "Dependencies are artifact ids."
+    },
+    {
+      "file": "invalid/s-representation-inputs-duplicate.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/representations/1/inputs",
+      "note": "Representation inputs are a set."
+    },
+    {
+      "file": "invalid/s-representation-inputs-bad-id.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/representations/1/inputs/0",
+      "note": "Representation inputs are ids."
+    },
+    {
+      "file": "invalid/s-representations-13.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/representations",
+      "note": "At most 12 representations."
+    },
+    {
+      "file": "invalid/s-representations-empty.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/representations",
+      "note": "At least one representation."
+    },
+    {
+      "file": "invalid/s-representation-kind.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/representations/0/kind",
+      "note": "Unsupported representation kind."
+    },
+    {
+      "file": "invalid/s-representation-extra.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/representations/0/onClick",
+      "note": "No commands on representations."
+    },
+    {
+      "file": "invalid/s-representation-chart-pie.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/representations/1/chart",
+      "note": "Unsupported chart."
+    },
+    {
+      "file": "invalid/s-representation-chart-missing-y.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/representations/1/y",
+      "note": "Chart needs y."
+    },
+    {
+      "file": "invalid/s-representation-metric-digits-7.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/representations/2/digits",
+      "note": "digits is 0..6."
+    },
+    {
+      "file": "invalid/s-representation-metric-digits-true.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/representations/2/digits",
+      "note": "true is not an integer."
+    },
+    {
+      "file": "invalid/s-representation-chart-unit-31.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/representations/1/unit",
+      "note": "Chart units are at most 30 characters."
+    },
+    {
+      "file": "invalid/s-columns-41.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/payload/columns",
+      "note": "At most 40 columns."
+    },
+    {
+      "file": "invalid/s-rows-10001.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/payload/rows",
+      "note": "At most 10,000 rows."
+    },
+    {
+      "file": "invalid/s-row-string-4001.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/payload/rows/0/id",
+      "note": "Cell strings are at most 4000 characters."
+    },
+    {
+      "file": "invalid/s-row-cell-object.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/payload/rows/0/value",
+      "note": "Cells are scalars."
+    },
+    {
+      "file": "invalid/s-row-cell-name.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/payload/rows/0/Bad",
+      "note": "Cell names are column ids."
+    },
+    {
+      "file": "invalid/s-payload-kind.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/payload/kind",
+      "note": "Unknown payload kind."
+    },
+    {
+      "file": "invalid/s-payload-extra.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/payload/sql",
+      "note": "No SQL on a table payload."
+    },
+    {
+      "file": "invalid/s-text-20001.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/payload/text",
+      "note": "Text payload is at most 20000 characters."
+    },
+    {
+      "file": "invalid/s-column-type.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/payload/columns/1/type",
+      "note": "Column types are string, number or boolean."
+    },
+    {
+      "file": "invalid/s-column-label-blank.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/payload/columns/0/label",
+      "note": "Column labels are filled."
+    },
+    {
+      "file": "invalid/m-input-duplicate-id.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/provenance/inputs/1/id",
+      "note": "Duplicate input id."
+    },
+    {
+      "file": "invalid/m-evidence-end-before-start.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/provenance/inputs/0/evidence/0/end",
+      "note": "Line range ends before it starts."
+    },
+    {
+      "file": "invalid/m-evidence-duplicate-range.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/provenance/producer/evidence/1",
+      "note": "Same path and range twice."
+    },
+    {
+      "file": "invalid/m-depends-on-self.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/provenance/dependsOn/1",
+      "note": "An artifact cannot depend on itself."
+    },
+    {
+      "file": "invalid/m-representation-undeclared-input.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/representations/1/inputs/1",
+      "note": "Representation names an undeclared input."
+    },
+    {
+      "file": "invalid/m-representation-inputs-without-provenance-inputs.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/representations/1/inputs/0",
+      "note": "Representation inputs need provenance inputs."
+    },
+    {
+      "file": "invalid/m-representation-duplicate-id.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/representations/3/id",
+      "note": "Duplicate representation id."
+    },
+    {
+      "file": "invalid/m-column-duplicate-id.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/payload/columns/2/id",
+      "note": "Duplicate column id."
+    },
+    {
+      "file": "invalid/m-row-key-undeclared.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/payload/rowKey",
+      "note": "rowKey must be a declared column."
+    },
+    {
+      "file": "invalid/m-row-missing-cell.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/payload/rows/1/flag",
+      "note": "Every row has every column."
+    },
+    {
+      "file": "invalid/m-row-undeclared-cell.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/payload/rows/0/extra",
+      "note": "No undeclared cells."
+    },
+    {
+      "file": "invalid/m-row-cell-type.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/payload/rows/1/value",
+      "note": "Cell type follows its column."
+    },
+    {
+      "file": "invalid/m-row-null-not-nullable.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/payload/rows/0/time",
+      "note": "null needs a nullable column."
+    },
+    {
+      "file": "invalid/m-row-key-duplicate.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/payload/rows/2/id",
+      "note": "Row keys are unique."
+    },
+    {
+      "file": "invalid/m-row-key-boolean.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/payload/rows/0/flag",
+      "note": "Row keys are strings or numbers."
+    },
+    {
+      "file": "invalid/m-chart-unknown-x.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/representations/1/x",
+      "note": "Chart x names an unknown column."
+    },
+    {
+      "file": "invalid/m-chart-y-not-number.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/representations/1/y",
+      "note": "Chart y must be a number column."
+    },
+    {
+      "file": "invalid/m-chart-line-x-string.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/representations/1/x",
+      "note": "Line chart x must be numeric."
+    },
+    {
+      "file": "invalid/m-metric-absent-row.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/representations/2/row",
+      "note": "Metric names an absent row."
+    },
+    {
+      "file": "invalid/m-metric-unknown-column.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/representations/2/column",
+      "note": "Metric names an unknown column."
+    },
+    {
+      "file": "invalid/m-text-representation-on-table.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/representations/0/kind",
+      "note": "Text view needs a text payload."
+    },
+    {
+      "file": "invalid/m-table-representation-on-text.json",
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/representations/0/kind",
+      "note": "Table view needs a table payload."
+    },
+    {
+      "file": "invalid/e-over-1-mib.json",
+      "expect": "reject",
+      "gate": "envelope",
+      "path": "",
+      "note": "More than 1 MiB of compact UTF-8 although every list and string is within bounds."
+    },
+    {
+      "file": "invalid/e-non-finite-number.json",
+      "expect": "reject",
+      "gate": "envelope",
+      "path": "",
+      "note": "1e400 is a valid JSON number but not a finite double."
+    }
+  ],
+  "sets": [
+    {
+      "name": "foil-shaped-capture-pair",
+      "files": [
+        "sets/foil-shaped-capture-pair/0.json",
+        "sets/foil-shaped-capture-pair/1.json"
+      ],
+      "expect": "accept",
+      "note": "Summary dependsOn series inside one bundle (synthetic look-alike)."
+    },
+    {
+      "name": "depends-on-cycle",
+      "files": [
+        "sets/depends-on-cycle/0.json",
+        "sets/depends-on-cycle/1.json"
+      ],
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/1/provenance/dependsOn/1",
+      "note": "a -> b -> a."
+    },
+    {
+      "name": "duplicate-id",
+      "files": [
+        "sets/duplicate-id/0.json",
+        "sets/duplicate-id/1.json"
+      ],
+      "expect": "reject",
+      "gate": "semantic",
+      "path": "/1/id",
+      "note": "Two members share one id."
+    }
+  ]
+}

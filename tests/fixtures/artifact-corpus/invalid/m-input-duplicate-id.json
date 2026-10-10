@@ -1,0 +1,148 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "corpus-lineage",
+  "title": "Synthetic corpus table with lineage",
+  "provenance": {
+    "kind": "computed",
+    "source": "SYNTHETIC fixture for the datapass.artifact differential corpus. Values are invented; not real data.",
+    "runId": "run-0001",
+    "producer": {
+      "kind": "script",
+      "name": "synthetic/producer.py",
+      "evidence": [
+        {
+          "path": "synthetic/producer.py",
+          "start": 1,
+          "end": 20,
+          "label": "Producer"
+        },
+        {
+          "path": "synthetic/helpers/units.py",
+          "start": 3,
+          "end": 9,
+          "label": "Unit helper"
+        }
+      ]
+    },
+    "inputHash": "394dab294a264b9a70612b07264f9fa661c722ca2f473a58cad01e71a04412c9",
+    "inputs": [
+      {
+        "id": "gain",
+        "label": "Gain",
+        "value": 2,
+        "unit": "x",
+        "evidence": [
+          {
+            "path": "synthetic/producer.py",
+            "start": 5,
+            "end": 5,
+            "label": "Gain constant"
+          }
+        ]
+      },
+      {
+        "id": "gain",
+        "label": "Mode",
+        "value": "fast"
+      },
+      {
+        "id": "enabled",
+        "label": "Enabled",
+        "value": true
+      },
+      {
+        "id": "note",
+        "label": "Declared without a value"
+      }
+    ],
+    "dependsOn": [
+      "corpus-upstream"
+    ]
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "id",
+    "columns": [
+      {
+        "id": "id",
+        "label": "ID",
+        "type": "string"
+      },
+      {
+        "id": "value",
+        "label": "Value",
+        "type": "number",
+        "unit": "kW",
+        "nullable": true
+      },
+      {
+        "id": "time",
+        "label": "Time",
+        "type": "number",
+        "unit": "s"
+      },
+      {
+        "id": "flag",
+        "label": "Flag",
+        "type": "boolean"
+      }
+    ],
+    "rows": [
+      {
+        "id": "a",
+        "value": 2,
+        "time": 0,
+        "flag": true
+      },
+      {
+        "id": "b",
+        "value": 3.5,
+        "time": 1,
+        "flag": false
+      },
+      {
+        "id": "c",
+        "value": null,
+        "time": 2,
+        "flag": true
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "Rows",
+      "kind": "table"
+    },
+    {
+      "id": "curve",
+      "title": "Value over time",
+      "kind": "chart",
+      "chart": "line",
+      "x": "time",
+      "y": "value",
+      "unit": "kW",
+      "inputs": [
+        "gain"
+      ]
+    },
+    {
+      "id": "first",
+      "title": "First value",
+      "kind": "metric",
+      "row": "a",
+      "column": "value",
+      "unit": "kW",
+      "digits": 1,
+      "inputs": [
+        "gain"
+      ]
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "kind": "json"
+    }
+  ]
+}

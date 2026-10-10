@@ -1,0 +1,93 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "cycle-b",
+  "title": "Synthetic corpus table",
+  "provenance": {
+    "kind": "synthetic",
+    "source": "SYNTHETIC fixture for the datapass.artifact differential corpus. Values are invented; not real data.",
+    "dependsOn": [
+      "corpus-outside",
+      "cycle-a"
+    ]
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "id",
+    "columns": [
+      {
+        "id": "id",
+        "label": "ID",
+        "type": "string"
+      },
+      {
+        "id": "value",
+        "label": "Value",
+        "type": "number",
+        "unit": "kW",
+        "nullable": true
+      },
+      {
+        "id": "time",
+        "label": "Time",
+        "type": "number",
+        "unit": "s"
+      },
+      {
+        "id": "flag",
+        "label": "Flag",
+        "type": "boolean"
+      }
+    ],
+    "rows": [
+      {
+        "id": "a",
+        "value": 2,
+        "time": 0,
+        "flag": true
+      },
+      {
+        "id": "b",
+        "value": 3.5,
+        "time": 1,
+        "flag": false
+      },
+      {
+        "id": "c",
+        "value": null,
+        "time": 2,
+        "flag": true
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "Rows",
+      "kind": "table"
+    },
+    {
+      "id": "curve",
+      "title": "Value over time",
+      "kind": "chart",
+      "chart": "line",
+      "x": "time",
+      "y": "value",
+      "unit": "kW"
+    },
+    {
+      "id": "first",
+      "title": "First value",
+      "kind": "metric",
+      "row": "a",
+      "column": "value",
+      "unit": "kW",
+      "digits": 1
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "kind": "json"
+    }
+  ]
+}

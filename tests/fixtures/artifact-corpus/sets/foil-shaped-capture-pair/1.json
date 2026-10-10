@@ -1,0 +1,125 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "capture-20260101T000000-0000aaaa-summary",
+  "title": "FOIL-shaped capture summary (synthetic look-alike)",
+  "provenance": {
+    "kind": "synthetic",
+    "source": "SYNTHETIC look-alike of a FOIL lab capture summary, written for the MosaicStudio corpus. Shape only; every value is invented. Not FOIL data.",
+    "runId": "capture-0000aaaa",
+    "producer": {
+      "kind": "service",
+      "name": "Synthetic look-alike of a lab capture export"
+    },
+    "inputs": [
+      {
+        "id": "model",
+        "label": "Model",
+        "value": "synthetic-model"
+      },
+      {
+        "id": "modelVersion",
+        "label": "Model version",
+        "value": "0.0.0"
+      },
+      {
+        "id": "scenario",
+        "label": "Scenario",
+        "value": "synthetic-gusts"
+      },
+      {
+        "id": "seed",
+        "label": "Seed",
+        "value": 11
+      },
+      {
+        "id": "durationS",
+        "label": "Duration",
+        "value": 60,
+        "unit": "s"
+      },
+      {
+        "id": "samplePeriodS",
+        "label": "Sample period",
+        "value": 1,
+        "unit": "s"
+      }
+    ],
+    "inputHash": "ddc7c77932d79a486240dac706625cf7f27d4fb94bdb09975018d3dacf34898d",
+    "dependsOn": [
+      "capture-20260101T000000-0000aaaa-series"
+    ]
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "metric",
+    "columns": [
+      {
+        "id": "metric",
+        "label": "Metric",
+        "type": "string"
+      },
+      {
+        "id": "value",
+        "label": "Value",
+        "type": "number",
+        "nullable": true
+      },
+      {
+        "id": "unit",
+        "label": "Unit",
+        "type": "string"
+      },
+      {
+        "id": "samples",
+        "label": "Samples",
+        "type": "number"
+      }
+    ],
+    "rows": [
+      {
+        "metric": "meanWind",
+        "value": 7.25,
+        "unit": "m/s",
+        "samples": 6
+      },
+      {
+        "metric": "meanPower",
+        "value": 131.25,
+        "unit": "kW",
+        "samples": 5
+      },
+      {
+        "metric": "dropouts",
+        "value": 1,
+        "unit": "samples",
+        "samples": 6
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "Summary",
+      "kind": "table"
+    },
+    {
+      "id": "mean-wind",
+      "title": "Mean wind",
+      "kind": "metric",
+      "row": "meanWind",
+      "column": "value",
+      "unit": "m/s",
+      "digits": 2
+    },
+    {
+      "id": "mean-power",
+      "title": "Mean power",
+      "kind": "metric",
+      "row": "meanPower",
+      "column": "value",
+      "unit": "kW",
+      "digits": 1
+    }
+  ]
+}

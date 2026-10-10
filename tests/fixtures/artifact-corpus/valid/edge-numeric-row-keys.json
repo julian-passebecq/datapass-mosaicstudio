@@ -1,0 +1,103 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "corpus-table",
+  "title": "Synthetic corpus table",
+  "provenance": {
+    "kind": "synthetic",
+    "source": "SYNTHETIC fixture for the datapass.artifact differential corpus. Values are invented; not real data."
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "time",
+    "columns": [
+      {
+        "id": "id",
+        "label": "ID",
+        "type": "string"
+      },
+      {
+        "id": "value",
+        "label": "Value",
+        "type": "number",
+        "unit": "kW",
+        "nullable": true
+      },
+      {
+        "id": "time",
+        "label": "Time",
+        "type": "number",
+        "unit": "s"
+      },
+      {
+        "id": "flag",
+        "label": "Flag",
+        "type": "boolean"
+      }
+    ],
+    "rows": [
+      {
+        "id": "a",
+        "value": 1,
+        "time": 2.0,
+        "flag": true
+      },
+      {
+        "id": "b",
+        "value": 2,
+        "time": 1e-7,
+        "flag": true
+      },
+      {
+        "id": "c",
+        "value": 3,
+        "time": 1e+21,
+        "flag": false
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "Rows",
+      "kind": "table"
+    },
+    {
+      "id": "curve",
+      "title": "Value over time",
+      "kind": "chart",
+      "chart": "line",
+      "x": "time",
+      "y": "value",
+      "unit": "kW"
+    },
+    {
+      "id": "first",
+      "title": "First value",
+      "kind": "metric",
+      "row": "2",
+      "column": "value",
+      "unit": "kW",
+      "digits": 1
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "kind": "json"
+    },
+    {
+      "id": "tiny",
+      "title": "Tiny time",
+      "kind": "metric",
+      "row": "1e-7",
+      "column": "value"
+    },
+    {
+      "id": "huge",
+      "title": "Huge time",
+      "kind": "metric",
+      "row": "1e+21",
+      "column": "value"
+    }
+  ]
+}

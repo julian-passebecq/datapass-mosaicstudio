@@ -1,0 +1,54 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "corpus-table",
+  "title": "Synthetic corpus table",
+  "provenance": {
+    "kind": "synthetic",
+    "source": "SYNTHETIC fixture for the datapass.artifact differential corpus. Values are invented; not real data."
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "flag",
+    "columns": [
+      {
+        "id": "id",
+        "label": "ID",
+        "type": "string"
+      },
+      {
+        "id": "value",
+        "label": "Value",
+        "type": "number",
+        "unit": "kW",
+        "nullable": true
+      },
+      {
+        "id": "time",
+        "label": "Time",
+        "type": "number",
+        "unit": "s"
+      },
+      {
+        "id": "flag",
+        "label": "Flag",
+        "type": "boolean"
+      }
+    ],
+    "rows": [
+      {
+        "id": "a",
+        "value": 2,
+        "time": 0,
+        "flag": true
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "Rows",
+      "kind": "table"
+    }
+  ]
+}

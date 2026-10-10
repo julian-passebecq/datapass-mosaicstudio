@@ -79,10 +79,27 @@
               },
               "title": {
                 "type": "string",
-                "maxLength": 160
+                "maxLength": 160,
+                "pattern": "\\S"
               },
               "kind": {
                 "const": "table"
+              },
+              "inputs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                  "not": {
+                    "enum": [
+                      "constructor",
+                      "prototype",
+                      "__proto__"
+                    ]
+                  }
+                },
+                "maxItems": 24,
+                "uniqueItems": true
               }
             },
             "required": [
@@ -108,10 +125,27 @@
               },
               "title": {
                 "type": "string",
-                "maxLength": 160
+                "maxLength": 160,
+                "pattern": "\\S"
               },
               "kind": {
                 "const": "text"
+              },
+              "inputs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                  "not": {
+                    "enum": [
+                      "constructor",
+                      "prototype",
+                      "__proto__"
+                    ]
+                  }
+                },
+                "maxItems": 24,
+                "uniqueItems": true
               }
             },
             "required": [
@@ -137,10 +171,27 @@
               },
               "title": {
                 "type": "string",
-                "maxLength": 160
+                "maxLength": 160,
+                "pattern": "\\S"
               },
               "kind": {
                 "const": "json"
+              },
+              "inputs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                  "not": {
+                    "enum": [
+                      "constructor",
+                      "prototype",
+                      "__proto__"
+                    ]
+                  }
+                },
+                "maxItems": 24,
+                "uniqueItems": true
               }
             },
             "required": [
@@ -166,10 +217,27 @@
               },
               "title": {
                 "type": "string",
-                "maxLength": 160
+                "maxLength": 160,
+                "pattern": "\\S"
               },
               "kind": {
                 "const": "chart"
+              },
+              "inputs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                  "not": {
+                    "enum": [
+                      "constructor",
+                      "prototype",
+                      "__proto__"
+                    ]
+                  }
+                },
+                "maxItems": 24,
+                "uniqueItems": true
               },
               "chart": {
                 "enum": [
@@ -231,14 +299,32 @@
               },
               "title": {
                 "type": "string",
-                "maxLength": 160
+                "maxLength": 160,
+                "pattern": "\\S"
               },
               "kind": {
                 "const": "metric"
               },
+              "inputs": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$",
+                  "not": {
+                    "enum": [
+                      "constructor",
+                      "prototype",
+                      "__proto__"
+                    ]
+                  }
+                },
+                "maxItems": 24,
+                "uniqueItems": true
+              },
               "row": {
                 "type": "string",
-                "maxLength": 160
+                "maxLength": 160,
+                "pattern": "\\S"
               },
               "column": {
                 "type": "string",

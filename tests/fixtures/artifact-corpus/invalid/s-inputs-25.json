@@ -1,0 +1,214 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "corpus-lineage",
+  "title": "Synthetic corpus table with lineage",
+  "provenance": {
+    "kind": "computed",
+    "source": "SYNTHETIC fixture for the datapass.artifact differential corpus. Values are invented; not real data.",
+    "runId": "run-0001",
+    "producer": {
+      "kind": "script",
+      "name": "synthetic/producer.py",
+      "evidence": [
+        {
+          "path": "synthetic/producer.py",
+          "start": 1,
+          "end": 20,
+          "label": "Producer"
+        },
+        {
+          "path": "synthetic/helpers/units.py",
+          "start": 3,
+          "end": 9,
+          "label": "Unit helper"
+        }
+      ]
+    },
+    "inputHash": "394dab294a264b9a70612b07264f9fa661c722ca2f473a58cad01e71a04412c9",
+    "inputs": [
+      {
+        "id": "in0",
+        "label": "Input 0"
+      },
+      {
+        "id": "in1",
+        "label": "Input 1"
+      },
+      {
+        "id": "in2",
+        "label": "Input 2"
+      },
+      {
+        "id": "in3",
+        "label": "Input 3"
+      },
+      {
+        "id": "in4",
+        "label": "Input 4"
+      },
+      {
+        "id": "in5",
+        "label": "Input 5"
+      },
+      {
+        "id": "in6",
+        "label": "Input 6"
+      },
+      {
+        "id": "in7",
+        "label": "Input 7"
+      },
+      {
+        "id": "in8",
+        "label": "Input 8"
+      },
+      {
+        "id": "in9",
+        "label": "Input 9"
+      },
+      {
+        "id": "in10",
+        "label": "Input 10"
+      },
+      {
+        "id": "in11",
+        "label": "Input 11"
+      },
+      {
+        "id": "in12",
+        "label": "Input 12"
+      },
+      {
+        "id": "in13",
+        "label": "Input 13"
+      },
+      {
+        "id": "in14",
+        "label": "Input 14"
+      },
+      {
+        "id": "in15",
+        "label": "Input 15"
+      },
+      {
+        "id": "in16",
+        "label": "Input 16"
+      },
+      {
+        "id": "in17",
+        "label": "Input 17"
+      },
+      {
+        "id": "in18",
+        "label": "Input 18"
+      },
+      {
+        "id": "in19",
+        "label": "Input 19"
+      },
+      {
+        "id": "in20",
+        "label": "Input 20"
+      },
+      {
+        "id": "in21",
+        "label": "Input 21"
+      },
+      {
+        "id": "in22",
+        "label": "Input 22"
+      },
+      {
+        "id": "in23",
+        "label": "Input 23"
+      },
+      {
+        "id": "in24",
+        "label": "Input 24"
+      }
+    ],
+    "dependsOn": [
+      "corpus-upstream"
+    ]
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "id",
+    "columns": [
+      {
+        "id": "id",
+        "label": "ID",
+        "type": "string"
+      },
+      {
+        "id": "value",
+        "label": "Value",
+        "type": "number",
+        "unit": "kW",
+        "nullable": true
+      },
+      {
+        "id": "time",
+        "label": "Time",
+        "type": "number",
+        "unit": "s"
+      },
+      {
+        "id": "flag",
+        "label": "Flag",
+        "type": "boolean"
+      }
+    ],
+    "rows": [
+      {
+        "id": "a",
+        "value": 2,
+        "time": 0,
+        "flag": true
+      },
+      {
+        "id": "b",
+        "value": 3.5,
+        "time": 1,
+        "flag": false
+      },
+      {
+        "id": "c",
+        "value": null,
+        "time": 2,
+        "flag": true
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "Rows",
+      "kind": "table"
+    },
+    {
+      "id": "curve",
+      "title": "Value over time",
+      "kind": "chart",
+      "chart": "line",
+      "x": "time",
+      "y": "value",
+      "unit": "kW"
+    },
+    {
+      "id": "first",
+      "title": "First value",
+      "kind": "metric",
+      "row": "a",
+      "column": "value",
+      "unit": "kW",
+      "digits": 1
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "kind": "json"
+    }
+  ]
+}

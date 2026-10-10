@@ -1,0 +1,26 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "corpus-text",
+  "title": "Synthetic text artifact",
+  "provenance": {
+    "kind": "provided",
+    "source": "SYNTHETIC fixture for the datapass.artifact differential corpus. Values are invented; not real data."
+  },
+  "payload": {
+    "kind": "text",
+    "text": "A short synthetic note. <b>Markup stays inert text.</b>"
+  },
+  "representations": [
+    {
+      "id": "text",
+      "title": "Text",
+      "kind": "text"
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "kind": "json"
+    }
+  ]
+}

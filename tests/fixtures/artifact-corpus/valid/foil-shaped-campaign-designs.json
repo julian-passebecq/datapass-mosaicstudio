@@ -1,0 +1,111 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "campaign-0000bbbb-designs",
+  "title": "FOIL-shaped campaign designs (synthetic look-alike)",
+  "provenance": {
+    "kind": "synthetic",
+    "source": "SYNTHETIC look-alike of a FOIL lab campaign export, written for the MosaicStudio corpus. Shape only; every value is invented. Not FOIL data.",
+    "runId": "campaign-0000bbbb",
+    "producer": {
+      "kind": "service",
+      "name": "Synthetic look-alike of a lab campaign export"
+    },
+    "inputs": [
+      {
+        "id": "model",
+        "label": "Model",
+        "value": "synthetic-model"
+      },
+      {
+        "id": "machineSpec",
+        "label": "Machine spec",
+        "value": "synthetic-spec-a"
+      },
+      {
+        "id": "assumptionSet",
+        "label": "Assumption set",
+        "value": "synthetic-assumptions"
+      },
+      {
+        "id": "seed",
+        "label": "Seed",
+        "value": 3
+      }
+    ],
+    "inputHash": "3daea7c1bcb1a596ef51300031a6251e7deb0f5ba64671bf5d2940bca9e1d871"
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "design",
+    "columns": [
+      {
+        "id": "design",
+        "label": "Design",
+        "type": "string"
+      },
+      {
+        "id": "spanM",
+        "label": "Span",
+        "type": "number",
+        "unit": "m"
+      },
+      {
+        "id": "aepMwh",
+        "label": "Annual energy",
+        "type": "number",
+        "unit": "MWh"
+      },
+      {
+        "id": "capacityFactor",
+        "label": "Capacity factor",
+        "type": "number",
+        "unit": "ratio"
+      }
+    ],
+    "rows": [
+      {
+        "design": "d1",
+        "spanM": 10,
+        "aepMwh": 120.5,
+        "capacityFactor": 0.21
+      },
+      {
+        "design": "d2",
+        "spanM": 12,
+        "aepMwh": 141,
+        "capacityFactor": 0.24
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "Designs",
+      "kind": "table"
+    },
+    {
+      "id": "aep",
+      "title": "Annual energy by design",
+      "kind": "chart",
+      "chart": "bar",
+      "x": "design",
+      "y": "aepMwh",
+      "unit": "MWh"
+    },
+    {
+      "id": "span",
+      "title": "Energy vs span",
+      "kind": "chart",
+      "chart": "scatter",
+      "x": "spanM",
+      "y": "aepMwh",
+      "unit": "MWh"
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "kind": "json"
+    }
+  ]
+}

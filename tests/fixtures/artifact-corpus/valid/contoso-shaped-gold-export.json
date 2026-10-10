@@ -1,0 +1,159 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "contoso-monthly-sales",
+  "title": "Contoso-shaped Gold monthly_sales (baseline, synthetic look-alike)",
+  "provenance": {
+    "kind": "synthetic",
+    "source": "SYNTHETIC look-alike of a Contoso Data Studio Gold export, written for the MosaicStudio corpus. Shape only; every value is invented. Not real business data.",
+    "runId": "run-synthetic-run-0001",
+    "producer": {
+      "kind": "service",
+      "name": "Synthetic look-alike of the Contoso export service"
+    },
+    "inputs": [
+      {
+        "id": "scenario",
+        "label": "Scenario",
+        "value": "baseline"
+      },
+      {
+        "id": "seed",
+        "label": "Generator seed",
+        "value": 7
+      },
+      {
+        "id": "scale",
+        "label": "Generated sales lines",
+        "value": 1500,
+        "unit": "lines"
+      },
+      {
+        "id": "generatorRunId",
+        "label": "Generator run",
+        "value": "synthetic-run-0001"
+      },
+      {
+        "id": "generatorSha256",
+        "label": "Generator source sha256",
+        "value": "6aa579dbaf4ba1561ecf39389f394d8815df88ddeed714c51e18c4cfc4373d20"
+      },
+      {
+        "id": "ducklakeSnapshot",
+        "label": "DuckLake snapshot at export",
+        "value": 3
+      },
+      {
+        "id": "dbtInvocation",
+        "label": "dbt invocation (successful)",
+        "value": "00000000-0000-4000-8000-000000000001"
+      },
+      {
+        "id": "dbtModelChecksum",
+        "label": "dbt model checksum",
+        "value": "988b95fea10a38475dc37db83cf1cd409b95b424fb4a8eae489c8c544eef91d8",
+        "evidence": [
+          {
+            "path": "dbt/models/gold/monthly_sales.sql",
+            "start": 1,
+            "end": 24,
+            "label": "dbt model monthly_sales"
+          }
+        ]
+      },
+      {
+        "id": "bronze-sales-sha256",
+        "label": "Staging sales.parquet sha256",
+        "value": "4d3ddf463646e9dee0f64cfb2ca73047b6ec93c6a677a658a35c31b6626f8d9e"
+      }
+    ],
+    "inputHash": "38207bec8be5991254727403ac659facc2ef83b24dddf8712983fdc0c3d00c33"
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "row",
+    "columns": [
+      {
+        "id": "row",
+        "label": "Row (export order)",
+        "type": "string"
+      },
+      {
+        "id": "order_month",
+        "label": "order month",
+        "type": "string"
+      },
+      {
+        "id": "channel",
+        "label": "channel",
+        "type": "string"
+      },
+      {
+        "id": "revenue",
+        "label": "revenue",
+        "type": "number",
+        "unit": "USD"
+      },
+      {
+        "id": "units",
+        "label": "units",
+        "type": "number",
+        "unit": "units"
+      },
+      {
+        "id": "gross_margin_rate",
+        "label": "gross margin rate",
+        "type": "number",
+        "unit": "ratio",
+        "nullable": true
+      }
+    ],
+    "rows": [
+      {
+        "row": "r00001",
+        "order_month": "2026-01",
+        "channel": "ONLINE",
+        "revenue": 1200.5,
+        "units": 40,
+        "gross_margin_rate": 0.31
+      },
+      {
+        "row": "r00002",
+        "order_month": "2026-01",
+        "channel": "NORD",
+        "revenue": 830,
+        "units": 22,
+        "gross_margin_rate": null
+      },
+      {
+        "row": "r00003",
+        "order_month": "2026-02",
+        "channel": "SOUTH",
+        "revenue": 990.25,
+        "units": 31,
+        "gross_margin_rate": 0.27
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "Gold rows",
+      "kind": "table"
+    },
+    {
+      "id": "chart",
+      "title": "revenue by order month",
+      "kind": "chart",
+      "chart": "bar",
+      "x": "order_month",
+      "y": "revenue",
+      "unit": "USD"
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "kind": "json"
+    }
+  ]
+}

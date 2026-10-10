@@ -1,0 +1,137 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "capture-20260101T000000-0000aaaa-series",
+  "title": "FOIL-shaped capture series (synthetic look-alike)",
+  "provenance": {
+    "kind": "synthetic",
+    "source": "SYNTHETIC look-alike of a FOIL lab capture export, written for the MosaicStudio corpus. Shape only; every value is invented. Not FOIL data.",
+    "runId": "capture-0000aaaa",
+    "producer": {
+      "kind": "service",
+      "name": "Synthetic look-alike of a lab capture export"
+    },
+    "inputs": [
+      {
+        "id": "model",
+        "label": "Model",
+        "value": "synthetic-model"
+      },
+      {
+        "id": "modelVersion",
+        "label": "Model version",
+        "value": "0.0.0"
+      },
+      {
+        "id": "scenario",
+        "label": "Scenario",
+        "value": "synthetic-gusts"
+      },
+      {
+        "id": "seed",
+        "label": "Seed",
+        "value": 11
+      },
+      {
+        "id": "durationS",
+        "label": "Duration",
+        "value": 60,
+        "unit": "s"
+      },
+      {
+        "id": "samplePeriodS",
+        "label": "Sample period",
+        "value": 1,
+        "unit": "s"
+      }
+    ],
+    "inputHash": "ddc7c77932d79a486240dac706625cf7f27d4fb94bdb09975018d3dacf34898d"
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "t",
+    "columns": [
+      {
+        "id": "t",
+        "label": "Time",
+        "type": "number",
+        "unit": "s"
+      },
+      {
+        "id": "windMs",
+        "label": "Wind speed",
+        "type": "number",
+        "unit": "m/s"
+      },
+      {
+        "id": "powerKw",
+        "label": "Power",
+        "type": "number",
+        "unit": "kW",
+        "nullable": true
+      }
+    ],
+    "rows": [
+      {
+        "t": 0,
+        "windMs": 6,
+        "powerKw": 100
+      },
+      {
+        "t": 1,
+        "windMs": 6.5,
+        "powerKw": 112.5
+      },
+      {
+        "t": 2,
+        "windMs": 7,
+        "powerKw": 125
+      },
+      {
+        "t": 3,
+        "windMs": 7.5,
+        "powerKw": null
+      },
+      {
+        "t": 4,
+        "windMs": 8,
+        "powerKw": 150
+      },
+      {
+        "t": 5,
+        "windMs": 8.5,
+        "powerKw": 162.5
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "Samples",
+      "kind": "table"
+    },
+    {
+      "id": "wind",
+      "title": "Wind speed",
+      "kind": "chart",
+      "chart": "line",
+      "x": "t",
+      "y": "windMs",
+      "unit": "m/s"
+    },
+    {
+      "id": "power",
+      "title": "Power",
+      "kind": "chart",
+      "chart": "line",
+      "x": "t",
+      "y": "powerKw",
+      "unit": "kW"
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "kind": "json"
+    }
+  ]
+}
