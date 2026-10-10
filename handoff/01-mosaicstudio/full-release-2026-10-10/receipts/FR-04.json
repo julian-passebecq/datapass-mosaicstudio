@@ -1,24 +1,28 @@
 {
   "fr": "01-mosaicstudio/FR-04",
   "also_closes": "01-mosaicstudio/FR-05 known load-sensitive embed-fit failure (cause: unbounded per-frame 3D rendering)",
-  "source_sha": "1afee91b22ced52b84376217736c6178eebc50dd",
-  "base_sha": "6f45dd06e95ee66d693fc08fb4369c2a6379e84c",
+  "source_sha": "4f7fedc484b2905de2e6ba8e4d32764e7290a09b",
+  "base_sha": "f3a02bca98efb56ac219db46edb6275088a20192",
+  "first_measured_on": "6f45dd06e95ee66d693fc08fb4369c2a6379e84c",
   "branch": "claude/consumer-interop",
   "producer_consumer_vector": [
     {"role": "producer", "repo": "datapass-react (GitLab, private)", "ref": "gitlab/main", "sha": "2e922ea4fc4d991ba809e1d3d78a23da2fb586be", "exporter": "apps/vscode-react/src/model/conceptExport.ts", "format": "datapass.concept-spec 1.0.0",
       "targets": [{"repo": "contoso-data-studio", "sha": "f2d0c759b2362b94db0cd73c3a9d901ed4aed9f0"}, {"repo": "datapass-mosaicstudio", "sha": "6f45dd06e95ee66d693fc08fb4369c2a6379e84c"}]},
     {"role": "producer", "repo": "contoso-data-studio", "ref": "origin/main", "sha": "f2d0c759b2362b94db0cd73c3a9d901ed4aed9f0", "exporter": "apps/api/app/services/fabric_apps/concept.py; apps/api/app/services/exports.py", "format": "datapass.concept-spec 1.0.0; datapass.artifact 1"},
-    {"role": "consumer", "repo": "datapass-mosaicstudio", "sha": "1afee91b22ced52b84376217736c6178eebc50dd", "surfaces": ["scripts/concept-validate.mjs --strict", "validateArtifact (TS)", "py/datapass_artifact.py", "docs/contracts/artifact.schema.json", "dist-standalone/concept-viewer.html (file:// and embed)", "?artifact=1 artifact file viewer"]},
+    {"role": "consumer", "repo": "datapass-mosaicstudio", "sha": "4f7fedc484b2905de2e6ba8e4d32764e7290a09b", "surfaces": ["scripts/concept-validate.mjs --strict", "validateArtifact (TS)", "py/datapass_artifact.py", "docs/contracts/artifact.schema.json", "dist-standalone/concept-viewer.html (file:// and embed)", "?artifact=1 artifact file viewer"]},
     {"role": "consumer (read only, not run)", "repo": "t3code-datapass", "ref": "origin/main", "sha": "3dfcecdfa169b8da1fadd6408ccb2765f73adaaf", "compatibility": "preview fixture compatible with what it inspects; it does not read preview.json; false 'missing provenance' for every concept spec (T3-side gap)"}
   ],
   "tests": [
-    {"cmd": "npm test", "pass": 620, "fail": 0, "skip": 1},
+    {"cmd": "npm test (rebased on f3a02bc)", "pass": 626, "fail": 0, "skip": 1},
+    {"cmd": "npm test (on 6f45dd0, before rebase)", "pass": 620, "fail": 0, "skip": 1},
+    {"cmd": "python -I validate_artifact_py.py (Python mirror + docs/contracts/artifact.schema.json at f3a02bc) on synthetic and real Contoso artifact", "pass": 2, "fail": 0, "skip": 0},
     {"cmd": "npx tsc --noEmit", "pass": 1, "fail": 0, "skip": 0},
     {"cmd": "node --experimental-strip-types --test tests/consumer-interop.test.mjs", "pass": 8, "fail": 0, "skip": 0},
     {"cmd": "node --experimental-strip-types --test tests/concept-stage-budget.test.mjs", "pass": 2, "fail": 0, "skip": 0},
     {"cmd": "node scripts/concept-validate.mjs --strict <2 synthetic fixtures + 3 real exports>", "pass": 5, "fail": 0, "skip": 0},
     {"cmd": "npm run preview:validate -- spec/preview/v1/fixtures/synthetic-client/preview.json --check-files", "pass": 1, "fail": 0, "skip": 0},
-    {"cmd": "PW_PORT=24173 npx playwright test tests/browser/consumer-interop.spec.ts tests/browser/concept-standalone.spec.ts", "pass": 9, "fail": 1, "skip": 1, "note": "the failure is concept-standalone 'validation errors' timing out in page.goto(file://) after the 3D test; it fails identically with the baseline viewer on this loaded PC and passes with its predecessor alone; cause UNKNOWN"},
+    {"cmd": "PW_PORT=24273 npx playwright test tests/browser/consumer-interop.spec.ts (rebased on f3a02bc, after npm run build)", "pass": 4, "fail": 0, "skip": 1},
+    {"cmd": "PW_PORT=24173 npx playwright test tests/browser/consumer-interop.spec.ts tests/browser/concept-standalone.spec.ts (on 6f45dd0)", "pass": 9, "fail": 1, "skip": 1, "note": "the failure is concept-standalone 'validation errors' timing out in page.goto(file://) after the 3D test; it fails identically with the baseline viewer on this loaded PC and passes with its predecessor alone; cause UNKNOWN"},
     {"cmd": "FR04_REAL_DIR=<private> npx playwright test tests/browser/consumer-interop.spec.ts -g 'private qualification'", "pass": 1, "fail": 0, "skip": 0},
     {"cmd": "baseline viewer: npx playwright test concept-standalone.spec.ts -g 'embed options' --repeat-each=8", "pass": 6, "fail": 2, "skip": 0, "note": "baseline reproduction of the FR-05 failure (90 s timeouts)"}
   ],
@@ -51,14 +55,14 @@
     "embed_origin_source_checks_bounded_payload": "PASS",
     "strict_concept_schema_and_semantic_validation": "PASS",
     "artifact_ts_and_python_validation": "PASS",
-    "artifact_json_schema_validation": "FAIL",
+    "artifact_json_schema_validation": "PASS",
     "preview_v1_consumer_fixture": "PASS",
     "t3_consumes_preview_json": "UNKNOWN",
     "fr05_embed_fit_cause_fixed": "PASS",
     "ci": "UNKNOWN"
   },
   "omissions": [
-    "artifact_json_schema_validation FAIL is the docs/contracts/artifact.schema.json lineage drift owned by FR-01 (rejects provenance.producer/inputs/inputHash that TS and Python accept); not repaired here",
+    "artifact JSON Schema: 1 error on 6f45dd0 (provenance lineage fields), 0 errors after rebasing on FR-01 f3a02bc",
     "T3 at 3dfcecd does not read preview.json and lists a false 'missing provenance' for concept specs; T3 was read only, not run and not changed",
     "concept-standalone 'validation errors' local timeout after the 3D file:// test also fails with the baseline viewer on this PC; cause UNKNOWN; passed in baseline CI",
     "No native Positron host; Playwright Chromium only"

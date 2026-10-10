@@ -1,6 +1,6 @@
 # FR-04 consumer interoperability (+ FR-05 embed-fit cause), 2026-10-10
 
-Packet `galaxy-full-release-2026-10-10/01-mosaicstudio`, branch `claude/consumer-interop`, code at `1afee91` (base `6f45dd0`, 0.9.0).
+Packet `galaxy-full-release-2026-10-10/01-mosaicstudio`, branch `claude/consumer-interop`, code at `4f7fedc`, rebased on `f3a02bc` (0.9.0 + FR-01 #46); first measured on base `6f45dd0`.
 Windows 11 Pro 10.0.26300, Node 26.9.0, Playwright 1.63.0 Chromium (software WebGL, as in CI), Python 3.13 venv under %TEMP% for Contoso.
 Receipt: `handoff/01-mosaicstudio/full-release-2026-10-10/receipts/FR-04.json`. Real exports, screenshots and logs are private: `D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-04/` (`SHA256SUMS.txt`), never committed.
 
@@ -10,7 +10,7 @@ Receipt: `handoff/01-mosaicstudio/full-release-2026-10-10/receipts/FR-04.json`. 
 |---|---|---|---|
 | Producer | DataPass React 2.1, `gitlab/main` (private) | `2e922ea4fc4d991ba809e1d3d78a23da2fb586be` | `analyzeWorkspace` → `buildTraces` → `buildConceptSpec` → `conceptJson` (`apps/vscode-react/src/model/conceptExport.ts`), headless in a `git archive` copy, on two trees: contoso-data-studio `f2d0c75` and datapass-mosaicstudio `6f45dd0` |
 | Producer | Contoso Data Studio, `origin/main` | `f2d0c759b2362b94db0cd73c3a9d901ed4aed9f0` | `concept_bytes(load_model(ROOT))` and `ExportService.export("monthly_sales")` after generate (online-migration, seed 7, 1,500 lines) → DuckLake Bronze → `dbt build` (dbt-duckdb 1.11.0) |
-| Consumer | datapass-mosaicstudio (this branch) | `1afee91` | `scripts/concept-validate.mjs --strict`, `validateArtifact` (TS), `py/datapass_artifact.py`, `docs/contracts/artifact.schema.json`, standalone viewer, artifact file viewer |
+| Consumer | datapass-mosaicstudio (this branch) | `4f7fedc` (on `f3a02bc`) | `scripts/concept-validate.mjs --strict`, `validateArtifact` (TS), `py/datapass_artifact.py`, `docs/contracts/artifact.schema.json`, standalone viewer, artifact file viewer |
 | Consumer (read only) | t3code-datapass `origin/main` | `3dfcecdfa169b8da1fadd6408ccb2765f73adaaf` | Source read of `apps/server/src/mosaic/MosaicStudio.ts`, `mosaicReceipt.ts`, `MosaicPreviewHost.ts`; not run, not changed |
 
 No obsolete checkout was searched: the exporters are at the refs above (React: `apps/vscode-react/src/model/conceptExport.ts`; Contoso: `apps/api/app/services/fabric_apps/concept.py`, `apps/api/app/services/exports.py`).
@@ -22,11 +22,11 @@ No obsolete checkout was searched: the exporters are at the refs above (React: `
 | React on contoso-data-studio (4 layers, 12 nodes, 11 flows, Unresolved side domain) | `77bd4d1e…a8ead7e3` | `--strict` OK | standalone file:// + embed fit at 1000x600, 640x420, 1280x760: PASS |
 | React on datapass-mosaicstudio (4 layers, 14 nodes, 4 flows) | `f52b948f…c4688ce7` | `--strict` OK | same: PASS |
 | Contoso concept `contoso-sales-forecasting` (6 layers, 13 nodes, 17 flows) | `d653d94f…bddc5db` | `--strict` OK. Byte-identical to Contoso's own `handoff/READY-concept.json` hash | same: PASS |
-| Contoso artifact `contoso-monthly-sales` (48 rows, 11 columns, 13 declared inputs, table/chart/json) | `92507...cbb5b` | TS `validateArtifact` + `artifactDefinition` OK; Python mirror OK; **JSON Schema: 1 error** (see below) | artifact file viewer `?artifact=1`: PASS |
+| Contoso artifact `contoso-monthly-sales` (48 rows, 11 columns, 13 declared inputs, table/chart/json) | `92507...cbb5b` | TS `validateArtifact` + `artifactDefinition` OK; Python mirror OK; JSON Schema: 0 errors on `f3a02bc` (1 error on `6f45dd0`, see below) | artifact file viewer `?artifact=1`: PASS |
 
 Run: `FR04_REAL_DIR=<private copy> FR04_SHOT_DIR=<private screenshots> npx playwright test tests/browser/consumer-interop.spec.ts -g "private qualification"` → 1 passed (2.0 min); 7 screenshots viewed (concept embed and artifact table render).
 
-**Finding for FR-01 (not fixed here):** `docs/contracts/artifact.schema.json` rejects the real Contoso export and the synthetic mirror: `provenance: Additional properties are not allowed ('inputHash', 'inputs', 'producer')`, while the TS validator and the Python mirror accept them. This is the drift FR-01 owns.
+**Schema drift, resolved by FR-01:** on `6f45dd0`, `docs/contracts/artifact.schema.json` rejected the real Contoso export and the synthetic mirror (`provenance: Additional properties are not allowed ('inputHash', 'inputs', 'producer')`) while TS and Python accepted them. After rebasing on `f3a02bc` (FR-01 #46) the same two files give 0 schema errors and still pass the TS validator and the Python mirror.
 
 **Finding for T3 (not changed here):** at `3dfcecd` T3 does not read `preview.json`; it requires `index.html`, reads `studio-build.json` capabilities, hashes all files and serves with `_headers` CSP. Its contract-document check treats `provenance` as an object, so every valid `datapass.concept-spec` v1 (string provenance) is listed with a false "missing provenance" problem.
 
@@ -47,7 +47,8 @@ Result: `concept-standalone` "embed options" passes with the fixed viewer in bot
 
 ## Runs (this PC)
 
-- `npm test`: 621 tests, 620 pass, 0 fail, 1 skipped.
+- After rebasing on `f3a02bc` (FR-01): `npm ci`, `npm test` 627 tests, 626 pass, 0 fail, 1 skipped; `tsc --noEmit` exit 0; `npm run build` exit 0; `PW_PORT=24273 npx playwright test tests/browser/consumer-interop.spec.ts` 4 passed, 1 skipped (private).
+- On `6f45dd0`: `npm test`: 621 tests, 620 pass, 0 fail, 1 skipped.
 - `npx tsc --noEmit`: exit 0.
 - `node scripts/concept-validate.mjs --strict` on the 2 synthetic fixtures and the 3 real exports: all OK.
 - `npm run preview:validate -- spec/preview/v1/fixtures/synthetic-client/preview.json --check-files`: valid, 4 files, 1 artifact, re-hashed.
@@ -57,4 +58,3 @@ Result: `concept-standalone` "embed options" passes with the fixed viewer in bot
 
 - T3 was not run and not changed; preview fixture compatibility is a source reading of `3dfcecd`.
 - No native Windows/Positron host beyond Playwright Chromium.
-- `docs/contracts/artifact.schema.json` drift is reported for FR-01, not repaired here.
