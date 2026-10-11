@@ -70,8 +70,7 @@ const filled=(f:Fit)=>{if(!f.ok)return f.reason;const r=Math.max(f.el.width/f.st
 /** expect.poll until the probe says 'ok'; a timeout reports the probe's last verdict. */
 async function pollOk(probe:()=>Promise<string>,message:string,timeout?:number){
   let last='(not run)';
-  const attempt=async()=>{try{return await probe();}catch(e){if(e instanceof errors.TimeoutError)return 'a measuring call timed out: '+e.message.split('
-')[0];throw e;}};
+  const attempt=async()=>{try{return await probe();}catch(e){if(e instanceof errors.TimeoutError)return 'a measuring call timed out: '+e.message.split('\n')[0];throw e;}};
   try{await expect.poll(async()=>(last=await attempt()),{message,timeout}).toBe('ok');}
   catch(e){throw new Error(message+' - last verdict: '+last+'\n'+(e instanceof Error?e.message:String(e)));}
 }
