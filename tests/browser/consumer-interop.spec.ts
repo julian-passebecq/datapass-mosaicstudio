@@ -1,4 +1,4 @@
-import {test,expect,type Page,type FrameLocator} from '@playwright/test';
+import {test,expect,errors,type Page,type FrameLocator} from '@playwright/test';
 import {readFile,readdir,writeFile,mkdtemp,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
@@ -52,9 +52,12 @@ type Fit={ok:true;el:Box;stage:Box}|{ok:false;reason:string};
  * Used inside expect.poll: PanZoom renders the SVG from a string, so the element is replaced while a load or resize settles
  * (also on 6f45dd0) and a node detached between resolve and measure has no box. That is "not settled yet", not a pass.
  */
+/** One measuring call inside a probe. A locator call waits for its element without limit by default, so a call that stalls
+ *  would hold the whole poll and report no verdict; bounded, it is one more "not yet" attempt with its reason. */
+const PROBE_CALL_MS=5000;
 async function fitsInside(page:Page,frame:FrameLocator,selector:string):Promise<Fit>{
-  const vp=page.viewportSize()!;
-  const [el,stage,host]=await Promise.all([frame.locator(selector).first().boundingBox(),frame.locator('.aa-stage').boundingBox(),page.locator('#v').boundingBox()]);
+  const vp=page.viewportSize()!,timeout=PROBE_CALL_MS;
+  const [el,stage,host]=await Promise.all([frame.locator(selector).first().boundingBox({timeout}),frame.locator('.aa-stage').boundingBox({timeout}),page.locator('#v').boundingBox({timeout})]);
   if(!el||!stage||!host)return {ok:false,reason:'no box yet for '+selector};
   const outside=(b:Box,o:Box)=>b.x<o.x-.5||b.y<o.y-.5||b.x+b.width>o.x+o.width+.5||b.y+b.height>o.y+o.height+.5;
   for(const [b,o,what] of [[host,{x:0,y:0,width:vp.width,height:vp.height},'frame'],[stage,host,'stage'],[el,stage,selector]] as [Box,Box,string][])
@@ -67,7 +70,9 @@ const filled=(f:Fit)=>{if(!f.ok)return f.reason;const r=Math.max(f.el.width/f.st
 /** expect.poll until the probe says 'ok'; a timeout reports the probe's last verdict. */
 async function pollOk(probe:()=>Promise<string>,message:string,timeout?:number){
   let last='(not run)';
-  try{await expect.poll(async()=>(last=await probe()),{message,timeout}).toBe('ok');}
+  const attempt=async()=>{try{return await probe();}catch(e){if(e instanceof errors.TimeoutError)return 'a measuring call timed out: '+e.message.split('
+')[0];throw e;}};
+  try{await expect.poll(async()=>(last=await attempt()),{message,timeout}).toBe('ok');}
   catch(e){throw new Error(message+' - last verdict: '+last+'\n'+(e instanceof Error?e.message:String(e)));}
 }
 
@@ -117,13 +122,23 @@ test('embed fit: no corner of the diagram, stage or frame is clipped after each 
   for(const [w,h] of [[1000,600],[640,420],[1280,760]] as [number,number][]){
     await frameSize(page,w,h);
     await pollOk(async()=>{
-      const f=await fitsInside(page,frame,'[data-testid=atlas-3d] canvas');if(!f.ok)return f.reason;const canvas=f.el;
-      if(Math.abs(canvas.width-f.stage.width)>1)return `canvas ${canvas.width} not resized to stage ${f.stage.width}`;
-      const labels=await frame.locator('[data-testid=atlas-3d] .aa-label[data-node], [data-testid=atlas-3d] .aa-layer-label').all();
-      if(labels.length!==spec.nodes.length+spec.layers.length)return 'labels '+labels.length;
-      for(const l of labels){const b=await l.boundingBox();if(!b)return 'label not measurable';if(b.x<canvas.x-.5||b.y<canvas.y-.5||b.x+b.width>canvas.x+canvas.width+.5||b.y+b.height>canvas.y+canvas.height+.5)return 'label clipped '+JSON.stringify(b)+' in '+JSON.stringify(canvas);}
-      const settled=await frame.locator('[data-testid=atlas-3d] .aa-canvas').getAttribute('data-settled');
-      return settled==='true'?'ok':'not settled ('+settled+')';
+      const f=await fitsInside(page,frame,'[data-testid=atlas-3d] canvas');if(!f.ok)return f.reason;
+      if(Math.abs(f.el.width-f.stage.width)>1)return `canvas ${f.el.width} not resized to stage ${f.stage.width}`;
+      // The stage settles only after drawing a frame at its current size; the labels are placed by that frame. One read
+      // inside the viewer takes the flag, the drawn size and every label box from the same layout, so labels still placed
+      // for the previous size (the canvas already follows its host's CSS size) cannot pass for the new one.
+      return frame.locator('[data-testid=atlas-3d]').evaluate((root,expected)=>{
+        const host=root.querySelector<HTMLElement>('.aa-canvas'),canvas=root.querySelector('canvas');
+        if(!host||!canvas)return 'no canvas';
+        if(host.dataset.settled!=='true')return 'not settled ('+host.dataset.settled+')';
+        const shown=host.clientWidth+'x'+host.clientHeight;
+        if(canvas.dataset.size!==shown)return `last frame drawn at ${canvas.dataset.size}, shown at ${shown}`;
+        const c=canvas.getBoundingClientRect(),labels=[...root.querySelectorAll('.aa-label[data-node], .aa-layer-label')];
+        if(labels.length!==expected)return 'labels '+labels.length;
+        for(const l of labels){const b=l.getBoundingClientRect();
+          if(b.left<c.left-.5||b.top<c.top-.5||b.right>c.right+.5||b.bottom>c.bottom+.5)return 'label clipped '+JSON.stringify({x:b.x,y:b.y,width:b.width,height:b.height})+' in '+JSON.stringify({x:c.x,y:c.y,width:c.width,height:c.height});}
+        return 'ok';
+      },spec.nodes.length+spec.layers.length,{timeout:PROBE_CALL_MS});
     },`3d ${w}x${h}`,30000);
   }
   await shot(page,'embed-3d-1280x760.png');
