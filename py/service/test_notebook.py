@@ -31,7 +31,7 @@ except ImportError:  # pragma: no cover
 if HAVE:
     import app as service
     from notebook_io import NotebookError, export_notebook, import_notebook
-    from result_store import ResultStore, StoreError, StoreFull, canonical, sha256
+    from result_store import ResultStore, StoreError, StoreFull, canonical, sha256, sql_source_sha256
 
 ORIGIN = "http://127.0.0.1:5173"
 TOKEN = "notebook-test-token-0123456789"
@@ -262,6 +262,101 @@ class NotebookRoutesTests(unittest.TestCase):
             self.assertEqual(client.get(API + "/store/manifest", headers=H).status_code, 404)
         finally:
             plain.state.runs.shutdown()
+
+
+VECTORS = json.loads((HERE.parent.parent / "tests" / "fixtures" / "sql-source-hash" / "vectors.json").read_text(encoding="utf-8"))
+
+
+def sql_nb(cells: list[tuple[str, str]]) -> dict:
+    return {"cells": [{"id": cid, "kind": "sql", "title": "SYNTHETIC " + cid, "sql": sql, "dependsOn": []} for cid, sql in cells],
+            "outputs": {}, "executionCounts": {}, "results": {}}
+
+
+def sql_item(cell_id: str, sql: str) -> dict:
+    src = sql_source_sha256(sql)
+    return {"cellId": cell_id, "cellKind": "sql", "sourceSha256": src, "run": {"runtime": "duckdb"},
+            "result": {"format": "datapass.cell-result", "version": 1, "cellId": cell_id, "sourceSha256": src, "outputs": [],
+                       "table": {"columns": ["n"], "rows": [[1]], "total": 1, "truncated": False}, "executionCount": None,
+                       "finishedAt": "2026-10-11T00:00:00.000Z", "origin": "duckdb"}}
+
+
+@unittest.skipUnless(HAVE, "nbformat / fastapi not installed")
+class SqlSourceHashTests(unittest.TestCase):
+    """M-SQLHASH: the manifest records each SQL cell's authored-source hash; reopening checks it."""
+    def setUp(self) -> None:
+        self.dir = Path(tempfile.mkdtemp(prefix="datapass-sqlhash-test-"))
+        self.app = service.create_app(origins=(ORIGIN,), token=TOKEN, results_dir=self.dir / "store", results_max_bytes=1_000_000)
+        self.client = TestClient(self.app, base_url="http://127.0.0.1:8765")
+
+    def tearDown(self) -> None:
+        self.app.state.runs.shutdown()
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+    def manifest_path(self) -> Path:
+        return self.dir / "store" / "manifest.json"
+
+    def test_vectors_match_the_browser_definition(self) -> None:
+        for case in VECTORS["cases"]:
+            self.assertEqual(sql_source_sha256(case["sql"]), case["sourceSha256"], case["id"])
+
+    def test_sql_only_save_records_hashes_and_reopens_after_restart(self) -> None:
+        cells = [(f"sql-{i}", c["sql"]) for i, c in enumerate(VECTORS["cases"])]
+        saved = self.client.post(API + "/store/save", headers=H, json={"notebook": sql_nb(cells), "results": [sql_item("sql-1", cells[1][1])]})
+        self.assertEqual(saved.status_code, 200, saved.text)
+        ws = json.loads(self.manifest_path().read_text())["workspace"]["cells"]
+        self.assertEqual([c["sourceSha256"] for c in ws], [c["sourceSha256"] for c in VECTORS["cases"]])
+        entry = json.loads(self.manifest_path().read_text())["entries"][0]
+        self.assertEqual(entry["sourceSha256"], ws[1]["sourceSha256"])
+        # Restart: a new app over the same folder reopens the same sources and results; nothing reruns.
+        self.app.state.runs.shutdown()
+        self.app = service.create_app(origins=(ORIGIN,), token=TOKEN, results_dir=self.dir / "store", results_max_bytes=1_000_000)
+        self.client = TestClient(self.app, base_url="http://127.0.0.1:8765")
+        reopened = self.client.get(API + "/store/notebook", headers=H)
+        self.assertEqual(reopened.status_code, 200, reopened.text)
+        got = {c["id"]: c["sql"] for c in reopened.json()["import"]["cells"]}
+        for cid, sql in cells:
+            self.assertEqual(got[cid], sql, cid)
+            self.assertEqual(sql_source_sha256(got[cid]), next(w["sourceSha256"] for w in ws if w["cellId"] == cid))
+        # Deleting the saved result keeps the cell's source hash in the manifest.
+        self.client.post(f"{API}/store/results/{entry['resultSha256']}/delete", headers=H)
+        after = json.loads(self.manifest_path().read_text())
+        self.assertEqual(after["entries"], [])
+        self.assertEqual(after["workspace"]["cells"][1]["sourceSha256"], ws[1]["sourceSha256"])
+
+    def test_old_manifest_without_hashes_still_opens(self) -> None:
+        self.assertEqual(self.client.post(API + "/store/save", headers=H, json={"notebook": sql_nb([("sql-a", "SELECT 1")]), "results": []}).status_code, 200)
+        doc = json.loads(self.manifest_path().read_text())
+        for c in doc["workspace"]["cells"]:
+            c.pop("sourceSha256")
+        self.manifest_path().write_bytes(canonical(doc))
+        reopened = self.client.get(API + "/store/notebook", headers=H)
+        self.assertEqual(reopened.status_code, 200, reopened.text)
+        self.assertEqual(reopened.json()["import"]["cells"][0]["sql"], "SELECT 1")
+
+    def test_mismatched_or_malformed_hash_refuses_to_open_and_changes_nothing(self) -> None:
+        self.assertEqual(self.client.post(API + "/store/save", headers=H, json={"notebook": sql_nb([("sql-a", "SELECT 1")]), "results": []}).status_code, 200)
+        good = json.loads(self.manifest_path().read_text())
+        for bad in (sql_source_sha256("SELECT 2"), "not-a-hash", 7):
+            doc = json.loads(json.dumps(good))
+            doc["workspace"]["cells"][0]["sourceSha256"] = bad
+            raw = canonical(doc)
+            self.manifest_path().write_bytes(raw)
+            reopened = self.client.get(API + "/store/notebook", headers=H)
+            self.assertEqual(reopened.status_code, 409, reopened.text)
+            self.assertIn("nothing was opened", reopened.json()["detail"])
+            self.assertEqual(self.manifest_path().read_bytes(), raw)
+        self.manifest_path().write_bytes(canonical(good))
+        self.assertEqual(self.client.get(API + "/store/notebook", headers=H).status_code, 200)
+
+    def test_stale_result_is_still_saved_under_its_run_source(self) -> None:
+        # The authored source changed after the run: the entry keeps the run's source hash, the workspace
+        # cell records the authored one, and the browser shows the reopened result as stale (unchanged semantics).
+        item = sql_item("sql-a", "SELECT 1")
+        saved = self.client.post(API + "/store/save", headers=H, json={"notebook": sql_nb([("sql-a", "SELECT 2")]), "results": [item]})
+        self.assertEqual(saved.status_code, 200, saved.text)
+        doc = json.loads(self.manifest_path().read_text())
+        self.assertEqual(doc["entries"][0]["sourceSha256"], sql_source_sha256("SELECT 1"))
+        self.assertEqual(doc["workspace"]["cells"][0]["sourceSha256"], sql_source_sha256("SELECT 2"))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,23 @@
+{
+  "action": "M-SQLHASH",
+  "lane": "01-mosaicstudio",
+  "parent": ["01-mosaicstudio/FR-03", "E2E-01"],
+  "baseline_sha": "ca26e9dc5b12021afa244de3ca03f326d1716172",
+  "state": "QUALIFIED_LOCAL",
+  "os": "Windows 11 Pro 10.0.26300.9550",
+  "runtime": "Node 26.9.0; Python 3.14.7 venv (jupyter_server 2.21.1, ipykernel 7.3.0, nbformat 5.11.1); Playwright 1.63.0 Chromium",
+  "tests": [
+    {"cmd": "node --experimental-strip-types --test tests/sql-source-hash.test.mjs", "pass": 2, "fail": 0, "skip": 0},
+    {"cmd": "python -m unittest discover -s py/service -p test_*.py (DATAPASS_REQUIRE_JUPYTER=1)", "pass": 43, "fail": 0, "skip": 0},
+    {"cmd": "npx tsc --noEmit", "result": "clean"},
+    {"cmd": "playwright test tests/browser/workbench-jupyter.spec.ts (PW_PORT=21492, Jupyter 28891, runtime 28792)", "pass": 4, "fail": 0, "attempts": 1}
+  ],
+  "hashes": {
+    "vectors_file": "tests/fixtures/sql-source-hash/vectors.json",
+    "e2e01_sql_source_sha256": "803a66b6f20b6c869ae089a73839f5d019dabe49f81768c29b7f4b063785f8e5",
+    "e2e01_sql_result_sha256": "e8d5fc1c1b39f9bb14490f0ec92d47eabbb746b06244bcfafbea79277fac57d6"
+  },
+  "corrects": "receipts/E2E-01.json omission about the SQL source hash (see qa/M-SQLHASH.md)",
+  "ci": "see PR",
+  "omissions": ["Only SQL cells get a workspace-level source hash; Python/Jupyter cells keep theirs in result entries and jobs, as before."]
+}

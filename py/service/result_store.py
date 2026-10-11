@@ -75,6 +75,40 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
+def sql_source_sha256(sql: str) -> str:
+    """SHA-256 of a SQL cell's authored source, defined exactly like the browser's cellSourceKey():
+    JSON.stringify(["sql", sql]) as UTF-8. Same text -> same hash in Python and TypeScript."""
+    return sha256(json.dumps(["sql", sql], separators=(",", ":"), ensure_ascii=False).encode("utf-8"))
+
+
+def _workspace_cell(cell: dict[str, Any]) -> dict[str, Any]:
+    out = {"cellId": cell.get("id"), "kind": cell.get("kind")}
+    if cell.get("kind") == "sql" and isinstance(cell.get("sql"), str):
+        out["sourceSha256"] = sql_source_sha256(cell["sql"])
+    return out
+
+
+def check_sql_sources(manifest: dict[str, Any], imported: dict[str, Any]) -> None:
+    """Re-opening: every SQL cell whose source hash the manifest recorded must still have exactly that
+    source in the stored notebook. Manifests written before the hash existed carry none and open as before."""
+    recorded = (manifest.get("workspace") or {}).get("cells") or []
+    if not isinstance(recorded, list):
+        raise StoreError("The store manifest's workspace cells are malformed; nothing was opened.", 409)
+    expected: dict[str, str] = {}
+    for item in recorded:
+        if not isinstance(item, dict) or "sourceSha256" not in item:
+            continue
+        sha = item.get("sourceSha256")
+        if item.get("kind") != "sql" or not isinstance(sha, str) or not _SHA.match(sha) or not isinstance(item.get("cellId"), str):
+            raise StoreError("The store manifest records an invalid SQL source hash; nothing was opened.", 409)
+        expected[item["cellId"]] = sha
+    sql_cells = {c.get("id"): c for c in imported.get("cells", []) if isinstance(c, dict) and c.get("kind") == "sql"}
+    for cell_id, sha in expected.items():
+        cell = sql_cells.get(cell_id)
+        if cell is None or sql_source_sha256(str(cell.get("sql", ""))) != sha:
+            raise StoreError(f"SQL cell {cell_id}: the stored notebook does not match the source hash in the manifest; nothing was opened.", 409)
+
+
 def inside_git_worktree(path: Path) -> Path | None:
     for parent in (path, *path.parents):
         if (parent / ".git").exists():
@@ -244,7 +278,7 @@ class ResultStore:
             new_files.append((nb_path, notebook_bytes))
         cells = nb_payload.get("cells") or []
         doc = {**old, "workspace": {"notebookSha256": notebook_sha, "savedAt": now,
-                                    "cells": [{"cellId": c.get("id"), "kind": c.get("kind")} for c in cells if isinstance(c, dict)]},
+                                    "cells": [_workspace_cell(c) for c in cells if isinstance(c, dict)]},
                "entries": entries}
         manifest_bytes = len(canonical({**doc, "updatedAt": now}))
         old_nb_bytes = 0
@@ -461,7 +495,9 @@ def create_notebook_router(store: ResultStore | None) -> APIRouter:
         s = need_store()
         try:
             text, nb_sha = s.notebook_text()
-            return {"sha256": nb_sha, "import": import_notebook(text), "manifest": s.view()}
+            imported = import_notebook(text)
+            check_sql_sources(s.manifest(), imported)
+            return {"sha256": nb_sha, "import": imported, "manifest": s.view()}
         except (StoreError, NotebookError) as error:
             raise fail(error) from None
 
