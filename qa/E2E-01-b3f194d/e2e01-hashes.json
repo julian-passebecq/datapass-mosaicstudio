@@ -1,0 +1,32 @@
+{
+  "pythonResultSha256": "3bee7597d211fff3b9d2b20d4b8d438a19697703b2e23ac93d93f5f65ef81494",
+  "sqlResultSha256": "ac6efed5656669424ada6bba9d81e0952c62de2efc49f3c173c72e8af06a8027",
+  "reopenedPythonSha256": "3bee7597d211fff3b9d2b20d4b8d438a19697703b2e23ac93d93f5f65ef81494",
+  "manifestSha256": "bc354fbefd8c05865baa6d12dccaee9a64d9225efa33860a3cff8d7b7a5ef58d",
+  "cells": [
+    {
+      "cellId": "jupyter-11o2k",
+      "cellKind": "jupyter",
+      "sourceSha256": "af43c2d24fdd062dacabbeaede0ebc139d8577c8566add75a3d190880df2092f",
+      "resultSha256": "3bee7597d211fff3b9d2b20d4b8d438a19697703b2e23ac93d93f5f65ef81494"
+    }
+  ],
+  "jobs": [
+    {
+      "cellId": "jupyter-11o2k",
+      "status": "succeeded"
+    },
+    {
+      "cellId": "jupyter-11o2k",
+      "status": "succeeded"
+    },
+    {
+      "cellId": "jupyter-35v0w",
+      "status": "succeeded"
+    },
+    {
+      "cellId": "jupyter-35v0w",
+      "status": "interrupted"
+    }
+  ]
+}
