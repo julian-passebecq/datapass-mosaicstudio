@@ -175,7 +175,7 @@ export function createStage(host:HTMLElement,overlay:HTMLElement,spec:ConceptSpe
     }
     layerLabels.forEach((el,i)=>{const p=project([-W/2-.3,layerY(g,i)+.05,DEPTH/2]);el.style.transform=`translate(${p.x.toFixed(1)}px,${p.y.toFixed(1)}px) translate(-100%,-50%)`;el.style.opacity=p.visible?'1':'0';el.classList.toggle('on',i===view.layer);});
     overlay.classList.toggle('aa-far',pose.distance>38);
-    canvas.dataset.t=t.toFixed(4);
+    canvas.dataset.t=t.toFixed(4);canvas.dataset.size=size.width+'x'+size.height;
   }
   const ray=new THREE.Raycaster();
   function pick(clientX:number,clientY:number){

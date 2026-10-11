@@ -31,7 +31,9 @@ export default function ConceptStage({spec,nav,reduced,onSelect,onStep,whole=fal
     host.current!.dataset.settled='false';dirty.current=true;
     try{stage.current=createStage(host.current!,overlay.current!,spec,{fitAspect:whole?2:1.5});}catch(e){setError(e instanceof Error?e.message:String(e));return;}
     const pose=navPose(spec,nav);current.current=pose;motion.current={from:pose,to:pose,start:-1e9};
-    const observer=new ResizeObserver(()=>{stage.current?.resize();dirty.current=true;});observer.observe(host.current!);
+    // A new size clears the canvas and leaves the labels where the previous size put them: the stage is not settled
+    // again until a frame has been drawn at the new size (the canvas records that size in data-size).
+    const observer=new ResizeObserver(()=>{stage.current?.resize();dirty.current=true;host.current!.dataset.settled='false';});observer.observe(host.current!);
     let frame=0,last=-Infinity,interval=0,wasMoving=true,drewPrevious=false,previous=0;
     const tick=(now:number)=>{
       frame=requestAnimationFrame(tick);

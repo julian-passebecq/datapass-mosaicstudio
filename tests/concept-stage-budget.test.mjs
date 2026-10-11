@@ -22,5 +22,8 @@ test('the stage loop skips frames when nothing moves and settles only after draw
   assert.match(src,/interval=ambientInterval\(performance\.now\(\)-started\)/);
   assert.match(src,/if\(drewPrevious\)interval=Math\.max\(interval,ambientInterval\(now-previous-FRAME_SLACK_MS\)\);/);
   assert.match(src,/host\.current!\.dataset\.settled='false';dirty\.current=true;\s*try\{stage\.current=createStage/);
-  assert.match(src,/new ResizeObserver\(\(\)=>\{stage\.current\?\.resize\(\);dirty\.current=true;\}\)/);
+  // A resize forces a frame and unsettles the stage until that frame (at the new size) is drawn.
+  assert.match(src,/new ResizeObserver\(\(\)=>\{stage\.current\?\.resize\(\);dirty\.current=true;host\.current!\.dataset\.settled='false';\}\)/);
+  const world=await readFile('src/framework/concept/three/world.ts','utf8');
+  assert.match(world,/canvas\.dataset\.size=size\.width\+'x'\+size\.height;/);
 });
