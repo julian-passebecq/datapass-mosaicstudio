@@ -1,0 +1,53 @@
+{
+  "format": "datapass.sql-source-hash-vectors",
+  "version": 1,
+  "definition": "sha256(UTF-8 of JSON.stringify([\"sql\", sql])) = cellSourceKey() of a SQL cell",
+  "synthetic": true,
+  "cases": [
+    {
+      "id": "empty",
+      "sql": "",
+      "sourceSha256": "a3a34a1dfb9ea8ecbcce1fb64516b7dd5c719b92b746243aa848a212de404efa"
+    },
+    {
+      "id": "simple",
+      "sql": "SELECT 1",
+      "sourceSha256": "cd390d45031596a47cf1ff39b0577d9c63432cde44d8f996cf7da83aab52dafd"
+    },
+    {
+      "id": "e2e01-buckets",
+      "sql": "SELECT step % 4 AS bucket, round(sum(value), 3)::DOUBLE AS total FROM synthetic GROUP BY 1 ORDER BY 1",
+      "sourceSha256": "803a66b6f20b6c869ae089a73839f5d019dabe49f81768c29b7f4b063785f8e5"
+    },
+    {
+      "id": "multiline-crlf-tab",
+      "sql": "SELECT a,\r\n\tb -- comment\nFROM t\n",
+      "sourceSha256": "77068c7e7407fb90ce371222a8cadaf4a3c10fa22ac254e867290386cde9ef79"
+    },
+    {
+      "id": "quotes-backslash",
+      "sql": "SELECT 'it''s' AS q, \"col \\\"x\\\"\" FROM t WHERE p LIKE 'a_b'",
+      "sourceSha256": "11931fe9f4c777a495ede7350613c57b42655f7e083ba826a897422790821e97"
+    },
+    {
+      "id": "unicode",
+      "sql": "SELECT 'café' AS s, '温度' AS t, '🌬️' AS w",
+      "sourceSha256": "5f5b88142caa9bd7e3768fe06362b62eb9ab66d79d8f92aba062e56264cf9d31"
+    },
+    {
+      "id": "control-chars",
+      "sql": "SELECT '\u0001\u001f' AS c",
+      "sourceSha256": "68d06c2828c741f96e00ec9d962b6d3041233367dab21b5d997b46fbdf902794"
+    },
+    {
+      "id": "line-separators",
+      "sql": "SELECT '  ' AS ls",
+      "sourceSha256": "5968385269e227fb3caa6dd712ced717d58e3a4393e0de52b03b456b67a0db38"
+    },
+    {
+      "id": "trailing-space",
+      "sql": "SELECT 1   ",
+      "sourceSha256": "6d0ed0569d134f8b482f6fbf5defa44969f55e4ad61b1106baaf351a895b6085"
+    }
+  ]
+}

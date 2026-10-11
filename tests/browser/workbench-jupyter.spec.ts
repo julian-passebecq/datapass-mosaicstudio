@@ -128,7 +128,8 @@ test('E2E-01 blank workspace -> pair -> Python -> SQL on its result -> chart -> 
   await page.getByRole('button',{name:'Add SQL cell'}).click();
   const q=page.getByTestId('cell').nth(1);
   await q.getByLabel('Cell title').fill('Buckets');
-  await q.getByLabel(/^SQL for/).fill('SELECT step % 4 AS bucket, round(sum(value), 3)::DOUBLE AS total FROM synthetic GROUP BY 1 ORDER BY 1');
+  const BUCKETS_SQL='SELECT step % 4 AS bucket, round(sum(value), 3)::DOUBLE AS total FROM synthetic GROUP BY 1 ORDER BY 1';
+  await q.getByLabel(/^SQL for/).fill(BUCKETS_SQL);
   await q.locator('.cell-deps summary').click();
   await q.locator('.cell-deps').getByRole('checkbox').first().check();
   await expect(q.getByRole('button',{name:/after 1 dependency$/})).toHaveText('Run (2 cells)');
@@ -179,6 +180,11 @@ test('E2E-01 blank workspace -> pair -> Python -> SQL on its result -> chart -> 
   for(const s of [pySha,qSha])expect(sha(await readFile(path.join(storeDir,'results',s+'.json')))).toBe(s);
   const manifest=JSON.parse(await readFile(path.join(storeDir,'manifest.json'),'utf8'));
   expect(manifest.jobs.some((j:{cellId:string;status:string})=>j.status==='interrupted')).toBe(true);
+  // M-SQLHASH: the manifest records the SQL cell's authored-source hash, equal to its saved result's source hash.
+  const qId=(await q.getAttribute('data-cell-id'))!;
+  const sqlHash=sha(JSON.stringify(['sql',BUCKETS_SQL]));
+  expect(manifest.workspace.cells.find((c:{cellId:string})=>c.cellId===qId)).toEqual({cellId:qId,kind:'sql',sourceSha256:sqlHash});
+  expect(manifest.entries.find((e:{cellId:string})=>e.cellId===qId).sourceSha256).toBe(sqlHash);
   await assertNoTokens(storeDir,[JTOKEN,rtoken]);
   const stored=await page.evaluate(()=>JSON.stringify({...localStorage})+JSON.stringify({...sessionStorage}));
   expect(stored.includes(JTOKEN)).toBe(false);
@@ -242,7 +248,9 @@ test('E2E-01 blank workspace -> pair -> Python -> SQL on its result -> chart -> 
   const saved=JSON.parse(await readFile(path.join(storeDir,'manifest.json'),'utf8'));
   const cells=(saved.entries??[]).map((e:{cellId:string;cellKind:string;sourceSha256:string;resultSha256:string})=>({cellId:e.cellId,cellKind:e.cellKind,sourceSha256:e.sourceSha256,resultSha256:e.resultSha256}));
   const jobs=(saved.jobs??[]).map((j:{cellId:string;status:string})=>({cellId:j.cellId,status:j.status}));
-  await writeFile(info.outputPath('e2e01-hashes.json'),JSON.stringify({pythonResultSha256:pySha,sqlResultSha256:qSha,reopenedPythonSha256:pySha,manifestSha256:before,cells,jobs},null,2));
+  const workspaceCells=saved.workspace.cells;
+  expect(workspaceCells.find((w:{kind:string})=>w.kind==='sql').sourceSha256).toBe(sha(JSON.stringify(['sql',BUCKETS_SQL])));
+  await writeFile(info.outputPath('e2e01-hashes.json'),JSON.stringify({pythonResultSha256:pySha,sqlResultSha256:qSha,reopenedPythonSha256:pySha,manifestSha256:before,workspaceCells,cells,jobs},null,2));
 });
 
 function rawRequest(url:string,headers:Record<string,string>):Promise<number>{
