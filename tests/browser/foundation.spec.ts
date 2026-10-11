@@ -1,10 +1,12 @@
 import {test,expect,type Page} from '@playwright/test';
 import {readFile} from 'node:fs/promises';
 let errors:string[]=[],external:string[]=[],heavy:string[]=[];
+const ORIGIN=`http://127.0.0.1:${process.env.PW_PORT||4173}/`;
+const HISTORY_KEY='datapass.run-history.foundation-reference.experiments';
 const button=(page:Page,name:string)=>page.getByRole('button',{name,exact:true});
 async function open(page:Page,section='runs'){await page.goto('/?app=foundation-reference&page='+section);await expect(page.locator('.studio-site[data-app-id="foundation-reference"]')).toBeVisible();}
 async function evaluate(page:Page,gain:string){await page.getByLabel('Gain',{exact:true}).fill(gain);await page.getByLabel('Gain',{exact:true}).press('Enter');await button(page,'Evaluate example').click();await expect(page.getByTestId('task-evaluate')).toHaveText('ready');await expect(page.getByTestId('artifact')).toBeVisible();}
-test.beforeEach(async({page})=>{errors=[];external=[];heavy=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('request',r=>{if(/^https?:/.test(r.url())&&!r.url().startsWith('http://127.0.0.1:4173/'))external.push(r.url());if(/\.wasm|\/duckdb\/|SceneViewport-|Scene3D-/.test(r.url()))heavy.push(r.url());});});
+test.beforeEach(async({page})=>{errors=[];external=[];heavy=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('request',r=>{if(/^https?:/.test(r.url())&&!r.url().startsWith(ORIGIN))external.push(r.url());if(/\.wasm|\/duckdb\/|SceneViewport-|Scene3D-/.test(r.url()))heavy.push(r.url());});});
 test.afterEach(async({},info)=>{await info.attach('foundation-diagnostics',{body:JSON.stringify({errors,external,heavy},null,2),contentType:'application/json'});expect(errors).toEqual([]);expect(external).toEqual([]);expect(heavy).toEqual([]);});
 
 test('one computation produces table chart and metric without rerunning it',async({page},info)=>{
@@ -58,4 +60,60 @@ test('source search returns exact line evidence and context begins excluded',asy
 test('mobile result and navigation views remain usable without a 3D canvas',async({page},info)=>{
   await page.setViewportSize({width:390,height:844});await open(page);await evaluate(page,'2');await page.getByLabel('Artifact representation').selectOption('metric');await expect(page.getByTestId('metric-metric')).toContainText('24');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await page.screenshot({path:info.outputPath('foundation-mobile-result.png'),fullPage:true});
   await page.getByRole('navigation',{name:'Site pages'}).getByRole('button',{name:'Navigation',exact:true}).click();await page.getByRole('tab',{name:'Inventory',exact:true}).click();await page.locator('.reference-inventory button').first().click();await expect(page.getByTestId('semantic-navigation')).toHaveAttribute('data-selection','presentation');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);await expect(page.locator('canvas')).toHaveCount(0);
+});
+
+// F07: opt-in run-reference persistence (foundation-reference only). References survive reload; results do not.
+const runs=(page:Page)=>page.getByTestId('runs');
+async function reload(page:Page){await page.reload();await expect(page.locator('.studio-site[data-app-id="foundation-reference"]')).toBeVisible();}
+test('run references survive reload as restored references, not rerun, result not kept',async({page},info)=>{
+  await open(page);await evaluate(page,'1');await evaluate(page,'3');
+  const stored=await page.evaluate(key=>localStorage.getItem(key)||'',HISTORY_KEY);
+  expect(JSON.parse(stored).refs).toHaveLength(2);for(const leak of ['sample-11','"rows"','"payload"','"message"'])expect(stored).not.toContain(leak);
+  await reload(page);
+  await expect(runs(page)).toHaveAttribute('data-restored-count','2');await expect(runs(page)).toHaveAttribute('data-run-count','0');
+  await expect(page.locator('[data-restored="true"]')).toHaveCount(2);
+  await expect(page.locator('[data-restored="true"]').first()).toContainText('Restored reference, not rerun, result not kept');
+  await expect(page.getByTestId('task-evaluate')).toHaveText('idle');await expect(page.getByTestId('artifact')).toHaveCount(0);
+  await button(page,'Inspect restored run 2').click();await expect(page.getByTestId('restored-result')).toContainText('Restored reference, not rerun, result not kept');
+  await expect(runs(page)).toHaveAttribute('data-selected-status','restored-succeeded');await expect(page.getByTestId('artifact')).toHaveCount(0);
+  await page.getByRole('tab',{name:'Compare',exact:true}).click();await expect(runs(page)).toContainText('Restored references cannot be compared');await expect(page.getByTestId('run-comparison')).toHaveCount(0);
+  await page.getByRole('tab',{name:'Record',exact:true}).click();await page.getByLabel('I reviewed the captured inputs and result data for sharing.').check();await expect(button(page,'Export selected run JSON')).toBeDisabled();
+  await page.getByRole('tab',{name:'Result',exact:true}).click();await page.screenshot({path:info.outputPath('foundation-restored-desktop.png'),fullPage:true});
+  await button(page,'Follow latest').click();await evaluate(page,'2');await expect(runs(page)).toHaveAttribute('data-run-count','1');await expect(runs(page)).toHaveAttribute('data-restored-count','2');
+});
+test('a run in flight at reload comes back as not observed, never completed',async({page},info)=>{
+  await page.setViewportSize({width:390,height:844});await open(page);
+  await button(page,'Evaluate example').click();await expect(page.getByTestId('task-evaluate')).toHaveText('running');
+  await reload(page);
+  const ref=page.locator('[data-restored="true"]');await expect(ref).toHaveCount(1);await expect(ref).toHaveAttribute('data-outcome','unobserved');
+  await expect(ref).toContainText('Outcome not observed (page reloaded)');await expect(ref).toContainText('Restored reference, not rerun, result not kept');
+  await expect(page.getByTestId('task-evaluate')).toHaveText('idle');await expect(runs(page)).toHaveAttribute('data-run-count','0');
+  await expect(runs(page)).toContainText('1 restored reference from before the reload is listed under Runs');
+  await button(page,'Show objects').click();await expect(ref).toBeVisible();
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+  await page.screenshot({path:info.outputPath('foundation-not-observed-mobile.png'),fullPage:true});
+});
+test('a newer or corrupt saved history is refused whole and kept aside; live history still works',async({page})=>{
+  await open(page);
+  for(const [value,reason] of [[JSON.stringify({format:'datapass.run-history',version:2,refs:[]}),'newer format'],['{"format":"datapass.run-history",','not valid JSON']]){
+    await page.evaluate(([key,v])=>{localStorage.removeItem(key+'.rejected');localStorage.setItem(key,v);},[HISTORY_KEY,value]);
+    await reload(page);
+    await expect(page.getByTestId('run-history-notice')).toContainText('was not restored');await expect(page.getByTestId('run-history-notice')).toContainText(reason);
+    expect(await page.evaluate(key=>[localStorage.getItem(key),localStorage.getItem(key+'.rejected')],HISTORY_KEY)).toEqual([null,value]);
+    await expect(runs(page)).toHaveAttribute('data-restored-count','0');
+  }
+  await evaluate(page,'2');await expect(runs(page)).toHaveAttribute('data-run-count','1');
+});
+test('reset removes saved references; nothing is restored after the next reload',async({page})=>{
+  await open(page);await evaluate(page,'2');await reload(page);await expect(runs(page)).toHaveAttribute('data-restored-count','1');
+  await page.getByRole('tab',{name:'Record',exact:true}).click();await button(page,'Reset saved run history').click();
+  await expect(page.getByTestId('run-history-notice')).toContainText('was reset');await expect(runs(page)).toHaveAttribute('data-restored-count','0');
+  await reload(page);await expect(runs(page)).toHaveAttribute('data-restored-count','0');
+  expect(await page.evaluate(key=>localStorage.getItem(key),HISTORY_KEY)).toBeNull();
+});
+test('other reference clients write no run-history keys',async({page})=>{
+  for(const app of ['operations-reference','architecture-reference']){
+    await page.goto('/?app='+app);await expect(page.locator(`.studio-site[data-app-id="${app}"]`)).toBeVisible();
+    expect(await page.evaluate(()=>Object.keys(localStorage).filter(k=>k.startsWith('datapass.run-history')))).toEqual([]);
+  }
 });

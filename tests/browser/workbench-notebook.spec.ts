@@ -7,12 +7,13 @@ import path from 'node:path';
 const PORT=Number(process.env.DATAPASS_TEST_RUNTIME_PORT||8799);
 const TOKEN='journey-token-'+Math.random().toString(36).slice(2,14).padEnd(12,'x');
 const ORIGIN=`http://127.0.0.1:${PORT}`;
+const WORKBENCH=`http://127.0.0.1:${process.env.PW_PORT||4173}`;
 const LINK=`/?workspace=blank#runtime=${encodeURIComponent(ORIGIN)}&token=${TOKEN}`;
 let service:ChildProcess|null=null,errors:string[]=[],external:string[]=[];
 
 async function startService(){
   await stopService();
-  service=spawn(process.env.PYTHON||'python',['py/service/app.py','--port',String(PORT),'--workbench-origin','http://127.0.0.1:4173'],{env:{...process.env,DATAPASS_RUNTIME_TOKEN:TOKEN},stdio:['ignore','ignore','pipe']});
+  service=spawn(process.env.PYTHON||'python',['py/service/app.py','--port',String(PORT),'--workbench-origin',WORKBENCH],{env:{...process.env,DATAPASS_RUNTIME_TOKEN:TOKEN},stdio:['ignore','ignore','pipe']});
   let log='';service.stderr!.on('data',d=>{log+=String(d);});
   for(let i=0;i<120;i++){
     try{const r=await fetch(ORIGIN+'/health');if(r.ok)return;}catch{/* starting */}
@@ -34,7 +35,7 @@ async function ready(page:Page,url:string){
 test.beforeEach(async({page})=>{
   errors=[];external=[];
   page.on('pageerror',e=>errors.push(e.message));
-  page.on('request',r=>{const u=r.url();if(/^https?:/.test(u)&&!u.startsWith('http://127.0.0.1:4173/')&&!u.startsWith(ORIGIN+'/'))external.push(u);});
+  page.on('request',r=>{const u=r.url();if(/^https?:/.test(u)&&!u.startsWith(WORKBENCH+'/')&&!u.startsWith(ORIGIN+'/'))external.push(u);});
 });
 test.afterEach(()=>{expect(errors,'Unhandled browser exceptions').toEqual([]);expect(external,'Only the page origin and the consented loopback runtime').toEqual([]);});
 test.afterAll(async()=>{await stopService();});
@@ -173,4 +174,23 @@ test('UX04 failures are explicit: stopped runtime, refused token, invalid import
   await page.getByLabel('Import workspace file').setInputFiles({name:'bad.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({format:'datapass.workspace',version:1,notebook:{cells:[{id:'x',kind:'shell'}]}}))});
   await expect(page.locator('.global-error')).toContainText('nothing changed');
   await expect(page.getByTestId('cell')).toHaveCount(before);
+});
+
+test('UX05 a saved run reference still running at reload shows as not observed, not as running',async({page})=>{
+  const ref=(runId:string,status:string,finishedAt:string|null)=>({runId,cellId:'model',origin:'http://127.0.0.1:8799',model:'synthetic_scale',modelVersion:'1.0.0',status,inputHash:'a'.repeat(64),inputs:{gain:2},submittedAt:'2026-10-12T08:00:00.000Z',finishedAt,artifactId:null,artifactSha256:null});
+  const doc={format:'datapass.workspace',version:1,savedAt:'2026-10-12T08:00:01.000Z',samples:false,module:'notebook',catalogCollapsed:false,queries:[],selectedQueryId:null,
+    notebook:{cells:[{id:'model',kind:'python',title:'Synthetic model',model:'synthetic_scale',inputs:{gain:2},dependsOn:[]}]},
+    runs:[ref('run-00000000000000a1','running',null),ref('run-00000000000000a2','failed','2026-10-12T08:00:02.000Z')],sources:[],runtimeOrigin:null,pipeline:null,cards:null};
+  await ready(page,'/?workspace=blank');
+  await page.evaluate(v=>localStorage.setItem('datapass.workspace',v),JSON.stringify(doc));
+  await ready(page,'/');
+  const history=page.getByTestId('cell').first().locator('.cell-history');
+  await history.locator('summary').click();
+  await expect(history.locator('[data-run-status="not observed since reload"]')).toHaveCount(1);
+  await expect(history).toContainText('run-00000000000000a1 not observed since reload');
+  await expect(history.locator('li').filter({hasText:'run-00000000000000a1'})).not.toContainText(' running ');
+  await expect(history.locator('[data-run-status="failed"]')).toHaveCount(1);
+  const stored=JSON.parse(await page.evaluate(()=>localStorage.getItem('datapass.workspace')||'{}'));
+  expect(stored.version).toBe(1);expect(stored.runs[0].status).toBe('running');
+  expect(await page.evaluate(()=>Object.keys(localStorage).filter(k=>k.startsWith('datapass.run-history')))).toEqual([]);
 });

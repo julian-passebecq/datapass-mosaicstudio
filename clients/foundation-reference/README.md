@@ -1,3 +1,3 @@
 # Foundation reference
 
-Three pages prove run artifacts, semantic navigation and local knowledge context. No cloud is connected; the scale function and graph are synthetic. Runs survive page navigation within this application but are not persisted after closing it. The compact portfolio must not inherit these workbench controls by default.
+Three pages prove run artifacts, semantic navigation and local knowledge context. No cloud is connected; the scale function and graph are synthetic. Runs survive page navigation within this application. This client also opts in to saved run references (`runHistory`, browser localStorage, at most 12): after a reload, earlier runs appear as restored references, not rerun and without their results; a run in flight at reload is shown as not observed. Result data is never saved. "Reset saved run history" in the Record tab removes the saved references. The compact portfolio must not inherit these workbench controls by default.

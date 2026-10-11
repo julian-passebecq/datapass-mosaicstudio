@@ -1,5 +1,6 @@
 import {defineApp} from '../../src/framework/authoring.ts';
 import type {RunResource} from '../../src/framework/foundation/journal.ts';
+import type {RunHistoryStore} from '../../src/framework/foundation/run-history.ts';
 import {navigationFields,readNavigation} from '../../src/framework/foundation/navigation.ts';
 import {NavigationDemo} from './NavigationDemo.tsx';
 import {KnowledgeDemo} from './KnowledgeDemo.tsx';
@@ -12,6 +13,13 @@ export const runResource:RunResource={maxRecords:12,maxBytes:2097152,specs:[{
     {id:'json',title:'JSON',kind:'json'},
   ],
 }]};
+/** Opt-in consumer of run-reference persistence (F07). Browser localStorage, resolved per call so a missing or
+ * blocked store only yields an in-memory notice. Saves references only; synthetic task, no result payload. */
+const browserRunHistory:RunHistoryStore={
+  getItem:key=>globalThis.localStorage.getItem(key),
+  setItem:(key,value)=>globalThis.localStorage.setItem(key,value),
+  removeItem:key=>globalThis.localStorage.removeItem(key),
+};
 export default defineApp({manifest:{
   format:'datapass.web-app',schemaVersion:1,id:'foundation-reference',version:'0.6.0',title:'Foundation / reference app',label:'Synthetic framework acceptance',description:'One task runtime, durable result semantics and independent stakeholder views. No connected cloud or validated physical model.',theme:{accent:'#286f89',density:'compact'},
   fields:[{id:'gain',label:'Gain',role:'input',type:'number',default:1,min:0,max:4,step:.5},{id:'reject-run',label:'Demonstrate a model error',role:'input',type:'toggle',default:false},...navigationFields(navigation,'nav')],
@@ -26,4 +34,4 @@ export default defineApp({manifest:{
   await new Promise<void>((resolve,reject)=>{const done=()=>{signal.removeEventListener('abort',abort);resolve();},timer=setTimeout(done,260),abort=()=>{clearTimeout(timer);reject(new Error('Example cancelled'));};signal.addEventListener('abort',abort,{once:true});if(signal.aborted)abort();});
   if(values['reject-run'])throw new Error('Deliberate synthetic model error. No artifact was produced.');
   return Array.from({length:12},(_,i)=>({id:'sample-'+i,time:i,value:(i+1)*Number(values.gain)}));
-}}},resources:{runs:{experiments:runResource}},components:{navigationDemo:NavigationDemo,knowledgeDemo:KnowledgeDemo},customCapabilities:{navigationDemo:[],knowledgeDemo:[]}});
+}}},resources:{runs:{experiments:runResource}},runHistory:{experiments:{store:browserRunHistory,maxRefs:12}},components:{navigationDemo:NavigationDemo,knowledgeDemo:KnowledgeDemo},customCapabilities:{navigationDemo:[],knowledgeDemo:[]}});

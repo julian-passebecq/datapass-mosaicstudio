@@ -27,7 +27,9 @@ export class SiteRuntime {
     this.manifest=freeze(validateDefinition(definition));
     if(definition.bindings.validateViewState!==undefined&&typeof definition.bindings.validateViewState!=='function')throw new Error('View invariant must be a trusted function');
     // Source functions are not cloned or serialized. Inline data and resources are copied.
-    this.definition=freeze({manifest:this.manifest,components:{...definition.components},customCapabilities:structuredClone(definition.customCapabilities),limits:freeze(structuredClone(definition.limits)),bindings:{inline:freeze(structuredClone(definition.bindings.inline||{})),derive:{...definition.bindings.derive},tasks:{...definition.bindings.tasks},validateViewState:definition.bindings.validateViewState},resources:freeze(structuredClone(definition.resources||{}))});
+    this.definition=freeze({manifest:this.manifest,components:{...definition.components},customCapabilities:structuredClone(definition.customCapabilities),limits:freeze(structuredClone(definition.limits)),bindings:{inline:freeze(structuredClone(definition.bindings.inline||{})),derive:{...definition.bindings.derive},tasks:{...definition.bindings.tasks},validateViewState:definition.bindings.validateViewState},resources:freeze(structuredClone(definition.resources||{})),
+      // Trusted client storage for run references (opt-in). Wrapped so freezing never touches the client's own store object.
+      ...(definition.runHistory?{runHistory:Object.fromEntries(Object.entries(definition.runHistory).map(([id,{store,maxRefs}])=>[id,{store:{getItem:(k:string)=>store.getItem(k),setItem:(k:string,v:string)=>store.setItem(k,v),removeItem:(k:string)=>store.removeItem(k)},...(maxRefs===undefined?{}:{maxRefs})}]))}:{})});
     this.snapshot=freeze({values:Object.fromEntries(this.manifest.fields.map(f=>[f.id,f.default])),revision:0,restoreEpoch:0,tasks:Object.fromEntries(this.manifest.tasks.map(t=>[t.id,{status:'idle',progress:0,message:''} satisfies TaskState]))});
     this.definition.bindings.validateViewState?.(this.snapshot.values);
   }

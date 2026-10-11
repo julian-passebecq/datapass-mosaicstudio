@@ -17,6 +17,9 @@ export type BoardCard={id:string; title:string; lane:'Backlog'|'In progress'|'Re
 export type DataPassSlice={datapass:{
   module:string; selectedTable:string; datasets:Record<string,DatasetInfo>; importing:boolean; error:string|null; pipeline:Pipeline; cards:BoardCard[];
   samples:boolean; loadingSamples:boolean; notice:string|null; notebook:Notebook; runs:RunRef[]; runtimeOrigin:string|null; missingSources:SourceRef[];
+  /** Run refs loaded from a saved/imported workspace and not observed again in this tab. A queued/running one is
+   * displayed as "not observed since reload" (rule 32); the stored v1 document itself is unchanged. */
+  restoredRunIds:string[];
   openModule(id:string):void; selectTable(id:string):void; importFile(file:File):Promise<void>; setError(error:string|null):void; setPipeline(p:Pipeline):void; setCards(cards:BoardCard[]):void;
   loadSamples():Promise<void>; setNotice(notice:string|null):void; setNotebook(notebook:Notebook):void; recordRun(run:RunRef):void; setRuntimeOrigin(origin:string|null):void;
   applyWorkspace(doc:WorkspaceDoc,notice:string|null):void; resetWorkspace():void; workspaceDocument():WorkspaceDoc;
@@ -58,7 +61,7 @@ export const {roomStore,useRoomStore}=createRoomStore<RoomState>((set,get,store)
   initialize:async()=>{await get().db.refreshTableSchemas();},
   datapass:{module:initialModule,selectedTable:samples?SAMPLE_TABLE:'',datasets:(samples?{[SAMPLE_TABLE]:SAMPLE_DATASET}:{}) as Record<string,DatasetInfo>,importing:false,error:null,pipeline:saved?.pipeline?validatePipeline(saved.pipeline):structuredClone(demoPipeline),
     cards:saved?.cards??DEMO_CARDS.map(c=>({...c})),
-    samples,loadingSamples:false,notice:startupNotice,notebook:saved?.notebook??{cells:[]},runs:saved?.runs??[],runtimeOrigin:saved?.runtimeOrigin??null,missingSources,
+    samples,loadingSamples:false,notice:startupNotice,notebook:saved?.notebook??{cells:[]},runs:saved?.runs??[],restoredRunIds:(saved?.runs??[]).map(r=>r.runId),runtimeOrigin:saved?.runtimeOrigin??null,missingSources,
     openModule(module){if(!modules.some(m=>m.id===module))return;set(s=>({datapass:{...s.datapass,module}}));},
     selectTable(selectedTable){set(s=>({datapass:{...s.datapass,selectedTable,module:'explore'}}));},
     setError(error){set(s=>({datapass:{...s.datapass,error}}));},
@@ -66,7 +69,7 @@ export const {roomStore,useRoomStore}=createRoomStore<RoomState>((set,get,store)
     setPipeline(pipeline){const validated=validatePipeline(pipeline);set(s=>({datapass:{...s.datapass,pipeline:validated}}));},
     setCards(cards){if(cards.length>100||cards.some(c=>!['Backlog','In progress','Review','Done'].includes(c.lane)||!c.title.trim()||c.title.length>160))throw new Error('Invalid board');set(s=>({datapass:{...s.datapass,cards}}));},
     setNotebook(notebook){const validated=validateNotebook(notebook);set(s=>({datapass:{...s.datapass,notebook:validated}}));},
-    recordRun(run){set(s=>({datapass:{...s.datapass,runs:[run,...s.datapass.runs.filter(r=>r.runId!==run.runId)].slice(0,50)}}));},
+    recordRun(run){set(s=>({datapass:{...s.datapass,runs:[run,...s.datapass.runs.filter(r=>r.runId!==run.runId)].slice(0,50),restoredRunIds:s.datapass.restoredRunIds.filter(id=>id!==run.runId)}}));},
     setRuntimeOrigin(runtimeOrigin){set(s=>({datapass:{...s.datapass,runtimeOrigin}}));},
     async loadSamples(){
       if(get().datapass.samples||get().datapass.loadingSamples)return;
@@ -83,14 +86,14 @@ export const {roomStore,useRoomStore}=createRoomStore<RoomState>((set,get,store)
     applyWorkspace(doc,notice){
       const sqlEditor=get().sqlEditor,queries=doc.queries.length?doc.queries:[BLANK_QUERY];
       sqlEditor.setConfig({...sqlEditor.config,queries:queries.map(q=>({...q})),selectedQueryId:doc.selectedQueryId&&queries.some(q=>q.id===doc.selectedQueryId)?doc.selectedQueryId:queries[0].id,openTabs:queries.slice(0,8).map(q=>q.id)});
-      set(s=>({datapass:{...s.datapass,module:doc.module,notebook:doc.notebook,runs:doc.runs,runtimeOrigin:doc.runtimeOrigin,pipeline:doc.pipeline??structuredClone(demoPipeline),cards:doc.cards??DEMO_CARDS.map(c=>({...c})),missingSources:doc.sources.filter(x=>x.kind==='user-file'),notice}}));
+      set(s=>({datapass:{...s.datapass,module:doc.module,notebook:doc.notebook,runs:doc.runs,restoredRunIds:doc.runs.map(r=>r.runId),runtimeOrigin:doc.runtimeOrigin,pipeline:doc.pipeline??structuredClone(demoPipeline),cards:doc.cards??DEMO_CARDS.map(c=>({...c})),missingSources:doc.sources.filter(x=>x.kind==='user-file'),notice}}));
       if(doc.samples&&!get().datapass.samples)void get().datapass.loadSamples();
     },
     resetWorkspace(){
       clearSavedWorkspace(storage);persistedSamples=false;
       const sqlEditor=get().sqlEditor;
       sqlEditor.setConfig({...sqlEditor.config,queries:[{...BLANK_QUERY}],selectedQueryId:BLANK_QUERY.id,openTabs:[BLANK_QUERY.id]});
-      set(s=>({datapass:{...s.datapass,module:'notebook',notebook:{cells:[]},runs:[],runtimeOrigin:null,pipeline:structuredClone(demoPipeline),cards:DEMO_CARDS.map(c=>({...c})),missingSources:[],notice:'The saved workspace was reset. Tables already open in this tab stay until reload.'}}));
+      set(s=>({datapass:{...s.datapass,module:'notebook',notebook:{cells:[]},runs:[],restoredRunIds:[],runtimeOrigin:null,pipeline:structuredClone(demoPipeline),cards:DEMO_CARDS.map(c=>({...c})),missingSources:[],notice:'The saved workspace was reset. Tables already open in this tab stay until reload.'}}));
     },
     workspaceDocument(){
       const s=get(),d=s.datapass;
