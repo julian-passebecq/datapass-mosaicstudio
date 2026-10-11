@@ -1,0 +1,49 @@
+{
+  "action": "M-ROLLBACK",
+  "lane": "01-mosaicstudio",
+  "parent": ["01-mosaicstudio/FR-07", "E2E-08"],
+  "depends_on": {"action": "M-SQLHASH", "pr": 53, "merge_sha": "e7db8543717cea709e7d2267d533ce404af600d5"},
+  "source_sha": "e7db8543717cea709e7d2267d533ce404af600d5",
+  "state": "QUALIFIED_LOCAL",
+  "result": "PASS",
+  "runs": "3 local runs, all PASS (1 dry run on the unmerged branch, 2 at e7db854)",
+  "os": "Windows 11 Pro 10.0.26300.9550",
+  "runtime": "Node 26.9.0; Python 3.14.7 venv; Playwright 1.63.0 Chromium",
+  "old": {
+    "label": "0.10.0 release",
+    "workbench_tree_sha256": "f840b4cadee594cce236764f7d6febad1e5065887750804b8145460886be0f99",
+    "service": "py/ at ec8d1f3c85a10d3ad943fc5deecb939c20439d0c",
+    "sdk_tar_sha256": "b90dfab704f9d9af41729b44afc1c9faf303fff63db8de7352346cff959e45fd"
+  },
+  "new": {
+    "label": "main e7db854 (still 0.10.0, no tag)",
+    "workbench_tree_sha256": "f840b4cadee594cce236764f7d6febad1e5065887750804b8145460886be0f99",
+    "workbench_note": "byte-identical to 0.10.0; M-SQLHASH changed only py/service",
+    "service": "py/ at e7db854",
+    "sdk_tar_sha256": "486266f302bcc21796d39fcb32485232d23395ca46ca44768c3eb56bbe524e02",
+    "sdk_release_json_sha256": "8089dc4efa12ce65ba2c07baa31b969575b896373b53ecf9d5b0531469c5b188"
+  },
+  "stored_data": {
+    "result_sha256": ["87b1049bac80528686b907210a64ed4dd1dca70c5b762115bcde4f840753c27d", "a674ac405b43e88eb547e443b50adfa64e1546fd3136803bfc9ce843f351f058"],
+    "result_files_identical_all_steps": true,
+    "manifest_sha256_by_step": {
+      "1-old": "142dfeebc799345b4d2cc299de90f70cda7163bb95a3a84c323b06a2b3a5cf47",
+      "2-new": "f8ca37f75e66dafbbda5043f8e7c954bb512f3e51561f844bcb2d1f82c537439",
+      "3-old": "194f6e0bb60bce3a25120f8a9efa024c27907c844bb6aa610ca496a5c71aa4cf",
+      "4-new": "b36a7214882ecc72d8842efdfea8c000d8fa51f65d28748fc63a598a4fbc1321"
+    },
+    "tampered_manifest_sha256_refused_unchanged": "911dc1487146421b8e8c425db26f17be690b3733a7b80035dc0c3c4cf23fc590",
+    "exported_ipynb_sha256": "af6d51b5b8d06b78cdf49617a14fe2dea547269b53ffa9087b1201fafa76da2e"
+  },
+  "evidence_files": [
+    {"path": "qa/M-ROLLBACK/rollback-check.json", "sha256": "2088b2ac826f9a752bb1da5be8fd1c492953798bbeeb95de0e887ddeaa43045a"},
+    {"path": "qa/M-ROLLBACK/1-old-author-save.png", "sha256": "70fc2188ee8e3d472ae1f81de896e0ba30099cd0174c210e5964392ae5c24646"},
+    {"path": "qa/M-ROLLBACK/2-new-upgrade-reopen-save.png", "sha256": "e04b9c275bddbf9e09d698b84c2bb3dbed6596487a10f533b31433dda843825f"},
+    {"path": "qa/M-ROLLBACK/3-old-rollback-reopen-save.png", "sha256": "ca8baa2d186429040a0888b10fd16be1711db50af3570769df87bbebdfa18b15"},
+    {"path": "qa/M-ROLLBACK/4-new-recover-tamper-restore.png", "sha256": "c2af56ef2bdf2d872371250787c90cac281ac4ab83b141b5e38980aab770e7a9"}
+  ],
+  "private_evidence": "D:/PROJ/_release-evidence/2026-10-11/mosaicstudio/M-ROLLBACK/ (new-sdk/, new-manifest/release-manifest.json, run/); binaries not committed",
+  "reused": "0.9.0 workspace refusal and recovery from FR-07 (qa/FR-07-release-packaging.md steps 5-6)",
+  "ci": "see PR",
+  "omissions": ["Edge and Positron not run for this check", "No real user browser profile used (by design)", "Jupyter cells not included; the store path is the same for SQL and Python results"]
+}
