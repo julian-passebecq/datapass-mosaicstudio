@@ -1,0 +1,91 @@
+{
+  "format": "datapass.rollback-check",
+  "version": 1,
+  "origin": "http://127.0.0.1:24190",
+  "old": {
+    "dist": "D:/PROJ/_release-evidence/2026-10-10/mosaicstudio/FR-07/outputs/workbench-dist",
+    "service": "%TEMP%/mosaic-rb-old"
+  },
+  "new": {
+    "dist": "dist",
+    "service": "."
+  },
+  "sql": {
+    "a": {
+      "sql": "SELECT * FROM (VALUES (1, 'SYNTHETIC north', 2.5), (2, 'SYNTHETIC south', 4.0), (3, 'SYNTHETIC east', 1.25)) AS t(id, label, value)",
+      "sourceSha256": "7cef2c34d4b055942c457ea1512d9172e4d9f27297f0e8ba8142b25b3ca5d9c6"
+    },
+    "b": {
+      "sql": "SELECT count(*)::INTEGER AS n, round(sum(v), 2)::DOUBLE AS total FROM (VALUES (2.5), (4.0), (1.25)) AS t(v)",
+      "sourceSha256": "d59de80b8658983ece3d719ade2294329e5d255d8dab9a9667c4d040ae2867c1"
+    }
+  },
+  "steps": [
+    {
+      "label": "1-old-author-save",
+      "side": "old",
+      "notes": [
+        "Saved 2 results and the notebook (3428068df8ee) to the result store \"store\"."
+      ],
+      "exportedIpynbSha256": "af6d51b5b8d06b78cdf49617a14fe2dea547269b53ffa9087b1201fafa76da2e",
+      "resultSha256": [
+        "87b1049bac80528686b907210a64ed4dd1dca70c5b762115bcde4f840753c27d",
+        "a674ac405b43e88eb547e443b50adfa64e1546fd3136803bfc9ce843f351f058"
+      ],
+      "store": {
+        "manifest.json": "142dfeebc799345b4d2cc299de90f70cda7163bb95a3a84c323b06a2b3a5cf47",
+        "notebooks/3428068df8eea251bf0bd0a2a93c2efd695335de19697218861dc3a8f061587b.ipynb": "3428068df8eea251bf0bd0a2a93c2efd695335de19697218861dc3a8f061587b",
+        "results/87b1049bac80528686b907210a64ed4dd1dca70c5b762115bcde4f840753c27d.json": "87b1049bac80528686b907210a64ed4dd1dca70c5b762115bcde4f840753c27d",
+        "results/a674ac405b43e88eb547e443b50adfa64e1546fd3136803bfc9ce843f351f058.json": "a674ac405b43e88eb547e443b50adfa64e1546fd3136803bfc9ce843f351f058"
+      }
+    },
+    {
+      "label": "2-new-upgrade-reopen-save",
+      "side": "new",
+      "notes": [
+        "Opened the saved notebook 3428068df8ee from \"store\": 2 cells (nbformat 4.5). Nothing was run. 2 of 2 saved results reopened from the result store without recomputation.",
+        "Saved 2 results and the notebook (39ba1f254574) to the result store \"store\"."
+      ],
+      "store": {
+        "manifest.json": "f8ca37f75e66dafbbda5043f8e7c954bb512f3e51561f844bcb2d1f82c537439",
+        "notebooks/39ba1f254574d5deede2f295bdc1a1e845809cba9b152d6cf3120584fe825177.ipynb": "39ba1f254574d5deede2f295bdc1a1e845809cba9b152d6cf3120584fe825177",
+        "results/87b1049bac80528686b907210a64ed4dd1dca70c5b762115bcde4f840753c27d.json": "87b1049bac80528686b907210a64ed4dd1dca70c5b762115bcde4f840753c27d",
+        "results/a674ac405b43e88eb547e443b50adfa64e1546fd3136803bfc9ce843f351f058.json": "a674ac405b43e88eb547e443b50adfa64e1546fd3136803bfc9ce843f351f058"
+      }
+    },
+    {
+      "label": "3-old-rollback-reopen-save",
+      "side": "old",
+      "notes": [
+        "Opened the saved notebook 39ba1f254574 from \"store\": 2 cells (nbformat 4.5). Nothing was run. 2 of 2 saved results reopened from the result store without recomputation.",
+        "Saved 2 results and the notebook (093810cb2e25) to the result store \"store\"."
+      ],
+      "store": {
+        "manifest.json": "194f6e0bb60bce3a25120f8a9efa024c27907c844bb6aa610ca496a5c71aa4cf",
+        "notebooks/093810cb2e254060ccb0ffd6bd5e40f2118609b448e60b1ad0356d66ac727916.ipynb": "093810cb2e254060ccb0ffd6bd5e40f2118609b448e60b1ad0356d66ac727916",
+        "results/87b1049bac80528686b907210a64ed4dd1dca70c5b762115bcde4f840753c27d.json": "87b1049bac80528686b907210a64ed4dd1dca70c5b762115bcde4f840753c27d",
+        "results/a674ac405b43e88eb547e443b50adfa64e1546fd3136803bfc9ce843f351f058.json": "a674ac405b43e88eb547e443b50adfa64e1546fd3136803bfc9ce843f351f058"
+      },
+      "manifestHasSqlHashes": false
+    },
+    {
+      "label": "4-new-recover-tamper-restore",
+      "side": "new",
+      "notes": [
+        "Opened the saved notebook 093810cb2e25 from \"store\": 2 cells (nbformat 4.5). Nothing was run. 2 of 2 saved results reopened from the result store without recomputation.",
+        "Saved 2 results and the notebook (611c87deddb2) to the result store \"store\".",
+        "Opened the saved notebook 611c87deddb2 from \"store\": 2 cells (nbformat 4.5). Nothing was run. 2 of 2 saved results reopened from the result store without recomputation."
+      ],
+      "tamperRefusal": "Opening from the result store failed, nothing changed: SQL cell sql-1gui4: the stored notebook does not match the source hash in the manifest; nothing was opened.",
+      "tamperedManifestSha256": "911dc1487146421b8e8c425db26f17be690b3733a7b80035dc0c3c4cf23fc590",
+      "store": {
+        "manifest.json": "b36a7214882ecc72d8842efdfea8c000d8fa51f65d28748fc63a598a4fbc1321",
+        "notebooks/611c87deddb2f3e0a5cbabcb9b7d11a070fc11fb20c0c0d99f6da1f35158d579.ipynb": "611c87deddb2f3e0a5cbabcb9b7d11a070fc11fb20c0c0d99f6da1f35158d579",
+        "results/87b1049bac80528686b907210a64ed4dd1dca70c5b762115bcde4f840753c27d.json": "87b1049bac80528686b907210a64ed4dd1dca70c5b762115bcde4f840753c27d",
+        "results/a674ac405b43e88eb547e443b50adfa64e1546fd3136803bfc9ce843f351f058.json": "a674ac405b43e88eb547e443b50adfa64e1546fd3136803bfc9ce843f351f058"
+      }
+    }
+  ],
+  "ok": true,
+  "runtimeLogTail": "Result store: %TEMP%\\mosaic-rollback-BooL2F\\store (limit 268,435,456 bytes).\r\nDataPass runtime ready. Open the workbench with: http://127.0.0.1:24190/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A24799&token=<token>\r\n"
+}
