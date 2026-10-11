@@ -239,7 +239,10 @@ test('E2E-01 blank workspace -> pair -> Python -> SQL on its result -> chart -> 
   expect((await filesUnder(storeDir)).sort()).toEqual(filesBefore);
   await assertNoTokens(storeDir,[JTOKEN,rtoken]);
   await context.close();
-  await writeFile(info.outputPath('e2e01-hashes.json'),JSON.stringify({pythonResultSha256:pySha,sqlResultSha256:qSha,reopenedPythonSha256:pySha,manifestSha256:before},null,2));
+  const saved=JSON.parse(await readFile(path.join(storeDir,'manifest.json'),'utf8'));
+  const cells=(saved.entries??[]).map((e:{cellId:string;cellKind:string;sourceSha256:string;resultSha256:string})=>({cellId:e.cellId,cellKind:e.cellKind,sourceSha256:e.sourceSha256,resultSha256:e.resultSha256}));
+  const jobs=(saved.jobs??[]).map((j:{cellId:string;status:string})=>({cellId:j.cellId,status:j.status}));
+  await writeFile(info.outputPath('e2e01-hashes.json'),JSON.stringify({pythonResultSha256:pySha,sqlResultSha256:qSha,reopenedPythonSha256:pySha,manifestSha256:before,cells,jobs},null,2));
 });
 
 function rawRequest(url:string,headers:Record<string,string>):Promise<number>{

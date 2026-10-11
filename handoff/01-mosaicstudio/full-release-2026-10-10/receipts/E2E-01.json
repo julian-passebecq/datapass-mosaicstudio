@@ -1,0 +1,43 @@
+{
+  "journey": "E2E-01 Conventional authoring survives restart",
+  "lane": "01-mosaicstudio",
+  "source_sha": "b3f194d0cc0a2620abc4b96d1a11740249b3b107",
+  "test_change": "tests/browser/workbench-jupyter.spec.ts now also writes each saved cell's sourceSha256/resultSha256 and the job statuses into e2e01-hashes.json (assertions unchanged)",
+  "executed_at": "2026-10-11T16:48+02:00",
+  "result": "PASS",
+  "attempts": "4/4 tests passed on attempt 1 (--retries=2 allowed, none used)",
+  "environment": {
+    "os": "Windows 11 Pro 10.0.26300.9550",
+    "browser": "Playwright 1.63.0 bundled Chromium (headless)",
+    "node": "26.9.0",
+    "python": "3.14.7 (venv under %TEMP%, outside git)",
+    "runtime": "jupyter_server 2.21.1, ipykernel 7.3.0, nbformat 5.11.1; py/service/app.py runtime with --results-dir store; ports 21492 (workbench preview), 28891 (Jupyter), 28792 (runtime)"
+  },
+  "command": "DATAPASS_JUPYTER_PYTHON=<venv python> DATAPASS_REQUIRE_JUPYTER=1 DATAPASS_JUPYTER_TEST_PORT=28891 DATAPASS_NOTEBOOK_TEST_RUNTIME_PORT=28792 PW_PORT=21492 npx playwright test tests/browser/workbench-jupyter.spec.ts --retries=2",
+  "tests": [
+    {"name": "E2E-01 blank workspace -> pair -> Python -> SQL on its result -> chart -> .ipynb + results -> restart -> reopen without rerun (includes interrupt with last valid output kept stale, storage-full atomicity, no token in store)", "result": "pass", "seconds": 30.1},
+    {"name": "pairing refusals: remote URL, wrong token, foreign Origin and Host on Jupyter and on the notebook routes", "result": "pass", "seconds": 8.3},
+    {"name": "notebook import: corrupt and invalid files change nothing; unsupported cells stay inert; outputs render untrusted", "result": "pass", "seconds": 6.2},
+    {"name": "a static light client and the blank workbench start with no Python service and no kernel", "result": "pass", "seconds": 5.0}
+  ],
+  "hashes": {
+    "python_cell_source_sha256": "af43c2d24fdd062dacabbeaede0ebc139d8577c8566add75a3d190880df2092f",
+    "python_result_sha256_before_restart": "3bee7597d211fff3b9d2b20d4b8d438a19697703b2e23ac93d93f5f65ef81494",
+    "python_result_sha256_after_reopen": "3bee7597d211fff3b9d2b20d4b8d438a19697703b2e23ac93d93f5f65ef81494",
+    "sql_result_sha256": "ac6efed5656669424ada6bba9d81e0952c62de2efc49f3c173c72e8af06a8027",
+    "store_manifest_sha256_before_storage_full_attempt": "bc354fbefd8c05865baa6d12dccaee9a64d9225efa33860a3cff8d7b7a5ef58d",
+    "job_statuses": "long-loop cell recorded interrupted; other runs succeeded"
+  },
+  "evidence_files": [
+    {"path": "qa/E2E-01-b3f194d/e2e01-authoring.png", "sha256": "f2d3d0e75668fac1106a59d1ccafffd10824035a9503a213ca10cf3cab425077"},
+    {"path": "qa/E2E-01-b3f194d/e2e01-reopened.png", "sha256": "33cac0b70ea815cf49a52dc79f9ccb6ffe7dce84bb7050871fb87a86f5c83143"},
+    {"path": "qa/E2E-01-b3f194d/e2e01-hashes.json", "sha256": "e92cd37b8131203f20042a598f22dec582607a32863419d37e0d72d47109e75c"},
+    {"path": "qa/E2E-01-b3f194d/e2e01-export.ipynb", "sha256": "d1ae41b765fe6db6a71cc5900c77bae89e3a0b74b1d283049d3801a341491130"}
+  ],
+  "privacy": "Synthetic rows only; screenshots and exported notebook inspected; no token string in the notebook; the test itself asserts no token in the result store.",
+  "omissions": [
+    "Headless bundled Chromium only in this run (Edge/Positron qualification is in receipts/FR-07.json).",
+    "The SQL cell's source hash is not in the store manifest entries (only the Python cell's entry is listed); its result file is hash-checked by the test.",
+    "Kernel heap restoration is not claimed."
+  ]
+}
