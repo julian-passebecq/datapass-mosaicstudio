@@ -18,10 +18,11 @@ npm run preview:validate -- spec/preview/v1/fixtures/synthetic-client/preview.js
 
 Bytes are hashed exactly, so `.gitattributes` marks this folder `-text` (no line-ending conversion). Regenerate `preview.json` with `writePreview` after any change to the folder; `tests/consumer-interop.test.mjs` fails otherwise.
 
-## Compatibility with T3 (`t3code-datapass` origin/main `3dfcecd`, read-only)
+## Compatibility with T3 (`t3code-datapass` origin/main `0552ed1`, read-only)
 
 What that revision reads from a client folder, and how this fixture relates (asserted in `tests/consumer-interop.test.mjs`):
 
 - It requires `index.html` and reads `studio-build.json` `capabilities`. Both are present; the capabilities equal `preview.json` `capabilities`.
-- It hashes every file into one digest and serves the folder with the CSP from `_headers`. It **does not read `preview.json`** yet, so the descriptor's file list and hashes are not verified by T3 at that revision; adopting them is a T3-side change.
+- It hashes every file except `preview.json` into one digest and serves the folder with the CSP from `_headers`.
+- Since T3 #4 (`3dd8aa6`) it **verifies builds against `preview.json`** (`deriveContract` in `apps/server/src/mosaic/mosaicReceipt.ts`): the descriptor must decode as `datapass.preview/1`, `app.id` must equal the client id (the output folder name), and every listed file must match on disk (bytes and sha256) with no unlisted file. This fixture comes out `verified`. (At `3dfcecd` T3 did not read `preview.json`.)
 - It lists contract documents (`artifacts/*.json`, `*.concept.json`) with a top-level check. The artifact passes. Known T3-side gap: its check treats `provenance` as an object for every format, while `datapass.concept-spec` v1 `provenance` is a string, so it reports a false "missing provenance" for every valid concept spec.
