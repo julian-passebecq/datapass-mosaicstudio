@@ -4,7 +4,8 @@ import {readFile} from 'node:fs/promises';
 import path from 'node:path';
 
 // Real journeys: DuckDB-WASM in the page and the actual Python runtime (py/service/app.py) on loopback.
-const PORT=Number(process.env.DATAPASS_TEST_RUNTIME_PORT||8799);
+// One runtime per Playwright worker, so --workers>1 does not share (or kill) another worker's service.
+const PORT=Number(process.env.DATAPASS_TEST_RUNTIME_PORT||8799)+Number(process.env.TEST_PARALLEL_INDEX||0);
 const TOKEN='journey-token-'+Math.random().toString(36).slice(2,14).padEnd(12,'x');
 const ORIGIN=`http://127.0.0.1:${PORT}`;
 const WORKBENCH=`http://127.0.0.1:${process.env.PW_PORT||4173}`;
@@ -28,6 +29,8 @@ async function stopService(){
   for(let i=0;i<40;i++){try{await fetch(ORIGIN+'/health');}catch{return;}await new Promise(r=>setTimeout(r,250));}
   throw new Error('The runtime is still answering after it was stopped.');
 }
+// The parsed `datapass.workspace` autosave, or null before the first write. Specs wait on it instead of the debounce.
+const savedWorkspace=(page:Page)=>page.evaluate(()=>{const raw=localStorage.getItem('datapass.workspace');return raw?JSON.parse(raw):null;});
 async function ready(page:Page,url:string){
   await page.goto(url,{waitUntil:'domcontentloaded'});
   await expect(page.getByTestId('runtime-state')).toHaveText('DuckDB ready',{timeout:60000});
@@ -70,7 +73,9 @@ test('UX01 blank workspace: no forced dataset, real SQL, chart, artifact export,
   expect(artifact.payload.rows.map((r:{region:string;total:number})=>[r.region,r.total])).toEqual([['North',40],['South',20]]);
   expect(artifact.representations.map((r:{kind:string})=>r.kind)).toEqual(['table','chart','json']);
   await page.screenshot({path:info.outputPath('notebook-sql.png'),fullPage:true});
-  await page.waitForTimeout(600); // autosave debounce
+  await expect.poll(async()=>{const w=await savedWorkspace(page);const c=w?.notebook?.cells?.[0];
+    return {sql:/sum\(amount\)/.test(c?.sql??''),chart:!!c?.chart,sample:(w?.sources??[]).some((x:{name:string})=>x.name==='sample.csv')};
+  },{message:'the autosave holds the SQL edit, its chart and the sample source'}).toEqual({sql:true,chart:true,sample:true});
   await page.reload({waitUntil:'domcontentloaded'});
   await expect(page.getByTestId('runtime-state')).toHaveText('DuckDB ready',{timeout:60000});
   await expect(page.getByTestId('workspace-notice')).toContainText('sample.csv');
@@ -134,7 +139,10 @@ test('UX02 Python through the real runtime: consent, run, representations, new r
   else await expect(page.locator('.notebook > .notice.error')).toContainText('already finished');
   await page.screenshot({path:info.outputPath('notebook-python.png'),fullPage:true});
   // Reload: run references persist; the result is re-fetched by run id, not recomputed; the token stays in the tab session.
-  await page.waitForTimeout(600);
+  const lastPyRun=(await py.locator('.cell-result .footnote .mono').first().textContent())!;
+  await expect.poll(async()=>{const w=await savedWorkspace(page);const runs:{runId:string;status:string}[]=w?.runs??[];
+    return {cells:w?.notebook?.cells?.length??0,lastPyRun:runs.some(r=>r.runId===lastPyRun),settled:runs.every(r=>!['queued','running'].includes(r.status))};
+  },{message:'the autosave holds all three cells and settled run references'}).toEqual({cells:3,lastPyRun:true,settled:true});
   await page.reload({waitUntil:'domcontentloaded'});
   await expect(page.getByTestId('runtime-bar')).toHaveAttribute('data-status','connected');
   const again=page.getByTestId('cell').first();

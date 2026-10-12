@@ -37,7 +37,8 @@ test('production workbench: blank start, a real DuckDB SQL cell, autosave and re
   await expect(cell).toHaveAttribute('data-status','done');
   await expect(cell.getByTestId('artifact')).toContainText('42');
   await shot(page,info,'workbench-sql.png');
-  await page.waitForTimeout(600); // autosave debounce
+  await expect.poll(()=>page.evaluate(()=>{const raw=localStorage.getItem('datapass.workspace');return raw?JSON.parse(raw).notebook?.cells?.[0]?.sql??'':'';}),
+    {message:'the autosave holds the SQL edit'}).toMatch(/6\*7 AS answer/);
   await page.reload({waitUntil:'domcontentloaded'});
   await expect(page.getByTestId('runtime-state')).toHaveText('DuckDB ready',{timeout:60000});
   const restored=page.getByTestId('cell').first();
