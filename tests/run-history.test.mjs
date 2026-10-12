@@ -87,6 +87,46 @@ test('v2, other app version, unknown task and malformed data are refused whole a
     assert.match(notices[0],/was not restored/,name);
   }
 });
+function asideFailStore(initial,mode){
+  const s=spyStore(initial),set=s.setItem;
+  s.setItem=(k,v)=>{if(k===KEY+'.rejected'){s.calls.push(['set-fail',k]);if(mode==='silent')return;throw new Error('QuotaExceededError');}set(k,v);};
+  return s;
+}
+for(const mode of ['throws','silent']){
+  test(`a refused value that cannot be kept aside (.rejected write ${mode}) stays in place and saving is suspended`,async()=>{
+    const value='{"format":"datapass.run-history",';
+    const {runtime,journal}=fixture(),store=asideFailStore({[KEY]:value},mode);const {c,notices}=bind(runtime,journal,store);
+    assert.equal(store.data.get(KEY),value,'refused bytes left under the main key');assert.equal(store.data.has(KEY+'.rejected'),false);
+    assert.match(c.notice,/was not restored/);assert.match(c.notice,/saving is suspended for this session/);
+    await runtime.runTask('compute');await runtime.runTask('compute');
+    assert.equal(journal.getSnapshot().records.length,2,'live history still works');
+    assert.equal(store.data.get(KEY),value,'no save overwrote the refused bytes');
+    assert.equal(store.calls.filter(([op,k])=>op==='set'&&k===KEY).length,0,'main key never written');
+    assert.equal(store.calls.filter(([op,k])=>op==='remove'&&k===KEY).length,0,'main key never removed');
+    assert.equal(notices.length,1,'the suspension notice stays');
+    const again=bindRunHistory(journal,{store},{manifest:runtime.manifest,resource:'experiments',specs:[runSpec()]});
+    assert.match(again.notice,/suspended/,'a remount of the same journal stays suspended');
+    await runtime.runTask('compute');assert.equal(store.data.get(KEY),value);
+    again.dispose();
+    c.reset();assert.match(c.notice,/was reset, including the refused value/);assert.equal(store.data.has(KEY),false,'explicit reset clears it');
+    await runtime.runTask('compute');assert.equal(JSON.parse(store.data.get(KEY)).refs.length,1,'saving resumes for runs after the reset');
+  });
+}
+test('an existing .rejected value is never overwritten by a second refusal',async()=>{
+  const first='{"format":"datapass.run-history","version":9}',second='not json at all';
+  const {runtime,journal}=fixture(),store=spyStore({[KEY+'.rejected']:first,[KEY]:second});const {c}=bind(runtime,journal,store);
+  assert.equal(store.data.get(KEY+'.rejected'),first,'first refused value kept');assert.equal(store.data.get(KEY),second,'second refused value kept in place');
+  assert.match(c.notice,/earlier refused value already occupies/);assert.match(c.notice,/saving is suspended/);
+  assert.equal(store.calls.some(([op,k])=>op!=='get'&&k===KEY+'.rejected'),false,'.rejected never written or removed');
+  await runtime.runTask('compute');assert.equal(store.data.get(KEY),second,'no save overwrote it');
+  c.reset();assert.equal(store.data.has(KEY),false);assert.equal(store.data.get(KEY+'.rejected'),first,'reset leaves .rejected alone');
+  await runtime.runTask('compute');assert.equal(JSON.parse(store.data.get(KEY)).refs.length,1);
+});
+test('pure load reports suspension when the kept-aside slot cannot be read',()=>{
+  const {runtime}=fixture(),store=spyStore({[KEY]:'bad'});const get=store.getItem;
+  store.getItem=k=>{if(k===KEY+'.rejected')throw new Error('blocked');return get(k);};
+  const r=loadRunHistory(store,scope(runtime));assert.equal(r.suspended,true);assert.deepEqual(r.refs,[]);assert.equal(store.data.get(KEY),'bad');
+});
 test('reset removes saved references and leaves the kept-aside value alone',async()=>{
   const {runtime,journal}=fixture(),store=spyStore({[KEY+'.rejected']:'old'});const {c}=bind(runtime,journal,store);
   await runtime.runTask('compute');assert.ok(store.data.has(KEY));
