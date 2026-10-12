@@ -85,9 +85,12 @@ test('run references survive reload as restored references, not rerun, result no
   await button(page,'Follow latest').click();await evaluate(page,'2');await expect(runs(page)).toHaveAttribute('data-run-count','1');await expect(runs(page)).toHaveAttribute('data-restored-count','2');
 });
 test('a run in flight at reload comes back as not observed, never completed',async({page},info)=>{
-  await page.setViewportSize({width:390,height:844});await open(page);
-  await button(page,'Evaluate example').click();await expect(page.getByTestId('task-evaluate')).toHaveText('running');
-  await reload(page);
+  // Hold the page clock so the 260 ms synthetic run is still in flight when the page reloads. Playwright replays
+  // clock calls in every new document, so the reloaded page starts held too: release it there (the old document
+  // and its pending timer are gone once reload() resolves) and only then wait for the app to boot.
+  await page.setViewportSize({width:390,height:844});await page.clock.install();await open(page);
+  await holdPageTimers(page);await button(page,'Evaluate example').click();await expect(page.getByTestId('task-evaluate')).toHaveText('running');
+  await page.reload();await page.clock.resume();await expect(page.locator('.studio-site[data-app-id="foundation-reference"]')).toBeVisible();
   const ref=page.locator('[data-restored="true"]');await expect(ref).toHaveCount(1);await expect(ref).toHaveAttribute('data-outcome','unobserved');
   await expect(ref).toContainText('Outcome not observed (page reloaded)');await expect(ref).toContainText('Restored reference, not rerun, result not kept');
   await expect(page.getByTestId('task-evaluate')).toHaveText('idle');await expect(runs(page)).toHaveAttribute('data-run-count','0');
