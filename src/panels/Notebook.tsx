@@ -53,7 +53,9 @@ export default function Notebook(){
   const [loss,setLoss]=useState<LossItem[]>([]);
   const [busy,setBusy]=useState<string|null>(null);
   const client=useRef<RuntimeClient|null>(null),sequence=useRef(0),attempts=useRef<Record<string,number>>({}),controllers=useRef<Record<string,AbortController>>({}),activeRun=useRef<Record<string,string>>({}),cancelRequested=useRef<Record<string,boolean>>({}),sequences=useRef<Record<string,number>>({});
-  const kernel=useRef<JupyterClient|null>(null),executions=useRef<Record<string,string>>({}),svc=useRef<NotebookService|null>(null);
+  // `preparing` marks a Jupyter cell between Run and the moment its execute request is sent (source hash and job record are
+  // awaited first); an Interrupt pressed in that window cannot reach the kernel yet, so it is recorded in `cancelRequested`.
+  const kernel=useRef<JupyterClient|null>(null),executions=useRef<Record<string,string>>({}),preparing=useRef<Record<string,boolean>>({}),svc=useRef<NotebookService|null>(null);
   const patch=useCallback((id:string,update:(r:Result|undefined)=>Result|undefined)=>setResults(all=>{const next=update(all[id]);const copy={...all};if(next)copy[id]=next;else delete copy[id];return copy;}),[]);
   const store=service&&'store' in service?service.store:null;
 
@@ -178,9 +180,18 @@ export default function Notebook(){
   async function runJupyter(cell:JupyterCell,signal:AbortSignal,onOutputs:(outputs:NbOutput[])=>void):Promise<Result>{
     const k=kernel.current;
     if(!k||!k.connected)return {status:'disconnected',message:'No Jupyter kernel is paired. Pair one above; nothing was run.'};
-    const source=await sourceSha256(cellSourceKey(cell));
     let job:string|null=null;
-    if(svc.current&&store)try{job=await svc.current.startJob(cell.id,source,'jupyter');}catch{/* the run itself does not depend on the record */}
+    preparing.current[cell.id]=true;
+    try{
+      const source=await sourceSha256(cellSourceKey(cell));
+      if(svc.current&&store)try{job=await svc.current.startJob(cell.id,source,'jupyter');}catch{/* the run itself does not depend on the record */}
+    }finally{delete preparing.current[cell.id];}
+    // Interrupted (or superseded/stopped) while preparing: the code was never sent, so nothing ran on the kernel.
+    if(cancelRequested.current[cell.id]||signal.aborted){
+      delete cancelRequested.current[cell.id];
+      if(job&&svc.current)void svc.current.finishJob(job,'cancelled').catch(()=>{});
+      return {status:'cancelled',message:'Interrupted before the cell was sent to the kernel; nothing ran. The last valid output stays below, marked stale.'};
+    }
     const live:NbOutput[]=[];
     let outcome:ExecuteOutcome;
     try{
@@ -241,6 +252,7 @@ export default function Notebook(){
     const runId=activeRun.current[id],cell=notebook.cells.find(c=>c.id===id);
     if(cell?.kind==='jupyter'){
       const exec=executions.current[id];
+      if(!exec&&preparing.current[id]){cancelRequested.current[id]=true;patch(id,prev=>prev&&{...prev,message:'Interrupt requested before the cell reached the kernel; it will not be sent.'});return;}
       if(exec&&kernel.current){try{await kernel.current.interrupt(exec);patch(id,prev=>prev&&{...prev,message:'Interrupt requested; waiting for the kernel to stop.'});}catch(error){setProblem('The interrupt was not confirmed: '+(error as Error).message);}}
       return; // the kernel's reply reports the real outcome
     }

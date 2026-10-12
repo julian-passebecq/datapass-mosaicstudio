@@ -151,7 +151,9 @@ test('E2E-01 blank workspace -> pair -> Python -> SQL on its result -> chart -> 
   await slow.getByLabel(/^Python for/).fill('import time\nprint("long loop started", flush=True)\nfor i in range(1200):\n    time.sleep(0.1)');
   await slow.getByRole('button',{name:/^Run/}).click();
   await expect(slow).toHaveAttribute('data-status','running');
-  await expect(slow).toContainText('long loop started',{timeout:30000});
+  // Wait for the kernel's own output, not the cell: React mirrors a controlled textarea's value into its text content, so
+  // the cell "contains" the source line `print("long loop started")` the moment it is typed, before anything executed.
+  await expect(slow.getByLabel('Live kernel output')).toContainText('long loop started',{timeout:30000});
   await slow.getByRole('button',{name:'Interrupt'}).click();
   await expect(slow).toHaveAttribute('data-status','interrupted',{timeout:60000});
   await expect(slow.getByTestId('previous-result')).toContainText('first valid output');
