@@ -203,6 +203,30 @@ class ResultStoreTests(unittest.TestCase):
         self.assertEqual(jobs[job["jobId"]]["status"], "unknown")
         self.assertEqual(jobs[done["jobId"]]["status"], "interrupted")
 
+    def test_concurrent_job_records_are_not_lost(self) -> None:
+        # FastAPI runs the sync store routes on a thread pool: a job `finish` racing the next job `start` must not drop it.
+        import threading
+        store = ResultStore(self.dir / "store")
+        barrier, errors, ids = threading.Barrier(8), [], []
+
+        def one(i: int) -> None:
+            try:
+                barrier.wait()
+                job = store.start_job({"cellId": f"py-{i}", "sourceSha256": f"{i:x}" * 64, "runtime": "jupyter"})
+                ids.append(job["jobId"])
+                store.finish_job(job["jobId"], {"status": "interrupted"})
+            except Exception as error:  # noqa: BLE001 - collected and asserted below
+                errors.append(error)
+
+        threads = [threading.Thread(target=one, args=(i,)) for i in range(8)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        self.assertEqual(errors, [])
+        jobs = {j["jobId"]: j["status"] for j in store.view()["jobs"]}
+        self.assertEqual(jobs, {i: "interrupted" for i in ids})
+
     def test_token_never_stored(self) -> None:
         store = ResultStore(self.dir / "store")
         store.secrets = (TOKEN.encode(),)

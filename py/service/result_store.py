@@ -27,8 +27,10 @@ import os
 import re
 import secrets
 import tempfile
+import threading
 import time
 from datetime import datetime, timezone
+from functools import wraps
 from pathlib import Path
 from typing import Any
 
@@ -116,6 +118,17 @@ def inside_git_worktree(path: Path) -> Path | None:
     return None
 
 
+def _serialized(method: Any) -> Any:
+    """Run a manifest read-modify-write under the store lock. FastAPI runs these sync routes on a thread pool, so two
+    requests (for example one cell's job `finish` and the next cell's job `start`) could otherwise both read the same
+    manifest and the later commit would silently drop the other's change (a lost job, then `unknown job` 404)."""
+    @wraps(method)
+    def locked(self: "ResultStore", *args: Any, **kwargs: Any) -> Any:
+        with self._lock:
+            return method(self, *args, **kwargs)
+    return locked
+
+
 class ResultStore:
     def __init__(self, root: Path | str, max_bytes: int = DEFAULT_MAX_BYTES, *, allow_git: bool = False) -> None:
         root = Path(root).expanduser().resolve()
@@ -131,6 +144,7 @@ class ResultStore:
         (root / "notebooks").mkdir(exist_ok=True)
         self.root, self.max_bytes = root, int(max_bytes)
         self.instance = secrets.token_hex(8)
+        self._lock = threading.RLock()
         self.secrets: tuple[bytes, ...] = ()
         self._fail_after_writes: int | None = None  # test hook: simulate a full disk after N file writes
 
@@ -237,6 +251,7 @@ class ResultStore:
             raise StoreError(f"result for {item['cellId']} is above {MAX_RESULT_BYTES // (1024 * 1024)} MB; aggregate it first")
         return item, data, sha256(data)
 
+    @_serialized
     def save(self, payload: Any, export: Any) -> dict[str, Any]:
         """Save results + the notebook. `export(nb_payload) -> str` is notebook_io.export_notebook."""
         if not isinstance(payload, dict) or set(payload) - {"notebook", "results"}:
@@ -339,6 +354,7 @@ class ResultStore:
             raise StoreError("The saved notebook is corrupt on disk (hash mismatch).", 409)
         return data.decode("utf-8"), nb_sha
 
+    @_serialized
     def delete_result(self, sha: str) -> dict[str, Any]:
         """Explicit user retention: drop every manifest entry for this result, then its file."""
         if not _SHA.match(sha):
@@ -360,6 +376,7 @@ class ResultStore:
         return self.view()
 
     # --- jobs ------------------------------------------------------------------------------------------
+    @_serialized
     def start_job(self, payload: Any) -> dict[str, Any]:
         if not isinstance(payload, dict) or set(payload) - {"cellId", "sourceSha256", "runtime"}:
             raise StoreError("job: expected {cellId, sourceSha256, runtime}")
@@ -384,6 +401,7 @@ class ResultStore:
             raise StoreFull(f"Recording the run failed ({error.strerror or error}).") from None
         return job
 
+    @_serialized
     def finish_job(self, job_id: str, payload: Any) -> dict[str, Any]:
         if not _JOB.match(job_id):
             raise StoreError("invalid job id")
