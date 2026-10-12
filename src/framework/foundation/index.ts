@@ -5,6 +5,8 @@ export {loadArtifact,artifactUrl,ARTIFACT_DIRECTORY,loadHttpArtifact,loadArtifac
 export type {ArtifactLoadState,ArtifactSourceSpec} from './artifact-loader.ts';
 export {RunJournal,validateRunRecord,validateRunSpec,validateRunResource,compareRuns} from './journal.ts';
 export type {RunRecord,RunSpec,RunResource,JournalSnapshot,JournalOptions} from './journal.ts';
+export {validateRunReference,validateRunHistory,toReference,loadRunHistory,saveRunHistory,resetRunHistory,runHistoryKey,bindRunHistory,RUN_HISTORY_FORMAT,RUN_REF_FORMAT} from './run-history.ts';
+export type {RunReference,RunHistoryDoc,RunHistoryStore,RunHistoryBinding,RunOutcome} from './run-history.ts';
 export {StaticKnowledgeProvider} from './knowledge.ts';
 export type {KnowledgeProvider,ContextBundle,ContextPayload,ContextSelection,SearchHit,SourceSummary} from './knowledge.ts';
 export {validateNavigation,validateNavigationState,defaultNavigation,navigateContext,visibleEntities,navigationFields,readNavigation,navigationPatch,navigationQuery,parseNavigationQuery} from './navigation.ts';

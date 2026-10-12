@@ -4,6 +4,7 @@ import type {Dataset,Scalar} from '../types.ts';
 import {identifier,strict,text,object} from '../guards.ts';
 import {tableArtifact,validateArtifactViews,validateArtifact,type Artifact,type Representation} from './artifact.ts';
 import {boundedJson,freezeValue,integerRange,jsonBytes} from './safety.ts';
+import {validateRunReference,type RunReference} from './run-history.ts';
 
 export type RunSpec={
   format:'datapass.run-spec';version:1;taskId:string;modelId:string;modelVersion:string;
@@ -17,7 +18,8 @@ export type RunRecord={
   startedAt:string;finishedAt:string|null;durationMs:number;
   artifact:Artifact|null;retention:'pending'|'retained'|'none'|'omitted-budget'|'invalid-output';message:string;
 };
-export type JournalSnapshot={records:readonly RunRecord[];evicted:number;notCaptured:number;revision:number;selectedId:string|null;followingLatest:boolean};
+/** `restored` holds references loaded from client-supplied storage: never rerun, never carrying a result. */
+export type JournalSnapshot={records:readonly RunRecord[];restored:readonly RunReference[];evicted:number;notCaptured:number;revision:number;selectedId:string|null;followingLatest:boolean};
 export type JournalOptions={maxRecords?:number;maxBytes?:number};
 const STATUSES=['running','succeeded','failed','cancelled','superseded','timed-out','unobserved'];
 function timestamp(value:unknown):asserts value is string{
@@ -70,7 +72,7 @@ export function validateRunSpec(value:unknown,runtime:Pick<SiteRuntime,'manifest
  * Records are immutable snapshots; it is NOT a durable backend or resume engine.
  */
 export class RunJournal{
-  private snapshot:JournalSnapshot=freezeValue({records:[],evicted:0,notCaptured:0,revision:0,selectedId:null,followingLatest:true});
+  private snapshot:JournalSnapshot=freezeValue({records:[],restored:[],evicted:0,notCaptured:0,revision:0,selectedId:null,followingLatest:true});
   private listeners=new Set<()=>void>();
   private readonly specs:Map<string,RunSpec>;
   private readonly pending=new Map<number,{id:string;output:Dataset}>();
@@ -94,13 +96,16 @@ export class RunJournal{
     const off=this.runtime.subscribeTaskRuns(this.observe);this.detach=off;
     return()=>{if(this.detach===off){off();this.detach=null;this.pending.clear();this.publish(this.snapshot.records.map(r=>r.status==='running'?validateRunRecord({...r,status:'unobserved',retention:'none',message:'Observation stopped; task completion was not observed.'}):r));}};
   };
-  private publish(records:RunRecord[],evicted=this.snapshot.evicted,notCaptured=this.snapshot.notCaptured){
+  private publish(records:RunRecord[],evicted=this.snapshot.evicted,notCaptured=this.snapshot.notCaptured,restored:RunReference[]=[...this.snapshot.restored]){
+    // Restored references share the record limit; being older, they are evicted first.
+    while(restored.length&&restored.length+records.length>this.maxRecords){restored.shift();evicted++;}
     while(records.length>this.maxRecords||jsonBytes(records)>this.maxBytes){records.shift();evicted++;}
     const retained=new Set(records.map(r=>r.id));
     for(const [ticket,pending] of this.pending)if(!retained.has(pending.id))this.pending.delete(ticket);
-    const followingLatest=this.snapshot.followingLatest||!records.some(r=>r.id===this.snapshot.selectedId);
+    const known=(id:string|null)=>records.some(r=>r.id===id)||restored.some(r=>r.id===id);
+    const followingLatest=this.snapshot.followingLatest||!known(this.snapshot.selectedId);
     const selectedId=followingLatest?(records.at(-1)?.id??null):this.snapshot.selectedId;
-    this.snapshot=freezeValue({records,evicted,notCaptured,revision:this.snapshot.revision+1,selectedId,followingLatest});
+    this.snapshot=freezeValue({records,restored,evicted,notCaptured,revision:this.snapshot.revision+1,selectedId,followingLatest});
     for(const fn of [...this.listeners]){try{fn();}catch{/* Presentation subscribers cannot corrupt execution. */}}
   }
   private observe=(event:TaskRunEvent)=>{
@@ -125,11 +130,22 @@ export class RunJournal{
     this.publish(this.snapshot.records.map(r=>r.id===previous.id?updated:r));
   };
   select(id:string|null){
-    if(id!==null&&!this.snapshot.records.some(r=>r.id===id))throw new Error('Unknown selected run');
+    if(id!==null&&!this.snapshot.records.some(r=>r.id===id)&&!this.snapshot.restored.some(r=>r.id===id))throw new Error('Unknown selected run');
     this.snapshot=freezeValue({...this.snapshot,followingLatest:id===null,selectedId:id??this.snapshot.records.at(-1)?.id??null});
     this.publish([...this.snapshot.records]);
   }
+  /** Clears live records only; restored references stay until clearRestored(). Never cancels a task. */
   clear(){this.pending.clear();this.publish([]);}
+  /** Show references restored from client-supplied storage. Validated as a whole before anything changes.
+   * Does not touch live records, pending observations or the SiteRuntime scheduler; nothing is rerun. */
+  restoreReferences(refs:readonly RunReference[]){
+    if(!Array.isArray(refs)||refs.length>100)throw new Error('Restored reference budget exceeded');
+    const scope={manifest:this.runtime.manifest,specs:[...this.specs.values()]};
+    const valid=refs.map(r=>validateRunReference(r,scope)),live=new Set(this.snapshot.records.map(r=>r.id));
+    if(new Set(valid.map(r=>r.id)).size!==valid.length||valid.some(r=>live.has(r.id)))throw new Error('Restored reference id collides with another run');
+    this.publish([...this.snapshot.records],this.snapshot.evicted,this.snapshot.notCaptured,valid);
+  }
+  clearRestored(){this.publish([...this.snapshot.records],this.snapshot.evicted,this.snapshot.notCaptured,[]);}
   exportRecord(id:string):string{
     const record=this.snapshot.records.find(r=>r.id===id);if(!record)throw new Error('Unknown run');
     if(record.status==='running')throw new Error('Wait for a terminal run before export');
@@ -138,6 +154,7 @@ export class RunJournal{
 }
 /** Like-for-like comparison only; no conversion or implied physical equivalence. */
 export function compareRuns(a:RunRecord,b:RunRecord){
+  // A restored reference has no result and fails record validation: it can never feed a comparison.
   validateRunRecord(a);validateRunRecord(b);
   if(a.modelId!==b.modelId||a.modelVersion!==b.modelVersion||a.taskId!==b.taskId||a.appId!==b.appId||a.appVersion!==b.appVersion||a.providerId!==b.providerId)throw new Error('Runs do not share the same declared model/task/provider contract');
   if(a.status!=='succeeded'||b.status!=='succeeded')throw new Error('Compare successful runs only');

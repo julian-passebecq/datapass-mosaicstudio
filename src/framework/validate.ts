@@ -1,5 +1,6 @@
 import {validateModel,validateModelBinding,MODEL_FIELDS} from './model-assets/model.ts';
 import {validateRunResource} from './foundation/journal.ts';
+import {validateRunHistoryBindings} from './foundation/run-history.ts';
 import {compileMotion} from './motion/compile.ts';
 import {validateMotionBinding,validateMotionControllers} from './motion/model.ts';
 import {validateReplay,validateReplayBinding,validateReplayControllers} from './replay/model.ts';
@@ -147,6 +148,7 @@ export function validateDefinition(d: AppDefinition): Manifest {
     const resource=validateRunResource(d.resources!.runs![id],{manifest});
     for(const spec of resource.specs){if(runOwners.has(spec.taskId)&&runOwners.get(spec.taskId)!==id)throw new Error('A task history requires one resource owner');runOwners.set(spec.taskId,id);}
   }
+  validateRunHistoryBindings(d.runHistory,[...runOwners.values()]);
   validateReplayControllers(d);validateMotionControllers(d);
   for(const story of Object.values(d.resources?.stories||{})) {const step=manifest.fields.find(f=>f.id===story.indexField); if(!step||step.type!=='number'||step.role!=='view'||step.min!==0||step.step!==1) throw new Error('Story index must be an integer view field'); if(!object(story.cues)) throw new Error('Invalid story cues'); for(const patch of Object.values(story.cues)) {if(!object(patch)) throw new Error('Invalid cue patch'); for(const [id,v] of Object.entries(patch)) {const f=manifest.fields.find(f=>f.id===id); if(!f || f.role!=='view') throw new Error('Story cues can only change declared view fields'); validateValue(f,v);}}}
   return manifest;

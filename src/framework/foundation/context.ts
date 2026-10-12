@@ -3,6 +3,7 @@ import {validateEvidence,type EvidenceRef,type SourceArtifact} from '../evidence
 import {validateArtifact,type Artifact} from './artifact.ts';
 import {validateRunRecord,type RunRecord} from './journal.ts';
 import {boundedJson,freezeValue} from './safety.ts';
+import type {RunReference} from './run-history.ts';
 export type ContextModel={
   id:string;kind:string;title:string;summary:string;
   facts:{label:string;value:string}[];
@@ -21,6 +22,10 @@ export function validateContext(input:unknown,sources:readonly SourceArtifact[]=
 }
 export function artifactContext(input:Artifact):ContextModel{
   const a=validateArtifact(input);return validateContext({id:a.id,kind:'artifact',title:a.title,summary:a.provenance.source,facts:[{label:'Provenance',value:a.provenance.kind},{label:'Representations',value:String(a.representations.length)},{label:'Data',value:a.payload.kind==='table'?`${a.payload.rows.length} rows / ${a.payload.columns.length} columns`:'Text payload'},...(a.provenance.runId?[{label:'Run',value:a.provenance.runId}]:[])],references:[],related:[],note:'A representation change does not run the model again. A display profile is not an access-control boundary.'});
+}
+/** A restored reference: what was observed before a reload. Not rerun; its result was not kept. */
+export function referenceContext(ref:RunReference):ContextModel{
+  return validateContext({id:ref.id,kind:'restored run reference',title:ref.taskId,summary:'Restored reference, not rerun, result not kept.',facts:[{label:'Outcome',value:ref.outcome==='unobserved'?'Outcome not observed (page reloaded)':ref.outcome},{label:'Model (declared)',value:ref.modelId+' / '+ref.modelVersion},{label:'Provider (declared)',value:ref.providerId},{label:'Started',value:ref.startedAt},{label:'Finished',value:ref.finishedAt??'Not observed'},{label:'Artifact reference',value:ref.artifactRef?ref.artifactRef.id+' (payload not kept)':'None'},...Object.entries(ref.parameters).map(([key,value])=>({label:key,value:String(value).length>980?String(value).slice(0,960)+' [display truncated]':String(value)})).slice(0,17)],references:[],related:[],note:'Loaded from storage the client chose. Only references are saved: no result rows, artifact payload or task message. Nothing was executed again.'});
 }
 export function runContext(input:RunRecord):ContextModel{
   const run=validateRunRecord(input);return validateContext({id:run.id,kind:'run',title:run.taskId,summary:run.message,facts:[{label:'Last observed status',value:run.status},{label:'Model (declared)',value:run.modelId+' / '+run.modelVersion},{label:'Provider (declared)',value:run.providerId},{label:'Started',value:run.startedAt},{label:'Elapsed',value:run.durationMs.toFixed(1)+' ms'},{label:'Artifact retention',value:run.retention},...Object.entries(run.parameters).map(([key,value])=>({label:key,value:String(value).length>980?String(value).slice(0,960)+' [display truncated]':String(value)})).slice(0,18)],references:[],related:[],note:'This journal observes the existing task runtime. Model/provider identities are client declarations; upstream revisions are local cache versions, not remote execution receipts.'});

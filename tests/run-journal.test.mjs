@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {SiteRuntime} from '../src/framework/runtime.ts';
 import {RunJournal,validateRunRecord,compareRuns} from '../src/framework/foundation/journal.ts';
+import {toReference} from '../src/framework/foundation/run-history.ts';
 import {definition,runSpec,rows,tick} from './foundation-fixture.mjs';
 function setup(d=definition(),options){const runtime=new SiteRuntime(d),journal=new RunJournal(runtime,[runSpec()],options),detach=journal.attach();return {runtime,journal,detach};}
 test('opt-in observation adds no default history listeners or saved-state payload',async()=>{const r=new SiteRuntime(definition());assert.equal(r.runObserverDiagnostics().listeners,0);await r.runTask('compute');assert.deepEqual(Object.keys(r.save('home')),['format','version','appId','appVersion','page','values']);});
@@ -43,4 +44,27 @@ test('selected run stays pinned across a new result until follow-latest is reque
   await r.runTask('compute');assert.equal(j.getSnapshot().selectedId,first.id);
   j.select(null);assert.equal(j.getSnapshot().selectedId,j.getSnapshot().records[1].id);
   off();
+});
+
+test('restored references stay separate from live records and never feed a comparison',async()=>{
+  const {runtime,journal}=setup();await runtime.runTask('compute');
+  const ref=toReference(journal.getSnapshot().records[0]);
+  const other=new SiteRuntime(definition()),next=new RunJournal(other,[runSpec()]);const off=next.attach();
+  next.restoreReferences([ref]);
+  let s=next.getSnapshot();assert.equal(s.records.length,0);assert.equal(s.restored.length,1);assert.equal(s.restored[0].restored,true);
+  next.select(ref.id);assert.equal(next.getSnapshot().selectedId,ref.id);
+  assert.throws(()=>next.exportRecord(ref.id),/Unknown run/);
+  await other.runTask('compute');s=next.getSnapshot();assert.equal(s.records.length,1);assert.equal(s.restored.length,1);
+  assert.throws(()=>compareRuns(ref,s.records[0]));assert.throws(()=>compareRuns(s.records[0],ref));
+  next.clear();assert.equal(next.getSnapshot().restored.length,1,'clear keeps restored references');
+  next.clearRestored();assert.equal(next.getSnapshot().restored.length,0);
+  assert.throws(()=>next.restoreReferences([{...ref,taskId:'unknown'}]));assert.equal(next.getSnapshot().restored.length,0,'invalid restore changes nothing');
+  off();
+});
+test('restored references share the record limit and are evicted first',async()=>{
+  const {runtime,journal}=setup(definition(),{maxRecords:2});await runtime.runTask('compute');await runtime.runTask('compute');
+  const refs=journal.getSnapshot().records.map(toReference);
+  const other=new SiteRuntime(definition()),next=new RunJournal(other,[runSpec()],{maxRecords:2});next.attach();next.restoreReferences(refs);
+  await other.runTask('compute');const s=next.getSnapshot();
+  assert.equal(s.records.length+s.restored.length,2);assert.equal(s.records.length,1);assert.equal(s.restored[0].id,refs[1].id);assert.equal(s.evicted,1);
 });

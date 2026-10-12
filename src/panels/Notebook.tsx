@@ -41,7 +41,7 @@ function jsonCell(v:unknown):string|number|boolean|null{
 }
 
 export default function Notebook(){
-  const notebook=useRoomStore(s=>s.datapass.notebook),setNotebook=useRoomStore(s=>s.datapass.setNotebook),runs=useRoomStore(s=>s.datapass.runs),recordRun=useRoomStore(s=>s.datapass.recordRun);
+  const notebook=useRoomStore(s=>s.datapass.notebook),setNotebook=useRoomStore(s=>s.datapass.setNotebook),runs=useRoomStore(s=>s.datapass.runs),recordRun=useRoomStore(s=>s.datapass.recordRun),restoredRunIds=useRoomStore(s=>s.datapass.restoredRunIds);
   const savedOrigin=useRoomStore(s=>s.datapass.runtimeOrigin),setRuntimeOrigin=useRoomStore(s=>s.datapass.setRuntimeOrigin),ready=useRoomStore(s=>s.room.initialized),setError=useRoomStore(s=>s.datapass.setError),setNotice=useRoomStore(s=>s.datapass.setNotice);
   const [results,setResults]=useState<Record<string,Result>>({});
   const [runtime,setRuntime]=useState<Runtime>({status:'disconnected',origin:savedOrigin??DEFAULT_ORIGIN,models:[]});
@@ -416,7 +416,7 @@ export default function Notebook(){
     <LossReport loss={loss} onDismiss={()=>setLoss([])}/>
     {problem&&<div className="notice error" role="alert"><span>{problem}</span> <Button size="small" onClick={()=>setProblem(null)}>Dismiss</Button></div>}
     {!notebook.cells.length&&<div className="empty notebook-empty" data-testid="notebook-empty"><h2>Blank notebook</h2><p>Add a SQL cell to query tables you open, a Python cell to run your code on a paired Jupyter kernel, or a model run on the local runtime. Nothing is preloaded.</p></div>}
-    <ol className="cells">{notebook.cells.map((cell,index)=><CellCard key={cell.id} cell={cell} index={index} notebook={notebook} result={results[cell.id]} stale={staleReason(notebook,staleMap,cell.id)} runtime={runtime} runs={runs.filter(r=>r.cellId===cell.id)} ready={ready}
+    <ol className="cells">{notebook.cells.map((cell,index)=><CellCard key={cell.id} cell={cell} index={index} notebook={notebook} result={results[cell.id]} stale={staleReason(notebook,staleMap,cell.id)} runtime={runtime} runs={runs.filter(r=>r.cellId===cell.id)} restoredRunIds={restoredRunIds} ready={ready}
       relinks={manifest&&results[cell.id]?.status==='missing'?manifest.entries.filter(e=>e.cellId===cell.id&&e.present&&e.resultSha256!==results[cell.id]?.missing?.sha):[]}
       onChange={next=>change(()=>updateCell(notebook,next))} onMove={d=>change(()=>moveCell(notebook,cell.id,d))} onRemove={()=>{stop(cell.id);delete sequences.current[cell.id];change(()=>removeCell(notebook,cell.id));patch(cell.id,()=>undefined);}}
       onRun={()=>void run(cell.id)} onCancel={()=>void cancel(cell.id)} onReopen={ref=>void reopen(cell as PythonCell,ref)} onChart={chart=>rechart(cell as SqlCell,chart)} onRelink={sha=>void loadStored(cell,sha)}/>)}</ol>
@@ -447,7 +447,7 @@ function RuntimeBar({runtime,consent,onConsent,onConnect,onDisconnect}:{runtime:
   </div>;
 }
 
-function CellCard({cell,index,notebook,result,stale,runtime,runs,ready,relinks,onChange,onMove,onRemove,onRun,onCancel,onReopen,onChart,onRelink}:{cell:Cell;index:number;notebook:NotebookDoc;result?:Result;stale:string|null;runtime:Runtime;runs:RunRef[];ready:boolean;relinks:StoreManifest['entries'];onChange(c:Cell):void;onMove(d:-1|1):void;onRemove():void;onRun():void;onCancel():void;onReopen(r:RunRef):void;onChart(c:ChartChoice|undefined):void;onRelink(sha:string):void}){
+function CellCard({cell,index,notebook,result,stale,runtime,runs,restoredRunIds,ready,relinks,onChange,onMove,onRemove,onRun,onCancel,onReopen,onChart,onRelink}:{cell:Cell;index:number;notebook:NotebookDoc;result?:Result;stale:string|null;runtime:Runtime;runs:RunRef[];restoredRunIds:readonly string[];ready:boolean;relinks:StoreManifest['entries'];onChange(c:Cell):void;onMove(d:-1|1):void;onRemove():void;onRun():void;onCancel():void;onReopen(r:RunRef):void;onChart(c:ChartChoice|undefined):void;onRelink(sha:string):void}){
   const running=result?.status==='running',others=notebook.cells.filter(c=>c.id!==cell.id&&runnable(c));
   let plan:string[]=[];try{plan=runnable(cell)?executionPlan(notebook,cell.id):[];}catch{plan=[];}
   const title=(id:string)=>notebook.cells.find(c=>c.id===id)?.title??id;
@@ -481,8 +481,13 @@ function CellCard({cell,index,notebook,result,stale,runtime,runs,ready,relinks,o
       <Button size="small" appearance="primary" icon={<Play size={14}/>} disabled={!ready} onClick={onRun}>Run again</Button>
     </div>}
     {result?.jobNote&&<p className="footnote job-note" data-testid="job-note">{result.jobNote}</p>}
-    {cell.kind==='python'&&runs.length>0&&<details className="cell-history"><summary>Run history ({runs.length})</summary><ul>{runs.slice(0,10).map(r=><li key={r.runId}><span className="mono">{r.runId}</span> {r.status} &middot; {time(r.submittedAt)} &middot; inputs {r.inputHash.slice(0,10)} {r.status==='succeeded'&&<Button size="small" onClick={()=>onReopen(r)}>Load result</Button>}</li>)}</ul><small>References only. Results live on the runtime, in memory, until it restarts.</small></details>}
+    {cell.kind==='python'&&runs.length>0&&<details className="cell-history"><summary>Run history ({runs.length})</summary><ul>{runs.slice(0,10).map(r=>{const shown=displayRunStatus(r,restoredRunIds);return <li key={r.runId} data-run-status={shown}><span className="mono">{r.runId}</span> {shown} &middot; {time(r.submittedAt)} &middot; inputs {r.inputHash.slice(0,10)} {r.status==='succeeded'&&<Button size="small" onClick={()=>onReopen(r)}>Load result</Button>}</li>;})}</ul><small>References only. Results live on the runtime, in memory, until it restarts.</small></details>}
   </li>;
+}
+
+/** A saved ref that was queued/running when the page closed: its outcome was not observed in this tab (rule 32). */
+function displayRunStatus(r:RunRef,restored:readonly string[]):string{
+  return (r.status==='queued'||r.status==='running')&&restored.includes(r.runId)?'not observed since reload':r.status;
 }
 
 function PythonInputs({cell,runtime,onChange}:{cell:PythonCell;runtime:Runtime;onChange(c:Cell):void}){

@@ -79,7 +79,10 @@ export type Bindings = {
 /** StorySpec is validated by the pinned VizForge parser in the adapter, not by a clone. */
 export type StoryResource = {indexField: string; spec: unknown; cues: Record<string, Record<string, Scalar>>};
 export type Resources = {scenes?: Record<string, unknown>; stories?: Record<string, StoryResource>; architectures?: Record<string, unknown>; explorers?: Record<string, unknown>; explanations?: Record<string, unknown>; replays?: Record<string, unknown>; motions?: Record<string, unknown>; runs?: Record<string, unknown>; models?: Record<string, unknown>};
-export type AppDefinition = {manifest: Manifest; bindings: Bindings; resources?: Resources; components?: Record<string, unknown>; customCapabilities?: Record<string, import('./capabilities.ts').CapabilityId[]>; limits?: import('./scene.ts').SceneLimits};
+export type AppDefinition = {manifest: Manifest; bindings: Bindings; resources?: Resources; components?: Record<string, unknown>; customCapabilities?: Record<string, import('./capabilities.ts').CapabilityId[]>; limits?: import('./scene.ts').SceneLimits;
+  /** Optional, trusted source only: client-supplied storage for run REFERENCES per run resource (never results).
+   * Absent means history stays in memory exactly as before. Not part of the inert manifest. */
+  runHistory?: Record<string, import('./foundation/run-history.ts').RunHistoryBinding>};
 export type TaskState = {status: 'idle' | 'running' | 'ready' | 'stale' | 'cancelled' | 'error'; progress: number; message: string};
 export type Snapshot = {values: Values; revision: number; restoreEpoch: number; tasks: Readonly<Record<string, TaskState>>};
 export type SavedState = {format: 'datapass.web-state'; version: 1; appId: string; appVersion: string; page: string; values: Record<string, Scalar>};
