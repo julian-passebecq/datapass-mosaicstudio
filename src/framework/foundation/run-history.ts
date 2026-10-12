@@ -93,20 +93,32 @@ export function toReference(record:RunRecord):RunReference{
     parameters:{...record.parameters},dependencies:{...record.dependencies},outcome,startedAt:record.startedAt,finishedAt:outcome==='unobserved'?null:record.finishedAt,durationMs:outcome==='unobserved'?0:record.durationMs,artifactRef,restored:true};
 }
 const UNAVAILABLE='Browser storage is unavailable; run history stays in memory for this tab only.';
-/** Load and validate before anything changes. A refused value is kept aside under `<key>.rejected`, never deleted. */
-export function loadRunHistory(store:RunHistoryStore,scope:RunHistoryScope):{refs:RunReference[];notice:string|null}{
-  const key=runHistoryKey(scope.manifest.id,scope.resource);
+/** Load and validate before anything changes. A refused value is copied to `<key>.rejected` and only then
+ * removed from the main key; it is never overwritten or deleted without the user's explicit reset. When it
+ * cannot be kept aside (storage refuses the write, or an earlier `.rejected` value already occupies the slot),
+ * it stays under the main key and `suspended` is true: the caller must not write that key this session. */
+export function loadRunHistory(store:RunHistoryStore,scope:RunHistoryScope):{refs:RunReference[];notice:string|null;suspended:boolean}{
+  const key=runHistoryKey(scope.manifest.id,scope.resource),aside=rejectedKey(key);
   let raw:string|null;
-  try{raw=store.getItem(key);}catch{return {refs:[],notice:UNAVAILABLE};}
-  if(raw===null)return {refs:[],notice:null};
+  try{raw=store.getItem(key);}catch{return {refs:[],notice:UNAVAILABLE,suspended:false};}
+  if(raw===null)return {refs:[],notice:null,suspended:false};
   try{
     if(raw.length>RUN_HISTORY_BYTES)throw new Error('Saved run history exceeds its byte budget');
     let json:unknown;try{json=JSON.parse(raw);}catch{throw new Error('Saved run history is not valid JSON');}
-    return {refs:[...validateRunHistory(json,scope).refs],notice:null};
+    return {refs:[...validateRunHistory(json,scope).refs],notice:null,suspended:false};
   }catch(error){
-    let kept=true;try{store.setItem(rejectedKey(key),raw);store.removeItem(key);}catch{kept=false;}
-    const message=(error as Error).message.replace(/\.?$/,'.');
-    return {refs:[],notice:`Saved run history was not restored: ${message} `+(kept?`It was kept aside under "${rejectedKey(key)}". Live history still works.`:'Storage could not keep it aside; it was left in place. Live history still works.')};
+    const message='Saved run history was not restored: '+(error as Error).message.replace(/\.?$/,'.')+' ';
+    let occupied:boolean;
+    try{occupied=store.getItem(aside)!==null;}catch{occupied=true;}
+    if(occupied)return {refs:[],suspended:true,notice:message+`An earlier refused value already occupies "${aside}", so this one was left in place and saving is suspended for this session. Live history still works; "Reset saved run history" clears the refused value.`};
+    try{store.setItem(aside,raw);}catch{
+      return {refs:[],suspended:true,notice:message+'Storage could not keep it aside, so it was left in place and saving is suspended for this session. Live history still works; "Reset saved run history" clears the refused value.'};
+    }
+    let copied:boolean;
+    try{copied=store.getItem(aside)===raw;}catch{copied=false;}
+    if(!copied)return {refs:[],suspended:true,notice:message+'Storage could not confirm the kept-aside copy, so it was left in place and saving is suspended for this session. Live history still works; "Reset saved run history" clears the refused value.'};
+    try{store.removeItem(key);}catch{/* the verified copy under .rejected is what is kept; the next save replaces the main key */}
+    return {refs:[],suspended:false,notice:message+`It was kept aside under "${aside}". Live history still works.`};
   }
 }
 /** Persist references only (newest kept within the budget). Returns a notice on failure, null on success. */
@@ -117,7 +129,8 @@ export function saveRunHistory(store:RunHistoryStore,scope:RunHistoryScope,refs:
     store.setItem(runHistoryKey(scope.manifest.id,scope.resource),JSON.stringify(valid));return null;
   }catch(error){return 'Run history could not be saved: '+(error as Error).message;}
 }
-/** Explicit reset: removes the saved references only. A kept-aside `.rejected` value is left alone. */
+/** Explicit reset: removes the main key (saved references, or a refused value that could not be kept aside).
+ * A kept-aside `.rejected` value is left alone. */
 export function resetRunHistory(store:RunHistoryStore,scope:Pick<RunHistoryScope,'manifest'|'resource'>):string|null{
   try{store.removeItem(runHistoryKey(scope.manifest.id,scope.resource));return null;}catch{return UNAVAILABLE;}
 }
@@ -141,7 +154,9 @@ type Journalish={
   clearRestored():void;
 };
 export type RunHistoryController={notice:string|null;reset():void;dispose():void};
-const loaded=new WeakSet<object>();
+/** Per-journal load state. `suspended` outlives a RunScope remount: a refused value left under the main key
+ * must not be overwritten by a later binding of the same journal before the user resets. */
+const loaded=new WeakMap<object,{suspended:boolean;notice:string|null}>();
 /** Glue used by RunScope: load once per journal, restore, then save references on every journal change.
  * Observes the journal only; it never calls runTask, cancelTask or subscribeTaskRuns. Returns null (and
  * touches no storage) when the client supplied no binding. */
@@ -150,18 +165,21 @@ export function bindRunHistory(journal:Journalish,binding:RunHistoryBinding|unde
   const full:RunHistoryScope={...scope,maxRefs:binding.maxRefs??RUN_HISTORY_DEFAULT_REFS};
   const controller:RunHistoryController={notice:null,reset:()=>{},dispose:()=>{}};
   const setNotice=(notice:string|null)=>{if(notice!==controller.notice){controller.notice=notice;onNotice(notice);}};
-  if(!loaded.has(journal)){
-    loaded.add(journal);
+  let state=loaded.get(journal);
+  if(!state){
     const result=loadRunHistory(binding.store,full);
+    state={suspended:result.suspended,notice:result.suspended?result.notice:null};loaded.set(journal,state);
     if(result.refs.length){
       try{journal.restoreReferences(result.refs);}
       catch(error){setNotice('Saved run history was not restored: '+(error as Error).message);}
     }
     if(result.notice)setNotice(result.notice);
-  }
+  }else if(state.suspended)setNotice(state.notice);
+  const shared=state;
   const excluded=new Set<string>();let last='';
   const save=()=>{
     const s=journal.getSnapshot(),refs=[...s.restored,...s.records.filter(r=>!excluded.has(r.id)).map(toReference)];
+    if(shared.suspended)return;
     const key=JSON.stringify(refs);if(key===last)return;last=key;
     const problem=saveRunHistory(binding.store,full,refs);if(problem)setNotice(problem);
   };
@@ -169,8 +187,10 @@ export function bindRunHistory(journal:Journalish,binding:RunHistoryBinding|unde
   controller.reset=()=>{
     for(const r of journal.getSnapshot().records)excluded.add(r.id);
     journal.clearRestored();
+    const wasSuspended=shared.suspended;
     const problem=resetRunHistory(binding.store,full);last=JSON.stringify([]);
-    setNotice(problem??'Saved run history was reset. Runs already shown in this tab stay until reload but are no longer saved.');
+    if(!problem){shared.suspended=false;shared.notice=null;}
+    setNotice(problem??(wasSuspended?'Saved run history was reset, including the refused value that could not be kept aside; saving resumes for new runs. ':'Saved run history was reset. ')+'Runs already shown in this tab stay until reload but are no longer saved.');
   };
   controller.dispose=off;
   return controller;
