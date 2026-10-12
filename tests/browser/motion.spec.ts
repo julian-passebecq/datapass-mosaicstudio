@@ -4,12 +4,15 @@ const start = async(page: Page, pageId = 'flow') => {await page.goto('/?app=moti
 const button = (page: Page, name: string) => page.getByRole('button', {name, exact: true});
 const svg = (page: Page) => page.getByTestId('motion-svg');
 const token = (page: Page) => svg(page).locator('[data-entity=batch]');
+// A forward step is a finite D3 transfer (900 ms on the flow page). A test that must observe or act during it freezes the
+// page clock first (after page.clock.install), so the transfer stays in flight until the test acts instead of racing a loaded machine.
+const holdPageTimers = async(page: Page) => {await page.clock.pauseAt(await page.evaluate(() => Date.now()) + 1000);};
 let errors: string[] = [], external: string[] = [], heavy: string[] = [];
 test.beforeEach(async({page}) => {
   errors = []; external = []; heavy = [];
   page.on('pageerror', e => errors.push(e.message));
   page.on('console', m => {if (m.type() === 'error') errors.push(m.text());});
-  page.on('request', r => {if (/^https?:/.test(r.url()) && !r.url().startsWith('http://127.0.0.1:4173/')) external.push(r.url()); if (/\.wasm|\/duckdb\/|SceneViewport-|Scene3D-/.test(r.url())) heavy.push(r.url());});
+  page.on('request', r => {if (/^https?:/.test(r.url()) && !r.url().startsWith(`http://127.0.0.1:${process.env.PW_PORT||4173}/`)) external.push(r.url()); if (/\.wasm|\/duckdb\/|SceneViewport-|Scene3D-/.test(r.url())) heavy.push(r.url());});
 });
 test.afterEach(async({}, info) => {
   await info.attach('motion-diagnostics', {body: JSON.stringify({errors, external, heavy}, null, 2), contentType: 'application/json'});
@@ -27,10 +30,11 @@ test('two projections retain DOM identity, exact snapshot and no WebGL', async({
   await page.screenshot({path: info.outputPath('motion-isometric-overview.png'), fullPage: true});
 });
 test('forward step uses a finite D3 transfer and selection does not cancel it', async({page}, info) => {
-  await start(page); await button(page, 'Next motion step').click();
+  await page.clock.install(); await start(page); await holdPageTimers(page); await button(page, 'Next motion step').click();
   await expect(svg(page)).toHaveAttribute('data-animating', 'true');
   await button(page, 'Inspect Model').click();
-  await expect(svg(page)).toHaveAttribute('data-animating', 'false');
+  await expect(page.getByTestId('motion')).toHaveAttribute('data-selection', 'model'); await expect(svg(page)).toHaveAttribute('data-animating', 'true');
+  await page.clock.resume(); await expect(svg(page)).toHaveAttribute('data-animating', 'false');
   await expect(token(page)).toHaveAttribute('data-world', '4.0000,0.0000,0.6800');
   await expect(page.getByTestId('motion')).toHaveAttribute('data-selection', 'model');
   await expect(page.getByRole('complementary', {name: 'Motion context'})).toContainText('Inspect the aggregation');

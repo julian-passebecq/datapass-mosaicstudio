@@ -3,12 +3,15 @@ import {readFile} from 'node:fs/promises';
 const open = async(page: Page) => {await page.goto('/?app=motion-reference&page=choreography'); await expect(page.getByTestId('motion')).toBeVisible();};
 const svg = (page: Page) => page.getByTestId('motion-svg');
 const button = (page: Page, name: string) => page.getByRole('button', {name, exact: true});
+// A forward step is a finite D3 transfer (1500 ms on the choreography page). A test that must act during it freezes the
+// page clock first (after page.clock.install), so the transfer stays in flight until the test acts instead of racing a loaded machine.
+const holdPageTimers = async(page: Page) => {await page.clock.pauseAt(await page.evaluate(() => Date.now()) + 1000);};
 const seek = async(page: Page, index: number) => {await page.getByLabel('Motion step', {exact: true}).selectOption(String(index));};
 let errors: string[] = [], network: string[] = [];
 test.beforeEach(async({page}) => {
   errors = []; network = [];
   page.on('pageerror', e => errors.push(e.message)); page.on('console', m => {if (m.type() === 'error') errors.push(m.text());});
-  page.on('request', r => {if (/^https?:/.test(r.url()) && (!r.url().startsWith('http://127.0.0.1:4173/') || /\.wasm|\/duckdb\/|SceneViewport-|ModelViewport-/.test(r.url()))) network.push(r.url());});
+  page.on('request', r => {if (/^https?:/.test(r.url()) && (!r.url().startsWith(`http://127.0.0.1:${process.env.PW_PORT||4173}/`) || /\.wasm|\/duckdb\/|SceneViewport-|ModelViewport-/.test(r.url()))) network.push(r.url());});
 });
 test.afterEach(async({}, info) => {await info.attach('choreography-diagnostics', {body: JSON.stringify({errors, network}), contentType: 'application/json'}); expect(errors).toEqual([]); expect(network).toEqual([]);});
 
@@ -45,8 +48,8 @@ test('semantic callouts preserve identity and evidence through projection change
   await expect(page.locator('.source-lines [data-highlight=true]')).toHaveCount(2);
 });
 test('reduced motion applied during a transfer immediately settles its canonical target', async({page}) => {
-  await open(page); await button(page, 'Next motion step').click(); await expect(svg(page)).toHaveAttribute('data-animating', 'true');
-  await page.emulateMedia({reducedMotion: 'reduce'}); await expect(svg(page)).toHaveAttribute('data-animating', 'false');
+  await page.clock.install(); await open(page); await holdPageTimers(page); await button(page, 'Next motion step').click(); await expect(svg(page)).toHaveAttribute('data-animating', 'true');
+  await page.emulateMedia({reducedMotion: 'reduce'}); await expect(svg(page)).toHaveAttribute('data-animating', 'false'); await page.clock.resume();
   await expect(button(page, 'Play motion')).toBeDisabled(); await expect(svg(page).locator('[data-entity=record-b]')).toHaveAttribute('data-world', '6.0000,3.0000,0.6800');
   await seek(page, 0); await button(page, 'Next motion step').click(); await expect(svg(page)).toHaveAttribute('data-animating', 'false');
 });

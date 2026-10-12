@@ -11,9 +11,12 @@ test.afterEach(async({},info)=>{
   await info.attach('framework-diagnostics',{body:JSON.stringify({exceptions,consoleErrors,requests},null,2),contentType:'application/json'});
   expect(exceptions,'Unhandled client exceptions').toEqual([]);
   expect(consoleErrors,'Client console errors').toEqual([]);
-  expect(requests.filter(r=>!r.startsWith('http://127.0.0.1:4173/')),'No external network from reference clients').toEqual([]);
+  expect(requests.filter(r=>!r.startsWith(`http://127.0.0.1:${process.env.PW_PORT||4173}/`)),'No external network from reference clients').toEqual([]);
   expect(requests.filter(r=>/\/duckdb\/|\.wasm(?:\?|$)/.test(r)),'Web clients must not initialize the workbench database').toEqual([]);
 });
+// The wind scenario check resolves after a 500 ms page timer. A test that must act while it runs (cancel) freezes the
+// page clock first (after page.clock.install), so the task stays in flight until the test acts instead of racing a loaded machine.
+async function holdPageTimers(page:Page){await page.clock.pauseAt(await page.evaluate(()=>Date.now())+1000);}
 async function client(page:Page,id:string,pageId?:string){
   await page.goto('/?app='+id+(pageId?'&page='+pageId:''));
   await expect(page.locator('.studio-site[data-app-id]')).toHaveAttribute('data-app-id',id);
@@ -74,9 +77,9 @@ test('one VizForge story controls 3D, original figure and narrative; restore pau
   await page.emulateMedia({reducedMotion:'reduce'});await expect(page.getByRole('button',{name:'Play story',exact:true})).toBeDisabled();await page.getByRole('button',{name:'Previous shared scene'}).click();await expect(page.locator('.site-story-figure')).toHaveAttribute('data-scene','rotor-focus');
 });
 test('client model reacts, explicit task cancels and stale results cannot masquerade as current',async({page},info)=>{
-  await client(page,'wind-reference','economics');await expect(page.getByTestId('metric-aep')).toContainText('22,075');await expect(page.getByTestId('task-scenario-check')).toHaveText('idle');
+  await page.clock.install();await client(page,'wind-reference','economics');await expect(page.getByTestId('metric-aep')).toContainText('22,075');await expect(page.getByTestId('task-scenario-check')).toHaveText('idle');
   const before=await page.getByTestId('metric-lcoe').textContent();const cf=page.getByRole('spinbutton',{name:'Capacity factor',exact:false});await cf.fill('50');await cf.press('Enter');await expect(page.getByTestId('metric-lcoe')).not.toHaveText(before!);await expect(page.getByTestId('metric-aep')).toContainText('26,280');
-  await page.getByRole('button',{name:'Run scenario check',exact:true}).click();await page.getByRole('button',{name:'Cancel task',exact:true}).click();await expect(page.getByTestId('task-scenario-check')).toHaveText('cancelled');
+  await holdPageTimers(page);await page.getByRole('button',{name:'Run scenario check',exact:true}).click();await expect(page.getByTestId('task-scenario-check')).toHaveText('running');await page.getByRole('button',{name:'Cancel task',exact:true}).click();await expect(page.getByTestId('task-scenario-check')).toHaveText('cancelled');await page.clock.resume();
   await page.getByRole('button',{name:'Run scenario check',exact:true}).click();await expect(page.getByTestId('task-scenario-check')).toHaveText('ready');await expect(page.locator('[data-block="checked-table"] tbody tr')).toHaveCount(2);
   await cf.fill('51');await cf.press('Enter');await expect(page.getByTestId('task-scenario-check')).toHaveText('stale');await expect(page.locator('[data-block="checked-table"]')).toContainText('Run the task');
   await page.screenshot({path:info.outputPath('framework-scenario.png'),fullPage:true});
