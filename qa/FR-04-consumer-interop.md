@@ -28,7 +28,9 @@ Run: `FR04_REAL_DIR=<private copy> FR04_SHOT_DIR=<private screenshots> npx playw
 
 **Schema drift, resolved by FR-01:** on `6f45dd0`, `docs/contracts/artifact.schema.json` rejected the real Contoso export and the synthetic mirror (`provenance: Additional properties are not allowed ('inputHash', 'inputs', 'producer')`) while TS and Python accepted them. After rebasing on `f3a02bc` (FR-01 #46) the same two files give 0 schema errors and still pass the TS validator and the Python mirror.
 
-**Finding for T3 (not changed here):** at `3dfcecd` T3 does not read `preview.json`; it requires `index.html`, reads `studio-build.json` capabilities, hashes all files and serves with `_headers` CSP. Its contract-document check treats `provenance` as an object, so every valid `datapass.concept-spec` v1 (string provenance) is listed with a false "missing provenance" problem.
+**Finding for T3 (not changed here):** T3 requires `index.html`, reads `studio-build.json` capabilities, hashes all files and serves with `_headers` CSP. Its contract-document check treats `provenance` as an object, so every valid `datapass.concept-spec` v1 (string provenance) is listed with a false "missing provenance" problem (still so at T3 `0552ed1`).
+
+**Update 2026-10-13 (source read of T3 `origin/main` `0552ed1`):** the `3dfcecd` finding that T3 does not read `preview.json` is obsolete. Since T3 #4 (`3dd8aa6`, "verify builds against the datapass.preview/1 descriptor"), `deriveContract` in `apps/server/src/mosaic/mosaicReceipt.ts` decodes `preview.json`, requires `app.id` to equal the client id, and reports every listed file that is missing or differs (bytes + sha256) and every unlisted file; only a clean result is `verified`, otherwise `legacy` (no descriptor), `invalid`, `stale` or `failed`. The synthetic fixture is asserted to come out `verified` under that rule in `tests/consumer-interop.test.mjs`.
 
 ## Public evidence in this repository (synthetic)
 

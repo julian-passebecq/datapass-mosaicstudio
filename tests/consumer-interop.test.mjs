@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
-import {cp,mkdtemp,readFile,rm,writeFile} from 'node:fs/promises';
+import {cp,mkdtemp,readdir,readFile,rm,writeFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import path from 'node:path';
@@ -106,16 +106,35 @@ test('a changed, missing or extra file in the preview fixture is reported (exit 
     const doc=await json(path.join(dir,'preview.json')),issues=await checkPreviewFiles(doc,dir);
     assert.deepEqual(issues.map(i=>i.message).sort(),['content differs: index.html','unlisted file: extra.js']);
     assert.equal(run('scripts/preview-validate.mjs',path.join(dir,'preview.json'),'--check-files').status,1);
+    // The T3 deriveContract mirror sees the same tampering (and the temp folder name is not the app id).
+    assert.deepEqual((await t3ContractProblems(dir,doc)).sort(),['content differs: index.html',`preview.json describes 'synthetic-client'`,'unlisted file: extra.js']);
   }finally{await rm(dir,{recursive:true,force:true});}
 });
 
 /**
- * What T3 (t3code-datapass origin/main 3dfcecd, apps/server/src/mosaic/MosaicStudio.ts + mosaicReceipt.ts) reads from a
+ * What T3 (t3code-datapass origin/main 0552ed1, apps/server/src/mosaic/MosaicStudio.ts + mosaicReceipt.ts) reads from a
  * built client folder, re-stated here so a fixture change that would break that host fails in this repository:
  * index.html must exist, studio-build.json capabilities are strings, contract documents (artifacts/ or *.concept.json)
  * have format/version 1/id/title/provenance(kind+source)/payload/representations, and preview.json is not one of them.
- * T3 at that revision does not read preview.json; it hashes it with every other file.
+ * Since T3 #4 (3dd8aa6) deriveContract also verifies the build against preview.json: app.id equals the client id
+ * (the output folder name) and the files on disk other than preview.json are exactly the listed ones, same bytes and sha256.
  */
+async function t3ContractProblems(dir,doc){
+  const problems=[];
+  if(doc.app?.id!==path.basename(dir))problems.push(`preview.json describes '${doc.app?.id}'`);
+  const onDisk=new Map();
+  for(const e of await readdir(dir,{recursive:true,withFileTypes:true})){
+    if(!e.isFile())continue;
+    const rel=path.relative(dir,path.join(e.parentPath??e.path,e.name)).split(path.sep).join('/');
+    if(rel==='preview.json')continue;
+    const bytes=await readFile(path.join(dir,rel));
+    onDisk.set(rel,{bytes:bytes.length,sha256:createHash('sha256').update(bytes).digest('hex')});
+  }
+  for(const f of doc.files){const a=onDisk.get(f.path);if(!a)problems.push('missing file: '+f.path);else if(a.bytes!==f.bytes||a.sha256!==f.sha256)problems.push('content differs: '+f.path);}
+  const listed=new Set(doc.files.map(f=>f.path));
+  for(const p of onDisk.keys())if(!listed.has(p))problems.push('unlisted file: '+p);
+  return problems;
+}
 const T3_KINDS=new Set(['synthetic','provided','computed']);
 function t3Summary(file,doc){
   if(!doc||typeof doc!=='object'||!['datapass.artifact','datapass.concept-spec'].includes(doc.format))return undefined;
@@ -126,15 +145,16 @@ function t3Summary(file,doc){
   for(const f of doc.format==='datapass.artifact'?['payload','representations']:['layers','domains','nodes','flows'])if(doc[f]===undefined)problems.push('missing '+f);
   return {file,format:doc.format,problems};
 }
-test('the preview fixture is compatible with what T3 3dfcecd inspects in a client folder',async()=>{
+test('the preview fixture is compatible with what T3 0552ed1 inspects in a client folder',async()=>{
   const doc=await json(PREVIEW_DIR+'/preview.json');
   assert.ok(existsSync(PREVIEW_DIR+'/index.html'));
+  assert.deepEqual(await t3ContractProblems(PREVIEW_DIR,doc),[],'T3 deriveContract would mark the fixture verified');
   const build=await json(PREVIEW_DIR+'/studio-build.json');
   assert.ok(Array.isArray(build.capabilities)&&build.capabilities.every(c=>typeof c==='string'));
   assert.deepEqual(build.capabilities,doc.capabilities);
   assert.equal(t3Summary('preview.json',doc),undefined,'T3 does not mistake preview.json for a contract document');
   for(const a of doc.artifacts)assert.deepEqual(t3Summary(a.path,await json(PREVIEW_DIR+'/'+a.path)),{file:a.path,format:'datapass.artifact',problems:[]});
-  // Known T3-side gap at 3dfcecd (reported, not changed here): its check treats `provenance` as an object for every
+  // Known T3-side gap since 3dfcecd, still at 0552ed1 (reported, not changed here): its check treats `provenance` as an object for every
   // contract, but datapass.concept-spec v1 provenance is the string "documented" or "synthetic", so T3 lists a false
   // "missing provenance" problem for every valid concept spec. Nothing else is flagged.
   for(const f of CONCEPTS)assert.deepEqual(t3Summary(f,await json(DIR+f)).problems,['missing provenance']);
