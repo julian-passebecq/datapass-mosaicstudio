@@ -6,6 +6,9 @@ const HISTORY_KEY='datapass.run-history.foundation-reference.experiments';
 const button=(page:Page,name:string)=>page.getByRole('button',{name,exact:true});
 async function open(page:Page,section='runs'){await page.goto('/?app=foundation-reference&page='+section);await expect(page.locator('.studio-site[data-app-id="foundation-reference"]')).toBeVisible();}
 async function evaluate(page:Page,gain:string){await page.getByLabel('Gain',{exact:true}).fill(gain);await page.getByLabel('Gain',{exact:true}).press('Enter');await button(page,'Evaluate example').click();await expect(page.getByTestId('task-evaluate')).toHaveText('ready');await expect(page.getByTestId('artifact')).toBeVisible();}
+// The synthetic evaluate task resolves after a 260 ms page timer. A test that must act while it is running (cancel)
+// freezes the page clock first, so the run stays in flight until the test acts instead of racing a loaded machine.
+async function holdPageTimers(page:Page){await page.clock.pauseAt(await page.evaluate(()=>Date.now())+1000);}
 test.beforeEach(async({page})=>{errors=[];external=[];heavy=[];page.on('pageerror',e=>errors.push(e.message));page.on('console',m=>{if(m.type()==='error')errors.push(m.text());});page.on('request',r=>{if(/^https?:/.test(r.url())&&!r.url().startsWith(ORIGIN))external.push(r.url());if(/\.wasm|\/duckdb\/|SceneViewport-|Scene3D-/.test(r.url()))heavy.push(r.url());});});
 test.afterEach(async({},info)=>{await info.attach('foundation-diagnostics',{body:JSON.stringify({errors,external,heavy},null,2),contentType:'application/json'});expect(errors).toEqual([]);expect(external).toEqual([]);expect(heavy).toEqual([]);});
 
@@ -29,8 +32,8 @@ test('captured runs compare exact input and output changes without corrupting ea
   await page.getByRole('navigation',{name:'Site pages'}).getByRole('button',{name:'Results',exact:true}).click();await expect(page.getByTestId('runs')).toHaveAttribute('data-run-count','2');await expect(button(page,'Inspect run 1')).toHaveAttribute('aria-pressed','true');
 });
 test('failed and cancelled runs never display a previous successful artifact',async({page})=>{
-  await open(page);await evaluate(page,'1');await page.getByLabel('Demonstrate a model error').check();await button(page,'Evaluate example').click();await expect(page.getByTestId('task-evaluate')).toHaveText('error');await expect(page.getByTestId('runs')).toHaveAttribute('data-selected-status','failed');await expect(page.getByTestId('artifact')).toHaveCount(0);
-  await page.getByLabel('Demonstrate a model error').uncheck();await button(page,'Evaluate example').click();await button(page,'Cancel task').click();await expect(page.getByTestId('runs')).toHaveAttribute('data-selected-status','cancelled');await expect(page.getByTestId('artifact')).toHaveCount(0);
+  await page.clock.install();await open(page);await evaluate(page,'1');await page.getByLabel('Demonstrate a model error').check();await button(page,'Evaluate example').click();await expect(page.getByTestId('task-evaluate')).toHaveText('error');await expect(page.getByTestId('runs')).toHaveAttribute('data-selected-status','failed');await expect(page.getByTestId('artifact')).toHaveCount(0);
+  await page.getByLabel('Demonstrate a model error').uncheck();await holdPageTimers(page);await button(page,'Evaluate example').click();await expect(page.getByTestId('task-evaluate')).toHaveText('running');await button(page,'Cancel task').click();await expect(page.getByTestId('runs')).toHaveAttribute('data-selected-status','cancelled');await expect(page.getByTestId('artifact')).toHaveCount(0);await page.clock.resume();
   await button(page,'Inspect run 1').click();await expect(page.getByTestId('artifact')).toBeVisible();
 });
 test('run export is explicitly reviewed and separate from saved UI values',async({page})=>{
