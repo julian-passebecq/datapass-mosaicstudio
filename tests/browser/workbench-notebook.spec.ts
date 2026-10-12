@@ -126,7 +126,8 @@ test('UX02 Python through the real runtime: consent, run, representations, new r
   await expect(sql.getByTestId('artifact')).toContainText('cases');
   await expect(sql.getByTestId('artifact').locator('tbody td').nth(2)).toHaveText(/^[0-9,]+(\.[0-9]+)?$/); // DECIMAL stays numeric
   await expect(py.locator('.cell-history summary')).toContainText('Run history (3)');
-  // Cancel a long, real grid computation.
+  // Cancel a long, real grid computation. Depending on timing (e.g. a throttled CPU), the Cancel reaches the runtime while the
+  // run is live (cancelled), or after it finished, before or while its artifact loads (done, "already finished"); UX02b pins the latter.
   await page.getByRole('button',{name:'Add Python cell'}).click();
   const grid=page.getByTestId('cell').nth(2);
   await grid.getByLabel('Model',{exact:true}).selectOption('wind-weibull-grid');
@@ -152,6 +153,26 @@ test('UX02 Python through the real runtime: consent, run, representations, new r
   const stored=await page.evaluate(()=>localStorage.getItem('datapass.workspace')||'');
   expect(stored).not.toContain(TOKEN);
   expect(stored).not.toContain('"rows"');
+});
+
+test('UX02b Cancel pressed after the runtime finished, while the artifact loads, reports "already finished" and keeps the result',async({page})=>{
+  await startService();
+  await ready(page,LINK);
+  await page.getByTestId('runtime-consent').getByRole('button',{name:'Connect'}).click();
+  await expect(page.getByTestId('runtime-bar')).toHaveAttribute('data-status','connected');
+  await page.getByRole('button',{name:'Add Python cell'}).click();
+  const py=page.getByTestId('cell').first();
+  // Hold the artifact response: it is only requested once the runtime reports the run as finished.
+  let release!:()=>void;const held=new Promise<void>(r=>{release=r;});let requested!:()=>void;const artifactRequested=new Promise<void>(r=>{requested=r;});
+  await page.route(/\/api\/runtime\/v1\/runs\/[^/]+\/artifact$/,async route=>{requested();await held;await route.continue();});
+  await py.getByRole('button',{name:/^Run/}).click();
+  await artifactRequested;
+  await py.getByRole('button',{name:'Cancel'}).click();
+  await expect(page.locator('.notebook > .notice.error')).toContainText(/already finished \(succeeded\) when the cancellation arrived/);
+  await expect(py.locator('.notice').filter({hasText:'waiting for the runtime to accept'})).toHaveCount(0);
+  release();
+  await expect(py).toHaveAttribute('data-status','done',{timeout:30000});
+  await expect(py.getByTestId('artifact')).toBeVisible();
 });
 
 test('UX04 failures are explicit: stopped runtime, refused token, invalid import; the last result is not called live',async({page})=>{
