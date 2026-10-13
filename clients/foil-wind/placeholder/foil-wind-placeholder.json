@@ -1,0 +1,30 @@
+{
+  "format": "foil-wind.placeholder",
+  "version": 1,
+  "label": "Hand-made placeholder, not FOIL output, not Foil'O physics. Every number below was typed by hand for layout testing.",
+  "runs": [
+    {"run": "placeholder-a", "scenario": "calm", "seed": 1, "state": "COMPLETED", "model": "hand-made-placeholder", "samplePeriodS": 10, "declaredMeanWindMs": 5},
+    {"run": "placeholder-b", "scenario": "breezy", "seed": 2, "state": "COMPLETED", "model": "hand-made-placeholder", "samplePeriodS": 10, "declaredMeanWindMs": 7},
+    {"run": "placeholder-c", "scenario": "gappy", "seed": 3, "state": "STOPPED", "model": "hand-made-placeholder", "samplePeriodS": 10, "declaredMeanWindMs": 6}
+  ],
+  "measurements": [
+    {"run": "placeholder-a", "i": 0, "windMs": 4.5, "powerKw": 0.5, "state": "IDLE", "fault": false},
+    {"run": "placeholder-a", "i": 1, "windMs": 5.0, "powerKw": 0.8, "state": "RUNNING", "fault": false},
+    {"run": "placeholder-a", "i": 2, "windMs": 5.5, "powerKw": 1.0, "state": "RUNNING", "fault": false},
+    {"run": "placeholder-a", "i": 3, "windMs": 5.0, "powerKw": 0.9, "state": "RUNNING", "fault": false},
+    {"run": "placeholder-a", "i": 4, "windMs": 4.0, "powerKw": 0.4, "state": "IDLE", "fault": false},
+    {"run": "placeholder-a", "i": 5, "windMs": 5.5, "powerKw": 1.1, "state": "RUNNING", "fault": false},
+    {"run": "placeholder-b", "i": 0, "windMs": 6.5, "powerKw": 1.5, "state": "RUNNING", "fault": false},
+    {"run": "placeholder-b", "i": 1, "windMs": 7.0, "powerKw": 2.0, "state": "RUNNING", "fault": false},
+    {"run": "placeholder-b", "i": 2, "windMs": 8.0, "powerKw": 2.5, "state": "RUNNING", "fault": false},
+    {"run": "placeholder-b", "i": 3, "windMs": 7.5, "powerKw": 2.2, "state": "RUNNING", "fault": false},
+    {"run": "placeholder-b", "i": 4, "windMs": 6.0, "powerKw": 1.4, "state": "RUNNING", "fault": false},
+    {"run": "placeholder-b", "i": 5, "windMs": 7.0, "powerKw": 1.9, "state": "RUNNING", "fault": false},
+    {"run": "placeholder-c", "i": 0, "windMs": 6.0, "powerKw": 1.2, "state": "RUNNING", "fault": false},
+    {"run": "placeholder-c", "i": 1, "windMs": null, "powerKw": 1.1, "state": "RUNNING", "fault": true},
+    {"run": "placeholder-c", "i": 2, "windMs": null, "powerKw": 1.0, "state": "RUNNING", "fault": true},
+    {"run": "placeholder-c", "i": 3, "windMs": 6.5, "powerKw": 1.3, "state": "RUNNING", "fault": false},
+    {"run": "placeholder-c", "i": 4, "windMs": 5.0, "powerKw": 0.7, "state": "IDLE", "fault": false},
+    {"run": "placeholder-c", "i": 5, "windMs": 6.0, "powerKw": 1.2, "state": "RUNNING", "fault": false}
+  ]
+}

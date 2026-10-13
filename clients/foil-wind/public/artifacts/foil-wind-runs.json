@@ -1,0 +1,164 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "foil-wind-runs",
+  "title": "Runs",
+  "provenance": {
+    "kind": "synthetic",
+    "source": "HAND-MADE PLACEHOLDER (not FOIL output, not Foil'O physics, invented numbers)",
+    "producer": {
+      "kind": "script",
+      "name": "clients/foil-wind/py/build_data.py"
+    },
+    "inputs": [
+      {
+        "id": "dataSource",
+        "label": "Data source",
+        "value": "hand-made placeholder"
+      },
+      {
+        "id": "producer",
+        "label": "Producer",
+        "value": "hand-made placeholder"
+      },
+      {
+        "id": "runs",
+        "label": "Runs shown",
+        "value": 3
+      }
+    ],
+    "inputHash": "90c8548f944110ed878fed53aad4a9c0795a1d76dee6ce44ccdfa68f785b5f01"
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "slot",
+    "columns": [
+      {
+        "id": "slot",
+        "label": "Slot",
+        "type": "string"
+      },
+      {
+        "id": "run",
+        "label": "Run",
+        "type": "string"
+      },
+      {
+        "id": "scenario",
+        "label": "Scenario",
+        "type": "string"
+      },
+      {
+        "id": "seed",
+        "label": "Seed",
+        "type": "number"
+      },
+      {
+        "id": "state",
+        "label": "State",
+        "type": "string"
+      },
+      {
+        "id": "samples",
+        "label": "Samples",
+        "type": "number"
+      },
+      {
+        "id": "missingWind",
+        "label": "Missing wind",
+        "type": "number"
+      },
+      {
+        "id": "meanWindMs",
+        "label": "Mean wind",
+        "type": "number",
+        "unit": "m/s",
+        "nullable": true
+      },
+      {
+        "id": "meanPowerKw",
+        "label": "Mean power (proxy)",
+        "type": "number",
+        "unit": "kW"
+      },
+      {
+        "id": "energyProxyKwh",
+        "label": "Energy (proxy, not yield)",
+        "type": "number",
+        "unit": "kWh"
+      },
+      {
+        "id": "faultSharePct",
+        "label": "Fault samples",
+        "type": "number",
+        "unit": "%"
+      }
+    ],
+    "rows": [
+      {
+        "slot": "run-1",
+        "run": "placeholder-a",
+        "scenario": "calm",
+        "seed": 1,
+        "state": "COMPLETED",
+        "samples": 6,
+        "missingWind": 0,
+        "meanWindMs": 4.9167,
+        "meanPowerKw": 0.7833,
+        "energyProxyKwh": 0.013056,
+        "faultSharePct": 0.0
+      },
+      {
+        "slot": "run-2",
+        "run": "placeholder-b",
+        "scenario": "breezy",
+        "seed": 2,
+        "state": "COMPLETED",
+        "samples": 6,
+        "missingWind": 0,
+        "meanWindMs": 7.0,
+        "meanPowerKw": 1.9167,
+        "energyProxyKwh": 0.031944,
+        "faultSharePct": 0.0
+      },
+      {
+        "slot": "run-3",
+        "run": "placeholder-c",
+        "scenario": "gappy",
+        "seed": 3,
+        "state": "STOPPED",
+        "samples": 6,
+        "missingWind": 2,
+        "meanWindMs": 5.875,
+        "meanPowerKw": 1.0833,
+        "energyProxyKwh": 0.018056,
+        "faultSharePct": 33.33
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "Runs",
+      "kind": "table"
+    },
+    {
+      "id": "power",
+      "title": "Mean power proxy per run",
+      "kind": "chart",
+      "chart": "bar",
+      "x": "slot",
+      "y": "meanPowerKw",
+      "unit": "kW"
+    },
+    {
+      "id": "wind",
+      "title": "Mean wind per run",
+      "kind": "chart",
+      "chart": "bar",
+      "x": "slot",
+      "y": "meanWindMs",
+      "unit": "m/s"
+    }
+  ]
+}

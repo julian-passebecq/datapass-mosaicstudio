@@ -1,0 +1,26 @@
+{
+  "format": "foil-wind.queries",
+  "version": 1,
+  "note": "Trusted, committed SQL. build_data.py runs each query with Python's standard sqlite3 module over the two loaded tables at build time (read-only connection). The page shows the text and the result; it does not execute SQL.",
+  "tables": {
+    "runs": "slot, run, scenario, seed, state, model, sample_period_s, declared_mean_wind_ms",
+    "measurements": "slot, i, t_s, wind_ms (NULL when missing), power_kw (proxy), state, fault (0/1)"
+  },
+  "queries": [
+    {
+      "id": "per-run",
+      "title": "Samples, gaps and means per run",
+      "sql": "SELECT r.slot AS slot, r.scenario AS scenario, COUNT(*) AS samples,\n       SUM(m.wind_ms IS NULL) AS missing_wind,\n       ROUND(AVG(m.wind_ms), 3) AS mean_wind_ms,\n       ROUND(AVG(m.power_kw), 3) AS mean_power_kw\nFROM measurements AS m JOIN runs AS r ON r.slot = m.slot\nGROUP BY r.slot, r.scenario\nORDER BY r.slot"
+    },
+    {
+      "id": "state-share",
+      "title": "Machine state share per run",
+      "sql": "SELECT m.slot AS slot, m.state AS state, COUNT(*) AS samples,\n       ROUND(100.0 * COUNT(*) / (SELECT COUNT(*) FROM measurements AS x WHERE x.slot = m.slot), 1) AS share_pct\nFROM measurements AS m\nGROUP BY m.slot, m.state\nORDER BY m.slot, samples DESC"
+    },
+    {
+      "id": "wind-bands",
+      "title": "Mean power proxy by 1 m/s wind band (all runs)",
+      "sql": "SELECT CAST(wind_ms AS INTEGER) AS wind_band_ms, COUNT(*) AS samples,\n       ROUND(AVG(power_kw), 3) AS mean_power_kw\nFROM measurements\nWHERE wind_ms IS NOT NULL\nGROUP BY wind_band_ms\nORDER BY wind_band_ms"
+    }
+  ]
+}
