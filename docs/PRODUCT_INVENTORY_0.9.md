@@ -180,6 +180,7 @@ Clients in `clients/`. "Public reference" = listed in `AGENTS.md` rule 17. Famil
 | `param-lab` | spatial | not in rule 17 (client prototype) | has its own geometry worker |
 | `portfolio-showcase` | content | not in rule 17 (client prototype) | compact portfolio |
 | `animated-coding-lab` | content | not in rule 17 (client prototype) | `npm run test:coding-lab` |
+| `galaxy-finition` | knowledge | not in rule 17 (client prototype) | owner-supplied snapshot of the Galaxy Finition pass; table, metric, architecture |
 
 "Client prototype" is this document's label for folders with no declared status; none of them says "draft" in the files read. Check each README before relying on it.
 

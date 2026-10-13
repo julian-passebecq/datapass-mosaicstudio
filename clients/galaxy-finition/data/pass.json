@@ -1,0 +1,251 @@
+{
+ "format": "galaxy-finition.pass-snapshot",
+ "version": 1,
+ "pass": "Galaxy Finition 2026-10-13",
+ "snapshotTime": "2026-10-14T00:35+02:00",
+ "provenance": "Owner-supplied status snapshot of the pass log, screened to public fields. Not live data.",
+ "apps": [
+  {
+   "key": "14-diagramcloud",
+   "name": "DiagramCloud",
+   "repository": "diagramcloud",
+   "wave": 1,
+   "version": "1.25.0",
+   "status": "DONE",
+   "destination": "Vercel production (owner-approved); package staged"
+  },
+  {
+   "key": "08-t3",
+   "name": "T3 + Mosaic",
+   "repository": "t3code-datapass",
+   "wave": 1,
+   "version": "0.0.45-datapass.aa0485a",
+   "status": "RATIFIED",
+   "destination": "private GitLab vault"
+  },
+  {
+   "key": "17-pbibench",
+   "name": "TabularEditor_J / PbiBench",
+   "repository": "TabularEditor_J",
+   "wave": 1,
+   "version": "portable build (no release version)",
+   "status": "DONE (NO_MERGE)",
+   "destination": "private GitLab CI artifact"
+  },
+  {
+   "key": "01-mosaicstudio",
+   "name": "MosaicStudio",
+   "repository": "datapass-mosaicstudio",
+   "wave": 1,
+   "version": "0.11.0",
+   "status": "PUBLISHED",
+   "destination": "private GitLab vault"
+  },
+  {
+   "key": "20-mosaic-vscode",
+   "name": "DataPass Mosaic VS Code / VSIX V1",
+   "repository": "datapass-mosaic-vscode",
+   "wave": 2,
+   "version": "0.4.0",
+   "status": "PUBLISHED",
+   "destination": "private GitLab vault"
+  },
+  {
+   "key": "02-react",
+   "name": "DataPass React",
+   "repository": "datapass-react-vscode",
+   "wave": 2,
+   "version": "2.2.3",
+   "status": "PUBLISHED",
+   "destination": "private GitLab package registry"
+  },
+  {
+   "key": "04-factory",
+   "name": "Factory VSIX",
+   "repository": "datapass-factory",
+   "wave": 2,
+   "version": "0.5.4",
+   "status": "PUBLISHED",
+   "destination": "private GitLab package registry"
+  },
+  {
+   "key": "07-contoso",
+   "name": "Contoso Data Studio",
+   "repository": "contoso-data-studio",
+   "wave": 2,
+   "version": "0.3.0 (planned)",
+   "status": "STARTED (no DONE in snapshot)",
+   "destination": "private GitLab vault (planned)"
+  },
+  {
+   "key": "05-rayfin",
+   "name": "FOIL Rayfin local",
+   "repository": "foil-rayfin-local",
+   "wave": 2,
+   "version": "not recorded",
+   "status": "STARTED (no DONE in snapshot)",
+   "destination": "private GitLab package registry (planned)"
+  },
+  {
+   "key": "03-foil-native",
+   "name": "FOIL Native",
+   "repository": "datapass-factory-foil",
+   "wave": 3,
+   "version": "0.4.0",
+   "status": "VERIFIED_NO_CHANGE",
+   "destination": "private GitLab package registry (existing package)"
+  },
+  {
+   "key": "06-foil-studio",
+   "name": "FOIL Studio 2D/3D",
+   "repository": "foil-studio-3d",
+   "wave": 3,
+   "version": "1.0.0-rc.2+fd77781",
+   "status": "PUBLISHED",
+   "destination": "private GitHub draft release"
+  },
+  {
+   "key": "09-conceptmotion",
+   "name": "ConceptMotion / VizForge",
+   "repository": "conceptmotion-vizforge-demo",
+   "wave": 3,
+   "version": "1.1.1",
+   "status": "PUBLISHED",
+   "destination": "private GitHub draft release"
+  },
+  {
+   "key": "11-bridge",
+   "name": "FOIL Bridge",
+   "repository": "datapass-factory-foil-bridge",
+   "wave": 3,
+   "version": "metadata 2026-10-11",
+   "status": "VERIFIED_NO_CHANGE · STAGED",
+   "destination": "staged, no destination"
+  }
+ ],
+ "paused": [
+  {
+   "key": "12-datapass",
+   "name": "DataPass VS Code",
+   "status": "PAUSED_BY_OWNER"
+  },
+  {
+   "key": "16-powerops",
+   "name": "Power Ops / Power Ring",
+   "status": "PAUSED_BY_OWNER"
+  },
+  {
+   "key": "15-atlasnote",
+   "name": "AtlasNote",
+   "status": "PAUSED_BY_OWNER"
+  },
+  {
+   "key": "13-agent",
+   "name": "DataPass Agent",
+   "status": "PAUSED_BY_OWNER"
+  },
+  {
+   "key": "18-mongoku",
+   "name": "Mongoku DataPass",
+   "status": "PAUSED_BY_OWNER"
+  }
+ ],
+ "edges": [
+  {
+   "from": "01-mosaicstudio",
+   "to": "02-react"
+  },
+  {
+   "from": "01-mosaicstudio",
+   "to": "07-contoso"
+  },
+  {
+   "from": "01-mosaicstudio",
+   "to": "08-t3"
+  },
+  {
+   "from": "01-mosaicstudio",
+   "to": "09-conceptmotion"
+  },
+  {
+   "from": "02-react",
+   "to": "07-contoso"
+  },
+  {
+   "from": "02-react",
+   "to": "01-mosaicstudio"
+  },
+  {
+   "from": "03-foil-native",
+   "to": "04-factory"
+  },
+  {
+   "from": "03-foil-native",
+   "to": "05-rayfin"
+  },
+  {
+   "from": "03-foil-native",
+   "to": "06-foil-studio"
+  },
+  {
+   "from": "03-foil-native",
+   "to": "11-bridge"
+  },
+  {
+   "from": "04-factory",
+   "to": "03-foil-native"
+  },
+  {
+   "from": "04-factory",
+   "to": "11-bridge"
+  },
+  {
+   "from": "05-rayfin",
+   "to": "03-foil-native"
+  },
+  {
+   "from": "06-foil-studio",
+   "to": "03-foil-native"
+  },
+  {
+   "from": "06-foil-studio",
+   "to": "04-factory"
+  },
+  {
+   "from": "07-contoso",
+   "to": "01-mosaicstudio"
+  },
+  {
+   "from": "07-contoso",
+   "to": "02-react"
+  },
+  {
+   "from": "08-t3",
+   "to": "01-mosaicstudio"
+  },
+  {
+   "from": "09-conceptmotion",
+   "to": "01-mosaicstudio"
+  },
+  {
+   "from": "11-bridge",
+   "to": "03-foil-native"
+  },
+  {
+   "from": "11-bridge",
+   "to": "04-factory"
+  },
+  {
+   "from": "11-bridge",
+   "to": "05-rayfin"
+  },
+  {
+   "from": "11-bridge",
+   "to": "06-foil-studio"
+  },
+  {
+   "from": "16-powerops",
+   "to": "18-mongoku"
+  }
+ ]
+}
