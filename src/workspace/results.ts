@@ -5,6 +5,7 @@
 import {runtimeOrigin,validToken} from './runtime.ts';
 import {validateCell,validateNotebook,type Cell} from './notebook.ts';
 import {validateTable,type NbOutput,type TablePayload} from './jupyter.ts';
+import {validateArtifact,type Artifact} from '../framework/foundation/artifact.ts';
 
 export const NOTEBOOK_PREFIX='/api/notebook/v1';
 export const RESULT_FORMAT='datapass.cell-result';
@@ -23,6 +24,23 @@ export async function sourceSha256(sourceKey:string):Promise<string>{return sha2
 export type StoredTable={columns:string[];rows:TablePayload['rows'];total:number;truncated:boolean};
 export function storedTable(t:TablePayload):StoredTable{return {columns:t.columns.map(c=>c.name),rows:t.rows,total:t.total,truncated:t.truncated};}
 export function resultTable(doc:CellResultDoc):TablePayload|null{return doc.table?validateTable(doc.table):null;}
+/** An allowlisted-model (datapass.runtime/1) result is stored as ONE display_data output carrying the validated
+ * datapass.artifact v1 document, with the run it came from as metadata (a reference, not a re-execution recipe). */
+export const ARTIFACT_MIME='application/vnd.datapass.artifact+json';
+export type StoredRun={runId:string;model:string;modelVersion:string;inputHash:string;artifactSha256:string|null};
+export function artifactOutputs(artifact:Artifact,run:StoredRun):NbOutput[]{
+  return [{output_type:'display_data',data:{[ARTIFACT_MIME]:JSON.parse(JSON.stringify(artifact))},metadata:{datapass:{run}}}];
+}
+/** Read a stored model result back. The artifact is re-validated; anything else in the document is refused. */
+export function storedArtifact(doc:CellResultDoc):{artifact:Artifact;run:StoredRun|null}{
+  if(doc.cellKind!=='python'||doc.origin!=='datapass.runtime/1')throw new Error('The stored result is not an allowlisted-model result.');
+  const out=doc.outputs.length===1?doc.outputs[0]:null,data=out&&isObject(out.data)?out.data:null;
+  if(!out||out.output_type!=='display_data'||!data||!(ARTIFACT_MIME in data))throw new Error('The stored model result holds no datapass.artifact output.');
+  const artifact=validateArtifact(data[ARTIFACT_MIME]);
+  const meta=isObject(out.metadata)&&isObject(out.metadata.datapass)&&isObject(out.metadata.datapass.run)?out.metadata.datapass.run:null;
+  const run=meta&&typeof meta.runId==='string'&&/^run-[0-9a-f]{16}$/.test(meta.runId)?{runId:meta.runId,model:String(meta.model??'').slice(0,80),modelVersion:String(meta.modelVersion??'').slice(0,80),inputHash:typeof meta.inputHash==='string'&&SHA.test(meta.inputHash)?meta.inputHash:'',artifactSha256:typeof meta.artifactSha256==='string'&&SHA.test(meta.artifactSha256)?meta.artifactSha256:null}:null;
+  return {artifact,run};
+}
 export type CellResultDoc={format:typeof RESULT_FORMAT;version:1;cellId:string;cellKind:'sql'|'jupyter'|'python';sourceSha256:string;
   outputs:NbOutput[];table:StoredTable|null;executionCount:number|null;finishedAt:string;origin:'jupyter'|'duckdb'|'datapass.runtime/1'};
 export function validateResultDoc(input:unknown,expect:{cellId?:string}={}):CellResultDoc{

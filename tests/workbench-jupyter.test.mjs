@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 import {cellSourceKey,executionPlan,staleReason,validateNotebook} from '../src/workspace/notebook.ts';
 import {JupyterClient,JupyterError,OutputCollector,jupyterOrigin,publishTableCode,validateTable,validJupyterToken,TABLE_MIME} from '../src/workspace/jupyter.ts';
 import {renderOutputs} from '../src/workspace/outputs.ts';
-import {NotebookService,validateImport,validateResultDoc,storedTable,resultTable} from '../src/workspace/results.ts';
+import {NotebookService,validateImport,validateResultDoc,storedTable,resultTable,artifactOutputs,storedArtifact,ARTIFACT_MIME} from '../src/workspace/results.ts';
 import {validateWorkspace,blankWorkspace} from '../src/workspace/persist.ts';
 
 const MODULES=['notebook','explore','linked','sql','pipeline','stories','explain','board','architecture'];
@@ -165,6 +165,24 @@ test('published and stored tables are validated as a whole; mixed columns become
   assert.deepEqual(resultTable(validateResultDoc(doc)).columns,t.columns);
   assert.throws(()=>validateResultDoc(doc,{cellId:'other'}),/another cell/);
   assert.throws(()=>validateResultDoc({...doc,format:'x'}),/cell-result/);
+});
+
+test('JOURNEY-GAP-1: an allowlisted-model artifact round-trips through a stored cell result; anything else is refused',()=>{
+  const artifact={format:'datapass.artifact',version:1,id:'synthetic-run',title:'Synthetic run',provenance:{kind:'computed',source:'SYNTHETIC test model.',runId:'run-00000000000000a1'},
+    payload:{kind:'table',rowKey:'step',columns:[{id:'step',label:'Step',type:'number'},{id:'value',label:'Value',type:'number'}],rows:[{step:1,value:2},{step:2,value:4}]},representations:[{id:'table',title:'Rows',kind:'table'}]};
+  const run={runId:'run-00000000000000a1',model:'synthetic_scale',modelVersion:'1.0.0',inputHash:'c'.repeat(64),artifactSha256:'d'.repeat(64)};
+  const doc={format:'datapass.cell-result',version:1,cellId:'model',cellKind:'python',sourceSha256:'a'.repeat(64),outputs:artifactOutputs(artifact,run),table:null,executionCount:null,finishedAt:'2026-10-13T00:00:00Z',origin:'datapass.runtime/1'};
+  const back=JSON.parse(JSON.stringify(doc)); // what the store writes and reads back
+  const saved=storedArtifact(validateResultDoc(back,{cellId:'model'}));
+  assert.deepEqual(saved.run,run);
+  assert.deepEqual(saved.artifact.payload.rows,artifact.payload.rows);
+  assert.equal(saved.artifact.provenance.runId,'run-00000000000000a1');
+  assert.ok(Object.isFrozen(saved.artifact),'the reopened artifact is the validated, frozen form');
+  assert.throws(()=>storedArtifact(validateResultDoc({...back,cellKind:'jupyter',origin:'jupyter'})),/not an allowlisted-model result/);
+  assert.throws(()=>storedArtifact(validateResultDoc({...back,outputs:[]})),/no datapass.artifact output/);
+  assert.throws(()=>storedArtifact(validateResultDoc({...back,outputs:[{output_type:'display_data',data:{[ARTIFACT_MIME]:{...artifact,format:'other'}},metadata:{}}]})));
+  const unknownRun=storedArtifact(validateResultDoc({...back,outputs:[{...back.outputs[0],metadata:{datapass:{run:{runId:'../x'}}}}]}));
+  assert.equal(unknownRun.run,null,'a malformed run reference is dropped, the artifact still reopens');
 });
 
 test('notebook service client: token in a header, hash-checked results, import validated as a whole',async()=>{

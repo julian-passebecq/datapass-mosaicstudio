@@ -13,14 +13,14 @@ import {sqlResultArtifact} from '../workspace/sql-artifact';
 import {checkInputs,connectionFromHash,RuntimeClient,RuntimeError,runtimeOrigin,validToken,waitForRun,type RunRecord,type RuntimeModel} from '../workspace/runtime';
 import {importWorkspace,type RunRef} from '../workspace/persist';
 import {JupyterClient,JupyterError,tableObjects,type ExecuteOutcome,type NbOutput,type TablePayload} from '../workspace/jupyter';
-import {NotebookService,NotebookServiceError,RESULT_FORMAT,resultTable,sourceSha256,storedTable,type CellResultDoc,type ExportPayload,type ImportedNotebook,type LossItem,type SaveItem,type StoreManifest} from '../workspace/results';
+import {artifactOutputs,NotebookService,NotebookServiceError,RESULT_FORMAT,resultTable,sourceSha256,storedArtifact,storedTable,type CellResultDoc,type StoredRun,type ExportPayload,type ImportedNotebook,type LossItem,type SaveItem,type StoreManifest} from '../workspace/results';
 import {DEFAULT_JUPYTER_ORIGIN,InertBody,JupyterBar,LossReport,OutputsView,StorePanel,TableView,type JupyterState} from './NotebookJupyter';
 
 type Preview={columns:{name:string;type:string}[];rows:Record<string,unknown>[];total:number};
 type Previous={artifact?:Artifact;outputs?:NbOutput[];table?:TablePayload;finishedAt:string;label:string};
 type Status='running'|'done'|'error'|'cancelled'|'skipped'|'failed'|'interrupted'|'disconnected'|'unknown'|'imported'|'missing';
 type Result={status:Status;message?:string;artifact?:Artifact;artifactError?:string;preview?:Preview;record?:RunRecord;run?:CellRun;finishedAt?:string;previous?:Previous;
-  outputs?:NbOutput[];table?:TablePayload;executionCount?:number|null;stored?:{sha:string};missing?:{sha:string};jobNote?:string};
+  outputs?:NbOutput[];table?:TablePayload;executionCount?:number|null;stored?:{sha:string};missing?:{sha:string};jobNote?:string;storedRun?:StoredRun};
 type Runtime={status:'disconnected'|'connecting'|'connected'|'unavailable';origin:string;message?:string;models:RuntimeModel[];version?:string};
 type Service={nbformat:string;store:{name:string;maxBytes:number;usedBytes:number}|null}|{unavailable:string};
 const TOKEN_KEY='datapass.runtime.token';
@@ -317,6 +317,11 @@ export default function Notebook(){
     else if(cell.kind==='sql'&&r.preview){
       const names=r.preview.columns.map(c=>c.name);if(!names.length||new Set(names).size!==names.length)return null;
       doc={format:RESULT_FORMAT,version:1,cellId:cell.id,cellKind:'sql',sourceSha256:source,outputs:[],table:{columns:names,rows:r.preview.rows.map(row=>names.map(n=>jsonCell(row[n]))),total:r.preview.total,truncated:r.preview.total>r.preview.rows.length},executionCount:null,finishedAt:r.finishedAt,origin:'duckdb'};
+    }else if(cell.kind==='python'&&r.artifact&&(r.record||r.storedRun)){
+      // The validated artifact the runtime returned (JOURNEY-GAP-1): reopening it later needs neither the runtime nor a rerun.
+      const ref:StoredRun=r.record?{runId:r.record.runId,model:r.record.model,modelVersion:r.record.modelVersion,inputHash:r.record.inputHash,artifactSha256:r.record.artifactSha256}:r.storedRun!;
+      doc={format:RESULT_FORMAT,version:1,cellId:cell.id,cellKind:'python',sourceSha256:source,outputs:artifactOutputs(r.artifact,ref),table:null,executionCount:null,finishedAt:r.finishedAt,origin:'datapass.runtime/1'};
+      return {cellId:cell.id,cellKind:'python',sourceSha256:source,result:doc,run:{finishedAt:r.finishedAt,runtime:doc.origin,runId:ref.runId,model:ref.model,modelVersion:ref.modelVersion,inputHash:ref.inputHash,...(r.stored?{fromStore:r.stored.sha}:{})}};
     }else return null;
     return {cellId:cell.id,cellKind:doc.cellKind,sourceSha256:source,result:doc,run:{finishedAt:r.finishedAt,executionCount:r.executionCount??null,runtime:doc.origin,...(r.stored?{fromStore:r.stored.sha}:{})}};
   }
@@ -329,7 +334,7 @@ export default function Notebook(){
       const receipt=await s.save(exportPayload(notebook.cells),items);
       for(const r of receipt.results)patch(r.cellId,prev=>prev&&{...prev,stored:{sha:r.resultSha256}});
       setManifest(await s.manifest());
-      setNotice(`Saved ${receipt.results.length} result${receipt.results.length===1?'':'s'} and the notebook (${receipt.notebookSha256.slice(0,12)}) to the result store "${store.name}".${skipped.length?' Not saved (kept by run reference only): '+skipped.join(', ')+'.':''}`);
+      setNotice(`Saved ${receipt.results.length} result${receipt.results.length===1?'':'s'} and the notebook (${receipt.notebookSha256.slice(0,12)}) to the result store "${store.name}".${skipped.length?' Not saved: '+skipped.join(', ')+'.':''}`);
     }catch(error){setProblem((error instanceof NotebookServiceError&&error.status===507?'Result store full: ':'Saving to the result store failed: ')+(error as Error).message);}
     finally{setBusy(null);}
   }
@@ -343,10 +348,22 @@ export default function Notebook(){
       let note='';
       if(cell.kind==='jupyter'&&cell.outputTable&&table){try{await loadTable(cell.outputTable,table);}catch(error){note=' Its table was not loaded into SQL: '+(error as Error).message;}}
       if(cell.kind==='sql'&&table){preview={columns:table.columns.map(c=>({name:c.name,type:c.type})),rows:tableObjects(table),total:table.total};wrapped=wrapSql(cell,preview);}
+      let storedRun:StoredRun|undefined;
+      if(cell.kind==='python'){
+        const saved=storedArtifact(doc);wrapped={artifact:saved.artifact};storedRun=saved.run??undefined;
+        if(saved.run)note+=` From runtime run ${saved.run.runId} (${saved.run.model} ${saved.run.modelVersion}).`;
+        // Same rule as a fresh run: the output table is replaced only with the stored rows, never with an opened dataset.
+        if(cell.outputTable&&saved.artifact.payload.kind==='table'){
+          try{
+            if(Object.hasOwn(roomStore.getState().datapass.datasets,cell.outputTable))throw new Error(`"${cell.outputTable}" is an opened dataset; choose another name.`);
+            const db=roomStore.getState().db;await db.connector.loadObjects(saved.artifact.payload.rows as Record<string,unknown>[],cell.outputTable,{replace:true});await db.refreshTableSchemas();
+          }catch(error){note+=' Its table was not loaded into SQL: '+(error as Error).message;}
+        }
+      }
       if(attempts.current[cell.id]!==attempt)return false;
       const seq=++sequence.current;if(matches)sequences.current[cell.id]=seq;else delete sequences.current[cell.id];
       const run:CellRun={cellId:cell.id,sequence:seq,sourceKey:matches?cellSourceKey(cell):'stored:'+sha,dependencySequences:Object.fromEntries(cell.dependsOn.map(d=>[d,sequences.current[d]??-1]))};
-      patch(cell.id,()=>({status:'done',outputs:cell.kind==='jupyter'?doc.outputs:undefined,table:cell.kind==='jupyter'?table??undefined:undefined,preview,...wrapped,executionCount:doc.executionCount,finishedAt:doc.finishedAt,stored:{sha},run,
+      patch(cell.id,()=>({status:'done',outputs:cell.kind==='jupyter'?doc.outputs:undefined,table:cell.kind==='jupyter'?table??undefined:undefined,preview,...wrapped,storedRun,executionCount:doc.executionCount,finishedAt:doc.finishedAt,stored:{sha},run,
         message:`Saved result ${sha.slice(0,12)} reopened from the result store (computed ${new Date(doc.finishedAt).toLocaleString()}). Not recomputed; kernel variables are not restored.${note}`}));
       return true;
     }catch(error){
@@ -501,7 +518,7 @@ function CellCard({cell,index,notebook,result,stale,runtime,runs,restoredRunIds,
       <Button size="small" appearance="primary" icon={<Play size={14}/>} disabled={!ready} onClick={onRun}>Run again</Button>
     </div>}
     {result?.jobNote&&<p className="footnote job-note" data-testid="job-note">{result.jobNote}</p>}
-    {cell.kind==='python'&&runs.length>0&&<details className="cell-history"><summary>Run history ({runs.length})</summary><ul>{runs.slice(0,10).map(r=>{const shown=displayRunStatus(r,restoredRunIds);return <li key={r.runId} data-run-status={shown}><span className="mono">{r.runId}</span> {shown} &middot; {time(r.submittedAt)} &middot; inputs {r.inputHash.slice(0,10)} {r.status==='succeeded'&&<Button size="small" onClick={()=>onReopen(r)}>Load result</Button>}</li>;})}</ul><small>References only. Results live on the runtime, in memory, until it restarts.</small></details>}
+    {cell.kind==='python'&&runs.length>0&&<details className="cell-history"><summary>Run history ({runs.length})</summary><ul>{runs.slice(0,10).map(r=>{const shown=displayRunStatus(r,restoredRunIds);return <li key={r.runId} data-run-status={shown}><span className="mono">{r.runId}</span> {shown} &middot; {time(r.submittedAt)} &middot; inputs {r.inputHash.slice(0,10)} {r.status==='succeeded'&&<Button size="small" onClick={()=>onReopen(r)}>Load result</Button>}</li>;})}</ul><small>References only. Results live on the runtime, in memory, until it restarts; Save results to store keeps a copy that reopens without the runtime.</small></details>}
   </li>;
 }
 
@@ -537,6 +554,7 @@ function CellResult({cell,result,stale,onChart}:{cell:Cell;result?:Result;stale:
       {result.previous.outputs&&<OutputsView outputs={result.previous.outputs} label="Last valid output (stale)"/>}
       {result.previous.table&&<TableView table={result.previous.table}/>}
     </div>}
+    {result.status==='done'&&!record&&result.storedRun&&<p className="footnote" data-testid="stored-run">Saved from run <span className="mono">{result.storedRun.runId}</span> &middot; {result.storedRun.model} {result.storedRun.modelVersion}{result.storedRun.inputHash?<> &middot; inputs sha256 {result.storedRun.inputHash.slice(0,12)}</>:null} &middot; reopened from the result store, not recomputed</p>}
     {result.status==='done'&&record&&<p className="footnote">Run <span className="mono">{record.runId}</span> &middot; {record.model} {record.modelVersion} &middot; inputs sha256 {record.inputHash.slice(0,12)} &middot; finished {time(record.finishedAt)}</p>}
     {cell.kind==='jupyter'&&(result.status==='done'||result.status==='imported'||(failed&&result.status!=='missing'))&&result.outputs&&<>
       {typeof result.executionCount==='number'&&<p className="footnote mono">[{result.executionCount}]{result.stored?` · saved ${result.stored.sha.slice(0,12)}`:''}</p>}

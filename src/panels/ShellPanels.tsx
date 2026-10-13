@@ -4,7 +4,19 @@ import {Database,FileUp,Search,ChevronRight,Table2} from 'lucide-react';
 import {useRoomStore} from '../store';
 import {PanelBoundary,Loading} from './Common';
 const panels={notebook:lazy(()=>import('./Notebook')),explore:lazy(()=>import('./Explore')),linked:lazy(()=>import('./Linked')),sql:lazy(()=>import('./Sql')),pipeline:lazy(()=>import('./Pipeline')),stories:lazy(()=>import('./Stories')),explain:lazy(()=>import('./Concepts')),board:lazy(()=>import('./Board')),architecture:lazy(()=>import('./Architecture'))};
-export function WorkspacePanel(){const module=useRoomStore(s=>s.datapass.module),Panel=panels[module as keyof typeof panels]||panels.explore;return <div className="workspace-panel"><PanelBoundary key={module}><Suspense fallback={<Loading/>}><Panel/></Suspense></PanelBoundary></div>;}
+/** The Notebook holds session-only state that cannot be rebuilt from the saved workspace: cell results, runs in progress and
+ * the paired Jupyter kernel (whose variables live only in that kernel). Once opened it therefore stays mounted, hidden while
+ * another module is shown, so switching modules never resets results, cancels runs or shuts the kernel down (JOURNEY-BUG-1).
+ * Every other module is mounted only while it is shown. */
+export function WorkspacePanel(){
+  const module=useRoomStore(s=>s.datapass.module),onNotebook=module==='notebook',visited=useRef(false);
+  if(onNotebook)visited.current=true;
+  const Panel=panels[module as keyof typeof panels]||panels.explore,NotebookPanel=panels.notebook;
+  return <div className="workspace-panel">
+    {visited.current&&<div className="notebook-keepalive" data-testid="notebook-keepalive" hidden={!onNotebook} style={onNotebook?{display:'contents'}:undefined}><PanelBoundary key="notebook"><Suspense fallback={<Loading/>}><NotebookPanel/></Suspense></PanelBoundary></div>}
+    {!onNotebook&&<PanelBoundary key={module}><Suspense fallback={<Loading/>}><Panel/></Suspense></PanelBoundary>}
+  </div>;
+}
 export function CatalogPanel(){
   const tables=useRoomStore(s=>s.db.tables),assets=useRoomStore(s=>s.datapass.datasets),selected=useRoomStore(s=>s.datapass.selectedTable),select=useRoomStore(s=>s.datapass.selectTable),importFile=useRoomStore(s=>s.datapass.importFile),importing=useRoomStore(s=>s.datapass.importing),setError=useRoomStore(s=>s.datapass.setError);
   const picker=useRef<HTMLInputElement>(null),[search,setSearch]=useState('');
