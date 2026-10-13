@@ -55,6 +55,9 @@ export default function Notebook(){
   const client=useRef<RuntimeClient|null>(null),sequence=useRef(0),attempts=useRef<Record<string,number>>({}),controllers=useRef<Record<string,AbortController>>({}),activeRun=useRef<Record<string,string>>({}),cancelRequested=useRef<Record<string,boolean>>({}),sequences=useRef<Record<string,number>>({});
   // `preparing` marks a Jupyter cell between Run and the moment its execute request is sent (source hash and job record are
   // awaited first); an Interrupt pressed in that window cannot reach the kernel yet, so it is recorded in `cancelRequested`.
+  // `finishedRun` marks a Python cell whose run already reached a terminal state on the runtime while its artifact is still
+  // fetched and loaded; a Cancel pressed then cannot stop anything, so it is reported as arriving after the run finished.
+  const finishedRun=useRef<Record<string,{runId:string;status:string}>>({});
   const kernel=useRef<JupyterClient|null>(null),executions=useRef<Record<string,string>>({}),preparing=useRef<Record<string,boolean>>({}),svc=useRef<NotebookService|null>(null);
   const patch=useCallback((id:string,update:(r:Result|undefined)=>Result|undefined)=>setResults(all=>{const next=update(all[id]);const copy={...all};if(next)copy[id]=next;else delete copy[id];return copy;}),[]);
   const store=service&&'store' in service?service.store:null;
@@ -156,6 +159,8 @@ export default function Notebook(){
     if(cancelRequested.current[cell.id]){delete cancelRequested.current[cell.id];try{onUpdate(await c.cancel(submitted.runId));}catch{/* the poll below reports the real terminal state */}}
     const final=await waitForRun(c,submitted,{signal,onUpdate:r=>{onUpdate(r);}});
     recordRun(ref(final));delete activeRun.current[cell.id];
+    finishedRun.current[cell.id]={runId:final.runId,status:final.status};
+    try{
     if(final.status==='cancelled')return {status:'cancelled',record:final,message:`Run ${final.runId} was cancelled on the runtime. No result was produced.`};
     if(final.status==='failed')return {status:'error',record:final,message:`Run ${final.runId} failed on the runtime: ${final.error??'no detail'}`};
     const artifact=await c.artifact(final,signal);
@@ -167,6 +172,7 @@ export default function Notebook(){
       await db.refreshTableSchemas();
     }
     return {status:'done',record:final,artifact,finishedAt:final.finishedAt??new Date().toISOString()};
+    }finally{if(finishedRun.current[cell.id]?.runId===final.runId)delete finishedRun.current[cell.id];}
   }
   async function loadTable(name:string,table:TablePayload,signal?:AbortSignal):Promise<void>{
     if(Object.hasOwn(roomStore.getState().datapass.datasets,name))throw new Error(`Output table "${name}" is an opened dataset; choose another name.`);
@@ -256,6 +262,8 @@ export default function Notebook(){
       if(exec&&kernel.current){try{await kernel.current.interrupt(exec);patch(id,prev=>prev&&{...prev,message:'Interrupt requested; waiting for the kernel to stop.'});}catch(error){setProblem('The interrupt was not confirmed: '+(error as Error).message);}}
       return; // the kernel's reply reports the real outcome
     }
+    const finished=cell?.kind==='python'&&!runId?finishedRun.current[id]:undefined;
+    if(finished){setProblem(`Run ${finished.runId} had already finished (${finished.status}) when the cancellation arrived; its result is being loaded.`);return;}
     if(cell?.kind==='python'&&!runId){cancelRequested.current[id]=true;patch(id,prev=>prev&&{...prev,message:'Cancellation requested; waiting for the runtime to accept the run.'});return;}
     if(runId&&client.current){
       try{const record=await client.current.cancel(runId);patch(id,prev=>prev?{...prev,record}:prev);if(record.status!=='cancelled'&&record.status!=='queued'&&record.status!=='running')setProblem(`Run ${runId} had already finished (${record.status}) when the cancellation arrived.`);}
