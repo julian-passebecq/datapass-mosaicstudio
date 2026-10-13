@@ -2,7 +2,7 @@
  "format": "galaxy-finition.pass-snapshot",
  "version": 1,
  "pass": "Galaxy Finition 2026-10-13",
- "snapshotTime": "2026-10-14T00:02+02:00",
+ "snapshotTime": "2026-10-14T00:35+02:00",
  "provenance": "Owner-supplied status snapshot of the pass log, screened to public fields. Not live data.",
  "apps": [
   {
@@ -109,9 +109,9 @@
    "name": "ConceptMotion / VizForge",
    "repository": "conceptmotion-vizforge-demo",
    "wave": 3,
-   "version": "not recorded",
-   "status": "STARTED (no DONE in snapshot)",
-   "destination": "private GitHub draft release (planned)"
+   "version": "1.1.1",
+   "status": "PUBLISHED",
+   "destination": "private GitHub draft release"
   },
   {
    "key": "11-bridge",

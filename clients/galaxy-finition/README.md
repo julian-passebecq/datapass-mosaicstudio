@@ -4,7 +4,7 @@ A selected-client status board and architecture graph for the **Galaxy Finition 
 
 ## Data: owner-supplied snapshot, not live data
 
-`data/pass.json` is a **screened, owner-supplied status snapshot** of the pass log taken at **2026-10-14 00:02 (+02:00)**. It is not read from any live system and is not release evidence: statuses are written as in the pass log (DONE, PUBLISHED, RATIFIED, VERIFIED_NO_CHANGE, STAGED, STARTED, PAUSED_BY_OWNER); "STARTED (no DONE in snapshot)" means the log had no completion entry at snapshot time.
+`data/pass.json` is a **screened, owner-supplied status snapshot** of the pass log taken at **2026-10-14 00:35 (+02:00)** (last journal entry: ConceptMotion DONE, 1.1.1 published). It is not read from any live system and is not release evidence: statuses are written as in the pass log (DONE, PUBLISHED, RATIFIED, VERIFIED_NO_CHANGE, STAGED, STARTED, PAUSED_BY_OWNER); "STARTED (no DONE in snapshot)" means the log had no completion entry at snapshot time.
 
 Allowed fields only: app key, display name, repository name, version string, status and destination as a **generic category** (for example "private GitLab vault", "private GitLab package registry", "private GitHub draft release", "staged, no destination"). Paused apps carry only their key, name and `PAUSED_BY_OWNER`. No paths, links, hostnames, session ids, hashes, user names or receipts. The generator that read the private pass files is not committed; `pass.ts` re-screens the JSON and fails closed on unknown fields, dangling edges or private-looking values.
 
