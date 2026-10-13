@@ -99,10 +99,25 @@ No Studio value maps to `verified`: schema validation, content hashes and cited 
 
 No format version changed. `datapass.artifact/1` gained optional lineage fields (`provenance.producer`, `inputs`, `inputHash`, `dependsOn`, `representation.inputs`); every file valid in 0.9.0 stays valid. The saved browser workspace stays `datapass.workspace` v1 and is restored unchanged by 0.10.0. The upgrade and both rollback cases below were executed with `scripts/release-upgrade-check.mjs` (record in `qa/FR-07-release-packaging.md`).
 
+### 0.10.0 → 0.11.0
+
+No format version changed (checked in source against `ec8d1f3`): the browser workspace stays `datapass.workspace` v1, the result store stays `datapass.result-store` with `datapass.cell-result` v1 entries, and `datapass.artifact/1`, `datapass.concept-spec/1` and `datapass.preview/1` are unchanged. Three additive changes:
+
+- **Result-store manifest gains SQL source hashes** (M-SQLHASH, #53): `workspace.cells[].sourceSha256` for SQL cells, checked on reopen. A manifest written by 0.10.0 has none and opens unchanged; the first 0.11.0 save adds them.
+- **Python model results can be saved to the store** (#65): a `datapass.cell-result` v1 with `cellKind: "python"` and `origin: "datapass.runtime/1"`, its artifact in one `application/vnd.datapass.artifact+json` output. The 0.10.0 service already accepted this kind.
+- **Opt-in run history key** (F07, #56/#58): `datapass.run-history.<appId>.<resource>` (`datapass.run-history` v1) exists only for a client that sets `AppDefinition.runHistory`; refused snapshots are kept under `<key>.rejected`. Clients that do not opt in write nothing new.
+
+The 0.10.0 → newer → 0.10.0 → newer cycle over one result store was executed for SQL results with `scripts/release-rollback-check.mjs` (record in `qa/M-ROLLBACK.md`, run at `e7db854`, the M-SQLHASH runtime that 0.11.0 ships). It was not re-run for #57-#65: those change cancellation, locking and the notebook UI, not the stored SQL format.
+
 ## Rollback
 
-From 0.10.0 to 0.9.0: a workspace that holds only SQL and note cells is restored by 0.9.0. A workspace that holds a 0.10.0-only cell kind (`jupyter` or `inert`) is refused by 0.9.0 with a notice; its bytes are kept, unchanged, under the browser storage key `datapass.workspace.rejected` and a blank workspace opens. Nothing is deleted. Before rolling back, use **Export workspace** (or copy that key) and, after returning to 0.10.0, bring it back with **Import workspace**. The optional 0.10.0 result store (`py/service/app.py --results-dir <folder>`) is a folder outside Git that 0.9.0 does not read; it is left as it is.
+From 0.11.0 to 0.10.0:
 
-Between the 0.10.0 release and later builds that record SQL source hashes in the result store (M-SQLHASH, `e7db854`): the 0.10.0 runtime opens a newer manifest, reopens the same results without recomputing them, and its own save drops those hashes. The next save by a newer build adds them back. Result files are immutable and never removed by either side; each explicit save replaces only the previous notebook snapshot. Executed with `scripts/release-rollback-check.mjs` (record in `qa/M-ROLLBACK.md`).
+- **Result store.** 0.10.0 opens a 0.11.0 manifest (the extra SQL hash field is ignored), reopens SQL and Jupyter results by hash without recomputing them, and its own save drops the SQL hashes; the next 0.11.0 save adds them back (executed, `qa/M-ROLLBACK.md`). Result files are immutable and neither side deletes them; each explicit save replaces only the previous notebook snapshot.
+- **Saved Python model results** (#65) are not shown by 0.10.0: from the source of `ec8d1f3`, its workbench marks the cell as reopened without displaying the artifact, and its next save leaves that cell's result out of the notebook snapshot. The result file stays in the store folder. Not executed; save again from 0.11.0 after returning to it, or rerun the model cell.
+- **Browser workspace.** Unchanged format; 0.10.0 restores a workspace saved by 0.11.0.
+- **Run history** (opt-in clients only). 0.10.0 does not read `datapass.run-history.*` keys and leaves them in place; returning to 0.11.0 restores them.
+
+From 0.10.0 to 0.9.0: a workspace that holds only SQL and note cells is restored by 0.9.0. A workspace that holds a 0.10.0-only cell kind (`jupyter` or `inert`) is refused by 0.9.0 with a notice; its bytes are kept, unchanged, under the browser storage key `datapass.workspace.rejected` and a blank workspace opens. Nothing is deleted. Before rolling back, use **Export workspace** (or copy that key) and, after returning to 0.10.0, bring it back with **Import workspace**. The optional 0.10.0 result store (`py/service/app.py --results-dir <folder>`) is a folder outside Git that 0.9.0 does not read; it is left as it is.
 
 Go back to the previous pinned SHA (`git checkout --detach <previous-sha>`) or the previous verified release folder, run `npm ci` and `npm run bootstrap` again, and rebuild the client. Client folders are owned by the consumer and are never overwritten by an upgrade, so a rollback only changes the framework. Saved user states follow the format rules in the migration policy: a state saved by a newer client version may be refused by the older one.
