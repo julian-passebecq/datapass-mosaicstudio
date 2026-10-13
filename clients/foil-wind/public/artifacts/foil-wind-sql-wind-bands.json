@@ -1,0 +1,100 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "foil-wind-sql-wind-bands",
+  "title": "Mean power proxy by 1 m/s wind band (all runs)",
+  "provenance": {
+    "kind": "synthetic",
+    "source": "HAND-MADE PLACEHOLDER (not FOIL output, not Foil'O physics, invented numbers); SQL executed by sqlite3 at build time",
+    "producer": {
+      "kind": "script",
+      "name": "clients/foil-wind/py/build_data.py"
+    },
+    "inputs": [
+      {
+        "id": "dataSource",
+        "label": "Data source",
+        "value": "hand-made placeholder"
+      },
+      {
+        "id": "producer",
+        "label": "Producer",
+        "value": "hand-made placeholder"
+      },
+      {
+        "id": "runs",
+        "label": "Runs shown",
+        "value": 3
+      }
+    ],
+    "inputHash": "90c8548f944110ed878fed53aad4a9c0795a1d76dee6ce44ccdfa68f785b5f01"
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "row",
+    "columns": [
+      {
+        "id": "row",
+        "label": "#",
+        "type": "string"
+      },
+      {
+        "id": "wind_band_ms",
+        "label": "wind_band_ms",
+        "type": "number",
+        "nullable": false
+      },
+      {
+        "id": "samples",
+        "label": "samples",
+        "type": "number",
+        "nullable": false
+      },
+      {
+        "id": "mean_power_kw",
+        "label": "mean_power_kw",
+        "type": "number",
+        "nullable": false
+      }
+    ],
+    "rows": [
+      {
+        "row": "r001",
+        "wind_band_ms": 4,
+        "samples": 2,
+        "mean_power_kw": 0.45
+      },
+      {
+        "row": "r002",
+        "wind_band_ms": 5,
+        "samples": 5,
+        "mean_power_kw": 0.9
+      },
+      {
+        "row": "r003",
+        "wind_band_ms": 6,
+        "samples": 5,
+        "mean_power_kw": 1.32
+      },
+      {
+        "row": "r004",
+        "wind_band_ms": 7,
+        "samples": 3,
+        "mean_power_kw": 2.033
+      },
+      {
+        "row": "r005",
+        "wind_band_ms": 8,
+        "samples": 1,
+        "mean_power_kw": 2.5
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "Mean power proxy by 1 m/s wind band (all runs)",
+      "kind": "table"
+    }
+  ]
+}

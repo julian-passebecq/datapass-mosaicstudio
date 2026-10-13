@@ -1,0 +1,159 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "foil-wind-measurements-run-1",
+  "title": "run-1: placeholder-a (calm, one sample per point)",
+  "provenance": {
+    "kind": "synthetic",
+    "source": "HAND-MADE PLACEHOLDER (not FOIL output, not Foil'O physics, invented numbers)",
+    "runId": "placeholder-a",
+    "producer": {
+      "kind": "script",
+      "name": "clients/foil-wind/py/build_data.py"
+    },
+    "inputs": [
+      {
+        "id": "dataSource",
+        "label": "Data source",
+        "value": "hand-made placeholder"
+      },
+      {
+        "id": "producer",
+        "label": "Producer",
+        "value": "hand-made placeholder"
+      },
+      {
+        "id": "runs",
+        "label": "Runs shown",
+        "value": 3
+      }
+    ],
+    "inputHash": "90c8548f944110ed878fed53aad4a9c0795a1d76dee6ce44ccdfa68f785b5f01"
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "bucket",
+    "columns": [
+      {
+        "id": "bucket",
+        "label": "Bucket",
+        "type": "string"
+      },
+      {
+        "id": "tS",
+        "label": "Start",
+        "type": "number",
+        "unit": "s"
+      },
+      {
+        "id": "samples",
+        "label": "Samples",
+        "type": "number"
+      },
+      {
+        "id": "meanWindMs",
+        "label": "Mean wind",
+        "type": "number",
+        "unit": "m/s",
+        "nullable": true
+      },
+      {
+        "id": "missingWind",
+        "label": "Missing wind",
+        "type": "number"
+      },
+      {
+        "id": "meanPowerKw",
+        "label": "Mean power (proxy)",
+        "type": "number",
+        "unit": "kW"
+      },
+      {
+        "id": "faults",
+        "label": "Fault samples",
+        "type": "number"
+      }
+    ],
+    "rows": [
+      {
+        "bucket": "b000",
+        "tS": 0.0,
+        "samples": 1,
+        "meanWindMs": 4.5,
+        "missingWind": 0,
+        "meanPowerKw": 0.5,
+        "faults": 0
+      },
+      {
+        "bucket": "b001",
+        "tS": 10.0,
+        "samples": 1,
+        "meanWindMs": 5.0,
+        "missingWind": 0,
+        "meanPowerKw": 0.8,
+        "faults": 0
+      },
+      {
+        "bucket": "b002",
+        "tS": 20.0,
+        "samples": 1,
+        "meanWindMs": 5.5,
+        "missingWind": 0,
+        "meanPowerKw": 1.0,
+        "faults": 0
+      },
+      {
+        "bucket": "b003",
+        "tS": 30.0,
+        "samples": 1,
+        "meanWindMs": 5.0,
+        "missingWind": 0,
+        "meanPowerKw": 0.9,
+        "faults": 0
+      },
+      {
+        "bucket": "b004",
+        "tS": 40.0,
+        "samples": 1,
+        "meanWindMs": 4.0,
+        "missingWind": 0,
+        "meanPowerKw": 0.4,
+        "faults": 0
+      },
+      {
+        "bucket": "b005",
+        "tS": 50.0,
+        "samples": 1,
+        "meanWindMs": 5.5,
+        "missingWind": 0,
+        "meanPowerKw": 1.1,
+        "faults": 0
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "wind",
+      "title": "Wind (gaps stay gaps)",
+      "kind": "chart",
+      "chart": "line",
+      "x": "tS",
+      "y": "meanWindMs",
+      "unit": "m/s"
+    },
+    {
+      "id": "power",
+      "title": "Power proxy",
+      "kind": "chart",
+      "chart": "line",
+      "x": "tS",
+      "y": "meanPowerKw",
+      "unit": "kW"
+    },
+    {
+      "id": "table",
+      "title": "Buckets",
+      "kind": "table"
+    }
+  ]
+}

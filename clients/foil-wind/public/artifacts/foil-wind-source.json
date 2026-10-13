@@ -1,0 +1,43 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "foil-wind-source",
+  "title": "Data source and limits",
+  "provenance": {
+    "kind": "synthetic",
+    "source": "HAND-MADE PLACEHOLDER (not FOIL output, not Foil'O physics, invented numbers)",
+    "producer": {
+      "kind": "script",
+      "name": "clients/foil-wind/py/build_data.py"
+    },
+    "inputs": [
+      {
+        "id": "dataSource",
+        "label": "Data source",
+        "value": "hand-made placeholder"
+      },
+      {
+        "id": "producer",
+        "label": "Producer",
+        "value": "hand-made placeholder"
+      },
+      {
+        "id": "runs",
+        "label": "Runs shown",
+        "value": 3
+      }
+    ],
+    "inputHash": "90c8548f944110ed878fed53aad4a9c0795a1d76dee6ce44ccdfa68f785b5f01"
+  },
+  "payload": {
+    "kind": "text",
+    "text": "Data: HAND-MADE PLACEHOLDER (not FOIL output, not Foil'O physics, invented numbers).\n3 run(s), 18 measurement rows. Run slots (run-1 ... run-3) follow the sorted run ids.\nPython (clients/foil-wind/py/build_data.py) wrote every artifact of this page at build time: SQL through sqlite3, the comparison of every ordered pair of runs, and the time buckets. The browser only fetches and validates them."
+  },
+  "representations": [
+    {
+      "id": "text",
+      "title": "Data source",
+      "kind": "text"
+    }
+  ]
+}

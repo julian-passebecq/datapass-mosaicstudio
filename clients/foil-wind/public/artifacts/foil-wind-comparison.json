@@ -1,0 +1,609 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "foil-wind-comparison",
+  "title": "Run-vs-run comparison (Python, every ordered pair)",
+  "provenance": {
+    "kind": "synthetic",
+    "source": "HAND-MADE PLACEHOLDER (not FOIL output, not Foil'O physics, invented numbers)",
+    "producer": {
+      "kind": "script",
+      "name": "clients/foil-wind/py/build_data.py"
+    },
+    "inputs": [
+      {
+        "id": "dataSource",
+        "label": "Data source",
+        "value": "hand-made placeholder"
+      },
+      {
+        "id": "producer",
+        "label": "Producer",
+        "value": "hand-made placeholder"
+      },
+      {
+        "id": "runs",
+        "label": "Runs shown",
+        "value": 3
+      }
+    ],
+    "inputHash": "90c8548f944110ed878fed53aad4a9c0795a1d76dee6ce44ccdfa68f785b5f01",
+    "dependsOn": [
+      "foil-wind-runs"
+    ]
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "key",
+    "columns": [
+      {
+        "id": "key",
+        "label": "Key",
+        "type": "string"
+      },
+      {
+        "id": "runA",
+        "label": "Run A",
+        "type": "string"
+      },
+      {
+        "id": "runB",
+        "label": "Run B",
+        "type": "string"
+      },
+      {
+        "id": "metric",
+        "label": "Metric",
+        "type": "string"
+      },
+      {
+        "id": "label",
+        "label": "Label",
+        "type": "string"
+      },
+      {
+        "id": "unit",
+        "label": "Unit",
+        "type": "string"
+      },
+      {
+        "id": "valueA",
+        "label": "A",
+        "type": "number",
+        "nullable": true
+      },
+      {
+        "id": "valueB",
+        "label": "B",
+        "type": "number",
+        "nullable": true
+      },
+      {
+        "id": "delta",
+        "label": "B - A",
+        "type": "number",
+        "nullable": true
+      },
+      {
+        "id": "deltaPct",
+        "label": "B vs A",
+        "type": "number",
+        "unit": "%",
+        "nullable": true
+      }
+    ],
+    "rows": [
+      {
+        "key": "run-1.run-2.samples",
+        "runA": "run-1",
+        "runB": "run-2",
+        "metric": "samples",
+        "label": "Samples",
+        "unit": "rows",
+        "valueA": 6.0,
+        "valueB": 6.0,
+        "delta": 0.0,
+        "deltaPct": 0.0
+      },
+      {
+        "key": "run-1.run-2.missingWind",
+        "runA": "run-1",
+        "runB": "run-2",
+        "metric": "missingWind",
+        "label": "Missing wind samples",
+        "unit": "rows",
+        "valueA": 0.0,
+        "valueB": 0.0,
+        "delta": 0.0,
+        "deltaPct": null
+      },
+      {
+        "key": "run-1.run-2.meanWindMs",
+        "runA": "run-1",
+        "runB": "run-2",
+        "metric": "meanWindMs",
+        "label": "Mean wind",
+        "unit": "m/s",
+        "valueA": 4.916667,
+        "valueB": 7.0,
+        "delta": 2.083333,
+        "deltaPct": 42.37
+      },
+      {
+        "key": "run-1.run-2.maxWindMs",
+        "runA": "run-1",
+        "runB": "run-2",
+        "metric": "maxWindMs",
+        "label": "Max wind",
+        "unit": "m/s",
+        "valueA": 5.5,
+        "valueB": 8.0,
+        "delta": 2.5,
+        "deltaPct": 45.45
+      },
+      {
+        "key": "run-1.run-2.meanPowerKw",
+        "runA": "run-1",
+        "runB": "run-2",
+        "metric": "meanPowerKw",
+        "label": "Mean power (proxy)",
+        "unit": "kW",
+        "valueA": 0.783333,
+        "valueB": 1.916667,
+        "delta": 1.133333,
+        "deltaPct": 144.68
+      },
+      {
+        "key": "run-1.run-2.energyProxyKwh",
+        "runA": "run-1",
+        "runB": "run-2",
+        "metric": "energyProxyKwh",
+        "label": "Energy over run (proxy, not yield)",
+        "unit": "kWh",
+        "valueA": 0.013056,
+        "valueB": 0.031944,
+        "delta": 0.018889,
+        "deltaPct": 144.68
+      },
+      {
+        "key": "run-1.run-2.faultSharePct",
+        "runA": "run-1",
+        "runB": "run-2",
+        "metric": "faultSharePct",
+        "label": "Samples with injected fault",
+        "unit": "%",
+        "valueA": 0.0,
+        "valueB": 0.0,
+        "delta": 0.0,
+        "deltaPct": null
+      },
+      {
+        "key": "run-1.run-3.samples",
+        "runA": "run-1",
+        "runB": "run-3",
+        "metric": "samples",
+        "label": "Samples",
+        "unit": "rows",
+        "valueA": 6.0,
+        "valueB": 6.0,
+        "delta": 0.0,
+        "deltaPct": 0.0
+      },
+      {
+        "key": "run-1.run-3.missingWind",
+        "runA": "run-1",
+        "runB": "run-3",
+        "metric": "missingWind",
+        "label": "Missing wind samples",
+        "unit": "rows",
+        "valueA": 0.0,
+        "valueB": 2.0,
+        "delta": 2.0,
+        "deltaPct": null
+      },
+      {
+        "key": "run-1.run-3.meanWindMs",
+        "runA": "run-1",
+        "runB": "run-3",
+        "metric": "meanWindMs",
+        "label": "Mean wind",
+        "unit": "m/s",
+        "valueA": 4.916667,
+        "valueB": 5.875,
+        "delta": 0.958333,
+        "deltaPct": 19.49
+      },
+      {
+        "key": "run-1.run-3.maxWindMs",
+        "runA": "run-1",
+        "runB": "run-3",
+        "metric": "maxWindMs",
+        "label": "Max wind",
+        "unit": "m/s",
+        "valueA": 5.5,
+        "valueB": 6.5,
+        "delta": 1.0,
+        "deltaPct": 18.18
+      },
+      {
+        "key": "run-1.run-3.meanPowerKw",
+        "runA": "run-1",
+        "runB": "run-3",
+        "metric": "meanPowerKw",
+        "label": "Mean power (proxy)",
+        "unit": "kW",
+        "valueA": 0.783333,
+        "valueB": 1.083333,
+        "delta": 0.3,
+        "deltaPct": 38.3
+      },
+      {
+        "key": "run-1.run-3.energyProxyKwh",
+        "runA": "run-1",
+        "runB": "run-3",
+        "metric": "energyProxyKwh",
+        "label": "Energy over run (proxy, not yield)",
+        "unit": "kWh",
+        "valueA": 0.013056,
+        "valueB": 0.018056,
+        "delta": 0.005,
+        "deltaPct": 38.3
+      },
+      {
+        "key": "run-1.run-3.faultSharePct",
+        "runA": "run-1",
+        "runB": "run-3",
+        "metric": "faultSharePct",
+        "label": "Samples with injected fault",
+        "unit": "%",
+        "valueA": 0.0,
+        "valueB": 33.333333,
+        "delta": 33.333333,
+        "deltaPct": null
+      },
+      {
+        "key": "run-2.run-1.samples",
+        "runA": "run-2",
+        "runB": "run-1",
+        "metric": "samples",
+        "label": "Samples",
+        "unit": "rows",
+        "valueA": 6.0,
+        "valueB": 6.0,
+        "delta": 0.0,
+        "deltaPct": 0.0
+      },
+      {
+        "key": "run-2.run-1.missingWind",
+        "runA": "run-2",
+        "runB": "run-1",
+        "metric": "missingWind",
+        "label": "Missing wind samples",
+        "unit": "rows",
+        "valueA": 0.0,
+        "valueB": 0.0,
+        "delta": 0.0,
+        "deltaPct": null
+      },
+      {
+        "key": "run-2.run-1.meanWindMs",
+        "runA": "run-2",
+        "runB": "run-1",
+        "metric": "meanWindMs",
+        "label": "Mean wind",
+        "unit": "m/s",
+        "valueA": 7.0,
+        "valueB": 4.916667,
+        "delta": -2.083333,
+        "deltaPct": -29.76
+      },
+      {
+        "key": "run-2.run-1.maxWindMs",
+        "runA": "run-2",
+        "runB": "run-1",
+        "metric": "maxWindMs",
+        "label": "Max wind",
+        "unit": "m/s",
+        "valueA": 8.0,
+        "valueB": 5.5,
+        "delta": -2.5,
+        "deltaPct": -31.25
+      },
+      {
+        "key": "run-2.run-1.meanPowerKw",
+        "runA": "run-2",
+        "runB": "run-1",
+        "metric": "meanPowerKw",
+        "label": "Mean power (proxy)",
+        "unit": "kW",
+        "valueA": 1.916667,
+        "valueB": 0.783333,
+        "delta": -1.133333,
+        "deltaPct": -59.13
+      },
+      {
+        "key": "run-2.run-1.energyProxyKwh",
+        "runA": "run-2",
+        "runB": "run-1",
+        "metric": "energyProxyKwh",
+        "label": "Energy over run (proxy, not yield)",
+        "unit": "kWh",
+        "valueA": 0.031944,
+        "valueB": 0.013056,
+        "delta": -0.018889,
+        "deltaPct": -59.13
+      },
+      {
+        "key": "run-2.run-1.faultSharePct",
+        "runA": "run-2",
+        "runB": "run-1",
+        "metric": "faultSharePct",
+        "label": "Samples with injected fault",
+        "unit": "%",
+        "valueA": 0.0,
+        "valueB": 0.0,
+        "delta": 0.0,
+        "deltaPct": null
+      },
+      {
+        "key": "run-2.run-3.samples",
+        "runA": "run-2",
+        "runB": "run-3",
+        "metric": "samples",
+        "label": "Samples",
+        "unit": "rows",
+        "valueA": 6.0,
+        "valueB": 6.0,
+        "delta": 0.0,
+        "deltaPct": 0.0
+      },
+      {
+        "key": "run-2.run-3.missingWind",
+        "runA": "run-2",
+        "runB": "run-3",
+        "metric": "missingWind",
+        "label": "Missing wind samples",
+        "unit": "rows",
+        "valueA": 0.0,
+        "valueB": 2.0,
+        "delta": 2.0,
+        "deltaPct": null
+      },
+      {
+        "key": "run-2.run-3.meanWindMs",
+        "runA": "run-2",
+        "runB": "run-3",
+        "metric": "meanWindMs",
+        "label": "Mean wind",
+        "unit": "m/s",
+        "valueA": 7.0,
+        "valueB": 5.875,
+        "delta": -1.125,
+        "deltaPct": -16.07
+      },
+      {
+        "key": "run-2.run-3.maxWindMs",
+        "runA": "run-2",
+        "runB": "run-3",
+        "metric": "maxWindMs",
+        "label": "Max wind",
+        "unit": "m/s",
+        "valueA": 8.0,
+        "valueB": 6.5,
+        "delta": -1.5,
+        "deltaPct": -18.75
+      },
+      {
+        "key": "run-2.run-3.meanPowerKw",
+        "runA": "run-2",
+        "runB": "run-3",
+        "metric": "meanPowerKw",
+        "label": "Mean power (proxy)",
+        "unit": "kW",
+        "valueA": 1.916667,
+        "valueB": 1.083333,
+        "delta": -0.833333,
+        "deltaPct": -43.48
+      },
+      {
+        "key": "run-2.run-3.energyProxyKwh",
+        "runA": "run-2",
+        "runB": "run-3",
+        "metric": "energyProxyKwh",
+        "label": "Energy over run (proxy, not yield)",
+        "unit": "kWh",
+        "valueA": 0.031944,
+        "valueB": 0.018056,
+        "delta": -0.013889,
+        "deltaPct": -43.48
+      },
+      {
+        "key": "run-2.run-3.faultSharePct",
+        "runA": "run-2",
+        "runB": "run-3",
+        "metric": "faultSharePct",
+        "label": "Samples with injected fault",
+        "unit": "%",
+        "valueA": 0.0,
+        "valueB": 33.333333,
+        "delta": 33.333333,
+        "deltaPct": null
+      },
+      {
+        "key": "run-3.run-1.samples",
+        "runA": "run-3",
+        "runB": "run-1",
+        "metric": "samples",
+        "label": "Samples",
+        "unit": "rows",
+        "valueA": 6.0,
+        "valueB": 6.0,
+        "delta": 0.0,
+        "deltaPct": 0.0
+      },
+      {
+        "key": "run-3.run-1.missingWind",
+        "runA": "run-3",
+        "runB": "run-1",
+        "metric": "missingWind",
+        "label": "Missing wind samples",
+        "unit": "rows",
+        "valueA": 2.0,
+        "valueB": 0.0,
+        "delta": -2.0,
+        "deltaPct": -100.0
+      },
+      {
+        "key": "run-3.run-1.meanWindMs",
+        "runA": "run-3",
+        "runB": "run-1",
+        "metric": "meanWindMs",
+        "label": "Mean wind",
+        "unit": "m/s",
+        "valueA": 5.875,
+        "valueB": 4.916667,
+        "delta": -0.958333,
+        "deltaPct": -16.31
+      },
+      {
+        "key": "run-3.run-1.maxWindMs",
+        "runA": "run-3",
+        "runB": "run-1",
+        "metric": "maxWindMs",
+        "label": "Max wind",
+        "unit": "m/s",
+        "valueA": 6.5,
+        "valueB": 5.5,
+        "delta": -1.0,
+        "deltaPct": -15.38
+      },
+      {
+        "key": "run-3.run-1.meanPowerKw",
+        "runA": "run-3",
+        "runB": "run-1",
+        "metric": "meanPowerKw",
+        "label": "Mean power (proxy)",
+        "unit": "kW",
+        "valueA": 1.083333,
+        "valueB": 0.783333,
+        "delta": -0.3,
+        "deltaPct": -27.69
+      },
+      {
+        "key": "run-3.run-1.energyProxyKwh",
+        "runA": "run-3",
+        "runB": "run-1",
+        "metric": "energyProxyKwh",
+        "label": "Energy over run (proxy, not yield)",
+        "unit": "kWh",
+        "valueA": 0.018056,
+        "valueB": 0.013056,
+        "delta": -0.005,
+        "deltaPct": -27.69
+      },
+      {
+        "key": "run-3.run-1.faultSharePct",
+        "runA": "run-3",
+        "runB": "run-1",
+        "metric": "faultSharePct",
+        "label": "Samples with injected fault",
+        "unit": "%",
+        "valueA": 33.333333,
+        "valueB": 0.0,
+        "delta": -33.333333,
+        "deltaPct": -100.0
+      },
+      {
+        "key": "run-3.run-2.samples",
+        "runA": "run-3",
+        "runB": "run-2",
+        "metric": "samples",
+        "label": "Samples",
+        "unit": "rows",
+        "valueA": 6.0,
+        "valueB": 6.0,
+        "delta": 0.0,
+        "deltaPct": 0.0
+      },
+      {
+        "key": "run-3.run-2.missingWind",
+        "runA": "run-3",
+        "runB": "run-2",
+        "metric": "missingWind",
+        "label": "Missing wind samples",
+        "unit": "rows",
+        "valueA": 2.0,
+        "valueB": 0.0,
+        "delta": -2.0,
+        "deltaPct": -100.0
+      },
+      {
+        "key": "run-3.run-2.meanWindMs",
+        "runA": "run-3",
+        "runB": "run-2",
+        "metric": "meanWindMs",
+        "label": "Mean wind",
+        "unit": "m/s",
+        "valueA": 5.875,
+        "valueB": 7.0,
+        "delta": 1.125,
+        "deltaPct": 19.15
+      },
+      {
+        "key": "run-3.run-2.maxWindMs",
+        "runA": "run-3",
+        "runB": "run-2",
+        "metric": "maxWindMs",
+        "label": "Max wind",
+        "unit": "m/s",
+        "valueA": 6.5,
+        "valueB": 8.0,
+        "delta": 1.5,
+        "deltaPct": 23.08
+      },
+      {
+        "key": "run-3.run-2.meanPowerKw",
+        "runA": "run-3",
+        "runB": "run-2",
+        "metric": "meanPowerKw",
+        "label": "Mean power (proxy)",
+        "unit": "kW",
+        "valueA": 1.083333,
+        "valueB": 1.916667,
+        "delta": 0.833333,
+        "deltaPct": 76.92
+      },
+      {
+        "key": "run-3.run-2.energyProxyKwh",
+        "runA": "run-3",
+        "runB": "run-2",
+        "metric": "energyProxyKwh",
+        "label": "Energy over run (proxy, not yield)",
+        "unit": "kWh",
+        "valueA": 0.018056,
+        "valueB": 0.031944,
+        "delta": 0.013889,
+        "deltaPct": 76.92
+      },
+      {
+        "key": "run-3.run-2.faultSharePct",
+        "runA": "run-3",
+        "runB": "run-2",
+        "metric": "faultSharePct",
+        "label": "Samples with injected fault",
+        "unit": "%",
+        "valueA": 33.333333,
+        "valueB": 0.0,
+        "delta": -33.333333,
+        "deltaPct": -100.0
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "All pairs",
+      "kind": "table"
+    }
+  ]
+}

@@ -1,0 +1,111 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "foil-wind-sql-state-share",
+  "title": "Machine state share per run",
+  "provenance": {
+    "kind": "synthetic",
+    "source": "HAND-MADE PLACEHOLDER (not FOIL output, not Foil'O physics, invented numbers); SQL executed by sqlite3 at build time",
+    "producer": {
+      "kind": "script",
+      "name": "clients/foil-wind/py/build_data.py"
+    },
+    "inputs": [
+      {
+        "id": "dataSource",
+        "label": "Data source",
+        "value": "hand-made placeholder"
+      },
+      {
+        "id": "producer",
+        "label": "Producer",
+        "value": "hand-made placeholder"
+      },
+      {
+        "id": "runs",
+        "label": "Runs shown",
+        "value": 3
+      }
+    ],
+    "inputHash": "90c8548f944110ed878fed53aad4a9c0795a1d76dee6ce44ccdfa68f785b5f01"
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "row",
+    "columns": [
+      {
+        "id": "row",
+        "label": "#",
+        "type": "string"
+      },
+      {
+        "id": "slot",
+        "label": "slot",
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "id": "state",
+        "label": "state",
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "id": "samples",
+        "label": "samples",
+        "type": "number",
+        "nullable": false
+      },
+      {
+        "id": "share_pct",
+        "label": "share_pct",
+        "type": "number",
+        "nullable": false
+      }
+    ],
+    "rows": [
+      {
+        "row": "r001",
+        "slot": "run-1",
+        "state": "RUNNING",
+        "samples": 4,
+        "share_pct": 66.7
+      },
+      {
+        "row": "r002",
+        "slot": "run-1",
+        "state": "IDLE",
+        "samples": 2,
+        "share_pct": 33.3
+      },
+      {
+        "row": "r003",
+        "slot": "run-2",
+        "state": "RUNNING",
+        "samples": 6,
+        "share_pct": 100.0
+      },
+      {
+        "row": "r004",
+        "slot": "run-3",
+        "state": "RUNNING",
+        "samples": 5,
+        "share_pct": 83.3
+      },
+      {
+        "row": "r005",
+        "slot": "run-3",
+        "state": "IDLE",
+        "samples": 1,
+        "share_pct": 16.7
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "Machine state share per run",
+      "kind": "table"
+    }
+  ]
+}
