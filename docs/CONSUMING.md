@@ -71,6 +71,20 @@ The archive has no `.git` folder: builds then record `sourceCommit: null` in the
 | `datapass.artifact/1` | `src/framework/foundation/artifact.ts` (`validateArtifact`) | reject unknown fields; the JSON Schema `docs/contracts/artifact.schema.json` is the exact structure gate (lineage fields included); semantic rules (references, duplicate ids, self-reference, row typing) and the 1 MiB envelope are separate validator gates. `py/datapass_artifact.py` mirrors all three; `tests/fixtures/artifact-corpus` is decided identically by all three (`npm run test:artifact-corpus`) |
 | `datapass.preview/1` | `spec/preview/v1/preview.schema.json` | reject unknown fields; validate with `scripts/preview-validate.mjs --check-files` |
 
+### Provenance vocabulary for cross-product consumers
+
+Studio contracts have no `verified` / `inferred` terms. A consumer that uses that vocabulary maps Studio values as follows and keeps the original value next to its own:
+
+| Studio value | Meaning in Studio | Consumer term |
+|---|---|---|
+| artifact `provenance.kind: "synthetic"` | generated or illustrative reference data | neither: keep it labelled synthetic; never `verified` |
+| artifact `provenance.kind: "provided"` | data supplied by a user or client, passed through unchecked | `inferred` (Studio checked structure and hashes only, not content) |
+| artifact `provenance.kind: "computed"` | output of a run (`runId`, `inputHash`, `producer` declared by the producer) | `inferred` |
+| concept `provenance: "synthetic"` | explanatory diagram without sources | neither: keep it labelled synthetic |
+| concept `provenance: "documented"` | every node cites a source or evidence ref | `inferred` (the source is cited, not verified by Studio) |
+
+No Studio value maps to `verified`: schema validation, content hashes and cited evidence prove integrity and attribution, not correctness.
+
 ## Upgrade
 
 1. Read `docs/API_VERSION_MIGRATION_POLICY.md` and the release notes or commit log between your current SHA and the new one.

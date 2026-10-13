@@ -352,3 +352,98 @@ test('a static light client and the blank workbench start with no Python service
   expect(requests.filter(u=>!u.startsWith(PAGE+'/'))).toEqual([]);
   await context.close();
 });
+
+test('JOURNEY-BUG-1/GAP-1 switching modules keeps results, a running cell and the kernel; a model result reopens from the store without the runtime',async({browser},info)=>{
+  test.setTimeout(300000);
+  await startRuntime();await startJupyter();
+  let context=await browser.newContext();
+  let page=await open(context,link());
+  let submits=0;
+  const countSubmits=(p:Page)=>p.on('request',r=>{if(r.method()==='POST'&&/\/api\/runtime\/v1\/runs$/.test(r.url()))submits++;});
+  countSubmits(page);
+  await pairKernel(page);
+  await expect(page.getByTestId('jupyter-bar')).toHaveAttribute('data-status','connected',{timeout:60000});
+  // A kernel variable, an allowlisted-model result with an output table, and a cell still running when the module changes.
+  await page.getByRole('button',{name:'Add Python (Jupyter) cell'}).click();
+  const setter=page.getByTestId('cell').nth(0);
+  await setter.getByLabel(/^Python for/).fill('kept = 41\nprint("SYNTHETIC set", kept)');
+  await setter.getByRole('button',{name:/^Run/}).click();
+  await expect(setter).toHaveAttribute('data-status','done',{timeout:90000});
+  await page.getByRole('button',{name:'Add Python cell'}).click();
+  const model=page.getByTestId('cell').nth(1);
+  await model.getByLabel('Output table (optional)').fill('model_rows');
+  await model.getByRole('button',{name:/^Run/}).click();
+  await expect(model).toHaveAttribute('data-status','done',{timeout:60000});
+  const runId=(await model.locator('.cell-result .footnote .mono').first().textContent())!;
+  expect(runId).toMatch(/^run-[0-9a-f]{16}$/);
+  await page.getByRole('button',{name:'Add Python (Jupyter) cell'}).click();
+  const slow=page.getByTestId('cell').nth(2);
+  await slow.getByLabel(/^Python for/).fill('import time\nprint("slow started", flush=True)\nfor i in range(40):\n    time.sleep(0.1)\nprint("SYNTHETIC slow done")');
+  await slow.getByRole('button',{name:/^Run/}).click();
+  await expect(slow.getByLabel('Live kernel output')).toContainText('slow started',{timeout:30000});
+
+  // Leave the Notebook for another module and come back.
+  await page.getByRole('button',{name:'Data explorer',exact:true}).click();
+  await expect(page.getByTestId('notebook-keepalive')).toBeHidden();
+  await expect(page.getByRole('region',{name:'Notebook'})).toBeHidden();
+  await page.getByRole('button',{name:'Notebook',exact:true}).click();
+  await expect(page.getByTestId('jupyter-bar')).toHaveAttribute('data-status','connected');
+  await expect(setter).toHaveAttribute('data-status','done');
+  await expect(setter.getByTestId('cell-outputs')).toContainText('SYNTHETIC set 41');
+  await expect(model).toHaveAttribute('data-status','done');
+  await expect(model.locator('.cell-result .footnote .mono').first()).toHaveText(runId);
+  await expect(model.getByTestId('artifact')).toBeVisible();
+  await expect(slow).toHaveAttribute('data-status','done',{timeout:60000}); // not cancelled by the switch
+  await expect(slow.getByTestId('cell-outputs')).toContainText('SYNTHETIC slow done');
+  // The kernel was not shut down: its variable is still there.
+  await page.getByRole('button',{name:'Add Python (Jupyter) cell'}).click();
+  const reader=page.getByTestId('cell').nth(3);
+  await reader.getByLabel(/^Python for/).fill('print("SYNTHETIC kept", kept + 1)');
+  await reader.getByRole('button',{name:/^Run/}).click();
+  await expect(reader).toHaveAttribute('data-status','done',{timeout:60000});
+  await expect(reader.getByTestId('cell-outputs')).toContainText('SYNTHETIC kept 42');
+  expect(submits).toBe(1);
+
+  // GAP-1: the model result is saved to the store like SQL and Jupyter results.
+  await page.getByRole('button',{name:'Save results to store'}).click();
+  await expect(page.getByTestId('workspace-notice')).toContainText('Saved 4 results');
+  await expect(page.getByTestId('workspace-notice')).not.toContainText('Not saved');
+  const mSha=(await model.getAttribute('data-result-sha'))!;
+  expect(mSha).toMatch(/^[0-9a-f]{64}$/);
+  const bytes=await readFile(path.join(storeDir,'results',mSha+'.json'));
+  expect(sha(bytes)).toBe(mSha);
+  const doc=JSON.parse(bytes.toString('utf8'));
+  expect(doc).toMatchObject({format:'datapass.cell-result',cellKind:'python',origin:'datapass.runtime/1',table:null});
+  expect(doc.outputs[0].data['application/vnd.datapass.artifact+json']).toMatchObject({format:'datapass.artifact',version:1});
+  expect(doc.outputs[0].metadata.datapass.run.runId).toBe(runId);
+  await assertNoTokens(storeDir,[JTOKEN,rtoken]);
+
+  // Restart the service (its in-memory runs are gone) and the browser, with no kernel: the model result reopens, not recomputed.
+  await context.close();
+  await stopTree(jupyter,JORIGIN+'/api/status');jupyter=null;
+  await startRuntime();
+  submits=0;
+  context=await browser.newContext();
+  page=await open(context,link());
+  countSubmits(page);
+  await page.getByRole('button',{name:'Open from store'}).click();
+  await expect(page.getByTestId('cell')).toHaveCount(4);
+  const model2=page.getByTestId('cell').nth(1);
+  await expect(model2).toHaveAttribute('data-status','done');
+  await expect(model2).toHaveAttribute('data-result-sha',mSha);
+  await expect(model2.getByTestId('cell-message')).toContainText('Not recomputed');
+  await expect(model2.getByTestId('stored-run')).toContainText(runId);
+  await expect(model2.getByTestId('artifact')).toBeVisible();
+  await expect(model2.locator('.notice.stale')).toHaveCount(0);
+  // Its output table is back in DuckDB from the stored rows.
+  await page.getByRole('button',{name:'Add SQL cell'}).click();
+  const count=page.getByTestId('cell').nth(4);
+  await count.getByLabel(/^SQL for/).fill('SELECT count(*)::INTEGER AS n FROM model_rows');
+  await count.getByRole('button',{name:/^Run/}).click();
+  await expect(count).toHaveAttribute('data-status','done');
+  await expect(count.getByTestId('artifact')).toContainText('n');
+  expect(submits).toBe(0);
+  expect(sha(await readFile(path.join(storeDir,'results',mSha+'.json')))).toBe(mSha);
+  await page.screenshot({path:info.outputPath('journey-model-reopened.png'),fullPage:true});
+  await context.close();
+});
