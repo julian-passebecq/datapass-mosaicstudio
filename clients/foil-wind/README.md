@@ -25,7 +25,8 @@ Foil'O physics, model accuracy or validation is claimed.
 |---|---|---|
 | Adapter, time buckets (at most 240 per run) | Python, build time | `py/foil_export_adapter.py`, `py/build_data.py` |
 | SQL | Python `sqlite3` (standard library), build time, read-only connection | committed queries in `queries.json`; the page shows each query and its result table |
-| Run-vs-run comparison | Python, build time, every ordered pair of runs | artifact `foil-wind-comparison` |
+| Run-vs-run comparison | Python, build time, every ordered pair of runs | artifact `foil-wind-comparison`: `delta` = B - A, `deltaPct` relative to \|A\|, `direction` (B higher / B lower / No change) and `chartPct` (the percentage only for a real change) |
+| Comparison chart | viz renderer (pinned: the VizForge ranking adapter refuses negative bars) | signed horizontal bars of `chartPct`, coloured by `direction`; no rank column; no-change rows stay in the table only |
 | Compare task | browser, `SiteRuntime` task `compare` | explicit button, cancellable, stale after an input change; it fetches and validates the Python result for the chosen pair and computes nothing |
 
 Run slots `run-1` ... `run-8` follow the sorted run ids (at most 8 runs; the source note says when more were found).

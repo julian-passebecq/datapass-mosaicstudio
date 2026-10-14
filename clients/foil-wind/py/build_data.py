@@ -138,6 +138,18 @@ def r(value: float | None, digits: int = 4) -> float | None:
     return None if value is None else round(float(value), digits)
 
 
+# Sign of B - A, written as text so the page never derives it. The chart draws `chartPct`: the
+# percentage only for a real change (B higher or lower), so a no-change row (for example equal
+# sample counts) is not drawn as a zero-length bar; the table keeps every row and `deltaPct`.
+HIGHER, LOWER, SAME = "B higher", "B lower", "No change"
+
+
+def change_direction(delta: float | None) -> str | None:
+    if delta is None:
+        return None
+    return HIGHER if delta > 0 else LOWER if delta < 0 else SAME
+
+
 def build(data: dict[str, Any], out_dir: Path) -> list[dict[str, Any]]:
     check_tables(data)
     runs, by_run, notices = select_runs(data)
@@ -253,16 +265,20 @@ def build(data: dict[str, Any], out_dir: Path) -> list[dict[str, Any]]:
                 va, vb = sa[key], sb[key]
                 delta = None if va is None or vb is None else vb - va
                 pct = None if delta is None or va == 0 else 100.0 * delta / abs(va)
+                direction = change_direction(r(delta, 6))
                 comparison.append({"key": f"{a['slot']}.{b['slot']}.{key}", "runA": a["slot"], "runB": b["slot"], "metric": key, "label": metric_label, "unit": unit,
-                                   "valueA": r(va, 6), "valueB": r(vb, 6), "delta": r(delta, 6), "deltaPct": r(pct, 2)})
+                                   "valueA": r(va, 6), "valueB": r(vb, 6), "delta": r(delta, 6), "deltaPct": r(pct, 2), "direction": direction,
+                                   "chartPct": r(pct, 2) if direction in (HIGHER, LOWER) else None})
     if not comparison:
         comparison.append({"key": "none", "runA": "none", "runB": "none", "metric": "none", "label": "Only one run: nothing to compare", "unit": "",
-                           "valueA": None, "valueB": None, "delta": None, "deltaPct": None})
+                           "valueA": None, "valueB": None, "delta": None, "deltaPct": None, "direction": None, "chartPct": None})
     cmp_columns = [
         {"id": "key", "label": "Key", "type": "string"}, {"id": "runA", "label": "Run A", "type": "string"}, {"id": "runB", "label": "Run B", "type": "string"},
         {"id": "metric", "label": "Metric", "type": "string"}, {"id": "label", "label": "Label", "type": "string"}, {"id": "unit", "label": "Unit", "type": "string"},
         {"id": "valueA", "label": "A", "type": "number", "nullable": True}, {"id": "valueB", "label": "B", "type": "number", "nullable": True},
         {"id": "delta", "label": "B - A", "type": "number", "nullable": True}, {"id": "deltaPct", "label": "B vs A", "type": "number", "unit": "%", "nullable": True},
+        {"id": "direction", "label": "Direction", "type": "string", "nullable": True},
+        {"id": "chartPct", "label": "Charted change", "type": "number", "unit": "%", "nullable": True},
     ]
     emit(comparison, id=PREFIX + "comparison", title="Run-vs-run comparison (Python, every ordered pair)", source=label,
          row_key="key", columns=cmp_columns, depends_on=[PREFIX + "runs"], representations=[{"id": "table", "title": "All pairs", "kind": "table"}])

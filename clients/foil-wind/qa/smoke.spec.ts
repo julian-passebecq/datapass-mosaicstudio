@@ -55,6 +55,28 @@ for(const [name,viewport] of [['desktop',{width:1440,height:960}],['mobile',{wid
     await expect(page.getByTestId('task-compare')).toHaveText('ready');
     await noHorizontalScroll(page);
     if(shots)await page.screenshot({path:`${shots}/compare-${name}.png`,fullPage:true});
+    // Reversed pair: B lower than A on several metrics. The chart draws the signed bars (no fallback
+    // note, no rank or rank-change column) and the table leads with the direction and the signed %.
+    await page.getByLabel('Run A (reference)',{exact:true}).selectOption('run-2');
+    await page.getByLabel('Run B',{exact:true}).selectOption('run-1');
+    await page.getByRole('button',{name:'Compare the two runs'}).click();
+    await expect(page.getByTestId('task-compare')).toHaveText('ready');
+    const chart=page.getByTestId('chart-compare-chart');
+    await expect(chart).toBeVisible();
+    await expect(page.getByText(/nonnegative/)).toHaveCount(0);
+    expect(Number((await chart.getAttribute('data-domain-y'))!.split(':')[0])).toBeLessThan(0);
+    expect(Number(await chart.getAttribute('data-marks'))).toBeGreaterThan(0);
+    await expect(chart.locator('[data-mark=rank], [data-mark=delta]')).toHaveCount(0);
+    const head=page.locator('table thead th');
+    await expect(head.nth(1)).toContainText('Direction');
+    await expect(head.nth(2)).toContainText('B vs A');
+    // The signed % must be on screen without scrolling the table sideways, also at 390 px.
+    const signed=page.locator('table tbody tr',{hasText:'B lower'}).first().locator('td').nth(2);
+    await expect(signed).toContainText('-');
+    const box=(await signed.boundingBox())!;
+    expect(box.x+box.width).toBeLessThanOrEqual(viewport.width);
+    await noHorizontalScroll(page);
+    if(shots)await page.screenshot({path:`${shots}/compare-negative-${name}.png`,fullPage:true});
     expect(errors).toEqual([]);
   });
 }
