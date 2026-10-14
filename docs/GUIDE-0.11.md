@@ -11,9 +11,11 @@ Put the release folder anywhere that is not inside a Git working copy, for examp
 Verification is plain Node (no install). Unpack the archive, then run its verifier against the release folder:
 
 ```sh
-mkdir sdk && tar -xzf <release-folder>/datapass-mosaicstudio-sdk-0.11.0.tar.gz -C sdk --strip-components=1
+mkdir sdk && tar --force-local -xzf <release-folder>/datapass-mosaicstudio-sdk-0.11.0.tar.gz -C sdk --strip-components=1
 node sdk/scripts/sdk-verify.mjs <release-folder>
 ```
+
+`--force-local` makes GNU tar (Git Bash, Linux, macOS with gtar) treat a drive-letter path such as `D:/work/...` as a local file instead of a `host:path` remote archive. Windows' own `C:\Windows\System32	ar.exe` (bsdtar) does not know that option: in PowerShell or cmd run the same command without `--force-local`.
 
 It re-hashes the archive, every file inside it, the standalone viewer and the contract files, and exits 1 on any difference. Then check by hand in `sdk-release.json`: `sdkVersion` is `0.11.0`, `sourceCommit` is the full 40-character SHA you were given, `sourceTreeClean` is `true`, and `archive.sha256` equals the hash received through a separate channel.
 
