@@ -23,7 +23,7 @@ async function compareRuns({values,signal,report}:TaskContext):Promise<Rows>{
   const rows=artifact.payload.rows.filter(row=>row.runA===a&&row.runB===b);
   if(!rows.length)throw new Error(`${a} or ${b} is not in this build. Check the Runs page for the available slots.`);
   report(1);
-  return rows.map(row=>({metric:row.metric,label:row.label,unit:row.unit,valueA:row.valueA,valueB:row.valueB,delta:row.delta,deltaPct:row.deltaPct}));
+  return rows.map(row=>({metric:row.metric,label:row.label,unit:row.unit,valueA:row.valueA,valueB:row.valueB,delta:row.delta,deltaPct:row.deltaPct,direction:row.direction??null,chartPct:row.chartPct??null}));
 }
 
 const sqlBlocks:Block[]=queries.queries.flatMap(q=>[
@@ -41,9 +41,11 @@ export default defineApp({manifest:{format:'datapass.web-app',schemaVersion:1,id
     {id:'runA',label:'Run A (reference)',type:'select',role:'input',default:'run-1',options:slots},
     {id:'runB',label:'Run B',type:'select',role:'input',default:'run-2',options:slots},
   ],
-  datasets:[{id:'comparison',title:'Run B against run A',layer:'Result',description:'Rows of the Python-written comparison for the chosen pair. Deltas are B minus A; the percentage is relative to |A| and empty when A is zero.',source:'task',provenance:'synthetic',rowKey:'metric',
-    columns:[{id:'metric',label:'Metric',type:'string'},{id:'label',label:'Label',type:'string'},{id:'unit',label:'Unit',type:'string'},
-      {id:'valueA',label:'A',type:'number',nullable:true},{id:'valueB',label:'B',type:'number',nullable:true},{id:'delta',label:'B - A',type:'number',nullable:true},{id:'deltaPct',label:'B vs A',type:'number',unit:'%',nullable:true}],
+  datasets:[{id:'comparison',title:'Run B against run A',layer:'Result',description:'Rows of the Python-written comparison for the chosen pair. Deltas are B minus A; the percentage is relative to |A| and empty when A is zero. Direction is the sign of B minus A, written by Python. The charted change is the percentage only when B differs from A.',source:'task',provenance:'synthetic',rowKey:'metric',
+    // Sign first: on a phone the table scrolls sideways, so the direction and the signed percentage lead.
+    columns:[{id:'label',label:'Metric',type:'string'},{id:'direction',label:'Direction',type:'string',nullable:true},{id:'deltaPct',label:'B vs A',type:'number',unit:'%',nullable:true},
+      {id:'delta',label:'B - A',type:'number',nullable:true},{id:'valueA',label:'A',type:'number',nullable:true},{id:'valueB',label:'B',type:'number',nullable:true},{id:'unit',label:'Unit',type:'string'},
+      {id:'metric',label:'Key',type:'string'},{id:'chartPct',label:'Charted change',type:'number',unit:'%',nullable:true}],
     inputs:['runA','runB'],dependsOn:[]}],
   tasks:[{id:'compare',label:'Compare the two runs',output:'comparison',timeoutMs:15000}],
   pages:[
@@ -61,8 +63,8 @@ export default defineApp({manifest:{format:'datapass.web-app',schemaVersion:1,id
     ]},
     {id:'compare',title:'Comparison',description:'Run B against run A. Python computed every ordered pair at build time; the button fetches and validates the result for the chosen pair.',sections:[
       {id:'inputs',columns:2,blocks:[{id:'run-a',type:'input',field:'runA'},{id:'run-b',type:'input',field:'runB'}]},
-      {id:'task',columns:1,blocks:[{id:'compare-task',type:'task',task:'compare'},{id:'compare-note',type:'text',tone:'note',text:'Changing a run marks the result stale until you compare again. Differences between synthetic runs describe the generator inputs, not a machine.'}]},
-      {id:'result',columns:2,blocks:[{id:'compare-chart',type:'chart',dataset:'comparison',kind:'bar',x:'metric',y:'deltaPct',unit:'%',renderer:'viz',sort:'none'},{id:'compare-table',type:'table',dataset:'comparison'}]},
+      {id:'task',columns:1,blocks:[{id:'compare-task',type:'task',task:'compare'},{id:'compare-note',type:'text',tone:'note',text:'Changing a run marks the result stale until you compare again. Differences between synthetic runs describe the generator inputs, not a machine. The chart draws signed changes (bars left of zero: B lower than A); rows with no change or no percentage stay in the table only.'}]},
+      {id:'result',columns:2,blocks:[{id:'compare-chart',type:'chart',title:'B vs A, % of A (left of zero: B lower)',dataset:'comparison',kind:'bar',x:'metric',y:'chartPct',unit:'%',renderer:'viz',series:'direction',orientation:'horizontal',sort:'none'},{id:'compare-table',type:'table',dataset:'comparison'}]},
     ]},
   ]},
   bindings:{tasks:{compare:compareRuns}},

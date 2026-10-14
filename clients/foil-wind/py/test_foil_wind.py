@@ -116,8 +116,24 @@ class DataStepTest(unittest.TestCase):
             self.assertEqual((wind["valueA"], wind["valueB"], wind["delta"], wind["deltaPct"]), (3.0, 3.0, 0.0, 0.0))
             missing = next(r for r in rows if r["key"] == "run-1.run-2.missingWind")
             self.assertEqual((missing["delta"], missing["deltaPct"]), (1, None))
+            self.assertEqual((wind["direction"], wind["chartPct"]), ("No change", None))
+            self.assertEqual((missing["direction"], missing["chartPct"]), ("B higher", None))
             sql = next(a for a in written if a["id"] == "foil-wind-sql-per-run")["payload"]["rows"]
             self.assertEqual([r["missing_wind"] for r in sql], [0, 1])
+
+    def test_negative_delta_is_kept_signed(self):
+        # Hand-made pair where run B is lower than run A: the sign must survive to the artifact.
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            make_bundle(root / "in", "b1", "test-run-a", [8.0, 6.0])
+            make_bundle(root / "in", "b2", "test-run-b", [3.0, 3.0])
+            written = build_data.build(load_export(root / "in"), root / "out")
+            rows = next(a for a in written if a["id"] == "foil-wind-comparison")["payload"]["rows"]
+            wind = next(r for r in rows if r["key"] == "run-1.run-2.meanWindMs")
+            self.assertEqual((wind["valueA"], wind["valueB"], wind["delta"], wind["deltaPct"]), (7.0, 3.0, -4.0, -57.14))
+            self.assertEqual((wind["direction"], wind["chartPct"]), ("B lower", -57.14))
+            back = next(r for r in rows if r["key"] == "run-2.run-1.meanWindMs")
+            self.assertEqual((back["delta"], back["deltaPct"], back["direction"], back["chartPct"]), (4.0, 133.33, "B higher", 133.33))
 
     def test_cli_refuses_export_into_committed_folder(self):
         self.assertEqual(build_data.main(["--export", "anything"]), 2)
