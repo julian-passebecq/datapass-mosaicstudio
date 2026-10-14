@@ -109,7 +109,13 @@ No format version changed (checked in source against `ec8d1f3`): the browser wor
 
 The 0.10.0 → newer → 0.10.0 → newer cycle over one result store was executed for SQL results with `scripts/release-rollback-check.mjs` (record in `qa/M-ROLLBACK.md`, run at `e7db854`, the M-SQLHASH runtime that 0.11.0 ships). It was not re-run for #57-#65: those change cancellation, locking and the notebook UI, not the stored SQL format.
 
+### 0.11.0 → 0.11.1
+
+No format version changed and no SDK API changed: same `datapass.workspace` v1, `datapass.result-store` / `datapass.cell-result` v1, `datapass.artifact/1`, `datapass.concept-spec/1` and `datapass.preview/1` as 0.11.0. The only workbench change is the shipped `_headers` file (#73): its CSP `connect-src` now allows loopback http/ws, as `vite preview` already did. If you serve the workbench from a static host that applies `_headers`, replace the deployed folder with the 0.11.1 `dist/`; if you copied `_headers` into your own host configuration, update it from `scripts/workbench-headers.mjs`. Clients are rebuilt as usual (`npm ci`, `npm run bootstrap`, `build:client`); their own CSP (`scripts/client-csp.mjs`) is unchanged.
+
 ## Rollback
+
+From 0.11.1 to 0.11.0: nothing stored changes. The 0.11.0 workbench `_headers` blocks the loopback runtime and Jupyter on a static host that applies it (SQL, notes and saved results opened in the browser still work); serve it without `_headers` or with the 0.11.1 policy if you need the runtime.
 
 From 0.11.0 to 0.10.0:
 

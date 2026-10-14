@@ -1,5 +1,13 @@
 # Release notes
 
+## 0.11.1 (2026-10-14)
+
+A patch release so that a static host serving the packaged workbench can reach the visitor's own loopback runtime. Built from the merge of this release commit; it contains everything on main after 0.11.0 (#67-#73). No stored format version changed and no SDK API changed. Upgrade and rollback: [`CONSUMING.md`](CONSUMING.md#0110--0111). The short user guide [`GUIDE-0.11.md`](GUIDE-0.11.md) applies with `0.11.1` in the file names. Nothing is tagged, published or deployed.
+
+- **#73 Workbench `_headers` CSP allows the loopback runtime.** The shipped `public/_headers` had `connect-src 'self' blob:` while `vite preview` allowed loopback http/ws, so a static host applying `_headers` (Netlify, Cloudflare Pages) blocked the consented Python runtime and the paired Jupyter Server. Both now come from `scripts/workbench-headers.mjs`: `connect-src` adds `http://127.0.0.1:*`, `http://localhost:*`, `ws://127.0.0.1:*`, `ws://localhost:*`; no remote origin is allowed. The runtime stays gated by explicit consent, the per-start token, the Host check and the Origin allowlist. New check `npm run test:static-headers`. `GUIDE-0.11.md`: `tar --force-local` for drive-letter paths in Git Bash.
+- **#68 #69 #72 Reference clients.** New `clients/galaxy-finition` (status board and dependency graph) and `clients/foil-wind` (runs, measurements, SQL and run comparison on a synthetic `foil.export`; negative deltas drawn with a direction encoding). Client folders only; the framework and the workbench are unchanged by them.
+- **#67 #70 #71 Records.** 0.11.0 release receipt and vault delivery record; galaxy-finition data snapshot. No code change.
+
 ## 0.11.0 (2026-10-13)
 
 A new version because the app and runtime changed after the 0.10.0 SDK (#55-#65). No stored format version changed: `datapass.workspace` v1, `datapass.result-store` / `datapass.cell-result` v1, `datapass.artifact/1`, `datapass.concept-spec/1` and `datapass.preview/1` are as in 0.10.0. Upgrade and rollback: [`CONSUMING.md`](CONSUMING.md#0100--0110); short user guide: [`GUIDE-0.11.md`](GUIDE-0.11.md). Nothing is tagged, published or deployed.

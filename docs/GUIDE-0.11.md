@@ -1,5 +1,7 @@
 # DataPass MosaicStudio 0.11.0: short user guide
 
+For **0.11.1** the steps are the same: read `0.11.1` wherever a file name or `sdkVersion` below says `0.11.0`. What changed is in [`RELEASE_NOTES.md`](RELEASE_NOTES.md#0111-2026-10-14).
+
 Four things are handed over for a release, each identified by hashes: the **SDK release folder** (archive, `sdk-release.json`, standalone viewer), the **built workbench** folder, the **Python runtime** (`py/` of the release commit) and optionally built reference clients. Nothing here is published, tagged or deployed for you, and no license is granted (see [`CONSUMING.md`](CONSUMING.md)). All data in the examples is synthetic.
 
 Requirements: Node 22 or later with npm, Git and network access to GitHub for `npm run bootstrap` (pinned upstream engines), and a Python 3 venv only for the runtime. Use ports above 20000 for local servers if other tools already use 4173/5173/8765.
