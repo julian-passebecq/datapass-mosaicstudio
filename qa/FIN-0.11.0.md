@@ -2,7 +2,7 @@
 
 Finition pass of 2026-10-13, lane `01-mosaicstudio`. This receipt records a **local, private** release build of **0.11.0** from the exact commit **`0bc8c8c5b872b1d2a12ae8dcd054acc9e792b085`** (squash of #66, "release: DataPass MosaicStudio 0.11.0"). `git rev-parse HEAD` in the build worktree gave that commit and `git status` was clean; `sdk:pack` recorded `sourceTreeClean: true`. CI on that commit: [Studio web gate run 38458744785](https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38458744785) (push, success).
 
-Nothing was tagged, published, uploaded, pushed as a release or deployed. No licence decision was made. `private_delivery` is **STAGED**: the files sit in the owner's local release folder and have not been placed in any vault.
+Nothing was tagged, publicly published, pushed as a release or deployed. No licence decision was made. `private_delivery` is **DELIVERED** (update of 2026-10-14): under the owner's private-publication grant (2026-10-13 21:10, this pass only) the six release files were uploaded unchanged to a private GitLab vault under the new version path `0.11.0-0bc8c8c`; see [Private delivery](#private-delivery). The build itself (sections below) was done before that upload.
 
 Everything below used synthetic data only (the in-repo fixtures `tests/fixtures/sample.csv`, `tests/fixtures/interop/contoso-shape.synthetic.artifact.json`, `react-shape.synthetic.concept.json`, and the `wind-reference` allowlisted model).
 
@@ -17,9 +17,26 @@ Local release folder (owner machine, not committed): `<releases>/datapass-mosaic
 | `concept-viewer.html` | 974,386 | `caf2a1269cadc9ccafe403471d1d1eee6201f5849f9ac1e89503610d21ea1a0e` | committed `dist-standalone/concept-viewer.html`, byte-identical to the copy `sdk:pack` hashed |
 | `datapass-mosaicstudio-workbench-0.11.0.zip` | 20,612,885 | `98df8537d96aee9fe26b75f7d14a64af09b64a4cfebe85749550df576d452072` | `npm run build` `dist/`: 112 files, 90,690,806 bytes, tree sha256 `a48342ab9472871a…`; deterministic zip (sorted paths, 1980-01-01, mode 0644, deflate 9), rebuilt to identical bytes |
 | `release-manifest.json` | 20,011 | `bef9ce37468ece3634c5320101d887c682ad2cc73d97dae50601da8ed195ad52` | `node scripts/release-manifest.mjs` on the clean tree: workbench tree `a48342ab9472871a…`, concept-viewer tree `624816a4458ed04c…`, SDK 3 files 1,710,253 bytes tree `6da45fe9b26c0915…` |
-| `SHA256SUMS` | 472 | — | covers the five files above |
+| `SHA256SUMS` | 472 | `f0d258c645e5aefa86efe96cdc21a3b16060ad82726f77e4474e4d46ca304b37` | covers the five files above |
 
 The repository has no zip script; the workbench zip was made with Python `zipfile` by a small script kept in the local evidence folder.
+
+## Private delivery
+
+Added 2026-10-14. Destination: private GitLab vault (owner grant 2026-10-13 21:10, this pass). Version path label `0.11.0-0bc8c8c`, a new immutable path; the earlier `0.10.0-e7db854` path is untouched. The lane staged the files; the lead uploaded them (registry file timestamps 2026-10-13T21:11Z, after the grant). Vault location and URLs are deliberately not recorded in this public repository.
+
+| File uploaded | Bytes | sha256 |
+|---|---:|---|
+| `datapass-mosaicstudio-sdk-0.11.0.tar.gz` | 678,205 | `dc2c374ebac661b0fc27aab701f063fb3c8b403df12fc6de28a220bb1d89405d` |
+| `datapass-mosaicstudio-workbench-0.11.0.zip` | 20,612,885 | `98df8537d96aee9fe26b75f7d14a64af09b64a4cfebe85749550df576d452072` |
+| `concept-viewer.html` | 974,386 | `caf2a1269cadc9ccafe403471d1d1eee6201f5849f9ac1e89503610d21ea1a0e` |
+| `sdk-release.json` | 57,662 | `645e477fc0ac4bc8b37b384d371df1fda759b5adbfa88d00542e26bde7f29bfe` |
+| `release-manifest.json` | 20,011 | `bef9ce37468ece3634c5320101d887c682ad2cc73d97dae50601da8ed195ad52` |
+| `SHA256SUMS` | 472 | `f0d258c645e5aefa86efe96cdc21a3b16060ad82726f77e4474e4d46ca304b37` |
+
+- Remote hash verified: **yes**. The registry's own sha256 for all six files equals the local release; an authenticated re-download of all six gave the same `SHA256SUMS` hash and `sha256sum -c SHA256SUMS` 5 of 5 OK (lead at upload; repeated independently on 2026-10-14).
+- Anonymous access refused: **yes**. An unauthenticated download request was answered HTTP 401 (lead at upload; repeated on 2026-10-14).
+- No tag, public publication, Marketplace or deployment. The licence gate is unchanged.
 
 ## Pins
 
@@ -47,10 +64,10 @@ Contracts (file sha256 at `0bc8c8c`; the first three are the ones `sdk-release.j
 |---|---|---|
 | FIN-01 Contract closure | **PASS** | Audit of `4623b04`: nine modules `status:'implemented'` (`src/core/host.ts`), nineteen `Block` kinds (`src/framework/types.ts`) matching `docs/PRODUCT_INVENTORY_0.9.md`; engines unchanged (VizForge, ConceptMotion, React Flow, Three.js, SQLRooms/Mosaic, D3). `tests/contracts.test.mjs` passes. #65 and #66 touched only the notebook, result store and docs. |
 | FIN-02 Usable authoring | **PASS** | JOURNEY-01 on `4623b04` found JOURNEY-BUG-1 (leaving the Notebook reset results and shut the kernel) and JOURNEY-GAP-1 (allowlisted-model results not in the result store). Both fixed in #65 (`5090bd0`, CI web pass) with a new browser test; JOURNEY-01 then passed on the installed 0.11.0 build. |
-| FIN-03 Interop | **PASS** (local scope) | `contracts:check`, `test:artifact-corpus` (115 files), `py/test_datapass_artifact.py` 14/14, preview fixture valid. TS and Python validators agree on provenance and dependsOn checks. `docs/CONSUMING.md` now maps Studio provenance terms to verified/inferred (nothing maps to verified). E2E-01 reused at its SHA; E2E-05 NOT_EXECUTED and E2E-06 BLOCKED as before (need the Contoso pipeline / React trace and a T3 agent). |
+| FIN-03 Interop | **PASS** (local scope) | `contracts:check`, `test:artifact-corpus` (115 files), `py/test_datapass_artifact.py` 14/14, preview fixture valid. TS and Python validators agree on provenance and dependsOn checks. `docs/CONSUMING.md` now maps Studio provenance terms to verified/inferred (nothing maps to verified). E2E-01 reused at its SHA; E2E-05 PARTIAL (see [E2E-05](#e2e-05-evidence-from-other-lanes)) and E2E-06 BLOCKED (needs a T3 agent). |
 | FIN-04 Old work | **PASS — nothing to integrate** | See below. |
 | FIN-05 Final distribution | **PASS** | A new immutable 0.11.0 version was built from `0bc8c8c` (contains #65) rather than claiming equivalence with the earlier SDK archive. SDK archive + manifest, standalone viewer and workbench zip installable outside a checkout (JOURNEY-01/02). |
-| FIN-06 Delivery | **PASS (local) / STAGED** | New client from the SDK package (JOURNEY-02), workbench and cross-app import/export (JOURNEY-01). Vault upload not done: needs the owner's grant. Licence and public publication remain a separate owner gate. |
+| FIN-06 Delivery | **PASS (local and private vault)** | New client from the SDK package (JOURNEY-02), workbench and cross-app import/export (JOURNEY-01). Delivered to the private vault under the owner's grant, remote hashes verified, anonymous access refused ([Private delivery](#private-delivery)). Licence and public publication remain a separate owner gate. |
 | JOURNEY-01 | **PASS** | Installed workbench zip, see below. 1 passed, 4.1 min. |
 | JOURNEY-02 | **PASS** | SDK archive in a fresh folder outside any git work tree, see below. |
 
@@ -116,10 +133,21 @@ Compared read-only against `origin/main` `4623b04`; **nothing integrated**.
 5. Observed in the JOURNEY-01 cross-app screenshot (step 13), not asserted by the journey: the "Declared lineage" evidence table on the `?artifact=1` page renders in a very narrow column, so its cells wrap character by character. The data is correct; the layout is not. Not fixed in this pass.
 6. The 8 reference clients were not rebuilt; no cross-OS reproducibility check; no Edge or Positron run; the cancel/interrupt and module-switch probes were not repeated on the installed build (they are covered by the browser test added in #65).
 7. Repo test suites were not rerun locally for the release build; CI on `0bc8c8c` passed.
-8. E2E-05 NOT_EXECUTED, E2E-06 BLOCKED (other lanes).
-9. Nothing committed to the release folder, nothing pushed as a release, tagged, published or deployed; no licence decision.
+8. E2E-05 PARTIAL (below), E2E-06 BLOCKED (needs an authenticated native agent in T3).
+9. Nothing committed to the release folder, nothing pushed as a release, tagged, publicly published or deployed; no licence decision. The only upload is the private vault delivery above.
+
+## E2E-05 evidence from other lanes
+
+Updated 2026-10-14. Verdict: **PARTIAL** (was NOT_EXECUTED). E2E-05 needs the Contoso dbt/DuckLake pipeline, the React field trace and MosaicStudio consuming the result ([RELEASE_0.10](../docs/RELEASE_0.10.md)). Receipts found, read-only:
+
+- Contoso `handoff/evidence/e2e-05-2026-10-11.json`: the journey ran end to end on Contoso `6b8185e` (synthetic seed 42, dbt Silver/Gold, DuckLake snapshot 44, department mapping with a 0-cent total match, artifact and concept export) and MosaicStudio `b3f194d` (0.10.0) consumed the export in Contoso CI run 38148268178 (strict/TS structural, semantic and concept gates PASS). The React `70b86fd` explanation of the Revenue KPI grounded only 7 of 14 steps.
+- Contoso `handoff/evidence/e2e-05-react-leg-2026-10-13.json` and React `docs/reports/v22/OUTCOME-2.2.3.json`: the React field trace is 14/14 grounded (7 VERIFIED, 7 INFERRED) on Contoso `8a429c3` and `9d99330` with React `49d51a1` and the 2.2.3 packed CLI. Trace leg only; Mosaic is not part of that run.
+- React `OUTCOME-2.2.3.json` FIN-05: the React Concept Map export opens in the standalone MosaicStudio viewer (0 warnings) and passes `concept-validate --strict` at MosaicStudio `8b22d9c` and `73630a2`. That is React's export, not the Contoso Gold export.
+
+Still missing: one run at exact SHAs where the Contoso Gold export is consumed by MosaicStudio 0.11.0 (`0bc8c8c` or later) and the React trace on that same Contoso SHA is 14/14. The end-to-end run used MosaicStudio 0.10.0 and a 7/14 trace, so the journey is not PASS.
+
 
 ## Owner gates
 
 - Licence decision and any public publication of the SDK or sites (NOT_AUTHORIZED today).
-- Grant to upload this fileset to the private vault (`private_delivery` stays STAGED until then).
+- Private vault upload: granted 2026-10-13 21:10 for this pass and used for `0.11.0-0bc8c8c` (see [Private delivery](#private-delivery)).
