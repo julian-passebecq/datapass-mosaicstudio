@@ -1,3 +1,5 @@
+> **Newest (2026-10-14):** MosaicStudio **0.11.1** built from `3575e6b` (contains the `_headers` CSP fix #73) and delivered to the private vault under `0.11.1-3575e6b`: receipt [`qa/REL-0.11.1.md`](../../qa/REL-0.11.1.md), outcome [`release-0.11.1-2026-10-14/OUTCOME.json`](release-0.11.1-2026-10-14/OUTCOME.json). 0.11.0 record: [`qa/FIN-0.11.0.md`](../../qa/FIN-0.11.0.md), [`finition-2026-10-13/OUTCOME.json`](finition-2026-10-13/OUTCOME.json). Next: E2E-05 joint run against >= 0.11.1; licence stays an owner gate.
+
 > **Newer:** the 0.10.0 full-release resume point (2026-10-10) is [`full-release-2026-10-10/RESUME.md`](full-release-2026-10-10/RESUME.md); this file is the 0.9.0 record, kept unchanged below.
 
 # Resume: 01-mosaicstudio (MosaicStudio 0.9.0)
