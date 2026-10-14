@@ -1,6 +1,6 @@
 {
   "app_key": "01-mosaicstudio",
-  "state": "LOCAL_RELEASE_BUILT_AND_QUALIFIED",
+  "state": "RELEASE_BUILT_QUALIFIED_AND_DELIVERED_PRIVATE",
   "implementation": "COMPLETE",
   "implementation_note": "FIN-02 bugs found on 4623b04 fixed in #65 (5090bd0); 0.11.0 release commit #66 (0bc8c8c). No new engine, no repo split.",
   "mandatory_ci": "PASS",
@@ -10,18 +10,39 @@
   ],
   "installed_journey": "PASS",
   "installed_journey_note": "JOURNEY-01 on the installed workbench zip (1 passed, 4.1 min) and JOURNEY-02 from the SDK archive in a fresh folder outside any git work tree. See qa/FIN-0.11.0.md.",
-  "private_delivery": "STAGED",
-  "private_delivery_note": "Release files are in the owner's local release folder only; no vault upload, tag, publication or deployment.",
+  "private_delivery": "DELIVERED",
+  "private_delivery_note": "The six release files were uploaded unchanged to the private vault under a new immutable version path; no tag, public publication or deployment. The lane staged the files; the lead uploaded them under the owner's grant.",
+  "private_delivery_receipt": {
+    "destination": "private GitLab vault (owner grant 2026-10-13 21:10, this pass)",
+    "version_path": "0.11.0-0bc8c8c",
+    "previous_version_untouched": "0.10.0-e7db854",
+    "uploaded_utc": "2026-10-13T21:11Z (registry file timestamps; the grant was given at 21:10 local time, 19:10Z)",
+    "files": [
+      {"name": "datapass-mosaicstudio-sdk-0.11.0.tar.gz", "bytes": 678205, "sha256": "dc2c374ebac661b0fc27aab701f063fb3c8b403df12fc6de28a220bb1d89405d"},
+      {"name": "datapass-mosaicstudio-workbench-0.11.0.zip", "bytes": 20612885, "sha256": "98df8537d96aee9fe26b75f7d14a64af09b64a4cfebe85749550df576d452072"},
+      {"name": "concept-viewer.html", "bytes": 974386, "sha256": "caf2a1269cadc9ccafe403471d1d1eee6201f5849f9ac1e89503610d21ea1a0e"},
+      {"name": "sdk-release.json", "bytes": 57662, "sha256": "645e477fc0ac4bc8b37b384d371df1fda759b5adbfa88d00542e26bde7f29bfe"},
+      {"name": "release-manifest.json", "bytes": 20011, "sha256": "bef9ce37468ece3634c5320101d887c682ad2cc73d97dae50601da8ed195ad52"},
+      {"name": "SHA256SUMS", "bytes": 472, "sha256": "f0d258c645e5aefa86efe96cdc21a3b16060ad82726f77e4474e4d46ca304b37"}
+    ],
+    "remote_hash_verified": true,
+    "remote_hash_evidence": "Registry-side sha256 of all six files equals the local release; an authenticated re-download of all six gave the same SHA256SUMS hash and sha256sum -c 5/5 OK (lead check at upload, repeated independently on 2026-10-14).",
+    "anonymous_access_refused": true,
+    "anonymous_access_evidence": "Unauthenticated download request answered HTTP 401 (lead at upload; repeated on 2026-10-14).",
+    "urls_recorded": false,
+    "urls_note": "Public repository: vault location and URLs are deliberately not recorded here."
+  },
   "owner_gates": [
     {"gate": "licence/public publication", "state": "NOT_AUTHORIZED", "note": "No licence exists; public SDK or site publication waits for the owner's licence decision."},
-    {"gate": "vault upload grant", "state": "NOT_GRANTED", "note": "private_delivery stays STAGED until the owner grants upload of this fileset."}
+    {"gate": "vault upload grant", "state": "GRANTED", "note": "Owner grant for private publication, 2026-10-13 21:10, valid for this pass only; used for 0.11.0-0bc8c8c (new path, nothing overwritten)."}
   ],
   "canonical_source_sha": "0bc8c8c5b872b1d2a12ae8dcd054acc9e792b085",
   "package_source_sha": "0bc8c8c5b872b1d2a12ae8dcd054acc9e792b085",
   "package_version": "0.11.0",
   "package_sha256": "dc2c374ebac661b0fc27aab701f063fb3c8b403df12fc6de28a220bb1d89405d",
   "package_url": null,
-  "download_sha256": null,
+  "package_url_note": "Delivered to a private vault; URL deliberately not recorded in this public repository.",
+  "download_sha256": "dc2c374ebac661b0fc27aab701f063fb3c8b403df12fc6de28a220bb1d89405d",
   "distribution": [
     {"name": "datapass-mosaicstudio-sdk-0.11.0.tar.gz", "bytes": 678205, "sha256": "dc2c374ebac661b0fc27aab701f063fb3c8b403df12fc6de28a220bb1d89405d", "archive_files": 339},
     {"name": "sdk-release.json", "bytes": 57662, "sha256": "645e477fc0ac4bc8b37b384d371df1fda759b5adbfa88d00542e26bde7f29bfe", "sourceTreeClean": true},
@@ -42,7 +63,13 @@
     {"id": "JOURNEY-01", "result": "PASS", "evidence": "qa/FIN-0.11.0.md#journey-01--installed-workbench; qa/FIN-0.11.0/journey01-reopened-from-store.png", "exports_validated": 3},
     {"id": "JOURNEY-02", "result": "PASS", "evidence": "qa/FIN-0.11.0.md#journey-02--new-client-from-the-sdk-package; qa/FIN-0.11.0/journey02-new-client-*.png"},
     {"id": "E2E-01", "result": "PASS", "reused": "handoff/01-mosaicstudio/full-release-2026-10-10/receipts/E2E-01.json (b3f194d)"},
-    {"id": "E2E-05", "result": "NOT_EXECUTED", "needs": "Contoso dbt/DuckLake pipeline and React field trace"},
+    {"id": "E2E-05", "result": "PARTIAL", "previous_result": "NOT_EXECUTED",
+     "evidence_partial": [
+       "contoso-data-studio handoff/evidence/e2e-05-2026-10-11.json: journey executed end to end on Contoso 6b8185e (synthetic seed 42, dbt Silver/Gold, DuckLake snapshot 44, mapping 0-cent match, artifact and concept export) and consumed by MosaicStudio b3f194d (0.10.0) in Contoso CI run 38148268178 (structural strict/TS, semantic and concept gates PASS); React 70b86fd explanation of the Revenue KPI grounded only 7 of 14 steps.",
+       "contoso-data-studio handoff/evidence/e2e-05-react-leg-2026-10-13.json and datapass-react docs/reports/v22/OUTCOME-2.2.3.json: React field trace 14/14 grounded (7 VERIFIED, 7 INFERRED) on Contoso 8a429c3 and 9d99330 with React 49d51a1 / the 2.2.3 packed CLI; trace leg only, no Mosaic consumption in that run.",
+       "datapass-react OUTCOME-2.2.3.json fin05_journey: the React Concept Map export opens in the standalone MosaicStudio viewer (ok, 0 warnings) and passes concept-validate --strict at mosaicstudio 8b22d9c and 73630a2; this is the React export, not the Contoso Gold export."
+     ],
+     "missing": "No single receipt runs Contoso Gold -> application -> full 14/14 React explanation with Mosaic consuming the export at one exact SHA set; the end-to-end run used Mosaic 0.10.0 (b3f194d) and a 7/14 trace, and nothing shows Mosaic 0.11.0 (0bc8c8c) consuming the Contoso export."},
     {"id": "E2E-06", "result": "BLOCKED", "needs": "authenticated native agent in T3"}
   ],
   "preserved_feature_ids": [],
@@ -52,11 +79,10 @@
     {"key": "01-mosaicstudio/FIN-03", "result": "PASS", "scope": "local", "evidence": "contracts:check, artifact corpus, Python validator 14/14, preview fixture; provenance verified/inferred mapping in docs/CONSUMING.md"},
     {"key": "01-mosaicstudio/FIN-04", "result": "PASS", "decision": "NOTHING_TO_INTEGRATE", "evidence": "#45 superseded by main; Fabric Bricks and viz-n1 stay draft"},
     {"key": "01-mosaicstudio/FIN-05", "result": "PASS", "evidence": "new immutable 0.11.0 built from 0bc8c8c, installable outside a checkout"},
-    {"key": "01-mosaicstudio/FIN-06", "result": "PASS", "scope": "local delivery", "evidence": "JOURNEY-02 new client from the SDK package; JOURNEY-01 cross-app import/export", "note": "vault upload STAGED pending grant"}
+    {"key": "01-mosaicstudio/FIN-06", "result": "PASS", "scope": "local delivery and private vault delivery", "evidence": "JOURNEY-02 new client from the SDK package; JOURNEY-01 cross-app import/export; private_delivery_receipt (six files, remote hash verified, anonymous access refused)"}
   ],
   "remaining_requirements": [
-    {"key": "01-mosaicstudio/FIN-06", "part": "private vault upload", "state": "STAGED", "needs": "owner's vault upload grant"},
-    {"key": "01-mosaicstudio/E2E-05", "state": "NOT_EXECUTED", "needs": "other lanes (Contoso pipeline, React trace)"},
+    {"key": "01-mosaicstudio/E2E-05", "state": "PARTIAL", "needs": "one run at exact SHAs: Contoso Gold pipeline -> export consumed by MosaicStudio 0.11.0 (0bc8c8c or later) -> React field trace 14/14 on the same Contoso SHA"},
     {"key": "01-mosaicstudio/E2E-06", "state": "BLOCKED", "needs": "T3 agent session"}
   ],
   "omissions": [
@@ -66,7 +92,7 @@
     "npm 11 skipped esbuild's postinstall script; builds still succeeded.",
     "Declared-lineage table on the ?artifact=1 page renders in a very narrow column (seen in the JOURNEY-01 cross-app screenshot); data correct, layout not.",
     "Reference clients not rebuilt; no cross-OS reproducibility, Edge or Positron run; cancel/interrupt probes not repeated on the installed build.",
-    "No tag, publication, upload or deployment; no licence decision."
+    "No tag, public publication or deployment; no licence decision. The only upload is the private vault delivery recorded in private_delivery_receipt."
   ],
-  "next_action": "Owner: grant (or refuse) the private vault upload and decide the licence. Agent: small follow-ups for the _headers loopback CSP, the GUIDE tar note and the lineage table layout."
+  "next_action": "Owner: decide the licence. Agent: small follow-ups for the _headers loopback CSP, the GUIDE tar note and the lineage table layout; E2E-05 needs one joint run with the Contoso and React lanes against MosaicStudio 0.11.0."
 }
