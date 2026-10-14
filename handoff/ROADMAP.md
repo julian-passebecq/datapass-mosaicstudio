@@ -1,5 +1,8 @@
 # DataPass MosaicStudio roadmap
 
+## Plans (candidates, not approved)
+- 2026-10-14 · Tech-lead product plan V1 existing / V2 / V3 / V4 / R&D, proposals evaluated against the code, Anatomy evaluation: [`docs/roadmap/tech-lead-2026-10-14/PLAN.md`](../docs/roadmap/tech-lead-2026-10-14/PLAN.md). Every item not built is CANDIDATE.
+
 ## Idées de Julian (2026-10-06)
 - 2026-10-06 · Concept visuals like the Architecture Atlas (natural icons, layered planes, a shared lake below, apps at different heights) are the direction for architecture, app and cloud diagrams. Target: 0.9.
 - 2026-10-06 · Fabric Bricks (LEGO-style client) stays a DRAFT with no further investment ("ça fait plus pro sans lego"). `clients/fabric-bricks/README.md` and its portfolio catalog entry are marked draft. Target: none (frozen).
