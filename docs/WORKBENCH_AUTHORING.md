@@ -100,7 +100,7 @@ Both need the local service (`py/service/app.py`) with `requirements-jupyter.txt
 
 ## Security headers
 
-`npm run preview` serves the workbench with a CSP whose `connect-src` allows `'self'`, `blob:`, loopback http (`http://127.0.0.1:*`, `http://localhost:*`) and loopback websockets (`ws://127.0.0.1:*`, `ws://localhost:*`, for a paired Jupyter kernel), so it can reach a runtime you consent to. Selected client builds keep `connect-src 'self'`.
+`npm run preview` serves the workbench with a CSP whose `connect-src` allows `'self'`, `blob:`, loopback http (`http://127.0.0.1:*`, `http://localhost:*`) and loopback websockets (`ws://127.0.0.1:*`, `ws://localhost:*`, for a paired Jupyter kernel), so it can reach a runtime you consent to. The built workbench ships the same headers in `dist/_headers` for static hosts that apply that file (Netlify, Cloudflare Pages); both come from `scripts/workbench-headers.mjs` and `tests/workbench-headers.test.mjs` keeps them identical. Loopback is allowed on purpose: the runtime connection is gated by the explicit consent, the per-start token and the service's Host check and Origin allowlist, not by CSP, and no remote origin is allowed. Selected client builds keep `connect-src 'self'`.
 
 ## Tests
 

@@ -38,6 +38,7 @@
     "test:python-bridge": "node scripts/smoke-python-bridge.mjs",
     "service:python": "python py/service/app.py",
     "test:python-service": "node scripts/smoke-python-service.mjs",
+    "test:static-headers": "node scripts/smoke-static-headers.mjs",
     "test:artifact-watch": "node scripts/smoke-artifact-watch.mjs",
     "test:artifact-lineage": "node scripts/smoke-artifact-lineage.mjs",
     "test:coding-lab": "node --experimental-strip-types scripts/smoke-coding-lab.mjs",

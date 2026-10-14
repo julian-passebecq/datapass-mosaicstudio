@@ -30,6 +30,7 @@ import http from 'node:http';
 import os from 'node:os';
 import path from 'node:path';
 import {chromium} from '@playwright/test';
+import {WORKBENCH_HEADERS} from './workbench-headers.mjs';
 
 const args=process.argv.slice(2),opt={'old-dist':null,'old-service':null,'new-dist':null,'new-service':null,python:'python',port:24190,rport:24799,out:null};
 for(let i=0;i<args.length;i++){const k=args[i].replace(/^--/,'');if(!(k in opt)||args[i+1]===undefined){console.error('Usage: see the header of scripts/release-rollback-check.mjs');process.exit(2);}opt[k]=args[++i];}
@@ -37,7 +38,6 @@ for(const k of ['old-dist','old-service','new-dist','new-service'])if(!opt[k])th
 opt.port=Number(opt.port);opt.rport=Number(opt.rport);
 if(!(opt.port>20000&&opt.rport>20000))throw new Error('Use ports above 20000');
 const ORIGIN=`http://127.0.0.1:${opt.port}`,RORIGIN=`http://127.0.0.1:${opt.rport}`;
-const CSP="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' blob: http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'";
 const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript','.mjs':'text/javascript','.css':'text/css','.json':'application/json','.wasm':'application/wasm','.svg':'image/svg+xml','.png':'image/png','.woff2':'font/woff2','.md':'text/plain; charset=utf-8','.parquet':'application/octet-stream','.csv':'text/csv'};
 const out=path.resolve(opt.out??path.join(os.tmpdir(),'mosaic-rollback-check'));await mkdir(out,{recursive:true});
 const sha=b=>createHash('sha256').update(b).digest('hex');
@@ -57,7 +57,7 @@ async function serve(dist){
     const url=new URL(req.url,ORIGIN);let rel=decodeURIComponent(url.pathname);if(rel.endsWith('/'))rel+='index.html';
     const file=path.resolve(root,'.'+rel);
     if(!file.startsWith(root+path.sep)||!existsSync(file)||!statSync(file).isFile()){res.writeHead(404);res.end();return;}
-    res.writeHead(200,{'Content-Type':MIME[path.extname(file)]??'application/octet-stream','Content-Security-Policy':CSP,'X-Content-Type-Options':'nosniff','Referrer-Policy':'no-referrer','Cache-Control':'no-store'});
+    res.writeHead(200,{'Content-Type':MIME[path.extname(file)]??'application/octet-stream',...WORKBENCH_HEADERS,'Cache-Control':'no-store'});
     createReadStream(file).pipe(res);
   });
   await new Promise((ok,ko)=>{web.once('error',ko);web.listen(opt.port,'127.0.0.1',ok);});
