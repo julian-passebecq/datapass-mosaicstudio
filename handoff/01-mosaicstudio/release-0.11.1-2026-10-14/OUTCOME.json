@@ -1,0 +1,70 @@
+{
+  "app_key": "01-mosaicstudio",
+  "state": "RELEASE_BUILT_AND_DELIVERED_PRIVATE",
+  "package_version": "0.11.1",
+  "reason": "Package the workbench _headers CSP fix (#73, f42c8a9) so a static host applying _headers reaches the loopback runtime (FIN-0.11.0 omission 2).",
+  "canonical_source_sha": "3575e6b048a6cf4ff19ce7746d2dacef648e28bf",
+  "package_source_sha": "3575e6b048a6cf4ff19ce7746d2dacef648e28bf",
+  "contains": ["f42c8a9 (#73)", "#68", "#69", "#72", "#74 docs", "#75 release commit"],
+  "mandatory_ci": "PASS",
+  "mandatory_ci_evidence": [
+    {"sha": "3575e6b048a6cf4ff19ce7746d2dacef648e28bf", "workflow": "Studio web gate", "event": "push", "conclusion": "success", "url": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38644459332"},
+    {"pr": 75, "head": "0246b1fe94640b7a1663741138fde94c87e0c138", "tree": "8b7e7136fccce8a6b2a6f66e9ec2d373c0203f01", "check": "web", "conclusion": "success", "url": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38643006070"}
+  ],
+  "delta_vs_0_11_0": {
+    "src_py_spec_contracts_changed": false,
+    "workbench_files_changed": ["_headers"],
+    "concept_viewer": "header comment only (version, source commit, build date)",
+    "sdk_files_added": ["scripts/workbench-headers.mjs", "scripts/workbench-headers.d.mts", "scripts/smoke-static-headers.mjs", "docs/roadmap/tech-lead-2026-10-14/* (5)"],
+    "sdk_files_removed": []
+  },
+  "distribution": [
+    {"name": "datapass-mosaicstudio-sdk-0.11.1.tar.gz", "bytes": 703932, "sha256": "b7384939c8bab9c26580ceac4d141ddbdc98764ca797c53676456661b7f32a67", "archive_files": 347},
+    {"name": "datapass-mosaicstudio-workbench-0.11.1.zip", "bytes": 20618296, "sha256": "652677cedb5ea383773a2221ce0b361f102c9edb7e12ae0527cc5ada8bc6ecf0", "dist_files": 112, "dist_bytes": 90690878, "deterministic_rebuild_identical": true},
+    {"name": "concept-viewer.html", "bytes": 974386, "sha256": "62b451fd3e98a5303b88cca407be1eeff6f05c1c78eb166188df6bff0ac7670c"},
+    {"name": "sdk-release.json", "bytes": 59066, "sha256": "03e0ced2602774c501161ab7f5de60e77b61fbb7da956dd82708f6c51b7c3480", "sourceTreeClean": true},
+    {"name": "release-manifest.json", "bytes": 20011, "sha256": "e8c60c3320b82f019e8853dc01ab4b143009e06d492607ea8413d9221a808b36"},
+    {"name": "SHA256SUMS", "bytes": 472, "sha256": "3548a06e606aca427343974aa38b81c8228b4390e1b7c7cc179fc54888b7cc54", "check": "5/5 OK"}
+  ],
+  "package_sha256": "b7384939c8bab9c26580ceac4d141ddbdc98764ca797c53676456661b7f32a67",
+  "download_sha256": "b7384939c8bab9c26580ceac4d141ddbdc98764ca797c53676456661b7f32a67",
+  "tests_affected": [
+    {"id": "static-headers-installed", "command": "node scripts/smoke-static-headers.mjs --dist <unzipped release zip> --port 24331 --rport 24831", "result": "PASS", "status": "VERIFIED", "evidence": "served CSP == shipped _headers; runtime connected through consent; loopback ws not CSP-blocked; non-loopback fetch blocked by connect-src"},
+    {"id": "static-headers-0.11.0-control", "result": "FAIL_AS_EXPECTED", "status": "VERIFIED", "evidence": "0.11.0 zip serves connect-src 'self' blob:; runtime never connects"},
+    {"id": "unit workbench-headers + sdk-release + release-0.10", "result": "17/17 PASS", "status": "VERIFIED"},
+    {"id": "contracts:check", "result": "PASS", "status": "VERIFIED"},
+    {"id": "sdk:verify (local and re-download)", "result": "PASS", "status": "VERIFIED"},
+    {"id": "license-inventory --check", "result": "PASS", "status": "VERIFIED"}
+  ],
+  "reused_not_rerun": [
+    {"id": "JOURNEY-01", "result": "PASS", "at": "0bc8c8c", "reuse_basis": "workbench files byte-identical except _headers; src/py unchanged", "with_headers_applied": "INFERRED (connect path verified by static-headers; full journey with Jupyter pairing not re-run)"},
+    {"id": "JOURNEY-02", "result": "PASS", "at": "0bc8c8c", "reuse_basis": "SDK framework sources unchanged; added files are the header module, its smoke and roadmap docs"},
+    {"id": "FIN-01..FIN-04", "at": "0bc8c8c", "see": "qa/FIN-0.11.0.md"}
+  ],
+  "private_delivery": "DELIVERED",
+  "private_delivery_receipt": {
+    "destination": "existing private GitLab vault (generic package datapass-mosaicstudio-sdk), pre-granted new immutable path (owner rules V5.7, 2026-10-13)",
+    "version_path": "0.11.1-3575e6b",
+    "previous_versions_untouched": ["0.10.0-e7db854 (1 file)", "0.11.0-0bc8c8c (6 files)"],
+    "pre_upload_absent": "every file of the version path answered 404 before upload",
+    "confidentiality_scan": "PASS (465 files; benign upstream hits only)",
+    "uploaded_utc": "2026-10-14T22:24Z",
+    "remote_hash_verified": true,
+    "remote_hash_evidence": "registry file_sha256 of all six files equals the local release; authenticated re-download into a fresh folder: sha256sum -c 5/5 OK, SHA256SUMS 3548a06e..., sdk:verify PASS",
+    "anonymous_access_refused": true,
+    "anonymous_access_evidence": "package file requests without credentials: HTTP 401; project API: HTTP 404",
+    "urls_recorded": false,
+    "urls_note": "Public repository: vault location and URLs are deliberately not recorded here."
+  },
+  "omissions": [
+    "Full JOURNEY-01 with _headers applied (Jupyter pairing, store save/reopen) not re-run; the connect path is verified by test:static-headers.",
+    "Standalone viewer header names f42c8a9 (built on the release branch before the squash); content otherwise identical.",
+    "Carried from 0.11.0: lineage table layout, npm 11 esbuild postinstall warning, no Edge/Positron/cross-OS run, E2E-05 PARTIAL, E2E-06 BLOCKED.",
+    "No tag, public publication or deployment; no licence decision."
+  ],
+  "owner_gates": [
+    {"gate": "licence/public publication", "state": "NOT_AUTHORIZED"}
+  ],
+  "next_action": "Agent: E2E-05 joint run (Contoso Gold -> Mosaic >= 0.11.1 -> React 14/14 on one SHA set); optional full JOURNEY-01 under _headers; lineage table layout fix. Owner: licence decision before any public publication.",
+  "receipt": "qa/REL-0.11.1.md"
+}
