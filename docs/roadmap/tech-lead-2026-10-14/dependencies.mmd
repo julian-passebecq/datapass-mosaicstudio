@@ -1,0 +1,146 @@
+%% Generated from features.csv: every CANDIDATE and the EXISTING features it depends on.
+%% Solid arrow = depends on (A --> B means A needs B). Grey = EXISTING (built). Nothing here is approved.
+flowchart LR
+  subgraph V1E["V1 existing (0.11.0 + main)"]
+    direction TB
+    F004["F004 Runtime runs API"]
+    F005["F005 Jupyter adapter"]
+    F007["F007 ResultStore"]
+    F008["F008 Workspace v1"]
+    F009["F009 Artifact contract /1"]
+    F011["F011 Python bridge"]
+    F012["F012 Lineage explorer"]
+    F013["F013 SiteRuntime tasks"]
+    F014["F014 RunJournal + run refs"]
+    F015["F015 Concept spec v1"]
+    F017["F017 Preview contract /1"]
+    F019["F019 VizForge player"]
+    F025["F025 Client families + commands"]
+    F027["F027 SDK pack/verify"]
+    F031["F031 Workbench CSP _headers"]
+    F034["F034 Licence inventory"]
+  end
+  subgraph V1C["V1 closure (candidates)"]
+    direction TB
+    F101["F101 0.11.1 package with CSP"]
+    F102["F102 E2E-05 one vector"]
+    F103["F103 E2E-06 reconcile"]
+    F104["F104 Lineage table fix"]
+    F105["F105 Install guide tar"]
+  end
+  subgraph V2["V2 candidates: coherent usage contract"]
+    direction TB
+    F201["F201 Python companion"]
+    F202["F202 ComputeAdapter"]
+    F203["F203 Run-state vocabulary"]
+    F204["F204 StorageAdapter facade"]
+    F205["F205 Cross-tab conflicts"]
+    F206["F206 Durable site runs"]
+    F207["F207 A/B compare"]
+    F208["F208 Provenance bundle"]
+    F209["F209 Diagnostic codes"]
+    F210["F210 doctor"]
+    F211["F211 datapass CLI"]
+    F212["F212 Loop on 2 consumers"]
+    F213["F213 Client status"]
+  end
+  subgraph V3["V3 candidates: SDK extensibility"]
+    direction TB
+    F301["F301 Export map + API report"]
+    F302["F302 Renderer extensions"]
+    F303["F303 Additive representation"]
+    F304["F304 Diagnostics overlay"]
+    F305["F305 Out-of-tree clients"]
+    F306["F306 Scenario sets"]
+    F307["F307 T3 variant helpers"]
+    F308["F308 DiagramCloud gateway"]
+    F309["F309 Testing kit"]
+  end
+  subgraph V4["V4 parked"]
+    direction TB
+    F401["F401 Remote runtime"]
+    F402["F402 RemoteStore / sync"]
+    F403["F403 IndexedDB backend"]
+    F404["F404 Public SDK (licence)"]
+    F405["F405 PDF/PPTX/video"]
+  end
+  subgraph RD["R&D: Anatomy"]
+    direction TB
+    R01["R01 Anatomy lab SVG"]
+    R02["R02 Pose from view state"]
+    R03["R03 Figure provenance"]
+    R04["R04 WebGL / 3D beta eval"]
+    R05["R05 Shared concept selection"]
+  end
+  F101 --> F031
+  F101 --> F027
+  F102 --> F101
+  F102 --> F009
+  F103 --> F017
+  F104 --> F012
+  F105 --> F027
+  F201 --> F004
+  F201 --> F007
+  F201 --> F027
+  F202 --> F004
+  F202 --> F005
+  F202 --> F011
+  F202 --> F013
+  F203 --> F202
+  F204 --> F007
+  F204 --> F008
+  F204 --> F014
+  F205 --> F204
+  F206 --> F204
+  F206 --> F202
+  F207 --> F014
+  F207 --> F206
+  F208 --> F204
+  F208 --> F009
+  F208 --> F012
+  F209 --> F009
+  F210 --> F209
+  F211 --> F025
+  F211 --> F027
+  F211 --> F210
+  F212 --> F206
+  F212 --> F207
+  F212 --> F208
+  F213 --> F025
+  F301 --> F202
+  F301 --> F204
+  F302 --> F301
+  F302 --> F025
+  F303 --> F302
+  F303 --> F009
+  F304 --> F209
+  F304 --> F302
+  F305 --> F301
+  F305 --> F211
+  F306 --> F202
+  F306 --> F207
+  F307 --> F017
+  F307 --> F305
+  F308 --> F015
+  F309 --> F301
+  F401 --> F202
+  F402 --> F204
+  F403 --> F204
+  F404 --> F301
+  F404 --> F034
+  F405 --> F208
+  R01 --> F025
+  R02 --> R01
+  R02 --> F019
+  R03 --> R01
+  R03 --> F009
+  R03 --> F012
+  R04 --> R02
+  R05 --> R01
+  R05 --> F015
+  classDef existing fill:#e8e8e8,stroke:#888,color:#222;
+  classDef candidate fill:#fff,stroke:#2b6cb0,color:#111;
+  classDef parked fill:#fff,stroke:#999,stroke-dasharray:4 3,color:#555;
+  class F004,F005,F007,F008,F009,F011,F012,F013,F014,F015,F017,F019,F025,F027,F031,F034 existing;
+  class F101,F102,F103,F104,F105,F201,F202,F203,F204,F205,F206,F207,F208,F209,F210,F211,F212,F213,F301,F302,F303,F304,F305,F306,F307,F308,F309,R01,R02,R03,R04,R05 candidate;
+  class F401,F402,F403,F404,F405 parked;

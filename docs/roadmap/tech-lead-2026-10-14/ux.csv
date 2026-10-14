@@ -1,0 +1,38 @@
+id,title,version,status,depends_on,acceptance_criteria,estimate
+U001,"JOURNEY-01: installed workbench, SQL/Python/Jupyter, representations, save, close, reopen from store",V1,EXISTING,F001;F002;F003;F004;F005;F007,"Exists: PASS on the installed 0.11.0 zip (qa/FIN-0.11.0.md): 4 results reopened with identical SHA, 0 POST /runs, 0 Jupyter calls.",0h (built)
+U002,JOURNEY-02: new client from the SDK archive outside a checkout,V1,EXISTING,F025;F027,"Exists: PASS 0.11.0; client:new, check, build, preview-validate, served at 1440 and 390 px with 0 errors.",0h (built)
+U003,"UX01: blank workspace, SQL, chart, export, reload",V1,EXISTING,F002;F003;F008,Exists: tests/browser/workbench-notebook.spec.ts.,0h (built)
+U004,"UX02: consent, Python model run, representations, new run, history, dependent SQL, cancel, reload",V1,EXISTING,F004;F002,Exists: tests/browser/workbench-notebook.spec.ts.,0h (built)
+U005,"UX04: stopped runtime, refused token, remote origin, invalid import",V1,EXISTING,F004;F008,Exists: failure-state table in docs/WORKBENCH_AUTHORING.md; browser spec.,0h (built)
+U006,E2E-01: Jupyter and ResultStore reopen with identical hashes and no kernel,V1,EXISTING,F005;F007,Exists: tests/browser/workbench-jupyter.spec.ts; qa/E2E-01-b3f194d.,0h (built)
+U007,"Interrupt keeps the last valid output, labelled stale",V1,EXISTING,F005,"Exists: #57, #64; browser spec.",0h (built)
+U008,.ipynb import with import report and untrusted outputs,V1,EXISTING,F006,"Exists: py/service/test_notebook.py, tests/workbench-jupyter.test.mjs.",0h (built)
+U009,Live file: producer rewrite shown in under 2 s with view state kept; invalid file gives a toast and keeps data,V1,EXISTING,F011,Exists: npm run test:artifact-watch.,0h (built)
+U010,Live FastAPI: input change gives a new result; stopped service shows the fallback banner,V1,EXISTING,F011,Exists: npm run test:python-service.,0h (built)
+U011,"Concept viewer: open, drop, paste, ?src and embed message",V1,EXISTING,F016,Exists: tests/browser/concept-standalone.spec.ts.,0h (built)
+U012,"Architecture review: import review, present mode with keyboard, script-free report",V1,EXISTING,F023,Exists: tests/browser/architecture.spec.ts.,0h (built)
+U013,"foil-wind: explicit, cancellable compare task that goes stale after an input change",V1,EXISTING,F032;F013,Exists: clients/foil-wind/qa.,0h (built)
+U014,model3d modes with outline fallback before WebGL,V1,EXISTING,F022,Exists: tests/browser/model-assets.spec.ts.,0h (built)
+U015,"Reduced motion and manual controls across stories, motion and replay",V1,EXISTING,F019;F021;F030,Exists: motion and replay browser specs.,0h (built)
+U016,Opt-in saved run references labelled not rerun after reload,V1,EXISTING,F014,"Exists: #56, #58; foundation-reference.",0h (built)
+U101,V1 closure: JOURNEY-01 on the corrected package served with its own _headers,V1,CANDIDATE,F101,Same steps as U001 on 0.11.1 with _headers applied by the static server; runtime and Jupyter reachable; hashes identical; no recompute.,2-4h
+U102,"V1 closure: E2E-05 single-vector journey (Gold data, KPI, source trace, artifact, Mosaic views)",V1,CANDIDATE,F102,One run on exact SHAs; 7 VERIFIED and 7 INFERRED steps remain visibly distinct; receipt with hashes.,3-6h
+U103,V1 closure: Declared lineage table readable on ?artifact=1,V1,CANDIDATE,F104,Screenshots at 1440 and 390 px inspected; no per-character wrapping.,0.5-1h
+U104,V1 closure: SDK archive extracts with Git Bash and Windows tar,V1,CANDIDATE,F105,Both commands from the guide exit 0 on Windows.,0.5-1h
+U201,"V2: product loop on two consumers (parameters, run, inspect, A/B, close, reopen, export with provenance)",V2,CANDIDATE,F212,Both consumers PASS; changing representation never reruns; reopen shows the same hashes; export re-imports.,6-12h
+U202,V2: unsupported capability is visible (e.g. a file producer has no Cancel; the reason is shown),V2,CANDIDATE,F202,No disabled-without-reason controls; no simulated progress.,2-4h
+U203,V2: one state vocabulary in notebook and site runs,V2,CANDIDATE,F203,Same label for the same observed outcome in both surfaces; 'not observed' never shown as cancelled or failed.,1-3h
+U204,V2: two tabs edit the workspace and see a conflict instead of losing work,V2,CANDIDATE,F205,"Conflict banner with keep mine, take theirs, export both; no silent overwrite.",2-4h
+U205,"V2: install the Python companion outside a checkout, consent, run, save, reopen; a static client still opens without Python",V2,CANDIDATE,F201,Guide steps exit 0 on Windows; hashes of the companion match its manifest.,3-6h
+U206,V2: doctor output is actionable,V2,CANDIDATE,F210,Each failing check names one fix; JSON output parsed by CI.,1-2h
+U207,"V2: provenance bundle exported, imported elsewhere, same hashes",V2,CANDIDATE,F208,TS and Python validation agree; sharing notice shown before export.,2-4h
+U208,V2: client status badge in the ?sites catalog,V2,CANDIDATE,F213,Draft and frozen clients are labelled; references unchanged.,0.5-1h
+U209,V2: A/B comparison persists across reopen,V2,CANDIDATE,F207,Reopened comparison shows the same deltas without recompute; incompatible pair refused with reason.,2-4h
+U301,V3: an author adds a renderer in the client folder without editing the framework,V3,CANDIDATE,F302,Build passes; fallback shown when the capability is absent; registry.tsx unchanged.,2-4h
+U302,V3: authoring diagnostics overlay in dev,V3,CANDIDATE,F304,Overlay lists codes with file references; absent in production build.,2-4h
+U303,"V3: scenario set defined, run bounded, some points cancelled, compared",V3,CANDIDATE,F306,Queue limit respected; cancelled points labelled; comparison via A/B view.,3-6h
+U304,"V3: T3 variant created, built, verified and compared",V3,CANDIDATE,F307,Two preview.json files validated; difference listed; T3 optional.,2-4h
+U305,V3: out-of-tree client upgrade N-1 to N and rollback,V3,CANDIDATE,F305,Both directions keep saved inputs or refuse with reason.,3-6h
+U401,"V4: remote runtime sign-in, allowed and denied users (parked)",V4,CANDIDATE,F401,Only after F401 is selected; denied user is refused.,not estimated
+U501,"R&D: Anatomy FOIL figure with keyboard and pointer, readout from an artifact, still pose under reduced motion, ILLUSTRATIVE label, SVG export, no WebGL needed",R&D,CANDIDATE,R01;R02;R03,Screenshots in light and dark at 1440 and 390 px inspected; 0 network requests; readout values traced to the artifact SHA.,2-4h
+U502,R&D: architecture explainer part selection syncs with the concept view,R&D,CANDIDATE,R05,Selecting a part highlights the same concept node and back.,1-2h
