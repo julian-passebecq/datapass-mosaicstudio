@@ -9,10 +9,13 @@ test('galaxy-finition snapshot: 13 retained apps, 5 paused, 24 declared edges',(
   assert.equal(snapshot.apps.length,13);assert.equal(snapshot.paused.length,5);assert.equal(snapshot.edges.length,24);
   assert.ok(snapshot.paused.every(p=>p.status==='PAUSED_BY_OWNER'&&Object.keys(p).length===3));
   assert.deepEqual(snapshot.paused.map(p=>p.key).sort(),['12-datapass','13-agent','15-atlasnote','16-powerops','18-mongoku']);
-  assert.equal(snapshot.snapshotTime,'2026-10-14T00:35+02:00');
-  const cm=snapshot.apps.find(a=>a.key==='09-conceptmotion');
-  assert.deepEqual([cm.version,cm.status,cm.destination],['1.1.1','PUBLISHED','private GitHub draft release']);
-  assert.deepEqual(snapshot.apps.filter(a=>a.status.startsWith('STARTED')).map(a=>a.key).sort(),['05-rayfin','07-contoso'].sort());
+  assert.equal(snapshot.snapshotTime,'2026-10-14T02:07+02:00');
+  const pick=k=>{const a=snapshot.apps.find(x=>x.key===k);return [a.version,a.status,a.destination];};
+  assert.deepEqual(pick('09-conceptmotion'),['1.2.0 (after 1.1.1)','PUBLISHED','private GitHub draft release']);
+  assert.deepEqual(pick('07-contoso'),['0.3.0','PUBLISHED','private GitLab vault']);
+  assert.deepEqual(pick('05-rayfin'),['0.4.1','PUBLISHED','private GitLab package registry']);
+  assert.deepEqual(snapshot.apps.filter(a=>a.status.startsWith('STARTED')).map(a=>a.key),[]);
+  assert.ok(snapshot.apps.every(a=>/^(DONE|PUBLISHED|RATIFIED|VERIFIED_NO_CHANGE)/.test(a.status)));
 });
 test('galaxy-finition graph: one node per app, edges follow dependency_keys',()=>{
   const keys=[...snapshot.apps,...snapshot.paused].map(a=>a.key);
@@ -35,7 +38,7 @@ test('galaxy-finition runtime: tables and counts resolve without 3D or workbench
   assert.equal(r.dataset('apps').length,13);assert.equal(r.dataset('paused').length,5);assert.equal(r.dataset('dependencies').length,24);
   assert.equal(r.resolve({dataset:'summary',row:'retained',column:'value'}),13);
   assert.equal(r.resolve({dataset:'summary',row:'edges',column:'value'}),24);
-  assert.equal(r.resolve({dataset:'summary',row:'published',column:'value'}),7);
+  assert.equal(r.resolve({dataset:'summary',row:'published',column:'value'}),9);
   const types=r.manifest.pages.flatMap(p=>p.sections.flatMap(s=>s.blocks.map(b=>b.type)));
   assert.ok(!types.some(t=>['scene3d','model3d','explorer','runs'].includes(t)));
 });

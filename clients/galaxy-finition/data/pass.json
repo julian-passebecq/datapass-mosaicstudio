@@ -2,7 +2,7 @@
  "format": "galaxy-finition.pass-snapshot",
  "version": 1,
  "pass": "Galaxy Finition 2026-10-13",
- "snapshotTime": "2026-10-14T00:35+02:00",
+ "snapshotTime": "2026-10-14T02:07+02:00",
  "provenance": "Owner-supplied status snapshot of the pass log, screened to public fields. Not live data.",
  "apps": [
   {
@@ -29,7 +29,7 @@
    "repository": "TabularEditor_J",
    "wave": 1,
    "version": "portable build (no release version)",
-   "status": "DONE (NO_MERGE)",
+   "status": "DONE (NO_MERGE; PR merged afterwards, owner decision open)",
    "destination": "private GitLab CI artifact"
   },
   {
@@ -73,18 +73,18 @@
    "name": "Contoso Data Studio",
    "repository": "contoso-data-studio",
    "wave": 2,
-   "version": "0.3.0 (planned)",
-   "status": "STARTED (no DONE in snapshot)",
-   "destination": "private GitLab vault (planned)"
+   "version": "0.3.0",
+   "status": "PUBLISHED",
+   "destination": "private GitLab vault"
   },
   {
    "key": "05-rayfin",
    "name": "FOIL Rayfin local",
    "repository": "foil-rayfin-local",
    "wave": 2,
-   "version": "not recorded",
-   "status": "STARTED (no DONE in snapshot)",
-   "destination": "private GitLab package registry (planned)"
+   "version": "0.4.1",
+   "status": "PUBLISHED",
+   "destination": "private GitLab package registry"
   },
   {
    "key": "03-foil-native",
@@ -109,7 +109,7 @@
    "name": "ConceptMotion / VizForge",
    "repository": "conceptmotion-vizforge-demo",
    "wave": 3,
-   "version": "1.1.1",
+   "version": "1.2.0 (after 1.1.1)",
    "status": "PUBLISHED",
    "destination": "private GitHub draft release"
   },
