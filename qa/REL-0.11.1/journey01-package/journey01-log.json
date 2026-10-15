@@ -1,0 +1,285 @@
+{
+  "journey": "JOURNEY-01 served with its own _headers: installed 0.11.1 release zip (3575e6b)",
+  "page": "http://127.0.0.1:24341",
+  "browser": "chromium 153.0.8010.12",
+  "shippedHeaders": {
+    "Content-Security-Policy": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self' blob:; connect-src 'self' blob: http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; object-src 'none'; base-uri 'self'",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer"
+  },
+  "documentsChecked": 3,
+  "headerMismatches": [],
+  "cspViolations": [
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:150",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    },
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:208",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    },
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:264",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    },
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:431",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    },
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:585",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    },
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:642",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    },
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:698",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    },
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:754",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    },
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:150",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    },
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:208",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    },
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:264",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    },
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:431",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    },
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:585",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    },
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:642",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    },
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:698",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    },
+    {
+      "directive": "script-src",
+      "blocked": "eval",
+      "source": "http://127.0.0.1:24341/assets/App-Co_JFfMl.js:754",
+      "page": "http://127.0.0.1:24341/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28841&token=<redacted>"
+    }
+  ],
+  "cspConsole": [
+    "error: Connecting to 'http://192.0.2.1:9/csp-probe' violates the following Content Security Policy directive: \"connect-src 'self' blob: http://127.0.0.1:* http://localhost:* ws://127.0.0.1:* ws://localhost:*\". The action has been blocked.",
+    "error: Fetch API cannot load http://192.0.2.1:9/csp-probe. Refused to connect because it violates the document's Content Security Policy."
+  ],
+  "steps": [
+    {
+      "step": "start runtime (result store in %TEMP%) and Jupyter Server from py/ (identical to 3575e6b)",
+      "status": "pass",
+      "at": "2026-10-15T01:33:55.510Z"
+    },
+    {
+      "step": "page title",
+      "status": "note",
+      "detail": "DataPass MosaicStudio",
+      "at": "2026-10-15T01:33:57.575Z"
+    },
+    {
+      "step": "blank workspace, consent to loopback runtime",
+      "status": "pass",
+      "at": "2026-10-15T01:33:57.575Z"
+    },
+    {
+      "step": "import CSV (sample.csv) in Data explorer",
+      "status": "pass",
+      "detail": "data_1_sample",
+      "at": "2026-10-15T01:33:58.153Z"
+    },
+    {
+      "step": "pair Jupyter kernel",
+      "status": "pass",
+      "at": "2026-10-15T01:33:59.677Z"
+    },
+    {
+      "step": "explicit SQL run on imported data",
+      "status": "pass",
+      "at": "2026-10-15T01:33:59.968Z"
+    },
+    {
+      "step": "chart and table representations (presentation only, no rerun)",
+      "status": "pass",
+      "detail": {
+        "representations": [
+          "Rows",
+          "total by region",
+          "JSON"
+        ]
+      },
+      "at": "2026-10-15T01:34:00.347Z"
+    },
+    {
+      "step": "export the SQL result as datapass.artifact JSON",
+      "status": "pass",
+      "detail": {
+        "suggested": "sql-sql-1vcqh-artifact.json",
+        "saved": "export-sql-result.artifact.json",
+        "bytes": 1368,
+        "sha256": "1c3ebc110e1d3473d7e22b074a1871444f6aa0234363b0653a50a9b935aab09f"
+      },
+      "at": "2026-10-15T01:34:00.657Z"
+    },
+    {
+      "step": "explicit Python run on the approved runtime (allowlisted model)",
+      "status": "pass",
+      "detail": {
+        "runId": "run-c02e325820926f4c",
+        "artifactId": "wind-reference-run"
+      },
+      "at": "2026-10-15T01:34:01.169Z"
+    },
+    {
+      "step": "export the approved-Python result as datapass.artifact JSON",
+      "status": "pass",
+      "detail": {
+        "suggested": "wind-reference-run-artifact.json",
+        "saved": "export-python-model.artifact.json",
+        "bytes": 4121,
+        "sha256": "27ec37794b43d31c5fc5255baee503b97b199033c76c686cea4fb2a5da518a41"
+      },
+      "at": "2026-10-15T01:34:01.342Z"
+    },
+    {
+      "step": "explicit Python run on the paired Jupyter kernel, published as SQL table",
+      "status": "pass",
+      "at": "2026-10-15T01:34:01.709Z"
+    },
+    {
+      "step": "SQL on the Python result (dependency) and chart",
+      "status": "pass",
+      "at": "2026-10-15T01:34:02.482Z"
+    },
+    {
+      "step": "save results + notebook to the result store",
+      "status": "pass",
+      "detail": {
+        "notice": "Saved 4 results and the notebook (a25ddd029620) to the result store \"rel0111-store-h1Wi0a\".",
+        "qSha": "80df297d489aa42ac9663e78f7eae3a808fd7e68227689fd94112037fbeec7cb",
+        "jSha": "9e1b1f93c73fd5bc882b3e72131f26e2acaf90ddf5b6e0245d9a0046841476a5",
+        "sSha": "6a8e544b4e3414948f9921afd29de09145aa10d1961a8957cda02f882d747fd4",
+        "modelCellSha": "5c38dfc8cdaa8df1c66dcc7e85689fa9f6542bb3aa52a70e8ae9d1180d46bd25"
+      },
+      "at": "2026-10-15T01:34:02.929Z"
+    },
+    {
+      "step": "close: browser context closed, Jupyter stopped, runtime restarted",
+      "status": "pass",
+      "at": "2026-10-15T01:34:07.356Z"
+    },
+    {
+      "step": "reopen from store without recomputation",
+      "status": "pass",
+      "detail": {
+        "modelCellStatus": "done",
+        "modelCellText": "PYTHON MODEL\nRun\nModel\nILLUSTRATIVE wind reference (AEP vs hub height)\nILLUSTRATIVE Weibull grid (AEP over k x c)\nWeibull shape k\nWeibull scale c at 100 m (m/s)\nHub height (m)\nOutput table (optional)\n\nGross AEP of a generic 3 MW-class turbine for a Weibull wind (c at 100 m, shear 0.14) across hub he",
+        "runtimeCalls": [
+          "GET /api/runtime/v1/health",
+          "GET /api/runtime/v1/models",
+          "GET /api/notebook/v1/status",
+          "GET /api/notebook/v1/store/manifest",
+          "GET /api/notebook/v1/store/notebook",
+          "GET /api/notebook/v1/store/results/80df297d489aa42ac9663e78f7eae3a808fd7e68227689fd94112037fbeec7cb",
+          "GET /api/notebook/v1/store/results/5c38dfc8cdaa8df1c66dcc7e85689fa9f6542bb3aa52a70e8ae9d1180d46bd25",
+          "GET /api/notebook/v1/store/results/9e1b1f93c73fd5bc882b3e72131f26e2acaf90ddf5b6e0245d9a0046841476a5",
+          "GET /api/notebook/v1/store/results/6a8e544b4e3414948f9921afd29de09145aa10d1961a8957cda02f882d747fd4"
+        ],
+        "postRuns": 0,
+        "jupyterCalls": 0,
+        "storeUnchanged": true
+      },
+      "at": "2026-10-15T01:34:09.837Z"
+    },
+    {
+      "step": "cross-app import: Contoso-shape artifact opened in the installed build (?artifact=1)",
+      "status": "pass",
+      "detail": {
+        "id": "orchard-monthly-yield",
+        "rows": 12,
+        "fixtureSha256": "d652f72e5f2b024304719d5ff1f45e023572727c4af6a8af19dbd22c33805591"
+      },
+      "at": "2026-10-15T01:34:10.609Z"
+    },
+    {
+      "step": "cross-app export: re-export that artifact as datapass.artifact JSON",
+      "status": "pass",
+      "detail": {
+        "suggested": "orchard-monthly-yield-artifact.json",
+        "saved": "export-crossapp-contoso.artifact.json",
+        "bytes": 8594,
+        "sha256": "6d896cd3e9a2215b8db1366629118090016cd5a7924bb6d38fe3e28bd4317e65"
+      },
+      "at": "2026-10-15T01:34:10.726Z"
+    },
+    {
+      "step": "CSP enforced: a non-loopback connect is blocked by connect-src under the shipped _headers",
+      "status": "pass",
+      "detail": {
+        "blocked": [
+          "connect-src http://192.0.2.1:9/csp-probe"
+        ]
+      },
+      "at": "2026-10-15T01:34:10.734Z"
+    },
+    {
+      "step": "cross-app import: React-shape concept spec in the release concept-viewer.html over file://",
+      "status": "pass",
+      "detail": {
+        "id": "bookshop-synthetic",
+        "nodes": 8,
+        "networkRequests": 0
+      },
+      "at": "2026-10-15T01:34:12.425Z"
+    }
+  ],
+  "errors": [],
+  "external": [],
+  "jupyterTokenInServiceLogs": false
+}

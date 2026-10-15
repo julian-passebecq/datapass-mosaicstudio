@@ -40,8 +40,33 @@ Local release folder (owner machine, not committed): `<releases>/datapass-mosaic
 | `sdk:verify` | local release folder and the authenticated re-download | PASS both (347 files, 1 standalone, 3 contracts, commit `3575e6b048a6`) |
 | `license-inventory --check` | release branch | PASS (792 npm packages) |
 | CI Studio web gate (full suite incl. browser tests, client builds, SDK archive check) | PR head and `3575e6b` push | PASS |
+| JOURNEY-01 under `_headers` (2026-10-15, [below](#journey-01-under-_headers)) | the **unzipped 0.11.1 release zip** served with its own `_headers` | **Functional PASS, CSP-clean FAIL**: all 15 steps pass (runtime consent, paired Jupyter kernel, save, reopen with 0 `POST /runs` and 0 Jupyter calls), served headers equal `_headers` on every document, `connect-src` still blocks a non-loopback fetch; but 16 `script-src 'eval'` violation reports (zod 4's caught `new Function` probe, 8 bundled copies x 2 page loads) |
+| Same journey | `dist/` built from the fix (zod jitless in `src/main.tsx`), served with its own `_headers` | **PASS**, 0 CSP violations |
 
-Not re-run (reused from `FIN-0.11.0.md` at `0bc8c8c`, valid because `src/`, `py/` and every workbench file except `_headers` are byte-identical): JOURNEY-01 installed-workbench journey, JOURNEY-02 new client from the SDK, FIN-01..04. The full JOURNEY-01 (Jupyter pairing, store save/reopen) **with `_headers` applied** was not executed; the connect path it depends on is covered by `test:static-headers` above. That statement is INFERRED, not VERIFIED.
+Not re-run (reused from `FIN-0.11.0.md` at `0bc8c8c`, valid because `src/`, `py/` and every workbench file except `_headers` are byte-identical): JOURNEY-01 installed-workbench journey, JOURNEY-02 new client from the SDK, FIN-01..04. JOURNEY-01 itself was then re-run **with `_headers` applied** on 2026-10-15 (next section): the inference above is now VERIFIED for function, and it found one CSP finding, fixed on `main` after 0.11.1.
+
+## JOURNEY-01 under `_headers`
+
+Run 2026-10-15 by `qa/REL-0.11.1/journey01-headers.spec.ts` (config `journey01-headers.config.ts`), the FIN-0.11.0 JOURNEY-01 spec recovered unchanged in its 15 steps plus header and CSP checks. The workbench folder is served by `qa/REL-0.11.1/serve-with-headers.mjs`, which applies that folder's own `_headers` the way Netlify / Cloudflare Pages do, on 127.0.0.1:24341. Python runtime on 28841 and Jupyter Server 2.21.1 on 28842 from `py/` on `main` (byte-identical to `3575e6b`), fresh venv with the pinned `py/service/requirements*.txt` and `duckdb==1.4.3`, `DATAPASS_REQUIRE_JUPYTER=1`. Playwright 1.63.0, Chromium 153.0.8010.12. Release folder `sha256sum -c SHA256SUMS` 5 of 5 OK before unzipping. All data synthetic; runtime tokens are redacted in the logs.
+
+Added to each run: every workbench document response must carry exactly the `/*` headers of the shipped `_headers` (3 documents: two workbench loads and `?artifact=1`, 0 mismatches); every `securitypolicyviolation` event and every CSP console report is recorded; a fetch to `http://192.0.2.1:9` must be blocked by `connect-src` (it was, in both runs), proving the policy is enforced and not bypassed.
+
+| | 0.11.1 release zip | Fixed `dist/` |
+|---|---|---|
+| Steps 1-15 (consent, CSV, Jupyter pairing, SQL, representations, export, approved Python, Jupyter table, dependent SQL, save, close, reopen, cross-app import/export, file:// concept viewer) | pass | pass |
+| Save | "Saved 4 results and the notebook", each file's sha256 equals its name | same |
+| Reopen from store | 4 cells, same result sha, "Not recomputed", 0 `POST /runs`, 0 Jupyter calls, store hashes unchanged | same |
+| Served headers vs `_headers` | equal (3 of 3) | equal (3 of 3) |
+| CSP violations | **16**, all `script-src eval` from `assets/App-*.js` | **0** |
+| Page errors / external requests / Jupyter token in service logs | 0 / 0 / no | 0 / 0 / no |
+| `py/datapass_artifact.py --set` on the 3 exports | ok | ok |
+| Cross-app re-export sha256 | `6d896cd3…` (identical to FIN-0.11.0) | `6d896cd3…` |
+
+**Finding (CSP-1).** The 16 reports come from zod 4, bundled eight times by `@sqlrooms/*` (the app's own zod is 3.24.2). On its first object parse each copy runs `try { new Function("") } catch {}` to decide whether to JIT its parsers. The shipped CSP has no `'unsafe-eval'`, so the probe is blocked and zod falls back to its non-JIT path; nothing breaks, but the browser emits one violation per copy and page load, which a host with CSP reporting would collect as noise and which hides real violations. Not fixed by loosening the policy: `src/main.tsx` now sets the zod global config `jitless: true` (shared by every copy through `globalThis.__zod_globalConfig`) before any module loads, so the probe never runs. `tests/browser/csp-clean.spec.ts` (CI) opens `?workspace=blank` and `?artifact=1` under the preview CSP, which equals `_headers`, and asserts 0 violations; against the 0.11.1 zip served with its `_headers` it fails with the same eight `eval` reports per load (negative control), against the fixed build it passes.
+
+The fix is on `main` after 0.11.1; the 0.11.1 bytes are not changed (immutable). It ships with the next package version.
+
+Evidence: [`REL-0.11.1/journey01-package/`](REL-0.11.1/journey01-package/) and [`REL-0.11.1/journey01-fixed/`](REL-0.11.1/journey01-fixed/) (journey log with every recorded violation, exports with their hashes, step-12 screenshot).
 
 ## Private delivery
 
@@ -55,7 +80,7 @@ Destination: the existing private GitLab vault (pre-granted for a new immutable 
 
 ## Omissions and known issues
 
-1. Full JOURNEY-01 with `_headers` applied not re-run (see Tests). Jupyter Server pairing under the new CSP is covered only by the loopback `ws://` probe, not by a paired kernel.
+1. ~~Full JOURNEY-01 with `_headers` applied not re-run.~~ Done 2026-10-15 ([JOURNEY-01 under `_headers`](#journey-01-under-_headers)): functional PASS on the 0.11.1 zip including a paired Jupyter kernel; finding CSP-1 (zod `eval` probe reports) is fixed on `main`, not in the 0.11.1 bytes.
 2. The standalone viewer header names `f42c8a9` as its source commit (built on the release branch before the squash); its content is otherwise identical to the viewer built at `5090bd0`.
 3. Carried from 0.11.0 and unchanged: lineage table layout on `?artifact=1` (omission 5), npm 11 esbuild postinstall warning, no Edge/Positron or cross-OS run, E2E-05 PARTIAL, E2E-06 BLOCKED.
 4. Licence and any public publication remain an owner gate.

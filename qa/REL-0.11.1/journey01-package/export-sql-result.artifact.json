@@ -1,0 +1,69 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "sql-sql-1vcqh",
+  "title": "Sales by region",
+  "provenance": {
+    "kind": "computed",
+    "source": "Local DuckDB-WASM query in the browser workbench: SELECT region, sum(amount)::DOUBLE AS total FROM data_1_sample GROUP BY region ORDER BY region",
+    "producer": {
+      "kind": "notebook",
+      "name": "MosaicStudio workbench SQL cell sql-1vcqh"
+    }
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "row",
+    "columns": [
+      {
+        "id": "row",
+        "label": "Result row (position)",
+        "type": "number"
+      },
+      {
+        "id": "region",
+        "label": "region",
+        "type": "string",
+        "nullable": true
+      },
+      {
+        "id": "total",
+        "label": "total",
+        "type": "number",
+        "nullable": true
+      }
+    ],
+    "rows": [
+      {
+        "row": 1,
+        "region": "North",
+        "total": 40
+      },
+      {
+        "row": 2,
+        "region": "South",
+        "total": 20
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "Rows",
+      "kind": "table"
+    },
+    {
+      "id": "chart",
+      "title": "total by region",
+      "kind": "chart",
+      "chart": "bar",
+      "x": "region",
+      "y": "total"
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "kind": "json"
+    }
+  ]
+}

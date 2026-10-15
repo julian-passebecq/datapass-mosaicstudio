@@ -1,0 +1,34 @@
+{
+  "sqlArtifact": {
+    "suggested": "sql-sql-1vcqh-artifact.json",
+    "saved": "export-sql-result.artifact.json",
+    "bytes": 1368,
+    "sha256": "1c3ebc110e1d3473d7e22b074a1871444f6aa0234363b0653a50a9b935aab09f"
+  },
+  "modelRun": {
+    "runId": "run-c02e325820926f4c",
+    "artifactId": "wind-reference-run"
+  },
+  "modelArtifact": {
+    "suggested": "wind-reference-run-artifact.json",
+    "saved": "export-python-model.artifact.json",
+    "bytes": 4121,
+    "sha256": "27ec37794b43d31c5fc5255baee503b97b199033c76c686cea4fb2a5da518a41"
+  },
+  "xImport": {
+    "id": "orchard-monthly-yield",
+    "rows": 12,
+    "fixtureSha256": "d652f72e5f2b024304719d5ff1f45e023572727c4af6a8af19dbd22c33805591"
+  },
+  "xExport": {
+    "suggested": "orchard-monthly-yield-artifact.json",
+    "saved": "export-crossapp-contoso.artifact.json",
+    "bytes": 8594,
+    "sha256": "6d896cd3e9a2215b8db1366629118090016cd5a7924bb6d38fe3e28bd4317e65"
+  },
+  "enforcement": {
+    "blocked": [
+      "connect-src http://192.0.2.1:9/csp-probe"
+    ]
+  }
+}
