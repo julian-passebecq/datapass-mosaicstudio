@@ -1,0 +1,191 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "wind-reference-run",
+  "title": "ILLUSTRATIVE run: AEP vs hub height (k=2, c=8 m/s at 100 m, hub 120 m)",
+  "provenance": {
+    "kind": "computed",
+    "source": "py/service/app.py runtime model wind-reference. ILLUSTRATIVE: generic 3 MW-class power curve, Weibull wind, no losses. Not FOIL data, not a site assessment.",
+    "runId": "run-a4f6d06752a2db91",
+    "producer": {
+      "kind": "service",
+      "name": "py/service runtime: wind-reference"
+    },
+    "inputs": [
+      {
+        "id": "k",
+        "label": "Weibull shape k",
+        "value": 2
+      },
+      {
+        "id": "c",
+        "label": "Weibull scale c at 100 m",
+        "value": 8,
+        "unit": "m/s"
+      },
+      {
+        "id": "hubHeight",
+        "label": "Hub height",
+        "value": 120,
+        "unit": "m"
+      }
+    ],
+    "inputHash": "d6d531564e03e534983cd98317af1c422c1391e43660e612618bfb1d8fb3655f"
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "id",
+    "columns": [
+      {
+        "id": "id",
+        "label": "Case",
+        "type": "string"
+      },
+      {
+        "id": "hubHeight",
+        "label": "Hub height",
+        "type": "number",
+        "unit": "m"
+      },
+      {
+        "id": "hubScale",
+        "label": "Weibull scale at hub",
+        "type": "number",
+        "unit": "m/s"
+      },
+      {
+        "id": "meanSpeed",
+        "label": "Mean speed at hub",
+        "type": "number",
+        "unit": "m/s"
+      },
+      {
+        "id": "aep",
+        "label": "Annual energy (gross)",
+        "type": "number",
+        "unit": "MWh/yr"
+      },
+      {
+        "id": "capacityFactor",
+        "label": "Capacity factor",
+        "type": "number",
+        "unit": "%"
+      }
+    ],
+    "rows": [
+      {
+        "id": "h-060",
+        "hubHeight": 60,
+        "hubScale": 7.448,
+        "meanSpeed": 6.6,
+        "aep": 6762.9,
+        "capacityFactor": 25.73
+      },
+      {
+        "id": "h-080",
+        "hubHeight": 80,
+        "hubScale": 7.754,
+        "meanSpeed": 6.872,
+        "aep": 7393.9,
+        "capacityFactor": 28.14
+      },
+      {
+        "id": "h-100",
+        "hubHeight": 100,
+        "hubScale": 8,
+        "meanSpeed": 7.09,
+        "aep": 7897.9,
+        "capacityFactor": 30.05
+      },
+      {
+        "id": "selected",
+        "hubHeight": 120,
+        "hubScale": 8.207,
+        "meanSpeed": 7.273,
+        "aep": 8317.7,
+        "capacityFactor": 31.65
+      },
+      {
+        "id": "h-140",
+        "hubHeight": 140,
+        "hubScale": 8.386,
+        "meanSpeed": 7.432,
+        "aep": 8677.2,
+        "capacityFactor": 33.02
+      },
+      {
+        "id": "h-160",
+        "hubHeight": 160,
+        "hubScale": 8.544,
+        "meanSpeed": 7.572,
+        "aep": 8991.5,
+        "capacityFactor": 34.21
+      },
+      {
+        "id": "h-180",
+        "hubHeight": 180,
+        "hubScale": 8.686,
+        "meanSpeed": 7.698,
+        "aep": 9270.4,
+        "capacityFactor": 35.28
+      },
+      {
+        "id": "h-200",
+        "hubHeight": 200,
+        "hubScale": 8.815,
+        "meanSpeed": 7.812,
+        "aep": 9520.9,
+        "capacityFactor": 36.23
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "aep",
+      "title": "AEP at selected hub height",
+      "kind": "metric",
+      "row": "selected",
+      "column": "aep",
+      "unit": "MWh/yr",
+      "digits": 0,
+      "inputs": [
+        "k",
+        "c",
+        "hubHeight"
+      ]
+    },
+    {
+      "id": "cf",
+      "title": "Capacity factor at selected hub height",
+      "kind": "metric",
+      "row": "selected",
+      "column": "capacityFactor",
+      "unit": "%",
+      "digits": 1,
+      "inputs": [
+        "k",
+        "c",
+        "hubHeight"
+      ]
+    },
+    {
+      "id": "table",
+      "title": "AEP by hub height",
+      "kind": "table"
+    },
+    {
+      "id": "curve",
+      "title": "AEP vs hub height",
+      "kind": "chart",
+      "chart": "line",
+      "x": "hubHeight",
+      "y": "aep",
+      "unit": "MWh/yr"
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "kind": "json"
+    }
+  ]
+}
