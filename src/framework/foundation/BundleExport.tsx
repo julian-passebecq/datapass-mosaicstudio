@@ -30,7 +30,7 @@ export function BundleExport({resource}:{resource:string}){
     <h3>Provenance bundle</h3>
     <p className="foundation-note">One <code>datapass.bundle</code> v1 file (candidate format) with the {input.runs.length} retained successful run{input.runs.length===1?'':'s'} of this page: artifacts as exported, run references, captured inputs, declared lineage and SHA256SUMS. It re-imports with the same hashes in the artifact viewer and with <code>python py/datapass_bundle.py validate</code>. Not a signature, release or verified lineage; synthetic results stay labelled synthetic.</p>
     <p className="foundation-notice" role="note" data-testid="bundle-notice">Sharing review: the bundle contains captured input values and result data, which may be sensitive. Tokens and workspace secrets are never included; the export is refused if one would be.</p>
-    <label><input type="checkbox" data-testid="bundle-reviewed" checked={reviewed} onChange={e=>setReviewed(e.target.checked)}/>I reviewed the captured inputs and result data for sharing.</label>
+    <label><input type="checkbox" data-testid="bundle-reviewed" checked={reviewed} onChange={e=>setReviewed(e.target.checked)}/>I reviewed the inputs and results in this bundle for sharing.</label>
     <button type="button" data-testid="bundle-export-button" disabled={!reviewed||busy||!input.runs.length} onClick={()=>void run()}>Export provenance bundle</button>
     {!input.runs.length&&<small className="foundation-note"> Run a task first: only retained successful results are exported.</small>}
     {result&&(result.ok
