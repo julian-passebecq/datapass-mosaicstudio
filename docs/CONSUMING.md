@@ -59,7 +59,7 @@ npm run client:new -- my-client --family content
 
 The archive has no `.git` folder: builds then record `sourceCommit: null` in their `preview.json`. Keep the `sdk-release.json` next to the consumer as the provenance record.
 
-### The `datapass` command (unreleased, F211)
+### The `datapass` command (0.12.0, F211)
 
 `package.json` declares `bin: {"datapass": "scripts/datapass.mjs"}`. It is a thin dispatcher with no logic of its own: each command runs the same script with the same Node flags as its npm script, from the package root, passes the remaining arguments through and returns the script's exit code. The npm scripts keep working unchanged.
 
@@ -132,11 +132,29 @@ The 0.10.0 → newer → 0.10.0 → newer cycle over one result store was execut
 
 No format version changed and no SDK API changed: same `datapass.workspace` v1, `datapass.result-store` / `datapass.cell-result` v1, `datapass.artifact/1`, `datapass.concept-spec/1` and `datapass.preview/1` as 0.11.0. The only workbench change is the shipped `_headers` file (#73): its CSP `connect-src` now allows loopback http/ws, as `vite preview` already did. If you serve the workbench from a static host that applies `_headers`, replace the deployed folder with the 0.11.1 `dist/`; if you copied `_headers` into your own host configuration, update it from `scripts/workbench-headers.mjs`. Clients are rebuilt as usual (`npm ci`, `npm run bootstrap`, `build:client`); their own CSP (`scripts/client-csp.mjs`) is unchanged.
 
-### After 0.11.1 (unreleased): client status is required (F213)
+### 0.11.1 → 0.12.0
+
+Stored formats keep their versions: `datapass.workspace` v1, `datapass.result-store` / `datapass.cell-result` v1, `datapass.run-history` v1, `datapass.artifact/1`, `datapass.concept-spec/1` and `datapass.preview/1` are read and written as in 0.11.1. New, beside them: the workspace revision sidecar `datapass.workspace.revision` (F205), the browser key `datapass.ab-pair.<appId>` (F207, opt-in clients), the export file `datapass.bundle` v1 status `candidate` (F208), results-only site run entries `site-<appId>-<taskId>` in the ResultStore (F206, opt-in clients) and the diagnostic codes (F209). SDK API additions only: `src/framework/{compute,storage,diagnostics}`, optional `AppDefinition.durableRuns`; `src/workspace/runtime.ts` re-exports the moved `RuntimeClient`. Follow the steps above, then:
+
+1. **Client status (F213, required, see below).** Add `"status"` to each of your `client.config.json` files before `client:check`; without it every build is refused.
+2. **Workbench.** Replace the deployed folder with the 0.12.0 `dist/`. Its `_headers` is the 0.11.1 policy; the zod `jitless` fix (#77) only removes CSP reports.
+3. **Python runtime companion (optional).** It replaces running `py/service/app.py` from a checkout. Take `datapass-runtime-companion-0.12.0.tar.gz` and `runtime-companion.json` from the private 0.12.0 delivery, check the archive sha256 against the manifest, then install and start it as in [`RUNTIME_COMPANION.md`](RUNTIME_COMPANION.md) (own venv, `DATAPASS_RUNTIME_TOKEN`, `DATAPASS_SERVICE_ORIGINS`, optional `DATAPASS_ARTIFACT_DIR`). A static client still needs no Python.
+4. `npm run doctor` reports the environment (Node, upstream pins, Python venv, ports, `_headers`) with one fix per finding.
+
+### Client status is required from 0.12.0 (F213)
 
 `datapass.client-profile` stays version 1 but now requires `status` (`reference`, `prototype`, `draft` or `frozen`). `client:check`, `client:context` and every build refuse a client without it (`DP-CLI-001`, unknown value `DP-CLI-002`), and a client folder without `client.config.json` is refused the same way. Each out-of-tree client adds one line before upgrading, for example `"status": "prototype"`; a client without a profile adds `{"format":"datapass.client-profile","version":1,"family":"content","status":"prototype"}` with its own family. `reference` is reserved for the AGENTS.md rule 17 public references. Status is a catalog label only: capabilities, CSP and build inclusion are unchanged. A profile with `status` is refused by 0.11.1 and older tooling (unknown key), so on rollback remove the line.
 
 ## Rollback
+
+From 0.12.0 to 0.11.1 (rollback check `scripts/release-rollback-check.mjs` executed with the 0.11.1 build `3575e6b` as the old release for F204, F205, F206, F207 and F208):
+
+- **Client status (F213).** 0.11.1 tooling refuses a profile with `status` (unknown key): remove the line from each `client.config.json` before `client:check` or a build. This is the only refusal on rollback.
+- **Browser workspace.** Same `datapass.workspace` v1 document; 0.11.1 restores it. The F205 sidecar `datapass.workspace.revision` is not read by 0.11.1 and stays in place; the next 0.12.0 load takes the stored document as its baseline, so no conflict banner opens for edits made under 0.11.1. Keep-aside behaviour is the 0.11.1 one: a document 0.11.1 refuses is moved, unchanged, to `datapass.workspace.rejected` and a refused run history to `<key>.rejected`, never overwritten. Nothing 0.12.0 writes is refused by 0.11.1, so nothing is moved aside by the rollback itself.
+- **Result store.** 0.11.1 opens the 0.12.0 manifest, reopens SQL and Jupyter results by hash, and its own save keeps every result file, notebook file and saved site run entry (step 3 of the rollback check); back on 0.12.0, the site run reopens by its hash, not recomputed.
+- **Saved A/B pairs (F207).** 0.11.1 does not read `datapass.ab-pair.*` keys and leaves them in place; returning to 0.12.0 restores them.
+- **Bundles (F208).** 0.11.1 has no bundle reader; exported `datapass.bundle` files stay valid for 0.12.0 and `py/datapass_bundle.py`.
+- **Runtime companion.** Stop it and start `py/service/app.py` from the 0.11.1 checkout or release instead; 0.11.1 has no `DATAPASS_ARTIFACT_DIR` (artifacts come from the checkout folder) and no results-only route, so a 0.12.0 client cannot save new site runs to it. Its venv folder can be removed by hand.
 
 From 0.11.1 to 0.11.0: nothing stored changes. The 0.11.0 workbench `_headers` blocks the loopback runtime and Jupyter on a static host that applies it (SQL, notes and saved results opened in the browser still work); serve it without `_headers` or with the 0.11.1 policy if you need the runtime.
 
