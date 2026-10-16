@@ -17,8 +17,8 @@ test('the display set is exactly the nine approved states with one label each',(
   assert.ok(!isTerminalRunState('queued'));assert.ok(!isTerminalRunState('running'));assert.ok(isTerminalRunState('not-observed'));
 });
 
-test('every local runtime RunStatus literal maps (workspace/runtime.ts STATUSES)',async()=>{
-  const statuses=line(await src('../src/workspace/runtime.ts'),/STATUSES=new Set\(\[[^\]]*\]\)/);
+test('every local runtime RunStatus literal maps (compute/runtime-client.ts STATUSES)',async()=>{
+  const statuses=line(await src('../src/framework/compute/runtime-client.ts'),/STATUSES=new Set\(\[[^\]]*\]\)/);
   assert.deepEqual(statuses,['queued','running','succeeded','failed','cancelled']);
   for(const s of statuses)assert.equal(runStateFromRuntime(s),s);
 });

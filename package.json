@@ -47,6 +47,8 @@
     "test:workbench": "node --experimental-strip-types --test tests/workbench-authoring.test.mjs && playwright test tests/browser/workbench-notebook.spec.ts",
     "sdk:pack": "node scripts/sdk-pack.mjs",
     "sdk:verify": "node scripts/sdk-verify.mjs",
+    "runtime:pack": "node scripts/runtime-pack.mjs",
+    "runtime:verify": "node scripts/runtime-verify.mjs dist-runtime",
     "preview:validate": "node scripts/preview-validate.mjs"
   },
   "overrides": {

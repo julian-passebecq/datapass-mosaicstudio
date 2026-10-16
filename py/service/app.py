@@ -10,7 +10,7 @@ origins and refuses request bodies above 2 KB. Do not expose it on a network.
 
 Endpoints
     GET  /health                     liveness + model version
-    GET  /artifacts/{id}             a precomputed artifact (clients/python-wind-reference/public/artifacts)
+    GET  /artifacts/{id}             a precomputed artifact ($DATAPASS_ARTIFACT_DIR, else clients/python-wind-reference/public/artifacts)
     POST /compute/wind-reference     {k, c, hubHeight} -> ILLUSTRATIVE artifact `wind-aep-live`
     /api/runtime/v1/...              token-protected runs of allowlisted models (`datapass.runtime/1`)
 
@@ -59,7 +59,20 @@ DEFAULT_PORT = 8765
 DEFAULT_ORIGINS = ("http://127.0.0.1:5173", "http://localhost:5173", "http://127.0.0.1:4173", "http://localhost:4173")
 DEFAULT_WORKBENCH_ORIGIN = "http://127.0.0.1:5173"
 LOOPBACK_HOSTS = ("127.0.0.1", "localhost", "[::1]", "::1")
-ARTIFACT_DIR = HERE.parents[1] / "clients" / "python-wind-reference" / "public" / "artifacts"
+CHECKOUT_ARTIFACT_DIR = HERE.parents[1] / "clients" / "python-wind-reference" / "public" / "artifacts"
+ARTIFACT_DIR_ENV = "DATAPASS_ARTIFACT_DIR"
+
+
+def resolve_artifact_dir() -> Path:
+    """DATAPASS_ARTIFACT_DIR when set (the runtime companion runs outside a checkout), else the checkout folder.
+
+    A folder that does not exist is not an error: GET /artifacts/{id} then answers 404.
+    """
+    chosen = os.environ.get(ARTIFACT_DIR_ENV, "").strip()
+    return Path(chosen).expanduser() if chosen else CHECKOUT_ARTIFACT_DIR
+
+
+ARTIFACT_DIR = resolve_artifact_dir()
 _ID = re.compile(r"^[a-z][a-zA-Z0-9_-]{0,79}$")
 SOURCE = ("py/service/app.py POST /compute/wind-reference. ILLUSTRATIVE: generic 3 MW-class power curve, "
           "Weibull wind with scale c given at 100 m, power-law shear 0.14, no losses. Not FOIL data, not a site assessment.")
@@ -259,10 +272,14 @@ class _BodyLimit:
 
 
 def create_app(*, origins: tuple[str, ...] | None = None, allowed_hosts: tuple[str, ...] = LOOPBACK_HOSTS,
-               artifact_dir: Path = ARTIFACT_DIR, models: dict[str, RuntimeModel] | None = None,
+               artifact_dir: Path | None = None, models: dict[str, RuntimeModel] | None = None,
                token: str | None = None, results_dir: Path | str | None = None,
                results_max_bytes: int = DEFAULT_RESULTS_MAX_BYTES) -> FastAPI:
-    """`results_dir` (opt-in) enables the durable result store; the nbformat routes need `nbformat` installed."""
+    """`results_dir` (opt-in) enables the durable result store; the nbformat routes need `nbformat` installed.
+
+    `artifact_dir` defaults to resolve_artifact_dir(), read when the app is created.
+    """
+    artifact_dir = resolve_artifact_dir() if artifact_dir is None else Path(artifact_dir)
     env_origins = os.environ.get("DATAPASS_SERVICE_ORIGINS")
     origins = origins or (tuple(o.strip() for o in env_origins.split(",") if o.strip()) if env_origins else DEFAULT_ORIGINS)
     app = FastAPI(title="DataPass artifact service (prototype)", version=MODEL_VERSION, docs_url="/docs", redoc_url=None)

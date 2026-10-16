@@ -215,6 +215,10 @@ jobs:
             git commit -m 'build: record qualified model asset contracts and version metadata [skip ci]'
             git push origin "HEAD:$GITHUB_REF_NAME"
           fi
+      - name: Python runtime companion archive, hashes and start outside the checkout
+        run: |
+          npm run runtime:pack -- --allow-dirty
+          npm run runtime:verify
       - name: SDK release archive and hash verification
         run: |
           npm run sdk:pack -- --allow-dirty
