@@ -7,8 +7,9 @@ import {manifestSchema,savedStateSchema,sceneSchema,explorerSchema,explanationSc
 import {componentCatalog} from '../src/framework/catalog.ts';
 import {conceptSpecJsonSchema} from '../src/framework/concept/json-schema.ts';
 import {checkConceptSpec} from '../src/framework/concept/schema.ts';
+import {diagnosticCodesContract} from '../src/framework/diagnostics/index.ts';
 const checking=process.argv.includes('--check');await mkdir('docs/contracts',{recursive:true});
-for(const [name,value] of Object.entries({'motion-v2.schema.json':motionV2Schema,'model3d.schema.json':modelSchema,...foundationSchemas,'web-app.schema.json':manifestSchema,'web-state.schema.json':savedStateSchema,'scene3d.schema.json':sceneSchema,'components.json':componentCatalog,'explorer.schema.json':explorerSchema,'explanation.schema.json':explanationSchema,'replay.schema.json':replaySchema,'client-profile.schema.json':clientProfileSchema,'families.json':appFamilies,'capabilities.json':capabilityCatalog,'motion.schema.json':motionSchema,'source-artifact.schema.json':sourceArtifactSchema,'concept-spec.schema.json':conceptSpecJsonSchema})){
+for(const [name,value] of Object.entries({'motion-v2.schema.json':motionV2Schema,'model3d.schema.json':modelSchema,...foundationSchemas,'web-app.schema.json':manifestSchema,'web-state.schema.json':savedStateSchema,'scene3d.schema.json':sceneSchema,'components.json':componentCatalog,'explorer.schema.json':explorerSchema,'explanation.schema.json':explanationSchema,'replay.schema.json':replaySchema,'client-profile.schema.json':clientProfileSchema,'families.json':appFamilies,'capabilities.json':capabilityCatalog,'motion.schema.json':motionSchema,'source-artifact.schema.json':sourceArtifactSchema,'concept-spec.schema.json':conceptSpecJsonSchema,'diagnostic-codes.json':diagnosticCodesContract})){
  const file='docs/contracts/'+name,content=JSON.stringify(value,null,2)+'\n';
  if(checking){if((await readFile(file,'utf8')).replace(/\r\n/g,'\n')!==content)throw new Error('Contract drift: '+file);}else await writeFile(file,content);
 }

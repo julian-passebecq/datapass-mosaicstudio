@@ -9,7 +9,12 @@ import {buildInventory,isPermissive,spdxIds} from '../scripts/license-inventory.
 // FR-07 release packaging: version identity, license honesty and the hand-off receipts agree with the tree.
 const json=p=>JSON.parse(readFileSync(p,'utf8'));
 const git=args=>execFileSync('git',args,{encoding:'utf8'}).trim();
-const blobSha=p=>createHash('sha256').update(execFileSync('git',['show','HEAD:'+p])).digest('hex');
+const blobSha=(p,rev='HEAD')=>createHash('sha256').update(execFileSync('git',['show',rev+':'+p])).digest('hex');
+/** Contract files changed after the 0.10.0 release by later additive packages (the released receipt itself is never edited). */
+const CHANGED_SINCE_0_10=new Map([
+  ['src/framework/foundation/artifact.ts','F209: stable DP-ART diagnostic code on every refusal (additive; messages and decisions unchanged)'],
+  ['py/datapass_artifact.py','F209: ArtifactError.code and the CLI "code" field (additive; messages and decisions unchanged)'],
+]);
 const pkg=json('package.json'),lock=json('package-lock.json');
 const DIR='handoff/01-mosaicstudio/full-release-2026-10-10';
 
@@ -48,7 +53,14 @@ test('READY receipt hashes are the committed contract bytes',()=>{
   assert.equal(ready.template,false);assert.equal(ready.visibility,'PRIVATE_OR_LOCAL_UNTIL_APPROVED');
   const ids=ready.contract_versions.map(c=>c.id);
   for(const id of ['datapass.artifact/1','datapass.concept-spec/1','datapass.preview/1'])assert.ok(ids.includes(id),id);
-  for(const c of ready.contract_versions)for(const f of c.files)assert.equal(f.sha256,blobSha(f.path),f.path);
+  // The receipt hashes "git blob content at source_sha". Files unchanged since the release are checked against HEAD (works in a
+  // shallow CI clone); files a later additive package changed are checked at source_sha when that commit is present locally.
+  const hasCommit=sha=>{try{execFileSync('git',['cat-file','-e',sha+'^{commit}'],{stdio:'ignore'});return true;}catch{return false;}};
+  for(const c of ready.contract_versions)for(const f of c.files){
+    if(!CHANGED_SINCE_0_10.has(f.path)){assert.equal(f.sha256,blobSha(f.path),f.path);continue;}
+    assert.notEqual(f.sha256,blobSha(f.path),f.path+' is unchanged: remove it from CHANGED_SINCE_0_10');
+    if(hasCommit(ready.source_sha))assert.equal(f.sha256,blobSha(f.path,ready.source_sha),f.path+' at '+ready.source_sha);
+  }
 });
 
 test('OUTCOME keeps every original row, maps FR-01..FR-07 and leaves publication and Fabric off',()=>{

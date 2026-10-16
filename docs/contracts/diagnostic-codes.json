@@ -1,0 +1,473 @@
+{
+  "format": "datapass.diagnostic-codes",
+  "version": 1,
+  "note": "Stable codes: a code names a rule and is never renumbered or reused. Message text is not part of the contract and may differ between languages. Generated from src/framework/diagnostics by npm run contracts.",
+  "prefixes": {
+    "DP-ART": "datapass.artifact v1 validators (TypeScript and Python)",
+    "DP-ENV": "doctor: author and consumer environment checks",
+    "DP-CLI": "client profile and client checks",
+    "DP-STO": "workspace, run and result storage",
+    "DP-BUN": "export bundles"
+  },
+  "codes": [
+    {
+      "code": "DP-ART-001",
+      "gate": "envelope",
+      "rule": "inert-json",
+      "summary": "Not inert finite JSON: a non-finite number, a non-JSON value, a cycle, a prototype key (__proto__, prototype, constructor) or text that does not parse as JSON.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-002",
+      "gate": "envelope",
+      "rule": "structure-budget",
+      "summary": "JSON structure budget exceeded (depth above 24 or more than 500 000 nodes).",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-003",
+      "gate": "envelope",
+      "rule": "byte-budget",
+      "summary": "More than 1 MiB of compact UTF-8 JSON.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-010",
+      "gate": "structure",
+      "rule": "expected-object",
+      "summary": "An object is required at this position.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-011",
+      "gate": "structure",
+      "rule": "unexpected-field",
+      "summary": "A field the schema does not declare (additionalProperties: false).",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-012",
+      "gate": "structure",
+      "rule": "missing-field",
+      "summary": "A required field is absent.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-013",
+      "gate": "structure",
+      "rule": "format",
+      "summary": "format is not \"datapass.artifact\".",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-014",
+      "gate": "structure",
+      "rule": "version",
+      "summary": "version is not 1.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-015",
+      "gate": "structure",
+      "rule": "invalid-id",
+      "summary": "Not an id (^[a-z][a-zA-Z0-9_-]{0,79}$, not constructor/prototype/__proto__).",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-016",
+      "gate": "structure",
+      "rule": "invalid-text",
+      "summary": "Not a string, too many Unicode code points, or blank where text must be filled.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-017",
+      "gate": "structure",
+      "rule": "integer-range",
+      "summary": "Not an integer within the allowed range.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-018",
+      "gate": "structure",
+      "rule": "enum-value",
+      "summary": "Not one of the allowed values (provenance kind, producer kind, column type, chart).",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-019",
+      "gate": "structure",
+      "rule": "expected-array",
+      "summary": "An array is required at this position.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-020",
+      "gate": "structure",
+      "rule": "list-budget",
+      "summary": "A list has fewer or more items than allowed.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-021",
+      "gate": "structure",
+      "rule": "duplicate-list-id",
+      "summary": "An id list (dependsOn, representation inputs) repeats an id (uniqueItems).",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-022",
+      "gate": "structure",
+      "rule": "evidence-path",
+      "summary": "Evidence path is not a safe relative path (forward slashes, no drive, no \"..\", no empty or \".\" segment, at most 260 characters).",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-023",
+      "gate": "structure",
+      "rule": "input-hash",
+      "summary": "inputHash is not 64 lowercase hex characters (sha256).",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-024",
+      "gate": "structure",
+      "rule": "input-value",
+      "summary": "An input value is not a finite number, a boolean or a string of at most 400 characters.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-025",
+      "gate": "structure",
+      "rule": "nullable-flag",
+      "summary": "column.nullable is not a boolean.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-026",
+      "gate": "structure",
+      "rule": "row-cell-budget",
+      "summary": "A row has more cells than the column budget.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-027",
+      "gate": "structure",
+      "rule": "row-cell-name",
+      "summary": "A row cell name is not a column id.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-028",
+      "gate": "structure",
+      "rule": "row-cell-value",
+      "summary": "A cell is not null, a boolean, a finite number or a string of at most 4000 characters.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-029",
+      "gate": "structure",
+      "rule": "payload-kind",
+      "summary": "Unknown payload kind (table or text).",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-030",
+      "gate": "structure",
+      "rule": "representation-kind",
+      "summary": "Unsupported representation kind (table, chart, metric, text or json).",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-040",
+      "gate": "semantic",
+      "rule": "evidence-range",
+      "summary": "Evidence line range ends before it starts.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-041",
+      "gate": "semantic",
+      "rule": "evidence-duplicate",
+      "summary": "The same evidence path and line range is listed twice.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-042",
+      "gate": "semantic",
+      "rule": "input-duplicate",
+      "summary": "Two provenance inputs share an id.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-043",
+      "gate": "semantic",
+      "rule": "depends-on-self",
+      "summary": "An artifact lists itself in dependsOn.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-044",
+      "gate": "semantic",
+      "rule": "column-duplicate",
+      "summary": "Two columns share an id.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-045",
+      "gate": "semantic",
+      "rule": "row-key-undeclared",
+      "summary": "rowKey is not a declared column.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-046",
+      "gate": "semantic",
+      "rule": "row-undeclared-cell",
+      "summary": "A row has a cell for an undeclared column.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-047",
+      "gate": "semantic",
+      "rule": "row-missing-cell",
+      "summary": "A row lacks a cell for a declared column.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-048",
+      "gate": "semantic",
+      "rule": "cell-type",
+      "summary": "A cell does not match its column type (or is null in a non-nullable column).",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-049",
+      "gate": "semantic",
+      "rule": "row-key-invalid",
+      "summary": "A row key is missing, not a string or number, or duplicated.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-050",
+      "gate": "semantic",
+      "rule": "representation-duplicate",
+      "summary": "Two representations share an id.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-051",
+      "gate": "semantic",
+      "rule": "representation-input",
+      "summary": "A representation names an input that provenance does not declare.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-052",
+      "gate": "semantic",
+      "rule": "text-needs-text",
+      "summary": "A text representation needs a text payload.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-053",
+      "gate": "semantic",
+      "rule": "needs-table",
+      "summary": "A table, chart or metric representation needs a table payload.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-054",
+      "gate": "semantic",
+      "rule": "chart-x",
+      "summary": "Chart x names an unknown column.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-055",
+      "gate": "semantic",
+      "rule": "chart-y",
+      "summary": "Chart y is not a number column.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-056",
+      "gate": "semantic",
+      "rule": "chart-x-number",
+      "summary": "Line or scatter chart x is not a number column.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-057",
+      "gate": "semantic",
+      "rule": "metric-column",
+      "summary": "Metric names an unknown column.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-058",
+      "gate": "semantic",
+      "rule": "metric-row",
+      "summary": "Metric names a row key that no row has (compared with JavaScript String()).",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-059",
+      "gate": "semantic",
+      "rule": "derived-manifest",
+      "summary": "Defence in depth: the app manifest derived from the artifact was refused by the existing app contracts.",
+      "languages": [
+        "ts"
+      ]
+    },
+    {
+      "code": "DP-ART-060",
+      "gate": "semantic",
+      "rule": "set-duplicate-id",
+      "summary": "Two artifacts published together share an id.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ART-061",
+      "gate": "semantic",
+      "rule": "set-cycle",
+      "summary": "Artifacts published together form a dependsOn cycle.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    }
+  ]
+}

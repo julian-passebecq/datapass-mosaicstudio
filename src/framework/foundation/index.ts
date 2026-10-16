@@ -17,4 +17,6 @@ export type {TaskRunEvent} from '../task-events.ts';
 export {artifactLineage,lineagePath,layoutLineage,artifactEvidence,metricValue} from './lineage/model.ts';
 export {LINEAGE_LIMITS,ARTIFACT_LIMITS,ArtifactValidationError,artifactDecision,checkArtifactEnvelope,checkArtifactStructure,checkArtifactSemantics,validateArtifactSet} from './artifact.ts';
 export type {ArtifactGate,ArtifactDecision} from './artifact.ts';
+export {ART,ARTIFACT_DIAGNOSTICS} from '../diagnostics/artifact.ts';
+export type {ArtifactCode} from '../diagnostics/artifact.ts';
 export type {EvidenceLink,ArtifactInput,ArtifactProducer,ArtifactProvenance} from './artifact.ts';

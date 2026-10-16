@@ -1,7 +1,8 @@
 // Differential test: every fixture in tests/fixtures/artifact-corpus (all SYNTHETIC) is decided by
 // (1) JSON Schema docs/contracts/artifact.schema.json (Ajv 2020-12, pinned dev dependency),
 // (2) the TypeScript validator and (3) the Python mirror py/datapass_artifact.py.
-// All three must agree with manifest.json: accept/reject, the refusing gate and the JSON Pointer of the offending field.
+// All three must agree with manifest.json: accept/reject, the refusing gate and the JSON Pointer of the offending field;
+// TypeScript and Python must also report the same stable DP-ART code (docs/DIAGNOSTIC_CODES.md).
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync,readdirSync} from 'node:fs';
@@ -9,6 +10,7 @@ import {spawnSync} from 'node:child_process';
 import path from 'node:path';
 import Ajv2020 from 'ajv/dist/2020.js';
 import {artifactDecision,checkArtifactEnvelope,checkArtifactStructure,validateArtifactSet,ArtifactValidationError} from '../src/framework/foundation/artifact.ts';
+import {ARTIFACT_DIAGNOSTICS} from '../src/framework/diagnostics/index.ts';
 
 const root='tests/fixtures/artifact-corpus';
 const manifest=JSON.parse(readFileSync(path.join(root,'manifest.json'),'utf8'));
@@ -52,7 +54,7 @@ test('the TypeScript validator gives the expected decision, gate and path',()=>{
     const value=load(f.file),got=artifactDecision(value);
     if(f.expect==='accept'){assert.deepEqual(got,{ok:true},f.file+': '+got.message);continue;}
     assert.equal(got.ok,false,f.file);
-    assert.deepEqual([got.gate,got.path],[f.gate,f.path],f.file+': '+got.message);
+    assert.deepEqual([got.gate,got.path,got.code],[f.gate,f.path,f.code],f.file+': '+got.message);
     assert.ok(got.message.startsWith((f.path||'/')+': '),got.message);
   }
 });
@@ -72,17 +74,28 @@ test('the Python mirror gives identical decisions, gates and paths',()=>{
   manifest.fixtures.forEach((f,i)=>{
     const py=decisions[i],ts=artifactDecision(load(f.file));
     assert.equal(py.ok,ts.ok,f.file+': '+(py.message??ts.message));
-    if(!ts.ok)assert.deepEqual([py.gate,py.path],[ts.gate,ts.path],f.file+': python '+py.message+' / ts '+ts.message);
+    if(!ts.ok)assert.deepEqual([py.gate,py.path,py.code],[ts.gate,ts.path,ts.code],f.file+': python '+py.message+' / ts '+ts.message);
   });
 });
 
 test('artifact sets: unique ids and no dependsOn cycle, identical in TypeScript and Python',()=>{
   for(const s of manifest.sets){
     let ts={ok:true};
-    try{validateArtifactSet(s.files.map(load));}catch(error){assert.ok(error instanceof ArtifactValidationError);ts={ok:false,gate:error.gate,path:error.path};}
-    assert.deepEqual(ts,s.expect==='accept'?{ok:true}:{ok:false,gate:s.gate,path:s.path},s.name);
+    try{validateArtifactSet(s.files.map(load));}catch(error){assert.ok(error instanceof ArtifactValidationError);ts={ok:false,gate:error.gate,path:error.path,code:error.code};}
+    assert.deepEqual(ts,s.expect==='accept'?{ok:true}:{ok:false,gate:s.gate,path:s.path,code:s.code},s.name);
     const run=spawnSync(process.platform==='win32'?'python':'python3',['-I','py/datapass_artifact.py','--set',...s.files.map(f=>path.join(root,f))],{encoding:'utf8'});
     const py=JSON.parse(run.stdout.trim());
-    assert.equal(py.ok,ts.ok,s.name);if(!ts.ok)assert.deepEqual([py.gate,py.path],[ts.gate,ts.path],s.name);
+    assert.equal(py.ok,ts.ok,s.name);if(!ts.ok)assert.deepEqual([py.gate,py.path,py.code],[ts.gate,ts.path,ts.code],s.name);
   }
+});
+
+test('every rejection code is in the diagnostic table under its gate, and both languages cover every shared code',()=>{
+  const table=new Map(ARTIFACT_DIAGNOSTICS.map(row=>[row.code,row]));
+  const rejected=[...manifest.fixtures.filter(f=>f.expect==='reject'),...manifest.sets.filter(s=>s.expect==='reject')];
+  for(const f of rejected){const row=table.get(f.code);assert.ok(row,(f.file??f.name)+': unknown code '+f.code);assert.equal(row.gate,f.gate,f.code);}
+  const used=new Set(rejected.map(f=>f.code));
+  // Codes the corpus cannot reach: the structure budget (any depth-25 value also fails the JSON Schema) and the
+  // TypeScript-only derived-manifest defence. Both are covered by tests/diagnostic-codes.test.mjs.
+  const unreachable=['DP-ART-002','DP-ART-059'];
+  assert.deepEqual(ARTIFACT_DIAGNOSTICS.map(row=>row.code).filter(code=>!used.has(code)),unreachable);
 });
