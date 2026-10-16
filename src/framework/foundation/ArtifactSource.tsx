@@ -6,9 +6,17 @@ import {artifactDefinition,type Artifact} from './artifact';
 import {loadArtifactSource,type ArtifactSourceSpec} from './artifact-loader';
 import {ArtifactView} from './ArtifactView';
 import {artifactWatchAvailable,onArtifactChanged} from './artifact-live';
+import {capabilityReason} from '../compute/adapter';
+import {HTTP_SOURCE_CAPABILITIES} from '../compute/http-source';
+import {LIVE_FILE_CAPABILITIES} from '../compute/live-file';
 import './foundation.css';
 
-function Provenance({artifact,url}:{artifact:Artifact;url:string}){
+/** U202: neither source kind can stop its producer, so the missing Cancel is stated with its reason (F202 descriptor). */
+function NoCancel({kind}:{kind:ArtifactSourceSpec['kind']}){
+  const reason=capabilityReason(kind==='http'?HTTP_SOURCE_CAPABILITIES:LIVE_FILE_CAPABILITIES,'cancel');
+  return reason?<div data-testid="artifact-no-cancel" data-compute-path={kind==='http'?'http-source':'live-file'}><dt>Cancel</dt><dd>Not available. {reason}</dd></div>:null;
+}
+function Provenance({artifact,url,kind}:{artifact:Artifact;url:string;kind:ArtifactSourceSpec['kind']}){
   const p=artifact.provenance;
   return <dl className="foundation-artifact-provenance" data-testid="artifact-provenance">
     <div><dt>Provenance</dt><dd data-provenance-kind={p.kind}>{p.kind}</dd></div>
@@ -17,6 +25,7 @@ function Provenance({artifact,url}:{artifact:Artifact;url:string}){
     {new URL(url).origin!==location.origin
       ?<div><dt>Service</dt><dd><code>{new URL(url).host+new URL(url).pathname}</code></dd></div>
       :<div><dt>File</dt><dd><code>{new URL(url).pathname.split('/').slice(-2).join('/')}</code></dd></div>}
+    <NoCancel kind={kind}/>
   </dl>;
 }
 function AllViews({artifact,show}:{artifact:Artifact;show:readonly string[]}){
@@ -68,13 +77,13 @@ export function useArtifactSource(source:ArtifactSourceSpec,fallback?:ArtifactSo
   },[key,fallbackKey,debounceMs,revision]);
   return state;
 }
-function Rendered({result,show,pending,liveSince}:{result:Loaded;show?:readonly string[];pending?:boolean;liveSince?:number}){
+function Rendered({result,kind,show,pending,liveSince}:{result:Loaded;kind:ArtifactSourceSpec['kind'];show?:readonly string[];pending?:boolean;liveSince?:number}){
   const {artifact,url}=result;
   return <section className="foundation-artifact-source" data-testid="artifact-source" data-artifact-id={artifact.id} data-run-id={artifact.provenance.runId??''} aria-busy={pending||undefined}>
     {liveSince!==undefined?<p className="foundation-artifact-live" data-testid="artifact-live-badge" data-updated-at={liveSince} title="Dev server: this file is watched; any producer that rewrites it updates this view.">
       <span aria-hidden="true">{'●'}</span> Live file <span>updated {new Date(liveSince).toLocaleTimeString()}</span></p>:null}
     {show?.length?<><header><span className="foundation-kicker">Python result / {artifact.provenance.kind}{pending?' / recomputing...':''}</span><h3>{artifact.title}</h3></header><AllViews artifact={artifact} show={show}/></>:<ArtifactView artifact={artifact}/>}
-    <Provenance artifact={artifact} url={url}/>
+    <Provenance artifact={artifact} url={url} kind={kind}/>
   </section>;
 }
 /**
@@ -91,14 +100,14 @@ export function ArtifactSource({id,source,fallback,show}:{id?:string;source?:Art
   if(state.status==='error'){
     if(state.fallback)return <>
       <div role="alert" className="foundation-artifact-fallback" data-testid="artifact-fallback-banner"><strong>Live result unavailable, showing the precomputed artifact.</strong> {state.message}</div>
-      <Rendered result={state.fallback} show={show}/>
+      <Rendered result={state.fallback} kind={fallback?.kind??'static'} show={show}/>
     </>;
     return <div role="alert" className="foundation-artifact-error" data-testid="artifact-error" data-artifact-id={label}><strong>Artifact unavailable.</strong> {state.message}</div>;
   }
   // Same element structure with or without the toast, so view state (table sort, chosen representation) survives updates.
   return <>
     {state.liveError?<div role="alert" className="foundation-artifact-toast" data-testid="artifact-live-error"><strong>Rejected file update, keeping the last valid result.</strong> {state.liveError}</div>:null}
-    <Rendered result={state.result} show={show} pending={state.pending} liveSince={artifactWatchAvailable&&spec.kind==='static'?state.updatedAt:undefined}/>
+    <Rendered result={state.result} kind={spec.kind} show={show} pending={state.pending} liveSince={artifactWatchAvailable&&spec.kind==='static'?state.updatedAt:undefined}/>
   </>;
 }
 /** Client helper: `components:{aep:artifactSource('wind-aep-weibull',['aep-8','table'])}`. */
