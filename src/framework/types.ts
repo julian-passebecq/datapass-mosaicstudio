@@ -82,7 +82,11 @@ export type Resources = {scenes?: Record<string, unknown>; stories?: Record<stri
 export type AppDefinition = {manifest: Manifest; bindings: Bindings; resources?: Resources; components?: Record<string, unknown>; customCapabilities?: Record<string, import('./capabilities.ts').CapabilityId[]>; limits?: import('./scene.ts').SceneLimits;
   /** Optional, trusted source only: client-supplied storage for run REFERENCES per run resource (never results).
    * Absent means history stays in memory exactly as before. Not part of the inert manifest. */
-  runHistory?: Record<string, import('./foundation/run-history.ts').RunHistoryBinding>};
+  runHistory?: Record<string, import('./foundation/run-history.ts').RunHistoryBinding>;
+  /** Optional, trusted source only (F206): per run resource, the runtime link and the runtime tasks whose completed
+   * runs a visitor may save to the paired local ResultStore and reopen without recomputing. Off when absent; each save
+   * is an explicit request. Browser-only tasks cannot be durable. Not part of the inert manifest. */
+  durableRuns?: Record<string, import('./storage/site-runs-binding.ts').DurableRunsBinding>};
 export type TaskState = {status: 'idle' | 'running' | 'ready' | 'stale' | 'cancelled' | 'error'; progress: number; message: string};
 export type Snapshot = {values: Values; revision: number; restoreEpoch: number; tasks: Readonly<Record<string, TaskState>>};
 export type SavedState = {format: 'datapass.web-state'; version: 1; appId: string; appVersion: string; page: string; values: Record<string, Scalar>};

@@ -1,9 +1,13 @@
 import type {TaskRunEvent} from './task-events.ts';
+import type {RuntimeTask} from './compute/runtime-task.ts';
+import type {RuntimeConnection} from './compute/runtime-client.ts';
 import {validateExplorerValues} from './explorer/model.ts';
 import {scenePartLimit} from './scene.ts';
 import type {AppDefinition, Manifest, Values, Rows, Scalar, ValueRef, Snapshot, TaskState, SavedState, DeriveContext} from './types.ts';
 import {validateDefinition, validateRows, validateValue, object, parseSavedState} from './validate.ts';
 function freeze<T>(value: T): T {if (value && typeof value==='object' && !Object.isFrozen(value)) {Object.freeze(value); Object.values(value).forEach(freeze);} return value;}
+/** A fresh object over a client's runtime task handle: freezing the definition never freezes the client's own object. */
+const wrapTask=(t:RuntimeTask):RuntimeTask=>({taskId:t.taskId,model:t.model,capabilities:t.capabilities,handler:t.handler,latest:()=>t.latest(),subscribe:(fn:()=>void)=>t.subscribe(fn)});
 const errorText=(e:unknown)=>e instanceof Error?e.message:String(e);
 type Cache={key:string; rows:Rows; version:number};
 /** Small website state/data adapter, NOT a SQL engine or replacement Mosaic coordinator. */
@@ -29,7 +33,9 @@ export class SiteRuntime {
     // Source functions are not cloned or serialized. Inline data and resources are copied.
     this.definition=freeze({manifest:this.manifest,components:{...definition.components},customCapabilities:structuredClone(definition.customCapabilities),limits:freeze(structuredClone(definition.limits)),bindings:{inline:freeze(structuredClone(definition.bindings.inline||{})),derive:{...definition.bindings.derive},tasks:{...definition.bindings.tasks},validateViewState:definition.bindings.validateViewState},resources:freeze(structuredClone(definition.resources||{})),
       // Trusted client storage for run references (opt-in). Wrapped so freezing never touches the client's own store object.
-      ...(definition.runHistory?{runHistory:Object.fromEntries(Object.entries(definition.runHistory).map(([id,{store,maxRefs}])=>[id,{store:{getItem:(k:string)=>store.getItem(k),setItem:(k:string,v:string)=>store.setItem(k,v),removeItem:(k:string)=>store.removeItem(k)},...(maxRefs===undefined?{}:{maxRefs})}]))}:{})});
+      ...(definition.runHistory?{runHistory:Object.fromEntries(Object.entries(definition.runHistory).map(([id,{store,maxRefs}])=>[id,{store:{getItem:(k:string)=>store.getItem(k),setItem:(k:string,v:string)=>store.setItem(k,v),removeItem:(k:string)=>store.removeItem(k)},...(maxRefs===undefined?{}:{maxRefs})}]))}:{}),
+      // Trusted durable-run binding (F206, opt-in). Wrapped like runHistory so freezing never touches the client's link or task objects.
+      ...(definition.durableRuns?{durableRuns:Object.fromEntries(Object.entries(definition.durableRuns).map(([id,{link,tasks}])=>[id,{link:{get:()=>link.get(),pending:(h:string)=>link.pending(h),connect:(c:RuntimeConnection)=>link.connect(c),clear:()=>link.clear()},tasks:tasks.map(t=>wrapTask(t))}]))}:{})});
     this.snapshot=freeze({values:Object.fromEntries(this.manifest.fields.map(f=>[f.id,f.default])),revision:0,restoreEpoch:0,tasks:Object.fromEntries(this.manifest.tasks.map(t=>[t.id,{status:'idle',progress:0,message:''} satisfies TaskState]))});
     this.definition.bindings.validateViewState?.(this.snapshot.values);
   }

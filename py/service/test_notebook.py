@@ -383,5 +383,136 @@ class SqlSourceHashTests(unittest.TestCase):
         self.assertEqual(doc["workspace"]["cells"][0]["sourceSha256"], sql_source_sha256("SELECT 2"))
 
 
+def site_item(task: str = "grid", marker: str = "a", cell_id: str | None = None) -> dict:
+    """A SYNTHETIC client-site run result (F206): an allowlisted-model artifact in a datapass.cell-result v1 document."""
+    cid = cell_id or f"site-synthetic-app-{task}"
+    src = sha256(json.dumps(["site", "synthetic-app", "1.0.0", task, "wind-reference", "v1", marker * 64]).encode())
+    run = {"runId": "run-00000000000000aa", "model": "wind-reference", "modelVersion": "v1", "inputHash": marker * 64, "artifactSha256": None}
+    artifact = {"format": "datapass.artifact", "version": 1, "id": "synthetic-run", "title": "SYNTHETIC run " + marker,
+                "provenance": {"kind": "synthetic", "source": "SYNTHETIC test fixture", "runId": run["runId"]},
+                "payload": {"kind": "table", "rowKey": "id", "columns": [{"id": "id", "label": "Id", "type": "string"}], "rows": [{"id": marker}]},
+                "representations": [{"id": "table", "title": "Rows", "kind": "table"}]}
+    return {"cellId": cid, "cellKind": "python", "sourceSha256": src,
+            "run": {**run, "site": {"appId": "synthetic-app", "appVersion": "1.0.0", "taskId": task, "values": {"k": 2}}},
+            "result": {"format": "datapass.cell-result", "version": 1, "cellId": cid, "sourceSha256": src,
+                       "outputs": [{"output_type": "display_data", "data": {"application/vnd.datapass.artifact+json": artifact},
+                                    "metadata": {"datapass": {"run": run}}}],
+                       "table": None, "executionCount": None, "finishedAt": "2026-10-16T00:00:00.000Z", "origin": "datapass.runtime/1"}}
+
+
+@unittest.skipUnless(HAVE, "nbformat / fastapi not installed")
+class SiteRunResultsTests(unittest.TestCase):
+    """F206: `POST /store/results` saves client-site run results only; the workspace and notebook stay untouched."""
+    def setUp(self) -> None:
+        self.dir = Path(tempfile.mkdtemp(prefix="datapass-site-runs-test-"))
+        self.app = service.create_app(origins=(ORIGIN,), token=TOKEN, results_dir=self.dir / "store", results_max_bytes=1_000_000)
+        self.client = TestClient(self.app, base_url="http://127.0.0.1:8765")
+
+    def tearDown(self) -> None:
+        self.app.state.runs.shutdown()
+        shutil.rmtree(self.dir, ignore_errors=True)
+
+    def manifest_bytes(self) -> bytes:
+        return (self.dir / "store" / "manifest.json").read_bytes()
+
+    def files(self) -> list[str]:
+        return sorted(str(p.relative_to(self.dir / "store")) for p in (self.dir / "store").rglob("*") if p.is_file())
+
+    def test_results_only_save_keeps_workspace_and_reopens_after_restart(self) -> None:
+        nb = self.client.post(API + "/store/save", headers=H, json={"notebook": nb_payload("py-1"), "results": [result_item("py-1", 2)]})
+        self.assertEqual(nb.status_code, 200, nb.text)
+        before = json.loads(self.manifest_bytes())
+        saved = self.client.post(API + "/store/results", headers=H, json={"results": [site_item()]})
+        self.assertEqual(saved.status_code, 200, saved.text)
+        sha = saved.json()["results"][0]["resultSha256"]
+        after = json.loads(self.manifest_bytes())
+        self.assertEqual(after["workspace"], before["workspace"], "the notebook workspace is untouched")
+        self.assertEqual(after["entries"][0], before["entries"][0])
+        site = after["entries"][1]
+        self.assertEqual(sorted(site), sorted(before["entries"][0]), "entries keep today's shape")
+        self.assertEqual((site["cellId"], site["cellKind"], site["resultSha256"]), ("site-synthetic-app-grid", "python", sha))
+        self.assertEqual(site["run"]["site"]["taskId"], "grid")
+        self.assertEqual(sha256((self.dir / "store" / "results" / f"{sha}.json").read_bytes()), sha)
+        # Saving the same run again is idempotent: no duplicate entry, no new file.
+        files = self.files()
+        again = self.client.post(API + "/store/results", headers=H, json={"results": [site_item()]})
+        self.assertEqual(again.json()["results"][0]["resultSha256"], sha)
+        self.assertEqual(len(json.loads(self.manifest_bytes())["entries"]), 2)
+        self.assertEqual(self.files(), files)
+        # Service restart: a new process and a new token read the same bytes back; nothing is recomputed.
+        self.app.state.runs.shutdown()
+        token2 = "notebook-test-token-restarted-01"
+        self.app = service.create_app(origins=(ORIGIN,), token=token2, results_dir=self.dir / "store", results_max_bytes=1_000_000)
+        client2 = TestClient(self.app, base_url="http://127.0.0.1:8765")
+        h2 = {"X-Datapass-Token": token2, "Origin": ORIGIN}
+        self.assertEqual(client2.get(f"{API}/store/results/{sha}", headers=H).status_code, 401, "the old token is refused")
+        got = client2.get(f"{API}/store/results/{sha}", headers=h2)
+        self.assertEqual(sha256(got.content), sha)
+        entries = client2.get(API + "/store/manifest", headers=h2).json()["entries"]
+        self.assertTrue(next(e for e in entries if e["resultSha256"] == sha)["present"])
+        # A later notebook save keeps the site entry.
+        self.assertEqual(client2.post(API + "/store/save", headers=h2, json={"notebook": nb_payload("py-2"), "results": []}).status_code, 200)
+        self.assertIn(sha, [e["resultSha256"] for e in json.loads(self.manifest_bytes())["entries"]])
+
+    def test_refuses_notebook_cells_other_kinds_and_bad_payloads_without_change(self) -> None:
+        self.client.post(API + "/store/results", headers=H, json={"results": [site_item()]})
+        before, files = self.manifest_bytes(), self.files()
+        bad = [
+            {"results": [site_item(cell_id="py-1")]},  # a notebook cell id
+            {"results": [{**site_item(), "cellKind": "sql"}]},
+            {"results": [{**site_item(), "result": {**site_item()["result"], "origin": "jupyter"}}]},
+            {"results": []},
+            {"results": [site_item()], "notebook": nb_payload("py-1")},
+            {"results": [{**site_item(), "sourceSha256": "0" * 64}]},  # result belongs to another source
+        ]
+        for body in bad:
+            response = self.client.post(API + "/store/results", headers=H, json=body)
+            self.assertEqual(response.status_code, 422, body)
+        self.assertEqual(self.manifest_bytes(), before)
+        self.assertEqual(self.files(), files)
+
+    def test_token_refusal_quota_and_atomic_failure(self) -> None:
+        self.assertEqual(self.client.post(API + "/store/results", json={"results": [site_item()]}).status_code, 401)
+        self.assertEqual(self.client.post(API + "/store/results", headers={**H, "Origin": "http://evil.example"}, json={"results": [site_item()]}).status_code, 403)
+        leak = site_item("leak")
+        leak["result"]["outputs"][0]["data"]["application/vnd.datapass.artifact+json"]["title"] = "SYNTHETIC " + TOKEN
+        refused = self.client.post(API + "/store/results", headers=H, json={"results": [leak]})
+        self.assertEqual(refused.status_code, 422)
+        self.assertIn("token", refused.json()["detail"])
+        leak_ref = site_item("leakref")
+        leak_ref["run"]["site"]["values"] = {"note": TOKEN}
+        self.assertEqual(self.client.post(API + "/store/results", headers=H, json={"results": [leak_ref]}).status_code, 422)
+        self.assertFalse((self.dir / "store" / "manifest.json").exists(), "nothing was written")
+        self.client.post(API + "/store/results", headers=H, json={"results": [site_item()]})
+        before, files = self.manifest_bytes(), self.files()
+        store: ResultStore = self.app.state.result_store
+        store.max_bytes = store.used_bytes() + 200
+        full = self.client.post(API + "/store/results", headers=H, json={"results": [site_item("grid", "b")]})
+        self.assertEqual(full.status_code, 507)
+        self.assertEqual((self.manifest_bytes(), self.files()), (before, files))
+        store.max_bytes = 1_000_000
+        store._fail_after_writes = 1  # the result file is written, the manifest commit fails: the new file is removed
+        failed = self.client.post(API + "/store/results", headers=H, json={"results": [site_item("grid", "c")]})
+        self.assertEqual(failed.status_code, 507)
+        self.assertIn("previous saved state is unchanged", failed.json()["detail"])
+        self.assertEqual((self.manifest_bytes(), self.files()), (before, files))
+        store._fail_after_writes = None
+        for path in (self.dir / "store").rglob("*"):
+            if path.is_file():
+                self.assertNotIn(TOKEN.encode(), path.read_bytes())
+
+    def test_corrupt_or_missing_site_result_is_reported_not_replaced(self) -> None:
+        sha = self.client.post(API + "/store/results", headers=H, json={"results": [site_item()]}).json()["results"][0]["resultSha256"]
+        path = self.dir / "store" / "results" / f"{sha}.json"
+        path.write_bytes(b"tampered")
+        self.assertEqual(self.client.get(f"{API}/store/results/{sha}", headers=H).status_code, 409)
+        self.assertEqual(self.client.post(API + "/store/results", headers=H, json={"results": [site_item()]}).status_code, 409)
+        self.assertEqual(path.read_bytes(), b"tampered", "a corrupt file is never silently overwritten")
+        path.unlink()
+        self.assertEqual(self.client.get(f"{API}/store/results/{sha}", headers=H).status_code, 404)
+        entry = next(e for e in self.client.get(API + "/store/manifest", headers=H).json()["entries"] if e["resultSha256"] == sha)
+        self.assertFalse(entry["present"])
+
+
 if __name__ == "__main__":
     unittest.main()

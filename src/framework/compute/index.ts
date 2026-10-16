@@ -7,3 +7,5 @@ export {SITE_TASK_CAPABILITIES,createSiteTaskAdapter,type SiteTaskAdapter} from 
 export {RUNTIME_RUN_CAPABILITIES,createRuntimeRunAdapter,type RuntimeRunAdapter} from './runtime-run.ts';
 export {HTTP_SOURCE_CAPABILITIES,HTTP_CANCEL_REASON,createHttpSourceAdapter,type HttpSourceAdapter} from './http-source.ts';
 export {LIVE_FILE_CAPABILITIES,LIVE_FILE_CANCEL_REASON,createLiveFileAdapter,type LiveFileAdapter} from './live-file.ts';
+export {RUNTIME_TASK_CAPABILITIES,RUNTIME_LINK_KEY,NOT_PAIRED,createRuntimeLink,createRuntimeTask} from './runtime-task.ts';
+export type {RuntimeLink,RuntimeTask,RuntimeTaskRun,RuntimeTaskOptions,SessionPort} from './runtime-task.ts';
