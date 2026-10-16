@@ -2,12 +2,18 @@ import {checkModelAssets} from './model-assets.mjs';
 import {readdir,mkdir,writeFile,lstat} from 'node:fs/promises';
 import path from 'node:path';
 import {loadClient} from './load-client.mjs';
+import {readClientProfile} from './client-context.mjs';
+import {validateClientStatus,CLIENT_STATUS_INVALID} from './client-csp.mjs';
+import {referenceClients} from './client-plugin.ts';
 import {SiteRuntime,validateScene,scenePartLimit} from '../src/framework/index.ts';
 const requested=process.argv[2];if(requested&&!/^[a-z][a-z0-9-]{0,59}$/.test(requested))throw new Error('Invalid client id');
 const ids=requested?[requested]:(await readdir('clients',{withFileTypes:true})).filter(d=>d.isDirectory()&&/^[a-z][a-z0-9-]{0,59}$/.test(d.name)).map(d=>d.name);
 await mkdir('qa/client-manifests',{recursive:true});
 for(const id of ids){
   const dir=path.resolve('clients',id);if((await lstat(dir)).isSymbolicLink())throw new Error('Symbolic client directory refused');
+  // F213: every client declares a status; a missing profile is refused like a missing status (DP-CLI-001).
+  const profile=await readClientProfile(id),status=validateClientStatus(profile?.status,id);
+  if((status==='reference')!==referenceClients.includes(id))throw new Error(`${CLIENT_STATUS_INVALID} Client ${id}: status "reference" is reserved for the AGENTS.md rule 17 public references (${referenceClients.join(', ')}). Fix: use "prototype", "draft" or "frozen".`);
   const definition=await loadClient(id);
   await checkModelAssets(definition,dir);
   const runtime=new SiteRuntime(definition);if(runtime.manifest.id!==id)throw new Error('Folder and app id differ: '+id);
@@ -22,5 +28,5 @@ for(const id of ids){
   }
   const saved=runtime.save(runtime.manifest.pages[0].id);runtime.review(JSON.stringify(saved));
   await writeFile('qa/client-manifests/'+id+'.json',JSON.stringify(runtime.manifest,null,2)+'\n');
-  console.log('Client OK: '+id+' / '+runtime.manifest.pages.length+' pages / '+runtime.manifest.datasets.length+' datasets');
+  console.log('Client OK: '+id+' / '+runtime.manifest.pages.length+' pages / '+runtime.manifest.datasets.length+' datasets / '+status);
 }

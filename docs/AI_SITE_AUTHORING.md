@@ -44,10 +44,12 @@ An ordinary client must not modify framework internals. A real requirement may j
 
 The preferred family in `client.config.json` is advisory. The build plan follows actual blocks and referenced resources. Unused scene resources do not force 3D. A client can combine families without changing its basic ownership model.
 
+Every `client.config.json` declares a `status`: `reference` (only the AGENTS.md rule 17 public references), `prototype` (what `client:new` writes), `draft` (provisional, no further investment) or `frozen` (kept, no further changes). `client:check` refuses a missing status (`DP-CLI-001`) or an unknown one (`DP-CLI-002`) with the one-line fix; the `?sites` catalog shows it as a label. Status never changes capabilities, CSP or which clients a build includes.
+
 `client.config.json` may also carry per-client Content-Security-Policy opt-ins. Omit `csp` to keep the default policy (`script-src 'self'; connect-src 'self'`).
 
 ```json
-{"format":"datapass.client-profile","version":1,"family":"analytics","csp":{"wasm":true,"connect":["http://127.0.0.1:8000"]}}
+{"format":"datapass.client-profile","version":1,"family":"analytics","status":"prototype","csp":{"wasm":true,"connect":["http://127.0.0.1:8000"]}}
 ```
 
 - `wasm: true` adds `'wasm-unsafe-eval'` to `script-src` for that client only (WebAssembly compilation; never `'unsafe-eval'`).

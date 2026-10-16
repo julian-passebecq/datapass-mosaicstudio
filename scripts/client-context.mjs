@@ -2,18 +2,18 @@ import {readFile,writeFile,mkdir,readdir} from 'node:fs/promises';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {loadClient} from './load-client.mjs';
-import {validateClientCsp} from './client-csp.mjs';
+import {validateClientCsp,validateClientStatus} from './client-csp.mjs';
 import {planCapabilities,appFamilies,familyById} from '../src/framework/capabilities.ts';
 import {componentCatalog} from '../src/framework/catalog.ts';
 export async function readClientProfile(id,root=process.cwd()){
   if(!/^[a-z][a-z0-9-]{0,59}$/.test(id))throw new Error('Invalid client id');
   let profile;try{profile=JSON.parse(await readFile(path.join(root,'clients',id,'client.config.json'),'utf8'));}catch(e){if(e.code==='ENOENT')return null;throw e;}
-  if(!profile||Object.keys(profile).some(k=>!['format','version','family','csp'].includes(k))||profile.format!=='datapass.client-profile'||profile.version!==1)throw new Error('Invalid client profile');
-  familyById(profile.family);validateClientCsp(profile.csp);return profile;
+  if(!profile||Object.keys(profile).some(k=>!['format','version','family','status','csp'].includes(k))||profile.format!=='datapass.client-profile'||profile.version!==1)throw new Error('Invalid client profile');
+  familyById(profile.family);validateClientStatus(profile.status,id);validateClientCsp(profile.csp);return profile;
 }
 export function contextDocument(id,definition,profile,files=[]){
   const plan=planCapabilities(definition),family=profile?familyById(profile.family):null;
-  const lines=[`# ${id}: focused authoring context`,'',`Application: ${definition.manifest.title}. Family: ${family?.id||'composed (no family profile)'}.`,'',
+  const lines=[`# ${id}: focused authoring context`,'',`Application: ${definition.manifest.title}. Family: ${family?.id||'composed (no family profile)'}.${profile?.status?` Status: ${profile.status}.`:''}`,'',
     'This generated guide is a starting route, not a restriction on the next client. Add the smallest justified capability; do not read every renderer or donor library.',
     '', '## Edit here',`- clients/${id}/app.ts: pages, blocks and bindings.`,`- clients/${id}/: approved content, models, data and optional assets.`,
     ...files.slice(0,40).map(file=>`- clients/${id}/${file}`),

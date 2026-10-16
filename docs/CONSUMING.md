@@ -113,6 +113,10 @@ The 0.10.0 → newer → 0.10.0 → newer cycle over one result store was execut
 
 No format version changed and no SDK API changed: same `datapass.workspace` v1, `datapass.result-store` / `datapass.cell-result` v1, `datapass.artifact/1`, `datapass.concept-spec/1` and `datapass.preview/1` as 0.11.0. The only workbench change is the shipped `_headers` file (#73): its CSP `connect-src` now allows loopback http/ws, as `vite preview` already did. If you serve the workbench from a static host that applies `_headers`, replace the deployed folder with the 0.11.1 `dist/`; if you copied `_headers` into your own host configuration, update it from `scripts/workbench-headers.mjs`. Clients are rebuilt as usual (`npm ci`, `npm run bootstrap`, `build:client`); their own CSP (`scripts/client-csp.mjs`) is unchanged.
 
+### After 0.11.1 (unreleased): client status is required (F213)
+
+`datapass.client-profile` stays version 1 but now requires `status` (`reference`, `prototype`, `draft` or `frozen`). `client:check`, `client:context` and every build refuse a client without it (`DP-CLI-001`, unknown value `DP-CLI-002`), and a client folder without `client.config.json` is refused the same way. Each out-of-tree client adds one line before upgrading, for example `"status": "prototype"`; a client without a profile adds `{"format":"datapass.client-profile","version":1,"family":"content","status":"prototype"}` with its own family. `reference` is reserved for the AGENTS.md rule 17 public references. Status is a catalog label only: capabilities, CSP and build inclusion are unchanged. A profile with `status` is refused by 0.11.1 and older tooling (unknown key), so on rollback remove the line.
+
 ## Rollback
 
 From 0.11.1 to 0.11.0: nothing stored changes. The 0.11.0 workbench `_headers` blocks the loopback runtime and Jupyter on a static host that applies it (SQL, notes and saved results opened in the browser still work); serve it without `_headers` or with the 0.11.1 policy if you need the runtime.
