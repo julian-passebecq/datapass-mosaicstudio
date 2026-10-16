@@ -120,6 +120,11 @@ test('embed options: chrome "embed" hides the gallery and inputs, fit shows the 
   await send({type:'datapass.concept-spec/load',spec:fixture,options:{view:'isometric',fit:true,chrome:'embed',theme:'light',unknown:1}});
   await expect(inner).toHaveAttribute('data-spec','helpdesk-fixture');
   await page.evaluate(()=>document.body.classList.add('sized'));
+  // The frame is cross-origin (out of process): the browser routes a click by the frame's last painted bounds, so
+  // a click right after the resize can land on the host outside the old 300x150 box. Wait until the frame itself
+  // reports 1000x600 and the host has painted two frames since.
+  await expect.poll(()=>frame.locator('html').evaluate(()=>innerWidth+'x'+innerHeight)).toBe('1000x600');
+  await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
   await expect(inner).toHaveAttribute('data-chrome','embed');
   await expect(inner).toHaveAttribute('data-fit','true');
   // Gallery and inputs gone; views, export and details stay (details collapsed below 1100 px, opened by toggle or selection).
