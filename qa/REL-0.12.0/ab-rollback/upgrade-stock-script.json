@@ -1,0 +1,79 @@
+{
+  "format": "datapass.upgrade-check",
+  "version": 1,
+  "origin": "http://127.0.0.1:24455",
+  "channel": "playwright-chromium",
+  "old": {
+    "dir": "uc-old",
+    "version": "0.11.1"
+  },
+  "new": {
+    "dir": "uc-new",
+    "version": "0.12.0"
+  },
+  "steps": [
+    {
+      "step": "1-old-author",
+      "served": "uc-old",
+      "version": "0.11.1",
+      "browser": "153.0.8010.12",
+      "notice": null,
+      "storedSha256": {
+        "workspace": "325bdb43f9fa58123221f31fa597248289d83860a6060dfa04adb84f8ae6be6b",
+        "rejected": null
+      },
+      "cells": [
+        "sql"
+      ],
+      "pageErrors": []
+    },
+    {
+      "step": "2-new-upgrade",
+      "served": "uc-new",
+      "version": "0.12.0",
+      "browser": "153.0.8010.12",
+      "notice": null,
+      "storedSha256": {
+        "workspace": "325bdb43f9fa58123221f31fa597248289d83860a6060dfa04adb84f8ae6be6b",
+        "rejected": null
+      },
+      "cells": [
+        "sql"
+      ],
+      "pageErrors": []
+    },
+    {
+      "step": "3-old-rollback-sql-only",
+      "served": "uc-old",
+      "version": "0.11.1",
+      "browser": "153.0.8010.12",
+      "notice": null,
+      "storedSha256": {
+        "workspace": "4487ef141a3514838b24d882254d0736285597a96f7570a2e559755534860927",
+        "rejected": null
+      },
+      "cells": [
+        "sql"
+      ],
+      "pageErrors": []
+    },
+    {
+      "step": "4-new-add-jupyter-cell",
+      "served": "uc-new",
+      "version": "0.12.0",
+      "browser": "153.0.8010.12",
+      "notice": null,
+      "storedSha256": {
+        "workspace": "1f7aea728810a493fe8c72e848cb5a470a6b195950f07d987feebd6a0c3a811a",
+        "rejected": null
+      },
+      "cells": [
+        "sql",
+        "jupyter"
+      ],
+      "pageErrors": []
+    }
+  ],
+  "ok": false,
+  "error": "expected the documented refusal notice, got: null"
+}

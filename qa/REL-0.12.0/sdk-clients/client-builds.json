@@ -1,0 +1,240 @@
+[
+ {
+  "id": "architecture-reference",
+  "status": "reference",
+  "capabilities": [
+   "architecture",
+   "motion"
+  ],
+  "containsThree": false,
+  "previewApp": "architecture-reference",
+  "previewCaps": [
+   "architecture",
+   "motion"
+  ],
+  "sourceCommit": "c6f5b97bfa3e4d80a4844e7f82470d1ff9159d9b",
+  "files": 18,
+  "bytes": 782809,
+  "wasm": [],
+  "otherClientPathRefs": [],
+  "publication": {
+   "mode": "preview",
+   "noindex": true
+  }
+ },
+ {
+  "id": "contoso-shape-analytics",
+  "status": "prototype",
+  "capabilities": [
+   "charts",
+   "runs"
+  ],
+  "containsThree": false,
+  "previewApp": "contoso-shape-analytics",
+  "previewCaps": [
+   "charts",
+   "runs"
+  ],
+  "sourceCommit": "c6f5b97bfa3e4d80a4844e7f82470d1ff9159d9b",
+  "files": 19,
+  "bytes": 732831,
+  "wasm": [],
+  "otherClientPathRefs": [],
+  "publication": {
+   "mode": "preview",
+   "noindex": true
+  }
+ },
+ {
+  "id": "energy-replay-reference",
+  "status": "reference",
+  "capabilities": [
+   "charts",
+   "spatial",
+   "replay"
+  ],
+  "containsThree": true,
+  "previewApp": "energy-replay-reference",
+  "previewCaps": [
+   "charts",
+   "spatial",
+   "replay"
+  ],
+  "sourceCommit": "c6f5b97bfa3e4d80a4844e7f82470d1ff9159d9b",
+  "files": 20,
+  "bytes": 1158618,
+  "wasm": [],
+  "otherClientPathRefs": [],
+  "publication": {
+   "mode": "preview",
+   "noindex": true
+  }
+ },
+ {
+  "id": "experience-reference",
+  "status": "reference",
+  "capabilities": [
+   "charts",
+   "spatial",
+   "architecture",
+   "explorer",
+   "explanation"
+  ],
+  "containsThree": true,
+  "previewApp": "experience-reference",
+  "previewCaps": [
+   "charts",
+   "spatial",
+   "architecture",
+   "explorer",
+   "explanation"
+  ],
+  "sourceCommit": "c6f5b97bfa3e4d80a4844e7f82470d1ff9159d9b",
+  "files": 28,
+  "bytes": 1547754,
+  "wasm": [],
+  "otherClientPathRefs": [],
+  "publication": {
+   "mode": "preview",
+   "noindex": true
+  }
+ },
+ {
+  "id": "foil-wind",
+  "status": "prototype",
+  "capabilities": [
+   "charts",
+   "runs"
+  ],
+  "containsThree": false,
+  "previewApp": "foil-wind",
+  "previewCaps": [
+   "charts",
+   "runs"
+  ],
+  "sourceCommit": "c6f5b97bfa3e4d80a4844e7f82470d1ff9159d9b",
+  "files": 29,
+  "bytes": 793764,
+  "wasm": [],
+  "otherClientPathRefs": [],
+  "publication": {
+   "mode": "preview",
+   "noindex": true
+  }
+ },
+ {
+  "id": "foundation-reference",
+  "status": "reference",
+  "capabilities": [
+   "charts",
+   "runs"
+  ],
+  "containsThree": false,
+  "previewApp": "foundation-reference",
+  "previewCaps": [
+   "charts",
+   "runs"
+  ],
+  "sourceCommit": "c6f5b97bfa3e4d80a4844e7f82470d1ff9159d9b",
+  "files": 20,
+  "bytes": 744998,
+  "wasm": [],
+  "otherClientPathRefs": [],
+  "publication": {
+   "mode": "preview",
+   "noindex": true
+  }
+ },
+ {
+  "id": "model-reference",
+  "status": "reference",
+  "capabilities": [
+   "stories",
+   "spatial",
+   "models"
+  ],
+  "containsThree": true,
+  "previewApp": "model-reference",
+  "previewCaps": [
+   "stories",
+   "spatial",
+   "models"
+  ],
+  "sourceCommit": "c6f5b97bfa3e4d80a4844e7f82470d1ff9159d9b",
+  "files": 17,
+  "bytes": 1225733,
+  "wasm": [],
+  "otherClientPathRefs": [],
+  "publication": {
+   "mode": "preview",
+   "noindex": true
+  }
+ },
+ {
+  "id": "motion-reference",
+  "status": "reference",
+  "capabilities": [
+   "motion"
+  ],
+  "containsThree": false,
+  "previewApp": "motion-reference",
+  "previewCaps": [
+   "motion"
+  ],
+  "sourceCommit": "c6f5b97bfa3e4d80a4844e7f82470d1ff9159d9b",
+  "files": 14,
+  "bytes": 547472,
+  "wasm": [],
+  "otherClientPathRefs": [],
+  "publication": {
+   "mode": "preview",
+   "noindex": true
+  }
+ },
+ {
+  "id": "operations-reference",
+  "status": "reference",
+  "capabilities": [
+   "charts"
+  ],
+  "containsThree": false,
+  "previewApp": "operations-reference",
+  "previewCaps": [
+   "charts"
+  ],
+  "sourceCommit": "c6f5b97bfa3e4d80a4844e7f82470d1ff9159d9b",
+  "files": 13,
+  "bytes": 616816,
+  "wasm": [],
+  "otherClientPathRefs": [],
+  "publication": {
+   "mode": "preview",
+   "noindex": true
+  }
+ },
+ {
+  "id": "wind-reference",
+  "status": "reference",
+  "capabilities": [
+   "charts",
+   "stories",
+   "spatial"
+  ],
+  "containsThree": true,
+  "previewApp": "wind-reference",
+  "previewCaps": [
+   "charts",
+   "stories",
+   "spatial"
+  ],
+  "sourceCommit": "c6f5b97bfa3e4d80a4844e7f82470d1ff9159d9b",
+  "files": 16,
+  "bytes": 1147409,
+  "wasm": [],
+  "otherClientPathRefs": [],
+  "publication": {
+   "mode": "preview",
+   "noindex": true
+  }
+ }
+]

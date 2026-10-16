@@ -1,0 +1,117 @@
+{
+  "format": "datapass.rollback-check",
+  "version": 1,
+  "origin": "http://127.0.0.1:24450",
+  "old": {
+    "dist": "%TEMP%/q3work/old-wb/datapass-mosaicstudio-workbench-0.11.1/",
+    "service": "%TEMP%/q3work/old-svc"
+  },
+  "new": {
+    "dist": "%TEMP%/q3work/new-wb/datapass-mosaicstudio-workbench-0.12.0/",
+    "service": "%TEMP%/q3work/new-comp/datapass-runtime-companion-0.12.0"
+  },
+  "sql": {
+    "a": {
+      "sql": "SELECT * FROM (VALUES (1, 'SYNTHETIC north', 2.5), (2, 'SYNTHETIC south', 4.0), (3, 'SYNTHETIC east', 1.25)) AS t(id, label, value)",
+      "sourceSha256": "7cef2c34d4b055942c457ea1512d9172e4d9f27297f0e8ba8142b25b3ca5d9c6"
+    },
+    "b": {
+      "sql": "SELECT count(*)::INTEGER AS n, round(sum(v), 2)::DOUBLE AS total FROM (VALUES (2.5), (4.0), (1.25)) AS t(v)",
+      "sourceSha256": "d59de80b8658983ece3d719ade2294329e5d255d8dab9a9667c4d040ae2867c1"
+    }
+  },
+  "steps": [
+    {
+      "label": "1-old-author-save",
+      "side": "old",
+      "notes": [
+        "Saved 2 results and the notebook (c6bf716b7caf) to the result store \"store\"."
+      ],
+      "exportedIpynbSha256": "db8623c3155285051bec6ef10c41ddcdf9b30e4e28efc9c2417d48e5fd3061af",
+      "resultSha256": [
+        "36e7fde1c0633dc403c48b28c2385db9da74d6537798183ccc63e873f2345b94",
+        "27474a1fe28f539ade8f11e640fcf42426d51f823145ea892a9c9b001cf7c66f"
+      ],
+      "store": {
+        "manifest.json": "5d2bfab4ff534043183ad515aad732494702099c98add084d484206304fa0055",
+        "notebooks/c6bf716b7caf7b9bc5400b5e36d471b8fc7004d69720daffa7b8e27aead50eda.ipynb": "c6bf716b7caf7b9bc5400b5e36d471b8fc7004d69720daffa7b8e27aead50eda",
+        "results/27474a1fe28f539ade8f11e640fcf42426d51f823145ea892a9c9b001cf7c66f.json": "27474a1fe28f539ade8f11e640fcf42426d51f823145ea892a9c9b001cf7c66f",
+        "results/36e7fde1c0633dc403c48b28c2385db9da74d6537798183ccc63e873f2345b94.json": "36e7fde1c0633dc403c48b28c2385db9da74d6537798183ccc63e873f2345b94"
+      },
+      "manifestHasSqlHashes": true
+    },
+    {
+      "label": "1b-new-site-run-save",
+      "side": "new",
+      "notes": [],
+      "model": "wind-reference",
+      "modelVersion": "wind-reference-live-1",
+      "inputs": {
+        "k": 2,
+        "c": 8,
+        "hubHeight": 120
+      },
+      "sourceSha256": "404b83212288035603c60e649bc00164d423d273844a1b7409660c56c6b58bf2",
+      "resultSha256": "9ee5dddc7ff2fa0b259a8f7a471fc13a18689dd84c2c8fb33ff0d2c07d971f55",
+      "store": {
+        "manifest.json": "a93085a74722f8e95e1b40e66e440cd39e8c8bce0f4418f2715c3e3a3b5993a1",
+        "notebooks/c6bf716b7caf7b9bc5400b5e36d471b8fc7004d69720daffa7b8e27aead50eda.ipynb": "c6bf716b7caf7b9bc5400b5e36d471b8fc7004d69720daffa7b8e27aead50eda",
+        "results/27474a1fe28f539ade8f11e640fcf42426d51f823145ea892a9c9b001cf7c66f.json": "27474a1fe28f539ade8f11e640fcf42426d51f823145ea892a9c9b001cf7c66f",
+        "results/36e7fde1c0633dc403c48b28c2385db9da74d6537798183ccc63e873f2345b94.json": "36e7fde1c0633dc403c48b28c2385db9da74d6537798183ccc63e873f2345b94",
+        "results/9ee5dddc7ff2fa0b259a8f7a471fc13a18689dd84c2c8fb33ff0d2c07d971f55.json": "9ee5dddc7ff2fa0b259a8f7a471fc13a18689dd84c2c8fb33ff0d2c07d971f55"
+      }
+    },
+    {
+      "label": "2-new-upgrade-reopen-save",
+      "side": "new",
+      "notes": [
+        "Opened the saved notebook c6bf716b7caf from \"store\": 2 cells (nbformat 4.5). Nothing was run. 2 of 2 saved results reopened from the result store without recomputation.",
+        "Saved 2 results and the notebook (83263a6b5761) to the result store \"store\"."
+      ],
+      "store": {
+        "manifest.json": "d4f59ae83d2449d9495ac0d92f3d1da5a086a32858a812479e15b54c6c7b95b5",
+        "notebooks/83263a6b5761e638af1ebdc4b6d6413a2570ba73f2bf6ecdc527be9cb2720678.ipynb": "83263a6b5761e638af1ebdc4b6d6413a2570ba73f2bf6ecdc527be9cb2720678",
+        "results/27474a1fe28f539ade8f11e640fcf42426d51f823145ea892a9c9b001cf7c66f.json": "27474a1fe28f539ade8f11e640fcf42426d51f823145ea892a9c9b001cf7c66f",
+        "results/36e7fde1c0633dc403c48b28c2385db9da74d6537798183ccc63e873f2345b94.json": "36e7fde1c0633dc403c48b28c2385db9da74d6537798183ccc63e873f2345b94",
+        "results/9ee5dddc7ff2fa0b259a8f7a471fc13a18689dd84c2c8fb33ff0d2c07d971f55.json": "9ee5dddc7ff2fa0b259a8f7a471fc13a18689dd84c2c8fb33ff0d2c07d971f55"
+      }
+    },
+    {
+      "label": "3-old-rollback-reopen-save",
+      "side": "old",
+      "notes": [
+        "Opened the saved notebook 83263a6b5761 from \"store\": 2 cells (nbformat 4.5). Nothing was run. 2 of 2 saved results reopened from the result store without recomputation.",
+        "Saved 2 results and the notebook (4e4c47296151) to the result store \"store\"."
+      ],
+      "store": {
+        "manifest.json": "f053162d6e72b1b205140c4eafe433f67c97d7b55d8a8c709ec9a99153e78532",
+        "notebooks/4e4c472961512d662290be68469c1d77fc4148866eaa45446cab600653e7297f.ipynb": "4e4c472961512d662290be68469c1d77fc4148866eaa45446cab600653e7297f",
+        "results/27474a1fe28f539ade8f11e640fcf42426d51f823145ea892a9c9b001cf7c66f.json": "27474a1fe28f539ade8f11e640fcf42426d51f823145ea892a9c9b001cf7c66f",
+        "results/36e7fde1c0633dc403c48b28c2385db9da74d6537798183ccc63e873f2345b94.json": "36e7fde1c0633dc403c48b28c2385db9da74d6537798183ccc63e873f2345b94",
+        "results/9ee5dddc7ff2fa0b259a8f7a471fc13a18689dd84c2c8fb33ff0d2c07d971f55.json": "9ee5dddc7ff2fa0b259a8f7a471fc13a18689dd84c2c8fb33ff0d2c07d971f55"
+      },
+      "manifestHasSqlHashes": true
+    },
+    {
+      "label": "4-new-recover-tamper-restore",
+      "side": "new",
+      "notes": [
+        "Opened the saved notebook 4e4c47296151 from \"store\": 2 cells (nbformat 4.5). Nothing was run. 2 of 2 saved results reopened from the result store without recomputation.",
+        "Saved 2 results and the notebook (79f19f189da0) to the result store \"store\".",
+        "Opened the saved notebook 79f19f189da0 from \"store\": 2 cells (nbformat 4.5). Nothing was run. 2 of 2 saved results reopened from the result store without recomputation."
+      ],
+      "tamperRefusal": "Opening from the result store failed, nothing changed: SQL cell sql-19bjz: the stored notebook does not match the source hash in the manifest; nothing was opened.",
+      "tamperedManifestSha256": "a41cf36e6fdfa33905e77a4693b6bfa5e23d4857405e3e178b64885e808803cb",
+      "siteRunReopened": "9ee5dddc7ff2fa0b259a8f7a471fc13a18689dd84c2c8fb33ff0d2c07d971f55",
+      "store": {
+        "manifest.json": "ad94307449073cca085050dcceacca3035883463c44fbdd3d9bf46311c59196f",
+        "notebooks/79f19f189da05f847748344e39995769bdb1834dd69a47556e1effe75704e35c.ipynb": "79f19f189da05f847748344e39995769bdb1834dd69a47556e1effe75704e35c",
+        "results/27474a1fe28f539ade8f11e640fcf42426d51f823145ea892a9c9b001cf7c66f.json": "27474a1fe28f539ade8f11e640fcf42426d51f823145ea892a9c9b001cf7c66f",
+        "results/36e7fde1c0633dc403c48b28c2385db9da74d6537798183ccc63e873f2345b94.json": "36e7fde1c0633dc403c48b28c2385db9da74d6537798183ccc63e873f2345b94",
+        "results/9ee5dddc7ff2fa0b259a8f7a471fc13a18689dd84c2c8fb33ff0d2c07d971f55.json": "9ee5dddc7ff2fa0b259a8f7a471fc13a18689dd84c2c8fb33ff0d2c07d971f55"
+      }
+    }
+  ],
+  "ok": true,
+  "runtimeLogTail": "Result store: %TEMP%\\mosaic-rollback-kauass\\store (limit 268,435,456 bytes).\r\nDataPass runtime ready. Open the workbench with: http://127.0.0.1:24450/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28450&token=<token>\r\n"
+}

@@ -1,0 +1,87 @@
+{
+  "checks": [
+    {
+      "check": "runtime health, no token, no origin",
+      "got": 401,
+      "want": 401,
+      "ok": true
+    },
+    {
+      "check": "models, no token",
+      "got": 401,
+      "want": 401,
+      "ok": true
+    },
+    {
+      "check": "runs POST, no token",
+      "got": 401,
+      "want": 401,
+      "ok": true
+    },
+    {
+      "check": "notebook store manifest, no token",
+      "got": 401,
+      "want": 401,
+      "ok": true
+    },
+    {
+      "check": "notebook store manifest, wrong token",
+      "got": 401,
+      "want": 401,
+      "ok": true
+    },
+    {
+      "check": "models, correct token but foreign Origin",
+      "got": 403,
+      "want": 403,
+      "ok": true
+    },
+    {
+      "check": "models, no token but allowed Origin (consent not given = no token)",
+      "got": 401,
+      "want": 401,
+      "ok": true
+    },
+    {
+      "check": "models, correct token + allowed Origin",
+      "got": 200,
+      "want": 200,
+      "ok": true
+    },
+    {
+      "check": "token in query string rejected",
+      "got": 401,
+      "want": 401,
+      "ok": true
+    },
+    {
+      "check": "non-loopback Host header",
+      "got": 400,
+      "want": [
+        400,
+        403,
+        421
+      ],
+      "ok": true
+    },
+    {
+      "check": "server binds loopback only",
+      "got": 0,
+      "want": 0,
+      "ok": true
+    },
+    {
+      "check": "runtime token occurrences in service log (only the by-design connect line)",
+      "got": 1,
+      "want": 1,
+      "ok": true
+    },
+    {
+      "check": "token appears in lines other than 'DataPass runtime ready' connect line",
+      "got": 0,
+      "want": 0,
+      "ok": true
+    }
+  ],
+  "serviceLogRedacted": "Result store: %TEMP%\\q1sec-store-on0_c0_3 (limit 268,435,456 bytes).\nDataPass runtime ready. Open the workbench with: http://127.0.0.1:24415/?workspace=blank#runtime=http%3A%2F%2F127.0.0.1%3A28415&token=<TOKEN>\nException in callback _ProactorBasePipeTransport._call_connection_lost()\nhandle: <Handle _ProactorBasePipeTransport._call_connection_lost()>\nTraceback (most recent call last):\n  File \"C:\\Python314\\Lib\\asyncio\\events.py\", line 94, in _run\n    self._context.run(self._callback, *self._args)\n    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Python314\\Lib\\asyncio\\proactor_events.py\", line 166, in _call_connection_lost\n    self._sock.shutdown(socket.SHUT_RDWR)\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^\nConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host\nException in callback _ProactorBasePipeTransport._call_connection_lost()\nhandle: <Handle _ProactorBasePipeTransport._call_connection_lost()>\nTraceback (most recent call last):\n  File \"C:\\Python314\\Lib\\asyncio\\events.py\", line 94, in _run\n    self._context.run(self._callback, *self._args)\n    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"C:\\Python314\\Lib\\asyncio\\proactor_events.py\", line 166, in _call_connection_lost\n    self._sock.shutdown(socket.SHUT_RDWR)\n    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^\nConnectionResetError: [WinError 10054] An existing connection was forcibly closed by the remote host\n"
+}
