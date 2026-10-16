@@ -18,9 +18,11 @@ test('codes are unique, well formed and under their reserved prefix',()=>{
   assert.ok(Object.isFrozen(DIAGNOSTICS)&&Object.isFrozen(DIAGNOSTICS[0]));
 });
 
-test('reserved areas start empty (F205-F208, F213 own them); DP-ENV is filled by the F210 doctor',()=>{
-  for(const rows of [CLI_DIAGNOSTICS,STO_DIAGNOSTICS,BUN_DIAGNOSTICS])assert.deepEqual(rows,[]);
+test('reserved areas start empty (F206-F208, F213 own them); DP-ENV is filled by the F210 doctor; F205 owns DP-STO-001..003',()=>{
+  for(const rows of [CLI_DIAGNOSTICS,BUN_DIAGNOSTICS])assert.deepEqual(rows,[]);
   assert.ok(ENV_DIAGNOSTICS.length>0&&ENV_DIAGNOSTICS.every(row=>row.code.startsWith('DP-ENV-')));
+  assert.deepEqual(STO_DIAGNOSTICS.map(row=>[row.code,row.rule]),[['DP-STO-001','workspace-conflict'],['DP-STO-002','revision-sidecar-mismatch'],['DP-STO-003','theirs-invalid']]);
+
 });
 
 test('every ART constant has exactly one table row with a valid gate',()=>{

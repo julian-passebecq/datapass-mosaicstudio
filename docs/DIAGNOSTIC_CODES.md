@@ -25,7 +25,7 @@ JSON lines) report the **same code for the same file**. The differential corpus 
 | `DP-ART` | `datapass.artifact` v1 validators, TypeScript and Python | F209 | `src/framework/diagnostics/artifact.ts` |
 | `DP-ENV` | doctor: author and consumer environment checks | F210 | `src/framework/diagnostics/env.ts` |
 | `DP-CLI` | client profile and client checks | F213 (reserved, empty) | `src/framework/diagnostics/client.ts` |
-| `DP-STO` | workspace, run and result storage | F205-F207 (reserved, empty) | `src/framework/diagnostics/storage.ts` |
+| `DP-STO` | workspace, run and result storage | F205 (001-009), F206-F207 (reserved) | `src/framework/diagnostics/storage.ts` |
 | `DP-BUN` | export bundles | F208 (reserved, empty) | `src/framework/diagnostics/bundle.ts` |
 
 ## DP-ART codes
@@ -126,3 +126,14 @@ then releases, loopback ports. `npm run doctor -- --json` prints
 | `DP-ENV-030` | ports | `port-busy` | TS | One of 21481, 21491, 24190, 24799, 24811, 24812 on 127.0.0.1 cannot be bound. |
 | `DP-ENV-040` | headers | `headers-drift` | TS | `dist/_headers` differs from `WORKBENCH_HEADERS` (skipped when `dist/` is absent). |
 | `DP-ENV-050` | store | `results-dir-in-git` | TS | The ResultStore folder is inside a Git work tree. |
+
+## DP-STO codes
+
+Cross-tab workspace revisions (F205). The `datapass.workspace` v1 document is unchanged; the revision lives in the sidecar
+key `datapass.workspace.revision` = `{rev,tab,sha256}` (`src/workspace/revision.ts`). TypeScript only.
+
+| Code | Gate | Rule | Reported by | Meaning |
+|---|---|---|---|---|
+| `DP-STO-001` | workspace-revision | `workspace-conflict` | TS | Another tab or writer saved (or reset) the workspace after this tab loaded it. Nothing is written until the user keeps mine, takes theirs or exports both. |
+| `DP-STO-002` | workspace-revision | `revision-sidecar-mismatch` | TS | The sidecar is missing, unreadable or does not hash to the stored document: an older studio or an unknown writer saved it. Still a conflict; the writer is shown as unknown. |
+| `DP-STO-003` | workspace-revision | `theirs-invalid` | TS | Take theirs refused: the other document failed `validateWorkspace`. This tab and the conflict are unchanged. |
