@@ -3,8 +3,13 @@
 ## Plans (candidates, not approved)
 - 2026-10-14 · Tech-lead product plan V1 existing / V2 / V3 / V4 / R&D, proposals evaluated against the code, Anatomy evaluation: [`docs/roadmap/tech-lead-2026-10-14/PLAN.md`](../docs/roadmap/tech-lead-2026-10-14/PLAN.md). Every item not built is CANDIDATE. **2026-10-16: V2 (F201-F213) APPROVED**; V3, V4 and R&D (R01-R05) stay CANDIDATE.
 
+## Releases
+- 2026-10-16 · **0.12.0** (V2 F201-F213 + CSP-1 #77): release commit `release/0.12.0`; private build and delivery follow the 0.11.1 recipe. 0.11.1 (`3575e6b`) stays as delivered.
+- 2026-10-16 · **T3 is out of the critical path (Julian, 16 Oct).** E2E-06 (native agent in T3) stays NOT_RUN/BLOCKED as history only; it is explicitly not a dependency of 0.12.0 or of any later Mosaic release or package.
+
 ## Idées de Julian (2026-10-16)
 - 2026-10-16 · V2 block F201-F213 of the tech-lead plan approved as planned ("launch mosaic v2 for tonight"); run overnight as one workflow, F212 (the loop on Contoso-shape synthetic and foil-wind) closes it. V3, V4 and Anatomy R01-R05 out of scope. Target: V2.
+- 2026-10-16 · Nothing in Mosaic waits on T3: E2E-06 stays NOT_RUN/BLOCKED as history, not a dependency. Target: 0.12.0 and later.
 
 ## Idées de Julian (2026-10-06)
 - 2026-10-06 · Concept visuals like the Architecture Atlas (natural icons, layered planes, a shared lake below, apps at different heights) are the direction for architecture, app and cloud diagrams. Target: 0.9.

@@ -3,7 +3,7 @@
  "version": 1,
  "package": {
   "name": "datapass-mosaicstudio",
-  "version": "0.11.1"
+  "version": "0.12.0"
  },
  "project": {
   "spdx": null,
@@ -7649,7 +7649,7 @@
    },
    {
     "name": "executing",
-    "version": "2.2.1",
+    "version": "2.3.0",
     "license": "MIT",
     "declared": {
      "licenseExpression": null,
@@ -7795,7 +7795,7 @@
    },
    {
     "name": "jedi",
-    "version": "0.20.0",
+    "version": "0.20.1",
     "license": "MIT",
     "declared": {
      "licenseExpression": null,
@@ -7821,7 +7821,7 @@
    },
    {
     "name": "jsonpointer",
-    "version": "3.2.0",
+    "version": "3.2.1",
     "license": "BSD-3-Clause",
     "declared": {
      "licenseExpression": null,
@@ -7993,7 +7993,7 @@
    },
    {
     "name": "nbconvert",
-    "version": "7.17.1",
+    "version": "7.17.2",
     "license": "BSD-3-Clause",
     "declared": {
      "licenseExpression": null,
@@ -8080,7 +8080,7 @@
    },
    {
     "name": "platformdirs",
-    "version": "4.12.4",
+    "version": "4.13.3",
     "license": "MIT",
     "declared": {
      "licenseExpression": "MIT",
@@ -8210,7 +8210,7 @@
    },
    {
     "name": "pywinpty",
-    "version": "3.0.5",
+    "version": "3.1.0",
     "license": "MIT",
     "declared": {
      "licenseExpression": null,
@@ -8332,7 +8332,7 @@
    },
    {
     "name": "soupsieve",
-    "version": "2.10",
+    "version": "3.0.3",
     "license": "MIT",
     "declared": {
      "licenseExpression": "MIT",
@@ -8358,7 +8358,7 @@
    },
    {
     "name": "starlette",
-    "version": "1.7.0",
+    "version": "1.8.0",
     "license": "BSD-3-Clause",
     "declared": {
      "licenseExpression": "BSD-3-Clause",

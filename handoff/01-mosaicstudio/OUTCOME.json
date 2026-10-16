@@ -171,5 +171,6 @@
     "No LICENSE file; manifest states this",
     "Full browser suite had one load-sensitive flake (concept-standalone embed fit) locally; passes alone and in CI"
   ],
-  "next_safe_action": "Owner/PM reviews the PR and merges on green CI; optionally add a CORS+browser-consent path to datapass-mosaic-vscode runtime in its own lane"
+  "next_safe_action": "Superseded (2026-10-16): see handoff/01-mosaicstudio/RESUME.md. Agent: build and privately deliver 0.12.0 from the merged release commit with the 0.11.1 recipe. Nothing waits on T3: E2E-06 stays NOT_RUN/BLOCKED as history, not a dependency (Julian, 16 Oct).",
+  "next_safe_action_0_9_0": "Owner/PM reviews the PR and merges on green CI; optionally add a CORS+browser-consent path to datapass-mosaic-vscode runtime in its own lane"
 }
