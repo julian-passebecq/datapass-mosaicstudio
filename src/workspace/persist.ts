@@ -10,8 +10,6 @@ export const WORKSPACE_FORMAT='datapass.workspace';
 export const WORKSPACE_VERSION=1;
 export const WORKSPACE_KEY='datapass.workspace';
 export const WORKSPACE_BACKUP_KEY='datapass.workspace.rejected';
-/** Cross-tab revision sidecar `{rev,tab,sha256}` (src/workspace/revision.ts). Kept outside the v1 document, which stays strict. */
-export const WORKSPACE_REVISION_KEY='datapass.workspace.revision';
 export const WORKSPACE_BYTES=512*1024;
 export const LANES=['Backlog','In progress','Review','Done'] as const;
 export type SavedQuery={id:string;name:string;query:string};

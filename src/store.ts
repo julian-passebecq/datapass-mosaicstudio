@@ -10,9 +10,9 @@ import {tableId} from './core/queries';
 import {modules} from './core/host';
 import {demoPipeline,type Pipeline,validatePipeline} from './core/pipeline';
 import {validateNotebook,type Notebook} from './workspace/notebook';
-import {loadWorkspace,resetWorkspace as clearSavedWorkspace,WORKSPACE_KEY,WORKSPACE_REVISION_KEY,type RunRef,type WorkspaceDoc,type SourceRef} from './workspace/persist';
+import {loadWorkspace,resetWorkspace as clearSavedWorkspace,WORKSPACE_KEY,type RunRef,type WorkspaceDoc,type SourceRef} from './workspace/persist';
 import {browserPreferences,createStorageAdapter} from './framework/storage';
-import {WorkspaceRevisionGuard,type WorkspaceConflict} from './workspace/revision';
+import {WorkspaceRevisionGuard,WORKSPACE_REVISION_KEY,type WorkspaceConflict} from './workspace/revision';
 
 export type DatasetInfo={table:string; name:string; kind:'synthetic'|'user-file'; bytes?:number; registeredFile?:string;};
 export type BoardCard={id:string; title:string; lane:'Backlog'|'In progress'|'Review'|'Done'};

@@ -3,8 +3,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {readFileSync} from 'node:fs';
-import {WorkspaceRevisionGuard,parseRevision,sha256HexSync,newTabId} from '../src/workspace/revision.ts';
-import {blankWorkspace,saveWorkspace,loadWorkspace,validateWorkspace,WORKSPACE_KEY,WORKSPACE_REVISION_KEY} from '../src/workspace/persist.ts';
+import {WorkspaceRevisionGuard,WORKSPACE_REVISION_KEY,parseRevision,sha256HexSync,newTabId} from '../src/workspace/revision.ts';
+import {blankWorkspace,saveWorkspace,loadWorkspace,validateWorkspace,WORKSPACE_KEY} from '../src/workspace/persist.ts';
 import {memoryKeyValue} from '../src/framework/storage/index.ts';
 import {diagnostic} from '../src/framework/diagnostics/index.ts';
 

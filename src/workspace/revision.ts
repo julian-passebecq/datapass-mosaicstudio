@@ -5,7 +5,9 @@
  * The user resolves it explicitly: keep mine (overwrite), take theirs (validated through `validateWorkspace`) or export
  * both. Pure logic over a key-value port: no React, no timers, no network. */
 import {strict} from '../framework/guards.ts';
-import {saveWorkspace,validateWorkspace,WORKSPACE_KEY,WORKSPACE_REVISION_KEY,type StoragePort,type WorkspaceDoc} from './persist.ts';
+import {saveWorkspace,validateWorkspace,WORKSPACE_KEY,type StoragePort,type WorkspaceDoc} from './persist.ts';
+/** Cross-tab revision sidecar `{rev,tab,sha256}`. Kept outside the v1 document (which stays strict) and outside persist.ts (bytes pinned by the 0.10 READY receipt). */
+export const WORKSPACE_REVISION_KEY='datapass.workspace.revision';
 
 export type WorkspaceRevision={rev:number;tab:string;sha256:string|null};
 /** An open conflict. `theirsRaw` is the stored document another writer left (null: they reset the workspace). */
