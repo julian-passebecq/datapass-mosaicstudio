@@ -18,7 +18,7 @@ def decide_file(name):
     try:
         return da.decide(da.load(CORPUS / name))
     except da.ArtifactError as error:
-        return {"ok": False, "gate": error.gate, "path": error.path, "message": str(error)}
+        return {"ok": False, "gate": error.gate, "path": error.path, "message": str(error), "code": error.code}
 
 
 class CorpusTests(unittest.TestCase):
@@ -37,7 +37,8 @@ class CorpusTests(unittest.TestCase):
                     self.assertEqual(got, {"ok": True}, got.get("message"))
                 else:
                     self.assertFalse(got["ok"])
-                    self.assertEqual((got["gate"], got["path"]), (fixture["gate"], fixture["path"]), got["message"])
+                    self.assertEqual((got["gate"], got["path"], got["code"]),
+                                     (fixture["gate"], fixture["path"], fixture["code"]), got["message"])
                     self.assertTrue(got["message"].startswith((fixture["path"] or "/") + ": "))
 
     def test_sets(self):
@@ -49,7 +50,8 @@ class CorpusTests(unittest.TestCase):
                 else:
                     with self.assertRaises(da.ArtifactError) as caught:
                         da.validate_set(members)
-                    self.assertEqual((caught.exception.gate, caught.exception.path), (entry["gate"], entry["path"]))
+                    self.assertEqual((caught.exception.gate, caught.exception.path, caught.exception.code),
+                                     (entry["gate"], entry["path"], entry["code"]))
 
     def test_cli_reports_json_decisions(self):
         import contextlib
@@ -61,6 +63,8 @@ class CorpusTests(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertEqual([line["ok"] for line in lines], [True, False])
         self.assertEqual(lines[1]["path"], "/format")
+        self.assertEqual(lines[1]["code"], "DP-ART-013")
+        self.assertNotIn("code", lines[0])
 
     def test_js_number_formatting_matches_string(self):
         cases = {2.0: "2", 2.5: "2.5", 1e-7: "1e-7", 1e21: "1e+21", 123456.789: "123456.789", 0.000001: "0.000001",
@@ -69,8 +73,9 @@ class CorpusTests(unittest.TestCase):
             self.assertEqual(da._js_number(value), expected, value)
 
     def test_nan_and_infinity_literals_are_not_json(self):
-        with self.assertRaises(da.ArtifactError):
+        with self.assertRaises(da.ArtifactError) as caught:
             da.loads('{"x": NaN}')
+        self.assertEqual(caught.exception.code, "DP-ART-001")
 
 
 if __name__ == "__main__":

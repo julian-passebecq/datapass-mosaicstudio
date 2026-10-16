@@ -94,6 +94,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/eval",
+      "code": "DP-ART-011",
       "note": "Unknown top-level command field."
     },
     {
@@ -101,6 +102,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/format",
+      "code": "DP-ART-013",
       "note": "Wrong format."
     },
     {
@@ -108,6 +110,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/version",
+      "code": "DP-ART-014",
       "note": "Unsupported version."
     },
     {
@@ -115,6 +118,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/version",
+      "code": "DP-ART-014",
       "note": "true is not the number 1 (Python True == 1 used to pass)."
     },
     {
@@ -122,6 +126,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/id",
+      "code": "DP-ART-015",
       "note": "\"$\" must not accept a trailing newline (Python re.match used to)."
     },
     {
@@ -129,6 +134,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/id",
+      "code": "DP-ART-015",
       "note": "Reserved prototype id."
     },
     {
@@ -136,6 +142,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/title",
+      "code": "DP-ART-016",
       "note": "Blank title."
     },
     {
@@ -143,6 +150,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/title",
+      "code": "DP-ART-016",
       "note": "U+3000 and U+FEFF are ECMAScript whitespace (Python str.strip() kept U+FEFF)."
     },
     {
@@ -150,13 +158,23 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/title",
+      "code": "DP-ART-016",
       "note": "161 code points exceed 160."
+    },
+    {
+      "file": "invalid/s-provenance-not-object.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/provenance",
+      "code": "DP-ART-010",
+      "note": "Provenance is an object."
     },
     {
       "file": "invalid/s-provenance-missing-source.json",
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/source",
+      "code": "DP-ART-012",
       "note": "source is required."
     },
     {
@@ -164,6 +182,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/kind",
+      "code": "DP-ART-018",
       "note": "Unknown provenance kind."
     },
     {
@@ -171,6 +190,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/secret",
+      "code": "DP-ART-011",
       "note": "Unknown provenance field."
     },
     {
@@ -178,6 +198,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/runId",
+      "code": "DP-ART-015",
       "note": "runId is an id."
     },
     {
@@ -185,6 +206,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/producer/kind",
+      "code": "DP-ART-018",
       "note": "Unknown producer kind."
     },
     {
@@ -192,6 +214,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/producer/extra",
+      "code": "DP-ART-011",
       "note": "Unknown producer field."
     },
     {
@@ -199,6 +222,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/producer/name",
+      "code": "DP-ART-012",
       "note": "Producer name is required."
     },
     {
@@ -206,6 +230,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputHash",
+      "code": "DP-ART-023",
       "note": "Hash syntax is lowercase hex."
     },
     {
@@ -213,6 +238,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputHash",
+      "code": "DP-ART-023",
       "note": "No algorithm prefix: exactly 64 hex characters."
     },
     {
@@ -220,6 +246,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputHash",
+      "code": "DP-ART-023",
       "note": "63 characters."
     },
     {
@@ -227,6 +254,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputHash",
+      "code": "DP-ART-023",
       "note": "Trailing newline (Python re.match used to accept it)."
     },
     {
@@ -234,6 +262,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs",
+      "code": "DP-ART-020",
       "note": "At most 24 inputs."
     },
     {
@@ -241,6 +270,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/1/value",
+      "code": "DP-ART-024",
       "note": "null is not a declared value (omit value instead)."
     },
     {
@@ -248,6 +278,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/1/value",
+      "code": "DP-ART-024",
       "note": "Arrays are not input values."
     },
     {
@@ -255,6 +286,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/1/value",
+      "code": "DP-ART-024",
       "note": "Input strings are at most 400 characters."
     },
     {
@@ -262,6 +294,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/0/unit",
+      "code": "DP-ART-016",
       "note": "Units are at most 40 characters."
     },
     {
@@ -269,6 +302,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/0/secret",
+      "code": "DP-ART-011",
       "note": "Unknown input field."
     },
     {
@@ -276,6 +310,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/2/label",
+      "code": "DP-ART-016",
       "note": "Input labels are filled."
     },
     {
@@ -283,6 +318,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/0/evidence/0/path",
+      "code": "DP-ART-022",
       "note": "Parent traversal."
     },
     {
@@ -290,6 +326,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/0/evidence/0/path",
+      "code": "DP-ART-022",
       "note": "Drive letter."
     },
     {
@@ -297,6 +334,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/0/evidence/0/path",
+      "code": "DP-ART-022",
       "note": "Absolute path."
     },
     {
@@ -304,6 +342,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/0/evidence/0/path",
+      "code": "DP-ART-022",
       "note": "Empty segment."
     },
     {
@@ -311,6 +350,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/0/evidence/0/path",
+      "code": "DP-ART-022",
       "note": "Backslash."
     },
     {
@@ -318,6 +358,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/0/evidence/0/path",
+      "code": "DP-ART-022",
       "note": "\".\" segment."
     },
     {
@@ -325,6 +366,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/0/evidence/0/path",
+      "code": "DP-ART-022",
       "note": "Control character."
     },
     {
@@ -332,6 +374,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/0/evidence/0/path",
+      "code": "DP-ART-022",
       "note": "Trailing slash (empty last segment)."
     },
     {
@@ -339,6 +382,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/0/evidence/0/path",
+      "code": "DP-ART-022",
       "note": "Empty path."
     },
     {
@@ -346,6 +390,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/inputs/0/evidence/0/path",
+      "code": "DP-ART-022",
       "note": "261 characters."
     },
     {
@@ -353,6 +398,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/producer/evidence",
+      "code": "DP-ART-020",
       "note": "At most 8 evidence links."
     },
     {
@@ -360,6 +406,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/producer/evidence/0/start",
+      "code": "DP-ART-017",
       "note": "Lines start at 1."
     },
     {
@@ -367,6 +414,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/producer/evidence/0/start",
+      "code": "DP-ART-017",
       "note": "Lines are integers."
     },
     {
@@ -374,6 +422,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/producer/evidence/0/start",
+      "code": "DP-ART-017",
       "note": "true is not an integer."
     },
     {
@@ -381,6 +430,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/producer/evidence/0/end",
+      "code": "DP-ART-017",
       "note": "Lines are at most 100000."
     },
     {
@@ -388,6 +438,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/producer/evidence/1/label",
+      "code": "DP-ART-012",
       "note": "Evidence label is required."
     },
     {
@@ -395,6 +446,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/dependsOn",
+      "code": "DP-ART-021",
       "note": "dependsOn is a set of ids (uniqueItems)."
     },
     {
@@ -402,6 +454,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/dependsOn",
+      "code": "DP-ART-020",
       "note": "At most 12 dependencies."
     },
     {
@@ -409,6 +462,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/provenance/dependsOn/0",
+      "code": "DP-ART-015",
       "note": "Dependencies are artifact ids."
     },
     {
@@ -416,6 +470,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/representations/1/inputs",
+      "code": "DP-ART-021",
       "note": "Representation inputs are a set."
     },
     {
@@ -423,6 +478,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/representations/1/inputs/0",
+      "code": "DP-ART-015",
       "note": "Representation inputs are ids."
     },
     {
@@ -430,6 +486,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/representations",
+      "code": "DP-ART-020",
       "note": "At most 12 representations."
     },
     {
@@ -437,13 +494,23 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/representations",
+      "code": "DP-ART-020",
       "note": "At least one representation."
+    },
+    {
+      "file": "invalid/s-representations-not-array.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/representations",
+      "code": "DP-ART-019",
+      "note": "Representations are an array."
     },
     {
       "file": "invalid/s-representation-kind.json",
       "expect": "reject",
       "gate": "structure",
       "path": "/representations/0/kind",
+      "code": "DP-ART-030",
       "note": "Unsupported representation kind."
     },
     {
@@ -451,6 +518,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/representations/0/onClick",
+      "code": "DP-ART-011",
       "note": "No commands on representations."
     },
     {
@@ -458,6 +526,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/representations/1/chart",
+      "code": "DP-ART-018",
       "note": "Unsupported chart."
     },
     {
@@ -465,6 +534,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/representations/1/y",
+      "code": "DP-ART-012",
       "note": "Chart needs y."
     },
     {
@@ -472,6 +542,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/representations/2/digits",
+      "code": "DP-ART-017",
       "note": "digits is 0..6."
     },
     {
@@ -479,6 +550,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/representations/2/digits",
+      "code": "DP-ART-017",
       "note": "true is not an integer."
     },
     {
@@ -486,6 +558,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/representations/1/unit",
+      "code": "DP-ART-016",
       "note": "Chart units are at most 30 characters."
     },
     {
@@ -493,20 +566,39 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/payload/columns",
+      "code": "DP-ART-020",
       "note": "At most 40 columns."
+    },
+    {
+      "file": "invalid/s-column-nullable-string.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/payload/columns/1/nullable",
+      "code": "DP-ART-025",
+      "note": "nullable is a boolean."
     },
     {
       "file": "invalid/s-rows-10001.json",
       "expect": "reject",
       "gate": "structure",
       "path": "/payload/rows",
+      "code": "DP-ART-020",
       "note": "At most 10,000 rows."
+    },
+    {
+      "file": "invalid/s-row-41-cells.json",
+      "expect": "reject",
+      "gate": "structure",
+      "path": "/payload/rows/0",
+      "code": "DP-ART-026",
+      "note": "A row has at most 40 cells."
     },
     {
       "file": "invalid/s-row-string-4001.json",
       "expect": "reject",
       "gate": "structure",
       "path": "/payload/rows/0/id",
+      "code": "DP-ART-028",
       "note": "Cell strings are at most 4000 characters."
     },
     {
@@ -514,6 +606,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/payload/rows/0/value",
+      "code": "DP-ART-028",
       "note": "Cells are scalars."
     },
     {
@@ -521,6 +614,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/payload/rows/0/Bad",
+      "code": "DP-ART-027",
       "note": "Cell names are column ids."
     },
     {
@@ -528,6 +622,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/payload/kind",
+      "code": "DP-ART-029",
       "note": "Unknown payload kind."
     },
     {
@@ -535,6 +630,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/payload/sql",
+      "code": "DP-ART-011",
       "note": "No SQL on a table payload."
     },
     {
@@ -542,6 +638,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/payload/text",
+      "code": "DP-ART-016",
       "note": "Text payload is at most 20000 characters."
     },
     {
@@ -549,6 +646,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/payload/columns/1/type",
+      "code": "DP-ART-018",
       "note": "Column types are string, number or boolean."
     },
     {
@@ -556,6 +654,7 @@
       "expect": "reject",
       "gate": "structure",
       "path": "/payload/columns/0/label",
+      "code": "DP-ART-016",
       "note": "Column labels are filled."
     },
     {
@@ -563,6 +662,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/provenance/inputs/1/id",
+      "code": "DP-ART-042",
       "note": "Duplicate input id."
     },
     {
@@ -570,6 +670,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/provenance/inputs/0/evidence/0/end",
+      "code": "DP-ART-040",
       "note": "Line range ends before it starts."
     },
     {
@@ -577,6 +678,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/provenance/producer/evidence/1",
+      "code": "DP-ART-041",
       "note": "Same path and range twice."
     },
     {
@@ -584,6 +686,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/provenance/dependsOn/1",
+      "code": "DP-ART-043",
       "note": "An artifact cannot depend on itself."
     },
     {
@@ -591,6 +694,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/representations/1/inputs/1",
+      "code": "DP-ART-051",
       "note": "Representation names an undeclared input."
     },
     {
@@ -598,6 +702,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/representations/1/inputs/0",
+      "code": "DP-ART-051",
       "note": "Representation inputs need provenance inputs."
     },
     {
@@ -605,6 +710,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/representations/3/id",
+      "code": "DP-ART-050",
       "note": "Duplicate representation id."
     },
     {
@@ -612,6 +718,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/payload/columns/2/id",
+      "code": "DP-ART-044",
       "note": "Duplicate column id."
     },
     {
@@ -619,6 +726,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/payload/rowKey",
+      "code": "DP-ART-045",
       "note": "rowKey must be a declared column."
     },
     {
@@ -626,6 +734,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/payload/rows/1/flag",
+      "code": "DP-ART-047",
       "note": "Every row has every column."
     },
     {
@@ -633,6 +742,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/payload/rows/0/extra",
+      "code": "DP-ART-046",
       "note": "No undeclared cells."
     },
     {
@@ -640,6 +750,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/payload/rows/1/value",
+      "code": "DP-ART-048",
       "note": "Cell type follows its column."
     },
     {
@@ -647,6 +758,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/payload/rows/0/time",
+      "code": "DP-ART-048",
       "note": "null needs a nullable column."
     },
     {
@@ -654,6 +766,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/payload/rows/2/id",
+      "code": "DP-ART-049",
       "note": "Row keys are unique."
     },
     {
@@ -661,6 +774,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/payload/rows/0/flag",
+      "code": "DP-ART-049",
       "note": "Row keys are strings or numbers."
     },
     {
@@ -668,6 +782,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/representations/1/x",
+      "code": "DP-ART-054",
       "note": "Chart x names an unknown column."
     },
     {
@@ -675,6 +790,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/representations/1/y",
+      "code": "DP-ART-055",
       "note": "Chart y must be a number column."
     },
     {
@@ -682,6 +798,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/representations/1/x",
+      "code": "DP-ART-056",
       "note": "Line chart x must be numeric."
     },
     {
@@ -689,6 +806,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/representations/2/row",
+      "code": "DP-ART-058",
       "note": "Metric names an absent row."
     },
     {
@@ -696,6 +814,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/representations/2/column",
+      "code": "DP-ART-057",
       "note": "Metric names an unknown column."
     },
     {
@@ -703,6 +822,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/representations/0/kind",
+      "code": "DP-ART-052",
       "note": "Text view needs a text payload."
     },
     {
@@ -710,6 +830,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/representations/0/kind",
+      "code": "DP-ART-053",
       "note": "Table view needs a table payload."
     },
     {
@@ -717,6 +838,7 @@
       "expect": "reject",
       "gate": "envelope",
       "path": "",
+      "code": "DP-ART-003",
       "note": "More than 1 MiB of compact UTF-8 although every list and string is within bounds."
     },
     {
@@ -724,6 +846,7 @@
       "expect": "reject",
       "gate": "envelope",
       "path": "",
+      "code": "DP-ART-001",
       "note": "1e400 is a valid JSON number but not a finite double."
     }
   ],
@@ -746,6 +869,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/1/provenance/dependsOn/1",
+      "code": "DP-ART-061",
       "note": "a -> b -> a."
     },
     {
@@ -757,6 +881,7 @@
       "expect": "reject",
       "gate": "semantic",
       "path": "/1/id",
+      "code": "DP-ART-060",
       "note": "Two members share one id."
     }
   ]

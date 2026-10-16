@@ -1,7 +1,7 @@
 // Regenerate tests/fixtures/artifact-corpus (every fixture is SYNTHETIC). node scripts/make-artifact-corpus.mjs [--check]
 // The committed JSON files are the shared contract; this script only documents how each one was derived.
 // tests/artifact-corpus.test.mjs and py/test_artifact_corpus.py decide every file with JSON Schema, the TypeScript
-// validator and the Python mirror and compare the decisions (accept/reject, gate, JSON Pointer path) with manifest.json.
+// validator and the Python mirror and compare the decisions (accept/reject, gate, JSON Pointer path, DP-ART code) with manifest.json.
 import {createHash} from 'node:crypto';
 import {execFileSync} from 'node:child_process';
 import {mkdir,readFile,readdir,rm,writeFile} from 'node:fs/promises';
@@ -66,7 +66,31 @@ const foilCampaign=()=>{const inputs=[{id:'model',label:'Model',value:'synthetic
 
 const valid=[];const invalid=[];const sets=[];
 const ok=(file,note,make,raw)=>valid.push({file,note,make,raw});
-const bad=(file,gate,pointer,note,mutate,base=lineage,raw)=>invalid.push({file,gate,path:pointer,note,make:()=>{const a=base();mutate(a);return a;},raw});
+/** Expected stable code of every invalid fixture (docs/DIAGNOSTIC_CODES.md), declared per rule, not computed by a validator. */
+const CODE={
+  's-top-extra-field':11,'s-format':13,'s-version-2':14,'s-version-true':14,'s-id-trailing-newline':15,'s-id-reserved':15,
+  's-title-blank':16,'s-title-js-whitespace':16,'s-title-161-astral':16,'s-provenance-not-object':10,'s-provenance-missing-source':12,'s-provenance-kind':18,
+  's-provenance-extra':11,'s-run-id':15,'s-producer-kind':18,'s-producer-extra':11,'s-producer-missing-name':12,
+  's-input-hash-uppercase':23,'s-input-hash-prefixed':23,'s-input-hash-63':23,'s-input-hash-newline':23,'s-inputs-25':20,
+  's-input-value-null':24,'s-input-value-array':24,'s-input-value-401':24,'s-input-unit-41':16,'s-input-extra':11,'s-input-label-blank':16,
+  's-evidence-path-dotdot':22,'s-evidence-path-drive':22,'s-evidence-path-absolute':22,'s-evidence-path-empty-segment':22,'s-evidence-path-backslash':22,
+  's-evidence-path-dot-segment':22,'s-evidence-path-control':22,'s-evidence-path-trailing-slash':22,'s-evidence-path-empty':22,'s-evidence-path-261':22,
+  's-evidence-9':20,'s-evidence-start-0':17,'s-evidence-start-fraction':17,'s-evidence-start-true':17,'s-evidence-end-100001':17,'s-evidence-missing-label':12,
+  's-depends-on-duplicate':21,'s-depends-on-13':20,'s-depends-on-bad-id':15,'s-representation-inputs-duplicate':21,'s-representation-inputs-bad-id':15,
+  's-representations-13':20,'s-representations-empty':20,'s-representations-not-array':19,'s-representation-kind':30,'s-representation-extra':11,'s-representation-chart-pie':18,
+  's-representation-chart-missing-y':12,'s-representation-metric-digits-7':17,'s-representation-metric-digits-true':17,'s-representation-chart-unit-31':16,
+  's-columns-41':20,'s-column-nullable-string':25,'s-rows-10001':20,'s-row-41-cells':26,'s-row-string-4001':28,'s-row-cell-object':28,'s-row-cell-name':27,'s-payload-kind':29,
+  's-payload-extra':11,'s-text-20001':16,'s-column-type':18,'s-column-label-blank':16,
+  'm-input-duplicate-id':42,'m-evidence-end-before-start':40,'m-evidence-duplicate-range':41,'m-depends-on-self':43,'m-representation-undeclared-input':51,
+  'm-representation-inputs-without-provenance-inputs':51,'m-representation-duplicate-id':50,'m-column-duplicate-id':44,'m-row-key-undeclared':45,
+  'm-row-missing-cell':47,'m-row-undeclared-cell':46,'m-row-cell-type':48,'m-row-null-not-nullable':48,'m-row-key-duplicate':49,'m-row-key-boolean':49,
+  'm-chart-unknown-x':54,'m-chart-y-not-number':55,'m-chart-line-x-string':56,'m-metric-absent-row':58,'m-metric-unknown-column':57,
+  'm-text-representation-on-table':52,'m-table-representation-on-text':53,
+  'e-over-1-mib':3,'e-non-finite-number':1,
+  'set:depends-on-cycle':61,'set:duplicate-id':60,
+};
+const codeOf=key=>{if(!Object.hasOwn(CODE,key))throw new Error('No expected diagnostic code for '+key);return 'DP-ART-'+String(CODE[key]).padStart(3,'0');};
+const bad=(file,gate,pointer,note,mutate,base=lineage,raw)=>invalid.push({file,gate,path:pointer,code:codeOf(file.replace(/\.json$/,'')),note,make:()=>{const a=base();mutate(a);return a;},raw});
 
 // ---- valid
 ok('legacy-v1-wind-aep-6e97cae.json','Plain v1 file exactly as committed at 6e97cae (before lineage fields existed). Illustrative synthetic wind reference.',null);
@@ -105,6 +129,7 @@ bad('s-id-reserved.json','structure','/id','Reserved prototype id.',a=>{a.id='co
 bad('s-title-blank.json','structure','/title','Blank title.',a=>{a.title='   ';});
 bad('s-title-js-whitespace.json','structure','/title','U+3000 and U+FEFF are ECMAScript whitespace (Python str.strip() kept U+FEFF).',a=>{a.title='\u3000\ufeff';});
 bad('s-title-161-astral.json','structure','/title','161 code points exceed 160.',a=>{a.title='\u{1D538}'.repeat(161);});
+bad('s-provenance-not-object.json','structure','/provenance','Provenance is an object.',a=>{a.provenance='synthetic';});
 bad('s-provenance-missing-source.json','structure','/provenance/source','source is required.',a=>{delete a.provenance.source;});
 bad('s-provenance-kind.json','structure','/provenance/kind','Unknown provenance kind.',a=>{a.provenance.kind='observed';});
 bad('s-provenance-extra.json','structure','/provenance/secret','Unknown provenance field.',a=>{a.provenance.secret='x';});
@@ -138,6 +163,7 @@ bad('s-representation-inputs-duplicate.json','structure','/representations/1/inp
 bad('s-representation-inputs-bad-id.json','structure','/representations/1/inputs/0','Representation inputs are ids.',a=>{a.representations[1].inputs=['Gain'];});
 bad('s-representations-13.json','structure','/representations','At most 12 representations.',a=>{a.representations=Array.from({length:13},(_,i)=>({id:'t'+i,title:'T',kind:'table'}));});
 bad('s-representations-empty.json','structure','/representations','At least one representation.',a=>{a.representations=[];});
+bad('s-representations-not-array.json','structure','/representations','Representations are an array.',a=>{a.representations={id:'table',title:'Rows',kind:'table'};});
 bad('s-representation-kind.json','structure','/representations/0/kind','Unsupported representation kind.',a=>{a.representations[0].kind='html';});
 bad('s-representation-extra.json','structure','/representations/0/onClick','No commands on representations.',a=>{a.representations[0].onClick='run()';});
 bad('s-representation-chart-pie.json','structure','/representations/1/chart','Unsupported chart.',a=>{a.representations[1].chart='pie';});
@@ -146,7 +172,9 @@ bad('s-representation-metric-digits-7.json','structure','/representations/2/digi
 bad('s-representation-metric-digits-true.json','structure','/representations/2/digits','true is not an integer.',a=>{a.representations[2].digits=true;});
 bad('s-representation-chart-unit-31.json','structure','/representations/1/unit','Chart units are at most 30 characters.',a=>{a.representations[1].unit='u'.repeat(31);});
 bad('s-columns-41.json','structure','/payload/columns','At most 40 columns.',a=>{a.payload.columns=Array.from({length:41},(_,i)=>({id:'c'+i,label:'C',type:'number'}));},table);
+bad('s-column-nullable-string.json','structure','/payload/columns/1/nullable','nullable is a boolean.',a=>{a.payload.columns[1].nullable='yes';},table);
 bad('s-rows-10001.json','structure','/payload/rows','At most 10,000 rows.',a=>{a.payload.rows=Array.from({length:10001},(_,i)=>({id:'r'+i,value:i,time:i,flag:true}));},table);
+bad('s-row-41-cells.json','structure','/payload/rows/0','A row has at most 40 cells.',a=>{Object.assign(a.payload.rows[0],Object.fromEntries(Array.from({length:37},(_,i)=>['x'+i,i])));},table);
 bad('s-row-string-4001.json','structure','/payload/rows/0/id','Cell strings are at most 4000 characters.',a=>{a.payload.rows[0].id='x'.repeat(4001);},table);
 bad('s-row-cell-object.json','structure','/payload/rows/0/value','Cells are scalars.',a=>{a.payload.rows[0].value={amount:2};},table);
 bad('s-row-cell-name.json','structure','/payload/rows/0/Bad','Cell names are column ids.',a=>{a.payload.rows[0].Bad=1;},table);
@@ -185,7 +213,7 @@ bad('e-over-1-mib.json','envelope','','More than 1 MiB of compact UTF-8 although
 bad('e-non-finite-number.json','envelope','','1e400 is a valid JSON number but not a finite double.',a=>{a.payload.rows[0].value=123456789;},table,s=>s.replace('123456789','1e400'));
 
 // ---- sets (artifacts published together; TypeScript and Python only: JSON Schema has no set notion)
-const setOf=(name,expect,members,gate,pointer,note)=>sets.push({name,expect,members,gate,path:pointer,note});
+const setOf=(name,expect,members,gate,pointer,note)=>sets.push({name,expect,members,gate,path:pointer,...(expect==='reject'?{code:codeOf('set:'+name)}:{}),note});
 setOf('foil-shaped-capture-pair','accept',[foilSeries,foilSummary],null,null,'Summary dependsOn series inside one bundle (synthetic look-alike).');
 setOf('depends-on-cycle','reject',[()=>{const a=table();a.id='cycle-a';a.provenance.dependsOn=['cycle-b'];return a;},()=>{const a=table();a.id='cycle-b';a.provenance.dependsOn=['corpus-outside','cycle-a'];return a;}],'semantic','/1/provenance/dependsOn/1','a -> b -> a.');
 setOf('duplicate-id','reject',[table,table],'semantic','/1/id','Two members share one id.');
@@ -205,8 +233,10 @@ for(const s of sets)s.members.forEach((m,i)=>files.set('sets/'+s.name+'/'+i+'.js
 const manifest={format:'datapass.artifact-corpus',version:1,
   note:'Every fixture is SYNTHETIC (invented values; Contoso/FOIL entries are look-alikes of the export shape only). Decisions are asserted for JSON Schema (docs/contracts/artifact.schema.json), the TypeScript validator and py/datapass_artifact.py. gate/path: which validator gate refuses the file and the JSON Pointer of the offending field. JSON Schema decides only the structure gate: it accepts envelope and semantic fixtures.',
   generator:'scripts/make-artifact-corpus.mjs',
-  fixtures:[...valid.map(f=>({file:'valid/'+f.file,expect:'accept',note:f.note})),...invalid.map(f=>({file:'invalid/'+f.file,expect:'reject',gate:f.gate,path:f.path,note:f.note}))],
-  sets:sets.map(s=>({name:s.name,files:s.members.map((_,i)=>'sets/'+s.name+'/'+i+'.json'),expect:s.expect,...(s.gate?{gate:s.gate,path:s.path}:{}),note:s.note}))};
+  fixtures:[...valid.map(f=>({file:'valid/'+f.file,expect:'accept',note:f.note})),...invalid.map(f=>({file:'invalid/'+f.file,expect:'reject',gate:f.gate,path:f.path,code:f.code,note:f.note}))],
+  sets:sets.map(s=>({name:s.name,files:s.members.map((_,i)=>'sets/'+s.name+'/'+i+'.json'),expect:s.expect,...(s.gate?{gate:s.gate,path:s.path,code:s.code}:{}),note:s.note}))};
+const unused=Object.keys(CODE).filter(key=>!invalid.some(f=>f.file===key+'.json')&&!sets.some(s=>'set:'+s.name===key));
+if(unused.length)throw new Error('Expected codes for absent fixtures: '+unused.join(', '));
 files.set('manifest.json',JSON.stringify(manifest,null,2)+'\n');
 if(checking){
   const listed=async dir=>(await readdir(dir,{recursive:true,withFileTypes:true})).filter(e=>e.isFile()).map(e=>path.relative(root,path.join(e.parentPath??e.path,e.name)).replace(/\\/g,'/'));
