@@ -15,6 +15,10 @@ import {importWorkspace,type RunRef} from '../workspace/persist';
 import {JupyterClient,JupyterError,tableObjects,type ExecuteOutcome,type NbOutput,type TablePayload} from '../workspace/jupyter';
 import {artifactOutputs,NotebookService,NotebookServiceError,RESULT_FORMAT,resultTable,sourceSha256,storedArtifact,storedTable,type CellResultDoc,type StoredRun,type ExportPayload,type ImportedNotebook,type LossItem,type SaveItem,type StoreManifest} from '../workspace/results';
 import {runStateFromCell,runStateFromRuntime,runStateFromStoreJob,runStateLabel} from '../framework/compute/run-state';
+import {capabilityReason} from '../framework/compute/adapter';
+import {JUPYTER_KERNEL_CAPABILITIES} from '../workspace/compute-jupyter';
+/** U202: a kernel run has Interrupt, not Cancel; the reason is on the button (F202 descriptor). */
+const JUPYTER_NO_CANCEL=capabilityReason(JUPYTER_KERNEL_CAPABILITIES,'cancel')??undefined;
 import {DEFAULT_JUPYTER_ORIGIN,InertBody,JupyterBar,LossReport,OutputsView,StorePanel,TableView,type JupyterState} from './NotebookJupyter';
 
 type Preview={columns:{name:string;type:string}[];rows:Record<string,unknown>[];total:number};
@@ -498,7 +502,7 @@ function CellCard({cell,index,notebook,result,stale,runtime,runs,restoredRunIds,
       {state&&<span className="cell-run-state run-state" data-testid="cell-run-state" data-run-state={state}>{runStateLabel(state)}</span>}
       <input className="cell-title" aria-label="Cell title" value={cell.title} maxLength={120} onChange={e=>onChange({...cell,title:e.target.value.trim()?e.target.value:'Untitled'})}/>
       <span className="cell-actions">
-      {runnable(cell)&&(running?<Button size="small" icon={<Ban size={14}/>} onClick={onCancel}>{cell.kind==='jupyter'?'Interrupt':'Cancel'}</Button>:<Button size="small" appearance="primary" icon={<Play size={14}/>} disabled={!ready} onClick={onRun} aria-label={plan.length>1?`Run ${cell.title} after ${plan.length-1} dependenc${plan.length===2?'y':'ies'}`:`Run ${cell.title}`}>{plan.length>1?`Run (${plan.length} cells)`:'Run'}</Button>)}
+      {runnable(cell)&&(running?<Button size="small" icon={<Ban size={14}/>} onClick={onCancel} title={cell.kind==='jupyter'?JUPYTER_NO_CANCEL:undefined} data-compute-path={cell.kind==='jupyter'?'jupyter-kernel':cell.kind==='python'?'runtime-run':undefined}>{cell.kind==='jupyter'?'Interrupt':'Cancel'}</Button>:<Button size="small" appearance="primary" icon={<Play size={14}/>} disabled={!ready} onClick={onRun} aria-label={plan.length>1?`Run ${cell.title} after ${plan.length-1} dependenc${plan.length===2?'y':'ies'}`:`Run ${cell.title}`}>{plan.length>1?`Run (${plan.length} cells)`:'Run'}</Button>)}
       <Button size="small" aria-label="Move cell up" icon={<ArrowUp size={14}/>} disabled={index===0} onClick={()=>onMove(-1)}/>
       <Button size="small" aria-label="Move cell down" icon={<ArrowDown size={14}/>} disabled={index===notebook.cells.length-1} onClick={()=>onMove(1)}/>
       <Button size="small" aria-label="Delete cell" icon={<Trash2 size={14}/>} onClick={onRemove}/>

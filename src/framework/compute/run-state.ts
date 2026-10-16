@@ -3,7 +3,7 @@
  * runtime and Jupyter keep their own lifecycles and their stored `status`/`outcome` values are unchanged.
  *
  * Input unions are spelled here as string literals on purpose: `src/framework` ships in the SDK archive and
- * must not import `src/workspace` (runtime.ts, jupyter.ts) or Python (`result_store.py` JOB_FINAL).
+ * must not import `src/workspace` (jupyter.ts) or Python (`result_store.py` JOB_FINAL).
  *
  * Rule: an outcome that was not observed (page reloaded, connection closed, unknown) is `not-observed`,
  * never `cancelled` and never `failed`.
@@ -17,7 +17,7 @@ export const RUN_STATE_LABELS:Readonly<Record<RunState,string>>={
   interrupted:'interrupted',superseded:'superseded','timed-out':'timed out','not-observed':'not observed',
 };
 
-/** Local Python runtime run status (`RunStatus` in src/workspace/runtime.ts). */
+/** Local Python runtime run status (`RunStatus` in src/framework/compute/runtime-client.ts). */
 export type RuntimeRunStatus='queued'|'running'|'succeeded'|'failed'|'cancelled';
 /** Jupyter execute outcome (`ExecuteStatus` in src/workspace/jupyter.ts). */
 export type JupyterExecuteStatus='ok'|'error'|'interrupted'|'disconnected'|'unknown';
