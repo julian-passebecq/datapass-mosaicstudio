@@ -1,0 +1,45 @@
+{
+  "format": "datapass.bundle",
+  "version": 1,
+  "status": "candidate",
+  "title": "Artifact only",
+  "createdAt": "2026-10-16T00:00:00.000Z",
+  "notice": "Contains captured inputs and result data. Exported deliberately after a sharing review. Not a signature, release or verified lineage.",
+  "files": [
+    {
+      "path": "artifacts/only-table.json",
+      "mediaType": "application/json",
+      "bytes": 866,
+      "sha256": "3033513c868f1a6d0cfe00c8ba632eaa8a1b4e161d43d8cfc797a6aba5768a6a",
+      "text": "{\n  \"format\": \"datapass.artifact\",\n  \"version\": 1,\n  \"id\": \"only-table\",\n  \"title\": \"Synthetic bundle table only-table\",\n  \"provenance\": {\n    \"kind\": \"computed\",\n    \"source\": \"SYNTHETIC fixture for the datapass.bundle corpus. Values are invented; not real data.\"\n  },\n  \"payload\": {\n    \"kind\": \"table\",\n    \"rowKey\": \"id\",\n    \"columns\": [\n      {\n        \"id\": \"id\",\n        \"label\": \"ID\",\n        \"type\": \"string\"\n      },\n      {\n        \"id\": \"value\",\n        \"label\": \"Value\",\n        \"type\": \"number\",\n        \"unit\": \"kW\"\n      }\n    ],\n    \"rows\": [\n      {\n        \"id\": \"a\",\n        \"value\": 2\n      },\n      {\n        \"id\": \"b\",\n        \"value\": 3.5\n      }\n    ]\n  },\n  \"representations\": [\n    {\n      \"id\": \"table\",\n      \"title\": \"Rows\",\n      \"kind\": \"table\"\n    },\n    {\n      \"id\": \"json\",\n      \"title\": \"JSON\",\n      \"kind\": \"json\"\n    }\n  ]\n}"
+    },
+    {
+      "path": "inputs.json",
+      "mediaType": "application/json",
+      "bytes": 178,
+      "sha256": "bbb5eaab5396796cdeb5f06aad8b15341420850bf3c157c189e230ac8d95587d",
+      "text": "{\n  \"format\": \"datapass.bundle-inputs\",\n  \"version\": 1,\n  \"note\": \"Captured input values as the run recorded them. They may be sensitive; review before sharing.\",\n  \"runs\": []\n}\n"
+    },
+    {
+      "path": "lineage.json",
+      "mediaType": "application/json",
+      "bytes": 542,
+      "sha256": "68af2684d8f12c457228b296dfeecf8c1d193ab29d1b87eeab20c9ed3d0a884c",
+      "text": "{\n  \"format\": \"datapass.bundle-lineage\",\n  \"version\": 1,\n  \"note\": \"Declared by the producers; MosaicStudio did not observe or rerun these computations.\",\n  \"artifacts\": [\n    {\n      \"id\": \"only-table\",\n      \"path\": \"artifacts/only-table.json\",\n      \"sha256\": \"3033513c868f1a6d0cfe00c8ba632eaa8a1b4e161d43d8cfc797a6aba5768a6a\",\n      \"kind\": \"computed\",\n      \"source\": \"SYNTHETIC fixture for the datapass.bundle corpus. Values are invented; not real data.\",\n      \"runId\": null,\n      \"inputHash\": null,\n      \"dependsOn\": []\n    }\n  ]\n}\n"
+    },
+    {
+      "path": "runs.json",
+      "mediaType": "application/json",
+      "bytes": 69,
+      "sha256": "69bb2771872b43ef031dbbdf0f485411bb48916743ac6de8b057534a71deac91",
+      "text": "{\n  \"format\": \"datapass.bundle-runs\",\n  \"version\": 1,\n  \"runs\": []\n}\n"
+    },
+    {
+      "path": "SHA256SUMS",
+      "mediaType": "text/plain; charset=utf-8",
+      "bytes": 325,
+      "sha256": "468be91868e50897dd5073021aa78a9b4b07fcb1dffedfe269985c6ce96fa8e4",
+      "text": "3033513c868f1a6d0cfe00c8ba632eaa8a1b4e161d43d8cfc797a6aba5768a6a  artifacts/only-table.json\nbbb5eaab5396796cdeb5f06aad8b15341420850bf3c157c189e230ac8d95587d  inputs.json\n68af2684d8f12c457228b296dfeecf8c1d193ab29d1b87eeab20c9ed3d0a884c  lineage.json\n69bb2771872b43ef031dbbdf0f485411bb48916743ac6de8b057534a71deac91  runs.json\n"
+    }
+  ]
+}

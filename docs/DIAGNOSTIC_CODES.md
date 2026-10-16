@@ -26,7 +26,7 @@ JSON lines) report the **same code for the same file**. The differential corpus 
 | `DP-ENV` | doctor: author and consumer environment checks | F210 | `src/framework/diagnostics/env.ts` |
 | `DP-CLI` | client profile and client checks | F213 (reserved, empty) | `src/framework/diagnostics/client.ts` |
 | `DP-STO` | workspace, run and result storage | F205 (001-009), F206-F207 (reserved) | `src/framework/diagnostics/storage.ts` |
-| `DP-BUN` | export bundles | F208 (reserved, empty) | `src/framework/diagnostics/bundle.ts` |
+| `DP-BUN` | export bundles (`datapass.bundle` v1, candidate) | F208 | `src/framework/diagnostics/bundle.ts` |
 
 ## DP-ART codes
 
@@ -137,3 +137,23 @@ key `datapass.workspace.revision` = `{rev,tab,sha256}` (`src/workspace/revision.
 | `DP-STO-001` | workspace-revision | `workspace-conflict` | TS | Another tab or writer saved (or reset) the workspace after this tab loaded it. Nothing is written until the user keeps mine, takes theirs or exports both. |
 | `DP-STO-002` | workspace-revision | `revision-sidecar-mismatch` | TS | The sidecar is missing, unreadable or does not hash to the stored document: an older studio or an unknown writer saved it. Still a conflict; the writer is shown as unknown. |
 | `DP-STO-003` | workspace-revision | `theirs-invalid` | TS | Take theirs refused: the other document failed `validateWorkspace`. This tab and the conflict are unchanged. |
+
+## DP-BUN codes
+
+Provenance export bundle `datapass.bundle` v1, status `candidate` (F208; `src/framework/foundation/bundle.ts`,
+`py/datapass_bundle.py`, schema `spec/bundle/v1/bundle.schema.json`, corpus `tests/fixtures/bundle/`, guide
+`docs/recipes/bundle.md`). Rules run in this order and the first refusal wins; both validators report the same code and
+the same refused file (`where`). `DP-BUN-007` also carries the artifact's own `DP-ART` code as `artifactCode`.
+
+| Code | Gate | Rule | Reported by | Meaning |
+|---|---|---|---|---|
+| `DP-BUN-001` | envelope | `bundle-envelope` | TS, Python | Not one bounded JSON object with `format` `datapass.bundle`, `version` 1, `status` `candidate`, a title, `createdAt`, a notice and 2 to 64 files, and no other key. |
+| `DP-BUN-002` | files | `file-entry` | TS, Python | A file entry has an unknown or duplicate path, the wrong media type, extra keys, a malformed `bytes`/`sha256`, text that is not well-formed UTF-8, or exceeds the byte budget. |
+| `DP-BUN-003` | hashes | `file-hash` | TS, Python | The declared `sha256` or `bytes` does not match the exact embedded text. Re-serializing a file changes its hash. |
+| `DP-BUN-004` | hashes | `sha256sums` | TS, Python | `SHA256SUMS` is missing or is not exactly one `<sha256>  <path>` line per other file, sorted by path. |
+| `DP-BUN-005` | members | `missing-member` | TS, Python | `runs.json`, `inputs.json`, `lineage.json` or every `artifacts/<id>.json` file is missing. |
+| `DP-BUN-006` | members | `member-invalid` | TS, Python | `runs.json`, `inputs.json` or `lineage.json` is not JSON of its documented shape. |
+| `DP-BUN-007` | members | `artifact-invalid` | TS, Python | An artifact file is refused by the `datapass.artifact` v1 validators or is not named after its id. |
+| `DP-BUN-008` | members | `reference-broken` | TS, Python | A run, an input set or a lineage entry names an artifact, hash or run the bundle does not hold, or lineage differs from what the artifact declares. |
+| `DP-BUN-009` | secrets | `secret-key` | TS, Python | A JSON member has a token-shaped key (the key, lowercased without `-`/`_`, ends with token, secret, password, passwd, apikey, authorization, cookie, credential(s) or privatekey). |
+| `DP-BUN-010` | secrets | `secret-value` | TS | Export only: a file would contain the in-memory runtime token. Nothing is exported. |

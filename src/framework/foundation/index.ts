@@ -21,3 +21,5 @@ export type {ArtifactGate,ArtifactDecision} from './artifact.ts';
 export {ART,ARTIFACT_DIAGNOSTICS} from '../diagnostics/artifact.ts';
 export type {ArtifactCode} from '../diagnostics/artifact.ts';
 export type {EvidenceLink,ArtifactInput,ArtifactProducer,ArtifactProvenance} from './artifact.ts';
+export {BUNDLE_FORMAT,BUNDLE_VERSION,BUNDLE_STATUS,BUNDLE_MIME,BUNDLE_LIMITS,BundleError,validateBundle,readBundleText,bundleDecision,exportBundle,bundleFromRecords,bundlePort,bundleSchema,looksLikeBundle,isSecretKey} from './bundle.ts';
+export type {BundleDocument,BundleFile,BundleRun,BundleLineage,BundleRunInput,BundleInput,ExportedBundle,ValidatedBundle,BundleDecision,BundleCode} from './bundle.ts';

@@ -3,7 +3,8 @@ import type {Block} from './types';
 import {useRuntime} from './hooks';
 import Basic from './blocks/Basic';
 import type {SiteRuntime} from './runtime';
-const Runs=__STUDIO_RUNS__?lazy(()=>import('./foundation/RunWorkbench')):null;
+// The run workbench and its provenance bundle export (F208) load together in the runs chunk.
+const Runs=__STUDIO_RUNS__?lazy(()=>Promise.all([import('./foundation/RunWorkbench'),import('./foundation/BundleExport')]).then(([w,b])=>({default:function RunsWithBundle({resource}:{resource:string}){return <><w.default resource={resource}/><b.BundleExport resource={resource}/></>;}}))):null;
 export const SharedRunScope=__STUDIO_RUNS__?lazy(()=>import('./foundation/RunScope').then(m=>({default:m.RunScope}))):function MissingRuns(_: {ids:string[];children:import('react').ReactNode}){throw new Error('Run capability was not included in this build');};
 const Model=__STUDIO_MODELS__?lazy(()=>import('./model-assets/ModelBlock')):null;
 const Chart=__STUDIO_CHARTS__?lazy(()=>import('./blocks/Chart')):null;

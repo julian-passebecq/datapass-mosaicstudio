@@ -30,7 +30,7 @@ export function createStorageAdapter(options:StorageAdapterOptions):StorageAdapt
   const reports:StorageTierReport[]=[
     {tier:'preferences',backend:prefs.port?prefs.backend:'none',available:!!prefs.port,reason:prefs.port?null:prefs.reason??'Preferences storage is unavailable.',mutable:true},
     {tier:'results',backend:results?'local-result-store':'none',available:!!results,reason:results?null:NO_RESULTS,mutable:false},
-    {tier:'bundles',backend:'none',available:!!bundles,reason:bundles?null:NO_BUNDLES,mutable:false},
+    {tier:'bundles',backend:bundles?'datapass-bundle':'none',available:!!bundles,reason:bundles?null:NO_BUNDLES,mutable:false},
   ];
   Object.freeze(reports);reports.forEach(r=>Object.freeze(r));
   return Object.freeze({preferences:prefs.port,results,bundles,tiers:()=>reports.map(r=>({...r}))});

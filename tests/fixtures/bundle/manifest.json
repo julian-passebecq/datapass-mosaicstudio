@@ -1,0 +1,246 @@
+{
+  "format": "datapass.bundle-corpus",
+  "version": 1,
+  "note": "Every fixture is SYNTHETIC (invented values; the Contoso entry is a byte copy of the synthetic interop fixture). Decisions are asserted for the TypeScript validator and py/datapass_bundle.py: same code, same refused file, same hashes.",
+  "generator": "scripts/make-bundle-corpus.mjs",
+  "fixtures": [
+    {
+      "file": "valid/one-run.json",
+      "expect": "accept",
+      "bundleSha256": "f90a0a42e5c392fe50908d70b9d2518a97efb58225e1a3931de19d07aa940c6b",
+      "files": [
+        {
+          "path": "SHA256SUMS",
+          "sha256": "f90a0a42e5c392fe50908d70b9d2518a97efb58225e1a3931de19d07aa940c6b",
+          "bytes": 336
+        },
+        {
+          "path": "artifacts/orchard-monthly-yield.json",
+          "sha256": "ed6fc2a319837ca68066b12a05f97c80d4d7095bca9f5f899a60fde0f05cba41",
+          "bytes": 8595
+        },
+        {
+          "path": "inputs.json",
+          "sha256": "10783961f7cd8edff9951e9f969a967b4200be5ad12f4d5f93bf9b54344fd472",
+          "bytes": 308
+        },
+        {
+          "path": "lineage.json",
+          "sha256": "2a78624572819e648b8e02198053654d41c04e91a1fb02e09f36ebaeb04a2d9a",
+          "bytes": 749
+        },
+        {
+          "path": "runs.json",
+          "sha256": "ee6f327e771bb1db0d2ef96725625e382a6989d94117859a5a265a614004131d",
+          "bytes": 679
+        }
+      ],
+      "note": "Contoso-shape SYNTHETIC artifact (byte copy of the interop fixture, LF) with one run and its captured inputs."
+    },
+    {
+      "file": "valid/artifact-only.json",
+      "expect": "accept",
+      "bundleSha256": "468be91868e50897dd5073021aa78a9b4b07fcb1dffedfe269985c6ce96fa8e4",
+      "files": [
+        {
+          "path": "SHA256SUMS",
+          "sha256": "468be91868e50897dd5073021aa78a9b4b07fcb1dffedfe269985c6ce96fa8e4",
+          "bytes": 325
+        },
+        {
+          "path": "artifacts/only-table.json",
+          "sha256": "3033513c868f1a6d0cfe00c8ba632eaa8a1b4e161d43d8cfc797a6aba5768a6a",
+          "bytes": 866
+        },
+        {
+          "path": "inputs.json",
+          "sha256": "bbb5eaab5396796cdeb5f06aad8b15341420850bf3c157c189e230ac8d95587d",
+          "bytes": 178
+        },
+        {
+          "path": "lineage.json",
+          "sha256": "68af2684d8f12c457228b296dfeecf8c1d193ab29d1b87eeab20c9ed3d0a884c",
+          "bytes": 542
+        },
+        {
+          "path": "runs.json",
+          "sha256": "69bb2771872b43ef031dbbdf0f485411bb48916743ac6de8b057534a71deac91",
+          "bytes": 69
+        }
+      ],
+      "note": "One artifact, no run: an artifact file exported from the viewer."
+    },
+    {
+      "file": "valid/exact-bytes.json",
+      "expect": "accept",
+      "bundleSha256": "32aa66a478a55c24782a7cdb226387cf132077fc9907a2a7a9f5ff21bb6c1ec6",
+      "files": [
+        {
+          "path": "SHA256SUMS",
+          "sha256": "32aa66a478a55c24782a7cdb226387cf132077fc9907a2a7a9f5ff21bb6c1ec6",
+          "bytes": 409
+        },
+        {
+          "path": "artifacts/crlf-a.json",
+          "sha256": "903790d894ba2acc134b6eff63b3bd0f5791852d92924e7e0cc2ac79920115d4",
+          "bytes": 939
+        },
+        {
+          "path": "artifacts/crlf-b.json",
+          "sha256": "167999f4ba2f96b095328a3afa6380755522a35e4895d05d724cc9d8ea13f282",
+          "bytes": 554
+        },
+        {
+          "path": "inputs.json",
+          "sha256": "470ded76958151a6751134be260721a544edfd5ecf5cfa315fa3bfae89d4e34b",
+          "bytes": 637
+        },
+        {
+          "path": "lineage.json",
+          "sha256": "cf200725602fb377ceeb21a038c53e1240dde07f2835fb30f6fd4ce0270011b3",
+          "bytes": 994
+        },
+        {
+          "path": "runs.json",
+          "sha256": "89f8a7914e25d8bd543d0ac4ed8a10b9dbaaf063a4711958b71ea830ce5b020d",
+          "bytes": 1667
+        }
+      ],
+      "note": "Two runs; artifact texts keep CRLF, tabs and non-ASCII exactly as given (é, 風, emoji) to prove hashing of the embedded bytes, not a re-serialization."
+    },
+    {
+      "file": "invalid/e-format.json",
+      "expect": "reject",
+      "code": "DP-BUN-001",
+      "where": "",
+      "note": "Unsupported format name."
+    },
+    {
+      "file": "invalid/e-status.json",
+      "expect": "reject",
+      "code": "DP-BUN-001",
+      "where": "",
+      "note": "A bundle must say status candidate (the format is not final)."
+    },
+    {
+      "file": "invalid/e-extra-key.json",
+      "expect": "reject",
+      "code": "DP-BUN-001",
+      "where": "",
+      "note": "Unknown top-level key."
+    },
+    {
+      "file": "invalid/e-not-json.json",
+      "expect": "reject",
+      "code": "DP-BUN-001",
+      "where": "",
+      "note": "Not JSON at all."
+    },
+    {
+      "file": "invalid/f-path.json",
+      "expect": "reject",
+      "code": "DP-BUN-002",
+      "where": "/files/0",
+      "note": "A path outside the documented file set (traversal)."
+    },
+    {
+      "file": "invalid/f-duplicate.json",
+      "expect": "reject",
+      "code": "DP-BUN-002",
+      "where": "runs.json",
+      "note": "The same path twice."
+    },
+    {
+      "file": "invalid/f-media.json",
+      "expect": "reject",
+      "code": "DP-BUN-002",
+      "where": "SHA256SUMS",
+      "note": "SHA256SUMS declared as JSON."
+    },
+    {
+      "file": "invalid/f-lone-surrogate.json",
+      "expect": "reject",
+      "code": "DP-BUN-002",
+      "where": "lineage.json",
+      "note": "Text that is not well-formed UTF-8 (a lone surrogate)."
+    },
+    {
+      "file": "invalid/h-file-hash.json",
+      "expect": "reject",
+      "code": "DP-BUN-003",
+      "where": "artifacts/orchard-monthly-yield.json",
+      "note": "Artifact text edited after hashing (one character of the source note changed)."
+    },
+    {
+      "file": "invalid/h-reserialized.json",
+      "expect": "reject",
+      "code": "DP-BUN-003",
+      "where": "artifacts/orchard-monthly-yield.json",
+      "note": "Artifact re-serialized compactly but the declared hash is the original text's: hashes cover exact bytes."
+    },
+    {
+      "file": "invalid/h-sums.json",
+      "expect": "reject",
+      "code": "DP-BUN-004",
+      "where": "SHA256SUMS",
+      "note": "SHA256SUMS omits one file (its own hash entry is consistent)."
+    },
+    {
+      "file": "invalid/m-missing-runs.json",
+      "expect": "reject",
+      "code": "DP-BUN-005",
+      "where": "runs.json",
+      "note": "runs.json is absent (SHA256SUMS lists what is present)."
+    },
+    {
+      "file": "invalid/m-runs-shape.json",
+      "expect": "reject",
+      "code": "DP-BUN-006",
+      "where": "runs.json",
+      "note": "A run with an unknown outcome."
+    },
+    {
+      "file": "invalid/m-inputs-shape.json",
+      "expect": "reject",
+      "code": "DP-BUN-006",
+      "where": "inputs.json",
+      "note": "A captured input value that is an object."
+    },
+    {
+      "file": "invalid/m-artifact-invalid.json",
+      "expect": "reject",
+      "code": "DP-BUN-007",
+      "where": "artifacts/orchard-monthly-yield.json",
+      "artifactCode": "DP-ART-013",
+      "note": "The artifact itself is refused by the datapass.artifact validators (wrong format)."
+    },
+    {
+      "file": "invalid/m-artifact-name.json",
+      "expect": "reject",
+      "code": "DP-BUN-007",
+      "where": "artifacts/renamed.json",
+      "note": "The file name is not the artifact id."
+    },
+    {
+      "file": "invalid/m-reference.json",
+      "expect": "reject",
+      "code": "DP-BUN-008",
+      "where": "runs.json",
+      "note": "A run names an artifact hash the bundle does not hold."
+    },
+    {
+      "file": "invalid/m-lineage-drift.json",
+      "expect": "reject",
+      "code": "DP-BUN-008",
+      "where": "lineage.json",
+      "note": "Lineage claims another provenance kind than the artifact declares."
+    },
+    {
+      "file": "invalid/s-secret-key.json",
+      "expect": "reject",
+      "code": "DP-BUN-009",
+      "where": "inputs.json",
+      "note": "A token-shaped key in the captured inputs (value is a placeholder, not a credential)."
+    }
+  ]
+}
