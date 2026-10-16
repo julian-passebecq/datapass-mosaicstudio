@@ -18,8 +18,9 @@ test('codes are unique, well formed and under their reserved prefix',()=>{
   assert.ok(Object.isFrozen(DIAGNOSTICS)&&Object.isFrozen(DIAGNOSTICS[0]));
 });
 
-test('reserved areas start empty (F206-F208, F213 own them); DP-ENV is filled by the F210 doctor; F205 owns DP-STO-001..003',()=>{
-  for(const rows of [CLI_DIAGNOSTICS,BUN_DIAGNOSTICS])assert.deepEqual(rows,[]);
+test('reserved areas start empty (F206-F207, F213 own them); DP-ENV is filled by the F210 doctor; F205 owns DP-STO-001..003; F208 owns DP-BUN',()=>{
+  for(const rows of [CLI_DIAGNOSTICS])assert.deepEqual(rows,[]);
+  assert.deepEqual(BUN_DIAGNOSTICS.map(row=>row.code),Array.from({length:10},(_,i)=>'DP-BUN-'+String(i+1).padStart(3,'0')));
   assert.ok(ENV_DIAGNOSTICS.length>0&&ENV_DIAGNOSTICS.every(row=>row.code.startsWith('DP-ENV-')));
   assert.deepEqual(STO_DIAGNOSTICS.map(row=>[row.code,row.rule]),[['DP-STO-001','workspace-conflict'],['DP-STO-002','revision-sidecar-mismatch'],['DP-STO-003','theirs-invalid']]);
 

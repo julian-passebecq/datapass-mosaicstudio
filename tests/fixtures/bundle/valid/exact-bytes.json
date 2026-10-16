@@ -1,0 +1,52 @@
+{
+  "format": "datapass.bundle",
+  "version": 1,
+  "status": "candidate",
+  "title": "Exact bytes – é 風 🌬",
+  "createdAt": "2026-10-16T00:00:00.000Z",
+  "notice": "Contains captured inputs and result data. Exported deliberately after a sharing review. Not a signature, release or verified lineage.",
+  "files": [
+    {
+      "path": "artifacts/crlf-a.json",
+      "mediaType": "application/json",
+      "bytes": 939,
+      "sha256": "903790d894ba2acc134b6eff63b3bd0f5791852d92924e7e0cc2ac79920115d4",
+      "text": "{\r\n\t\"format\": \"datapass.artifact\",\r\n\t\"version\": 1,\r\n\t\"id\": \"crlf-a\",\r\n\t\"title\": \"Synthetic bundle table crlf-a\",\r\n\t\"provenance\": {\r\n\t\t\"kind\": \"computed\",\r\n\t\t\"source\": \"SYNTHETIC fixture for the datapass.bundle corpus. Values are invented; not real data.\",\r\n\t\t\"runId\": \"run-a\",\r\n\t\t\"inputHash\": \"b3cc0475bb78a5026098858e9889acf666d31062d513d303314eca31d36e72f2\",\r\n\t\t\"dependsOn\": [\r\n\t\t\t\"external-upstream\"\r\n\t\t]\r\n\t},\r\n\t\"payload\": {\r\n\t\t\"kind\": \"table\",\r\n\t\t\"rowKey\": \"id\",\r\n\t\t\"columns\": [\r\n\t\t\t{\r\n\t\t\t\t\"id\": \"id\",\r\n\t\t\t\t\"label\": \"ID\",\r\n\t\t\t\t\"type\": \"string\"\r\n\t\t\t},\r\n\t\t\t{\r\n\t\t\t\t\"id\": \"value\",\r\n\t\t\t\t\"label\": \"Value\",\r\n\t\t\t\t\"type\": \"number\",\r\n\t\t\t\t\"unit\": \"kW\"\r\n\t\t\t}\r\n\t\t],\r\n\t\t\"rows\": [\r\n\t\t\t{\r\n\t\t\t\t\"id\": \"a\",\r\n\t\t\t\t\"value\": 2\r\n\t\t\t},\r\n\t\t\t{\r\n\t\t\t\t\"id\": \"b\",\r\n\t\t\t\t\"value\": 3.5\r\n\t\t\t}\r\n\t\t]\r\n\t},\r\n\t\"representations\": [\r\n\t\t{\r\n\t\t\t\"id\": \"table\",\r\n\t\t\t\"title\": \"Rows\",\r\n\t\t\t\"kind\": \"table\"\r\n\t\t},\r\n\t\t{\r\n\t\t\t\"id\": \"json\",\r\n\t\t\t\"title\": \"JSON\",\r\n\t\t\t\"kind\": \"json\"\r\n\t\t}\r\n\t]\r\n}"
+    },
+    {
+      "path": "artifacts/crlf-b.json",
+      "mediaType": "application/json",
+      "bytes": 554,
+      "sha256": "167999f4ba2f96b095328a3afa6380755522a35e4895d05d724cc9d8ea13f282",
+      "text": "{\"format\":\"datapass.artifact\",\"version\":1,\"id\":\"crlf-b\",\"title\":\"Synthetic é 風 🌬 table\",\"provenance\":{\"kind\":\"computed\",\"source\":\"SYNTHETIC fixture for the datapass.bundle corpus. Values are invented; not real data.\",\"runId\":\"run-b\"},\"payload\":{\"kind\":\"table\",\"rowKey\":\"id\",\"columns\":[{\"id\":\"id\",\"label\":\"ID\",\"type\":\"string\"},{\"id\":\"value\",\"label\":\"Value\",\"type\":\"number\",\"unit\":\"kW\"}],\"rows\":[{\"id\":\"a\",\"value\":2},{\"id\":\"b\",\"value\":3.5}]},\"representations\":[{\"id\":\"table\",\"title\":\"Rows\",\"kind\":\"table\"},{\"id\":\"json\",\"title\":\"JSON\",\"kind\":\"json\"}]}"
+    },
+    {
+      "path": "inputs.json",
+      "mediaType": "application/json",
+      "bytes": 637,
+      "sha256": "470ded76958151a6751134be260721a544edfd5ecf5cfa315fa3bfae89d4e34b",
+      "text": "{\n  \"format\": \"datapass.bundle-inputs\",\n  \"version\": 1,\n  \"note\": \"Captured input values as the run recorded them. They may be sensitive; review before sharing.\",\n  \"runs\": [\n    {\n      \"runId\": \"run-a\",\n      \"values\": {\n        \"gain\": 2,\n        \"mode\": \"fast\",\n        \"enabled\": true,\n        \"note\": null\n      }\n    },\n    {\n      \"runId\": \"run-b\",\n      \"values\": {\n        \"gain\": 3,\n        \"mode\": \"slow\",\n        \"enabled\": false,\n        \"note\": \"é\"\n      }\n    },\n    {\n      \"runId\": \"run-c\",\n      \"values\": {\n        \"gain\": 4,\n        \"mode\": \"fast\",\n        \"enabled\": true,\n        \"note\": null\n      }\n    }\n  ]\n}\n"
+    },
+    {
+      "path": "lineage.json",
+      "mediaType": "application/json",
+      "bytes": 994,
+      "sha256": "cf200725602fb377ceeb21a038c53e1240dde07f2835fb30f6fd4ce0270011b3",
+      "text": "{\n  \"format\": \"datapass.bundle-lineage\",\n  \"version\": 1,\n  \"note\": \"Declared by the producers; MosaicStudio did not observe or rerun these computations.\",\n  \"artifacts\": [\n    {\n      \"id\": \"crlf-a\",\n      \"path\": \"artifacts/crlf-a.json\",\n      \"sha256\": \"903790d894ba2acc134b6eff63b3bd0f5791852d92924e7e0cc2ac79920115d4\",\n      \"kind\": \"computed\",\n      \"source\": \"SYNTHETIC fixture for the datapass.bundle corpus. Values are invented; not real data.\",\n      \"runId\": \"run-a\",\n      \"inputHash\": \"b3cc0475bb78a5026098858e9889acf666d31062d513d303314eca31d36e72f2\",\n      \"dependsOn\": [\n        \"external-upstream\"\n      ]\n    },\n    {\n      \"id\": \"crlf-b\",\n      \"path\": \"artifacts/crlf-b.json\",\n      \"sha256\": \"167999f4ba2f96b095328a3afa6380755522a35e4895d05d724cc9d8ea13f282\",\n      \"kind\": \"computed\",\n      \"source\": \"SYNTHETIC fixture for the datapass.bundle corpus. Values are invented; not real data.\",\n      \"runId\": \"run-b\",\n      \"inputHash\": null,\n      \"dependsOn\": []\n    }\n  ]\n}\n"
+    },
+    {
+      "path": "runs.json",
+      "mediaType": "application/json",
+      "bytes": 1667,
+      "sha256": "89f8a7914e25d8bd543d0ac4ed8a10b9dbaaf063a4711958b71ea830ce5b020d",
+      "text": "{\n  \"format\": \"datapass.bundle-runs\",\n  \"version\": 1,\n  \"runs\": [\n    {\n      \"runId\": \"run-a\",\n      \"taskId\": \"scenario\",\n      \"appId\": \"bundle-corpus\",\n      \"appVersion\": \"1.0.0\",\n      \"model\": {\n        \"id\": \"synthetic-model\",\n        \"version\": \"1\",\n        \"provider\": \"runtime\"\n      },\n      \"outcome\": \"succeeded\",\n      \"startedAt\": \"2026-10-16T00:00:01.000Z\",\n      \"finishedAt\": \"2026-10-16T00:00:02.000Z\",\n      \"artifact\": {\n        \"id\": \"crlf-a\",\n        \"path\": \"artifacts/crlf-a.json\",\n        \"sha256\": \"903790d894ba2acc134b6eff63b3bd0f5791852d92924e7e0cc2ac79920115d4\"\n      },\n      \"resultSha256\": null\n    },\n    {\n      \"runId\": \"run-b\",\n      \"taskId\": \"scenario\",\n      \"appId\": \"bundle-corpus\",\n      \"appVersion\": \"1.0.0\",\n      \"model\": {\n        \"id\": \"synthetic-model\",\n        \"version\": \"1\",\n        \"provider\": \"runtime\"\n      },\n      \"outcome\": \"succeeded\",\n      \"startedAt\": \"2026-10-16T00:00:01.000Z\",\n      \"finishedAt\": \"2026-10-16T00:00:02.000Z\",\n      \"artifact\": {\n        \"id\": \"crlf-b\",\n        \"path\": \"artifacts/crlf-b.json\",\n        \"sha256\": \"167999f4ba2f96b095328a3afa6380755522a35e4895d05d724cc9d8ea13f282\"\n      },\n      \"resultSha256\": \"d2bf0fb5faba9ce210665af623cc7cdd545a7ac04c5e6d44f7c7fa59210f7d37\"\n    },\n    {\n      \"runId\": \"run-c\",\n      \"taskId\": \"scenario\",\n      \"appId\": \"bundle-corpus\",\n      \"appVersion\": \"1.0.0\",\n      \"model\": {\n        \"id\": \"synthetic-model\",\n        \"version\": \"1\",\n        \"provider\": \"runtime\"\n      },\n      \"outcome\": \"unobserved\",\n      \"startedAt\": \"2026-10-16T00:00:01.000Z\",\n      \"finishedAt\": null,\n      \"artifact\": null,\n      \"resultSha256\": null\n    }\n  ]\n}\n"
+    },
+    {
+      "path": "SHA256SUMS",
+      "mediaType": "text/plain; charset=utf-8",
+      "bytes": 409,
+      "sha256": "32aa66a478a55c24782a7cdb226387cf132077fc9907a2a7a9f5ff21bb6c1ec6",
+      "text": "903790d894ba2acc134b6eff63b3bd0f5791852d92924e7e0cc2ac79920115d4  artifacts/crlf-a.json\n167999f4ba2f96b095328a3afa6380755522a35e4895d05d724cc9d8ea13f282  artifacts/crlf-b.json\n470ded76958151a6751134be260721a544edfd5ecf5cfa315fa3bfae89d4e34b  inputs.json\ncf200725602fb377ceeb21a038c53e1240dde07f2835fb30f6fd4ce0270011b3  lineage.json\n89f8a7914e25d8bd543d0ac4ed8a10b9dbaaf063a4711958b71ea830ce5b020d  runs.json\n"
+    }
+  ]
+}
