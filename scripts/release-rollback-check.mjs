@@ -11,7 +11,8 @@
  *        [--port 24190] [--rport 24799] [--out <evidence dir>]
  *
  * Steps (all data synthetic: inline SQL literals):
- *   1 old : blank workspace, two SQL cells run, results + notebook saved to the store, .ipynb exported.
+ *   1 old : blank workspace, two SQL cells run, results + notebook saved to the store, .ipynb exported. A pre-hash
+ *           old release (0.10.0) writes no SQL hashes; an M-SQLHASH one (0.11.x) must write the authored hashes.
  *   2 new : upgrade; Open from store reopens both results by hash without recomputation; saving again records
  *           each SQL cell's source hash (M-SQLHASH) and leaves every result file byte-identical.
  *   3 old : rollback; the older release opens the newer manifest (the extra field is ignored), reopens the same
@@ -186,7 +187,15 @@ try{
   const resultsOf=files=>Object.fromEntries(Object.entries(files).filter(([k])=>k.startsWith('results/')));
   const savedResults=resultsOf(record.steps[0].store);
   const m1=await manifest();
-  if(m1.workspace.cells.some(c=>'sourceSha256' in c))fail('the old release unexpectedly wrote SQL source hashes');
+  // A pre-hash old release (0.10.0) writes none; an old release that already ships M-SQLHASH (0.11.x) must write
+  // exactly the authored hash for every cell. A partial or wrong hash fails either way.
+  const oldHashes=m1.workspace.cells.filter(c=>'sourceSha256' in c).length;
+  record.steps[0].manifestHasSqlHashes=oldHashes>0;
+  if(oldHashes>0){
+    if(oldHashes!==m1.workspace.cells.length)fail('the old release wrote SQL source hashes for only some cells');
+    const want1=[sqlHash(SQL_A),sqlHash(SQL_B)];
+    m1.workspace.cells.forEach((c,i)=>{if(c.sourceSha256!==want1[i])fail('the old release wrote a wrong SQL source hash for '+c.cellId);});
+  }
 
   // 2 new: upgrade; reopen by hash, then save: SQL hashes recorded, result files unchanged.
   await session('2-new-upgrade-reopen-save','new',async(page,step)=>{

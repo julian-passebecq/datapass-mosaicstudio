@@ -10,7 +10,8 @@ import {tableId} from './core/queries';
 import {modules} from './core/host';
 import {demoPipeline,type Pipeline,validatePipeline} from './core/pipeline';
 import {validateNotebook,type Notebook} from './workspace/notebook';
-import {browserStorage,loadWorkspace,saveWorkspace,resetWorkspace as clearSavedWorkspace,type RunRef,type WorkspaceDoc,type SourceRef} from './workspace/persist';
+import {loadWorkspace,saveWorkspace,resetWorkspace as clearSavedWorkspace,type RunRef,type WorkspaceDoc,type SourceRef} from './workspace/persist';
+import {browserPreferences,createStorageAdapter} from './framework/storage';
 
 export type DatasetInfo={table:string; name:string; kind:'synthetic'|'user-file'; bytes?:number; registeredFile?:string;};
 export type BoardCard={id:string; title:string; lane:'Backlog'|'In progress'|'Review'|'Done'};
@@ -29,7 +30,9 @@ export const MODULE_IDS=modules.map(m=>m.id);
 let importSequence=0;
 const params=new URLSearchParams(location.search);
 const requestedModule=params.get('module');
-const storage=browserStorage();
+// Workspace load/save go through the StorageAdapter preferences tier (same localStorage port, same bytes).
+const storageAdapter=createStorageAdapter({preferences:browserPreferences()});
+const storage=storageAdapter.preferences;
 // `?workspace=blank` never loads samples for this visit; `?sample=operations` opts into the synthetic sample.
 const restored=params.get('embed')==='1'?{doc:null,notice:null}:loadWorkspace(storage,MODULE_IDS);
 const saved=restored.doc;

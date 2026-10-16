@@ -6,17 +6,16 @@ import {runtimeOrigin,validToken} from './runtime.ts';
 import {validateCell,validateNotebook,type Cell} from './notebook.ts';
 import {validateTable,type NbOutput,type TablePayload} from './jupyter.ts';
 import {validateArtifact,type Artifact} from '../framework/foundation/artifact.ts';
+import {RESULT_FORMAT,ARTIFACT_MIME,sha256Hex} from '../framework/storage/result-store-client.ts';
+
+/** Shared with the framework StorageAdapter (tier 2) so both read the same constants and hash. */
+export {RESULT_FORMAT,ARTIFACT_MIME,sha256Hex};
 
 export const NOTEBOOK_PREFIX='/api/notebook/v1';
-export const RESULT_FORMAT='datapass.cell-result';
 const SHA=/^[0-9a-f]{64}$/;
 type FetchLike=(url:string,init:{method:'GET'|'POST';headers:Record<string,string>;body?:string;credentials:'omit';cache:'no-store';mode:'cors'})=>Promise<{ok:boolean;status:number;text():Promise<string>}>;
 function isObject(v:unknown):v is Record<string,unknown>{return !!v&&typeof v==='object'&&!Array.isArray(v);}
 
-export async function sha256Hex(text:string):Promise<string>{
-  const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(text));
-  return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
-}
 /** Deterministic JSON like the service's canonical form (sorted keys, ASCII escapes) for hashing a cell source key. */
 export async function sourceSha256(sourceKey:string):Promise<string>{return sha256Hex(sourceKey);}
 
@@ -26,7 +25,6 @@ export function storedTable(t:TablePayload):StoredTable{return {columns:t.column
 export function resultTable(doc:CellResultDoc):TablePayload|null{return doc.table?validateTable(doc.table):null;}
 /** An allowlisted-model (datapass.runtime/1) result is stored as ONE display_data output carrying the validated
  * datapass.artifact v1 document, with the run it came from as metadata (a reference, not a re-execution recipe). */
-export const ARTIFACT_MIME='application/vnd.datapass.artifact+json';
 export type StoredRun={runId:string;model:string;modelVersion:string;inputHash:string;artifactSha256:string|null};
 export function artifactOutputs(artifact:Artifact,run:StoredRun):NbOutput[]{
   return [{output_type:'display_data',data:{[ARTIFACT_MIME]:JSON.parse(JSON.stringify(artifact))},metadata:{datapass:{run}}}];
