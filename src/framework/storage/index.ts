@@ -1,0 +1,8 @@
+/** StorageAdapter facade (F204): three tiers over the existing ports. No React, renderer or task execution on import. */
+export type {KeyValuePort,StorageTierId,StorageBackend,StorageTierReport,BundleEntry,BundlePort} from './ports.ts';
+export {browserPreferences,memoryPreferences,memoryKeyValue,isKeyValuePort} from './kv.ts';
+export type {PreferencesSource,MemoryKeyValue} from './kv.ts';
+export {ResultStoreClient,ResultStoreError,readArtifactResult,resultStoreOrigin,sha256Hex,RESULT_FORMAT,RESULT_STORE_FORMAT,RESULT_STORE_PREFIX,ARTIFACT_MIME,RUNTIME_RESULT_ORIGIN} from './result-store-client.ts';
+export type {StoredArtifactResult,StoredRunRef,ResultStoreEntry} from './result-store-client.ts';
+export {createStorageAdapter} from './tiers.ts';
+export type {StorageAdapter,StorageAdapterOptions} from './tiers.ts';
