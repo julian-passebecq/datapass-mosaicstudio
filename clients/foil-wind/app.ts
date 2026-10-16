@@ -1,6 +1,8 @@
 import {defineApp} from '../../src/framework/authoring.ts';
 import {artifactSource} from '../../src/framework/foundation/ArtifactSource.tsx';
 import {loadArtifact} from '../../src/framework/foundation/artifact-loader.ts';
+import {createRuntimeLink,createRuntimeTask} from '../../src/framework/compute/runtime-task.ts';
+import type {RunResource} from '../../src/framework/foundation/index.ts';
 import type {Block,Rows,TaskContext} from '../../src/framework/types.ts';
 import queries from './queries.json' with {type:'json'};
 import {Measurements} from './Measurements.tsx';
@@ -26,6 +28,26 @@ async function compareRuns({values,signal,report}:TaskContext):Promise<Rows>{
   return rows.map(row=>({metric:row.metric,label:row.label,unit:row.unit,valueA:row.valueA,valueB:row.valueB,delta:row.delta,deltaPct:row.deltaPct,direction:row.direction??null,chartPct:row.chartPct??null}));
 }
 
+/** F212 loop (optional): the same comparison computed on the approved local producer clients/foil-wind/py/serve.py
+ * (the existing DataPass runtime plus model foil-wind-compare over the committed hand-made placeholder), so a run can
+ * be saved, reopened by hash, compared A/B and exported with provenance. Visitors without Python keep the static pages. */
+const LOOP_MODEL='foil-wind-compare',LOOP_MODEL_VERSION='foil-wind-compare-1';
+function sessionPort(){try{return globalThis.sessionStorage??null;}catch{return null;}}
+export const link=createRuntimeLink(sessionPort());
+const slotNumber=(value:unknown)=>{const n=Number(/^run-([1-8])$/.exec(String(value))?.[1]);if(!n)throw new Error('Choose run slots run-1 to run-'+MAX_RUNS+'.');return n;};
+export const compareRuntimeTask=createRuntimeTask({taskId:'compareRuntime',model:LOOP_MODEL,link,inputs:values=>({runA:slotNumber(values.runA),runB:slotNumber(values.runB)})});
+const comparisonColumns=[{id:'label',label:'Metric',type:'string'},{id:'direction',label:'Direction',type:'string',nullable:true},{id:'deltaPct',label:'B vs A',type:'number',unit:'%',nullable:true},
+  {id:'delta',label:'B - A',type:'number',nullable:true},{id:'valueA',label:'A',type:'number',nullable:true},{id:'valueB',label:'B',type:'number',nullable:true},{id:'unit',label:'Unit',type:'string'},
+  {id:'metric',label:'Key',type:'string'},{id:'chartPct',label:'Charted change',type:'number',unit:'%',nullable:true}] as const;
+export const loopResource:RunResource={maxRecords:12,specs:[{format:'datapass.run-spec',version:1,taskId:'compareRuntime',modelId:LOOP_MODEL,modelVersion:LOOP_MODEL_VERSION,providerId:'datapass-runtime',
+  source:'Local DataPass runtime (datapass.runtime/1), model '+LOOP_MODEL+', over the HAND-MADE PLACEHOLDER (SYNTHETIC, invented numbers, not FOIL output).',provenance:'synthetic',representations:[
+    {id:'table',title:'B against A',kind:'table'},
+    {id:'change-chart',title:'B vs A, % of A',kind:'chart',chart:'bar',x:'metric',y:'chartPct',unit:'%'},
+    {id:'power-delta',title:'Mean power proxy, B - A',kind:'metric',row:'meanPowerKw',column:'delta',unit:'kW',digits:3},
+    {id:'wind-delta',title:'Mean wind, B - A',kind:'metric',row:'meanWindMs',column:'delta',unit:'m/s',digits:3},
+    {id:'json',title:'JSON',kind:'json'},
+  ]}]};
+
 const sqlBlocks:Block[]=queries.queries.flatMap(q=>[
   {id:'sql-'+q.id+'-text',type:'code',title:q.title,language:'sql',text:q.sql} as Block,
   {id:'sql-'+q.id+'-result',type:'custom',resource:'sql-'+q.id} as Block,
@@ -46,8 +68,10 @@ export default defineApp({manifest:{format:'datapass.web-app',schemaVersion:1,id
     columns:[{id:'label',label:'Metric',type:'string'},{id:'direction',label:'Direction',type:'string',nullable:true},{id:'deltaPct',label:'B vs A',type:'number',unit:'%',nullable:true},
       {id:'delta',label:'B - A',type:'number',nullable:true},{id:'valueA',label:'A',type:'number',nullable:true},{id:'valueB',label:'B',type:'number',nullable:true},{id:'unit',label:'Unit',type:'string'},
       {id:'metric',label:'Key',type:'string'},{id:'chartPct',label:'Charted change',type:'number',unit:'%',nullable:true}],
-    inputs:['runA','runB'],dependsOn:[]}],
-  tasks:[{id:'compare',label:'Compare the two runs',output:'comparison',timeoutMs:15000}],
+    inputs:['runA','runB'],dependsOn:[]},
+    {id:'runtimeComparison',title:'Run B against run A (local producer)',layer:'Result',description:'The same comparison rows, computed by the local producer for the chosen pair (F212 loop). SYNTHETIC placeholder data.',source:'task',provenance:'synthetic',rowKey:'metric',
+      columns:comparisonColumns.map(c=>({...c})),inputs:['runA','runB'],dependsOn:[]}],
+  tasks:[{id:'compare',label:'Compare the two runs',output:'comparison',timeoutMs:15000},{id:'compareRuntime',label:'Compare on the local producer',output:'runtimeComparison',timeoutMs:20000}],
   pages:[
     {id:'runs',title:'Runs',description:'One row per capture run, summarised by Python from its measurements.',sections:[
       {id:'note',columns:1,blocks:[{id:'synthetic',type:'text',tone:'note',text:SYNTHETIC},{id:'source',type:'custom',resource:'source'}]},
@@ -66,8 +90,13 @@ export default defineApp({manifest:{format:'datapass.web-app',schemaVersion:1,id
       {id:'task',columns:1,blocks:[{id:'compare-task',type:'task',task:'compare'},{id:'compare-note',type:'text',tone:'note',text:'Changing a run marks the result stale until you compare again. Differences between synthetic runs describe the generator inputs, not a machine. The chart draws signed changes (bars left of zero: B lower than A); rows with no change or no percentage stay in the table only.'}]},
       {id:'result',columns:2,blocks:[{id:'compare-chart',type:'chart',title:'B vs A, % of A (left of zero: B lower)',dataset:'comparison',kind:'bar',x:'metric',y:'chartPct',unit:'%',renderer:'viz',series:'direction',orientation:'horizontal',sort:'none'},{id:'compare-table',type:'table',dataset:'comparison'}]},
     ]},
+    {id:'loop',title:'Saved runs',description:'Optional: compare on the local producer (python clients/foil-wind/py/serve.py), save results, reopen them by hash, compare two saved results and export them with provenance. Without the producer the other pages are unchanged.',sections:[
+      {id:'note',columns:1,blocks:[{id:'loop-synthetic',type:'text',tone:'note',text:SYNTHETIC},{id:'loop-explanation',type:'text',text:'How a result is made: the local producer reads the committed hand-made placeholder, summarises each run and writes B minus A per metric with the same Python code as the build step (build_data.compare_pair). The page sends only the two run slots, follows the run and validates the artifact. Changing a view never reruns the producer.'}]},
+      {id:'runs',columns:1,blocks:[{id:'loop-runs',type:'runs',resource:'loop'}]},
+    ]},
   ]},
-  bindings:{tasks:{compare:compareRuns}},
+  bindings:{tasks:{compare:compareRuns,compareRuntime:compareRuntimeTask.handler}},
+  resources:{runs:{loop:loopResource}},durableRuns:{loop:{link,tasks:[compareRuntimeTask]}},
   components:{source:artifactSource('foil-wind-source',['text']),runs:artifactSource('foil-wind-runs',['table','power','wind']),measurements:Measurements,...sqlComponents},
   customCapabilities:{source:[],runs:['charts'],measurements:['charts'],...Object.fromEntries(Object.keys(sqlComponents).map(k=>[k,[]]))},
 });

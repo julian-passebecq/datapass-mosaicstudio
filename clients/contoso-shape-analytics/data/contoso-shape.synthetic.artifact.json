@@ -1,0 +1,339 @@
+{
+  "format": "datapass.artifact",
+  "version": 1,
+  "id": "orchard-monthly-yield",
+  "title": "Orchard monthly yield (early-frost, SYNTHETIC)",
+  "provenance": {
+    "kind": "synthetic",
+    "source": "SYNTHETIC rows written for MosaicStudio interoperability tests (FR-04). Shape mirrors a Contoso Data Studio ExportService export; values, names and paths are invented. Not real business data.",
+    "runId": "run-synthetic-0001",
+    "producer": {
+      "kind": "service",
+      "name": "Synthetic export service (test fixture, not a real producer)"
+    },
+    "inputHash": "460626987b2f20e24f7a82df9f872d46814bf7a5c7d8f0f5005b25a193987d10",
+    "inputs": [
+      {
+        "id": "scenario",
+        "label": "Plan scenario",
+        "value": "early-frost"
+      },
+      {
+        "id": "seed",
+        "label": "Generator seed",
+        "value": 11
+      },
+      {
+        "id": "scale",
+        "label": "Generated picks",
+        "value": 600,
+        "unit": "picks"
+      },
+      {
+        "id": "generatorRunId",
+        "label": "Generator run",
+        "value": "run-synthetic-0001"
+      },
+      {
+        "id": "generatorSha256",
+        "label": "Generator source sha256",
+        "value": "1d8058a37db48f50c0dd6e3a82a5d66eaa55808c3a3788bafb6310ef9a117070"
+      },
+      {
+        "id": "lakeSnapshot",
+        "label": "Lake snapshot at export",
+        "value": 3
+      },
+      {
+        "id": "modelInvocation",
+        "label": "Model build invocation (successful)",
+        "value": "00000000-0000-4000-8000-000000000001"
+      },
+      {
+        "id": "modelChecksum",
+        "label": "Curated model checksum",
+        "value": "82bac5ab863365683370670e6e7cc7dfd7bf935b285fa6b8b1323711c88ffce8",
+        "evidence": [
+          {
+            "path": "models/curated/monthly_yield.sql",
+            "start": 1,
+            "end": 18,
+            "label": "curated model monthly_yield (synthetic path)"
+          }
+        ]
+      },
+      {
+        "id": "raw-orchard-sha256",
+        "label": "Staging orchard.parquet sha256",
+        "value": "5cfc2a4e8c4d019638391edd6e43cc459d82a6ddb10f394132eab0f0d0e6d786"
+      },
+      {
+        "id": "raw-picks-sha256",
+        "label": "Staging picks.parquet sha256",
+        "value": "623949f130f18d8c8d9703ad0d3f16b13300cf9329032f98ab0bbfba2d69a6c0"
+      },
+      {
+        "id": "raw-prices-sha256",
+        "label": "Staging prices.parquet sha256",
+        "value": "60b52ee159f661832eab171c98d8e233ab1734d485428d45fd95c3e44563853c"
+      },
+      {
+        "id": "raw-crates-sha256",
+        "label": "Staging crates.parquet sha256",
+        "value": "4fd4fc9675be575632fe8095dd240502b2f5db0847c5f3a77e55addf881f9205"
+      },
+      {
+        "id": "raw-season-sha256",
+        "label": "Staging season.parquet sha256",
+        "value": "2e2b7933e08e0626c5e7a40dc73156f63a9b6b93b7dd5ad6282e6efc26b8730d"
+      }
+    ]
+  },
+  "payload": {
+    "kind": "table",
+    "rowKey": "row",
+    "columns": [
+      {
+        "id": "row",
+        "label": "Row (export order)",
+        "type": "string"
+      },
+      {
+        "id": "plan_scenario",
+        "label": "plan scenario",
+        "type": "string"
+      },
+      {
+        "id": "harvest_month",
+        "label": "harvest month",
+        "type": "string"
+      },
+      {
+        "id": "orchard",
+        "label": "orchard",
+        "type": "string"
+      },
+      {
+        "id": "picks",
+        "label": "picks",
+        "type": "number",
+        "unit": "picks"
+      },
+      {
+        "id": "crates",
+        "label": "crates",
+        "type": "number",
+        "unit": "crates"
+      },
+      {
+        "id": "avg_reject_rate",
+        "label": "avg reject rate",
+        "type": "number",
+        "unit": "ratio"
+      },
+      {
+        "id": "revenue",
+        "label": "revenue",
+        "type": "number",
+        "unit": "USD"
+      },
+      {
+        "id": "cost",
+        "label": "cost",
+        "type": "number",
+        "unit": "USD"
+      },
+      {
+        "id": "margin",
+        "label": "margin",
+        "type": "number",
+        "unit": "USD"
+      },
+      {
+        "id": "margin_rate",
+        "label": "margin rate",
+        "type": "number",
+        "unit": "ratio"
+      }
+    ],
+    "rows": [
+      {
+        "row": "r00001",
+        "plan_scenario": "early-frost",
+        "harvest_month": "2025-04-01",
+        "orchard": "East slope",
+        "picks": 23,
+        "crates": 92,
+        "avg_reject_rate": 0.034,
+        "revenue": 1702,
+        "cost": 851,
+        "margin": 851,
+        "margin_rate": 0.5
+      },
+      {
+        "row": "r00002",
+        "plan_scenario": "early-frost",
+        "harvest_month": "2025-04-01",
+        "orchard": "River bank",
+        "picks": 26,
+        "crates": 104,
+        "avg_reject_rate": 0.038,
+        "revenue": 1924,
+        "cost": 962,
+        "margin": 962,
+        "margin_rate": 0.5
+      },
+      {
+        "row": "r00003",
+        "plan_scenario": "early-frost",
+        "harvest_month": "2025-05-01",
+        "orchard": "East slope",
+        "picks": 29,
+        "crates": 116,
+        "avg_reject_rate": 0.042,
+        "revenue": 2146,
+        "cost": 1073,
+        "margin": 1073,
+        "margin_rate": 0.5
+      },
+      {
+        "row": "r00004",
+        "plan_scenario": "early-frost",
+        "harvest_month": "2025-05-01",
+        "orchard": "River bank",
+        "picks": 32,
+        "crates": 128,
+        "avg_reject_rate": 0.046,
+        "revenue": 2368,
+        "cost": 1184,
+        "margin": 1184,
+        "margin_rate": 0.5
+      },
+      {
+        "row": "r00005",
+        "plan_scenario": "early-frost",
+        "harvest_month": "2025-06-01",
+        "orchard": "East slope",
+        "picks": 35,
+        "crates": 140,
+        "avg_reject_rate": 0.05,
+        "revenue": 2590,
+        "cost": 1295,
+        "margin": 1295,
+        "margin_rate": 0.5
+      },
+      {
+        "row": "r00006",
+        "plan_scenario": "early-frost",
+        "harvest_month": "2025-06-01",
+        "orchard": "River bank",
+        "picks": 38,
+        "crates": 152,
+        "avg_reject_rate": 0.054,
+        "revenue": 2812,
+        "cost": 1406,
+        "margin": 1406,
+        "margin_rate": 0.5
+      },
+      {
+        "row": "r00007",
+        "plan_scenario": "early-frost",
+        "harvest_month": "2025-07-01",
+        "orchard": "East slope",
+        "picks": 41,
+        "crates": 164,
+        "avg_reject_rate": 0.058,
+        "revenue": 3034,
+        "cost": 1517,
+        "margin": 1517,
+        "margin_rate": 0.5
+      },
+      {
+        "row": "r00008",
+        "plan_scenario": "early-frost",
+        "harvest_month": "2025-07-01",
+        "orchard": "River bank",
+        "picks": 44,
+        "crates": 176,
+        "avg_reject_rate": 0.062,
+        "revenue": 3256,
+        "cost": 1628,
+        "margin": 1628,
+        "margin_rate": 0.5
+      },
+      {
+        "row": "r00009",
+        "plan_scenario": "early-frost",
+        "harvest_month": "2025-08-01",
+        "orchard": "East slope",
+        "picks": 47,
+        "crates": 188,
+        "avg_reject_rate": 0.066,
+        "revenue": 3478,
+        "cost": 1739,
+        "margin": 1739,
+        "margin_rate": 0.5
+      },
+      {
+        "row": "r00010",
+        "plan_scenario": "early-frost",
+        "harvest_month": "2025-08-01",
+        "orchard": "River bank",
+        "picks": 50,
+        "crates": 200,
+        "avg_reject_rate": 0.07,
+        "revenue": 3700,
+        "cost": 1850,
+        "margin": 1850,
+        "margin_rate": 0.5
+      },
+      {
+        "row": "r00011",
+        "plan_scenario": "early-frost",
+        "harvest_month": "2025-09-01",
+        "orchard": "East slope",
+        "picks": 53,
+        "crates": 212,
+        "avg_reject_rate": 0.074,
+        "revenue": 3922,
+        "cost": 1961,
+        "margin": 1961,
+        "margin_rate": 0.5
+      },
+      {
+        "row": "r00012",
+        "plan_scenario": "early-frost",
+        "harvest_month": "2025-09-01",
+        "orchard": "River bank",
+        "picks": 56,
+        "crates": 224,
+        "avg_reject_rate": 0.078,
+        "revenue": 4144,
+        "cost": 2072,
+        "margin": 2072,
+        "margin_rate": 0.5
+      }
+    ]
+  },
+  "representations": [
+    {
+      "id": "table",
+      "title": "Curated rows",
+      "kind": "table"
+    },
+    {
+      "id": "chart",
+      "title": "revenue by harvest month",
+      "kind": "chart",
+      "chart": "bar",
+      "x": "harvest_month",
+      "y": "revenue",
+      "unit": "USD"
+    },
+    {
+      "id": "json",
+      "title": "JSON",
+      "kind": "json"
+    }
+  ]
+}

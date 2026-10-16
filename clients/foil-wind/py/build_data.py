@@ -150,6 +150,23 @@ def change_direction(delta: float | None) -> str | None:
     return HIGHER if delta > 0 else LOWER if delta < 0 else SAME
 
 
+def compare_pair(slot_a: str, slot_b: str, sa: dict[str, Any], sb: dict[str, Any]) -> list[dict[str, Any]]:
+    """Run B against run A, one row per METRICS entry (B minus A; percentage relative to |A|, empty when A is zero).
+
+    Used by build() for every ordered pair and by py/serve.py (runtime model foil-wind-compare) for one pair.
+    """
+    rows = []
+    for key, metric_label, unit in METRICS:
+        va, vb = sa[key], sb[key]
+        delta = None if va is None or vb is None else vb - va
+        pct = None if delta is None or va == 0 else 100.0 * delta / abs(va)
+        direction = change_direction(r(delta, 6))
+        rows.append({"key": f"{slot_a}.{slot_b}.{key}", "runA": slot_a, "runB": slot_b, "metric": key, "label": metric_label, "unit": unit,
+                     "valueA": r(va, 6), "valueB": r(vb, 6), "delta": r(delta, 6), "deltaPct": r(pct, 2), "direction": direction,
+                     "chartPct": r(pct, 2) if direction in (HIGHER, LOWER) else None})
+    return rows
+
+
 def build(data: dict[str, Any], out_dir: Path) -> list[dict[str, Any]]:
     check_tables(data)
     runs, by_run, notices = select_runs(data)
@@ -258,17 +275,8 @@ def build(data: dict[str, Any], out_dir: Path) -> list[dict[str, Any]]:
     comparison = []
     for a in runs:
         for b in runs:
-            if a is b:
-                continue
-            sa, sb = summaries[a["slot"]], summaries[b["slot"]]
-            for key, metric_label, unit in METRICS:
-                va, vb = sa[key], sb[key]
-                delta = None if va is None or vb is None else vb - va
-                pct = None if delta is None or va == 0 else 100.0 * delta / abs(va)
-                direction = change_direction(r(delta, 6))
-                comparison.append({"key": f"{a['slot']}.{b['slot']}.{key}", "runA": a["slot"], "runB": b["slot"], "metric": key, "label": metric_label, "unit": unit,
-                                   "valueA": r(va, 6), "valueB": r(vb, 6), "delta": r(delta, 6), "deltaPct": r(pct, 2), "direction": direction,
-                                   "chartPct": r(pct, 2) if direction in (HIGHER, LOWER) else None})
+            if a is not b:
+                comparison.extend(compare_pair(a["slot"], b["slot"], summaries[a["slot"]], summaries[b["slot"]]))
     if not comparison:
         comparison.append({"key": "none", "runA": "none", "runB": "none", "metric": "none", "label": "Only one run: nothing to compare", "unit": "",
                            "valueA": None, "valueB": None, "delta": None, "deltaPct": None, "direction": None, "chartPct": None})
