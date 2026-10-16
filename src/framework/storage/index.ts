@@ -6,3 +6,7 @@ export {ResultStoreClient,ResultStoreError,readArtifactResult,resultStoreOrigin,
 export type {StoredArtifactResult,StoredRunRef,ResultStoreEntry} from './result-store-client.ts';
 export {createStorageAdapter} from './tiers.ts';
 export type {StorageAdapter,StorageAdapterOptions} from './tiers.ts';
+export {SiteRunStore,SiteRunError,siteRunItem,siteSourceSha256,relinkCandidates} from './site-runs.ts';
+export type {SiteApp,SiteRunIdentity,SiteRunRef,SiteRunItem,SiteRunDocument,SavedSiteRun,ReopenedSiteRun,SiteRunErrorKind} from './site-runs.ts';
+export {SITE_CELL_PREFIX,siteCellId,validateDurableRunsBindings} from './site-runs-binding.ts';
+export type {DurableRunsBinding} from './site-runs-binding.ts';

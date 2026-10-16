@@ -8,11 +8,14 @@
  *
  *   node scripts/release-rollback-check.mjs --old-dist <dir> --old-service <repo dir with py/service>
  *        --new-dist <dir> --new-service <repo dir> --python <python with fastapi + nbformat>
- *        [--port 24190] [--rport 24799] [--out <evidence dir>]
+ *        [--port 24190] [--rport 24799] [--out <evidence dir>] [--site-run 1|0]
  *
  * Steps (all data synthetic: inline SQL literals):
  *   1 old : blank workspace, two SQL cells run, results + notebook saved to the store, .ipynb exported. A pre-hash
  *           old release (0.10.0) writes no SQL hashes; an M-SQLHASH one (0.11.x) must write the authored hashes.
+ *   1b new: (F206, on by default, `--site-run 0` skips it) a client-site run of an allowlisted model is saved through the
+ *           results-only route POST /store/results under `site-rollback-check-run`. Every later step must keep its
+ *           result file byte-identical and its manifest entry, and the newer runtime serves it back by hash at the end.
  *   2 new : upgrade; Open from store reopens both results by hash without recomputation; saving again records
  *           each SQL cell's source hash (M-SQLHASH) and leaves every result file byte-identical.
  *   3 old : rollback; the older release opens the newer manifest (the extra field is ignored), reopens the same
@@ -33,7 +36,7 @@ import path from 'node:path';
 import {chromium} from '@playwright/test';
 import {WORKBENCH_HEADERS} from './workbench-headers.mjs';
 
-const args=process.argv.slice(2),opt={'old-dist':null,'old-service':null,'new-dist':null,'new-service':null,python:'python',port:24190,rport:24799,out:null};
+const args=process.argv.slice(2),opt={'old-dist':null,'old-service':null,'new-dist':null,'new-service':null,python:'python',port:24190,rport:24799,out:null,'site-run':'1'};
 for(let i=0;i<args.length;i++){const k=args[i].replace(/^--/,'');if(!(k in opt)||args[i+1]===undefined){console.error('Usage: see the header of scripts/release-rollback-check.mjs');process.exit(2);}opt[k]=args[++i];}
 for(const k of ['old-dist','old-service','new-dist','new-service'])if(!opt[k])throw new Error('--'+k+' is required');
 opt.port=Number(opt.port);opt.rport=Number(opt.rport);
@@ -97,6 +100,43 @@ async function currentNotebookIntact(files){
   const nb=(await manifest()).workspace.notebookSha256,key='notebooks/'+nb+'.ipynb';
   if(files[key]!==nb)fail('the saved notebook named by the manifest is missing or corrupt');
 }
+/** F206: save one client-site run (allowlisted model on the newer runtime) through the results-only route, as a site does. */
+const SITE={appId:'rollback-check',appVersion:'1',taskId:'run'},SITE_CELL=`site-${SITE.appId}-${SITE.taskId}`;
+async function seedSiteRun(step){
+  await startRuntime(opt['new-service']);
+  const h={'X-Datapass-Token':token,'Content-Type':'application/json'};
+  const get=async p=>{const r=await fetch(RORIGIN+p,{headers:h});if(!r.ok)fail(p+' answered '+r.status+': '+await r.text());return r;};
+  const models=(await (await get('/api/runtime/v1/models')).json()).models;
+  const model=models.find(m=>m.id==='wind-reference')??models[0];
+  const inputs=Object.fromEntries(model.inputs.map(i=>[i.id,i.default]));
+  const submitted=await fetch(RORIGIN+'/api/runtime/v1/runs',{method:'POST',headers:h,body:JSON.stringify({model:model.id,inputs})});
+  if(!submitted.ok)fail('site run refused: '+await submitted.text());
+  let run=await submitted.json();
+  for(let i=0;i<480&&(run.status==='queued'||run.status==='running');i++){await pause(250);run=await (await get('/api/runtime/v1/runs/'+run.runId)).json();}
+  if(run.status!=='succeeded')fail('site run ended '+run.status);
+  const text=await (await get(`/api/runtime/v1/runs/${run.runId}/artifact`)).text();
+  if(sha(text)!==run.artifactSha256)fail('site run artifact does not match its recorded hash');
+  const ref={runId:run.runId,model:run.model,modelVersion:run.modelVersion,inputHash:run.inputHash,artifactSha256:run.artifactSha256};
+  const sourceSha256=sha(JSON.stringify(['site',SITE.appId,SITE.appVersion,SITE.taskId,run.model,run.modelVersion,run.inputHash]));
+  const result={format:'datapass.cell-result',version:1,cellId:SITE_CELL,cellKind:'python',sourceSha256,
+    outputs:[{output_type:'display_data',data:{'application/vnd.datapass.artifact+json':JSON.parse(text)},metadata:{datapass:{run:ref}}}],
+    table:null,executionCount:null,finishedAt:run.finishedAt,origin:'datapass.runtime/1'};
+  const saved=await fetch(RORIGIN+'/api/notebook/v1/store/results',{method:'POST',headers:h,
+    body:JSON.stringify({results:[{cellId:SITE_CELL,cellKind:'python',sourceSha256,result,run:{...ref,site:{...SITE,values:inputs}}}]})});
+  if(!saved.ok)fail('site run save refused: '+saved.status+' '+await saved.text());
+  const receipt=await saved.json(),resultSha256=receipt.results[0].resultSha256;
+  await stopRuntime();
+  Object.assign(step,{model:run.model,modelVersion:run.modelVersion,inputs,sourceSha256,resultSha256});
+  return resultSha256;
+}
+async function siteRunKept(files,label){
+  if(!site)return;
+  if(files['results/'+site+'.json']!==site)fail(label+': the saved site run file is missing or changed');
+  const entries=(await manifest()).entries.filter(e=>e.cellId===SITE_CELL&&e.resultSha256===site);
+  if(entries.length!==1||entries[0].run?.site?.appId!==SITE.appId)fail(label+': the saved site run entry was lost');
+}
+let site=null;
+
 const link=()=>`${ORIGIN}/?workspace=blank#runtime=${encodeURIComponent(RORIGIN)}&token=${token}`;
 
 const record={format:'datapass.rollback-check',version:1,origin:ORIGIN,old:{dist:opt['old-dist'],service:opt['old-service']},new:{dist:opt['new-dist'],service:opt['new-service']},sql:{a:{sql:SQL_A,sourceSha256:sqlHash(SQL_A)},b:{sql:SQL_B,sourceSha256:sqlHash(SQL_B)}},steps:[],ok:false};
@@ -185,7 +225,6 @@ try{
     step.resultSha256=shas;
   });
   const resultsOf=files=>Object.fromEntries(Object.entries(files).filter(([k])=>k.startsWith('results/')));
-  const savedResults=resultsOf(record.steps[0].store);
   const m1=await manifest();
   // A pre-hash old release (0.10.0) writes none; an old release that already ships M-SQLHASH (0.11.x) must write
   // exactly the authored hash for every cell. A partial or wrong hash fails either way.
@@ -197,6 +236,18 @@ try{
     m1.workspace.cells.forEach((c,i)=>{if(c.sourceSha256!==want1[i])fail('the old release wrote a wrong SQL source hash for '+c.cellId);});
   }
 
+  // 1b new (F206): a client site saves one runtime run; the notebook workspace must be untouched.
+  if(opt['site-run']!=='0'){
+    const step={label:'1b-new-site-run-save',side:'new',notes:[]};
+    site=await seedSiteRun(step);
+    step.store=await storeFiles();record.steps.push(step);
+    if(JSON.stringify((await manifest()).workspace)!==JSON.stringify(m1.workspace))fail('the site run save changed the notebook workspace');
+    await siteRunKept(step.store,'1b');
+    console.log('ok',step.label);
+  }
+  const savedResults=resultsOf(record.steps.at(-1).store);
+  const at=label=>record.steps.find(s=>s.label===label);
+
   // 2 new: upgrade; reopen by hash, then save: SQL hashes recorded, result files unchanged.
   await session('2-new-upgrade-reopen-save','new',async(page,step)=>{
     await openFromStore(page,step);
@@ -206,8 +257,9 @@ try{
   const m2=await manifest();
   const want={[m2.workspace.cells[0].cellId]:sqlHash(SQL_A),[m2.workspace.cells[1].cellId]:sqlHash(SQL_B)};
   for(const c of m2.workspace.cells)if(c.sourceSha256!==want[c.cellId])fail('new release did not record the authored SQL hash for '+c.cellId);
-  if(JSON.stringify(resultsOf(record.steps[1].store))!==JSON.stringify(savedResults))fail('result files changed on upgrade');
-  await currentNotebookIntact(record.steps[1].store);
+  if(JSON.stringify(resultsOf(at('2-new-upgrade-reopen-save').store))!==JSON.stringify(savedResults))fail('result files changed on upgrade');
+  await currentNotebookIntact(at('2-new-upgrade-reopen-save').store);
+  await siteRunKept(at('2-new-upgrade-reopen-save').store,'2');
 
   // 3 old: rollback; the older release reads the newer manifest and keeps every file.
   await session('3-old-rollback-reopen-save','old',async(page,step)=>{
@@ -215,10 +267,11 @@ try{
     await expectReopened(page,shas);
     await save(page,step,2);
   });
-  const s3=record.steps[2].store;
+  const s3=at('3-old-rollback-reopen-save').store;
   if(JSON.stringify(resultsOf(s3))!==JSON.stringify(savedResults))fail('result files changed on rollback');
   await currentNotebookIntact(s3);
-  record.steps[2].manifestHasSqlHashes=(await manifest()).workspace.cells.some(c=>'sourceSha256' in c);
+  await siteRunKept(s3,'3 (the older release opened and saved)');
+  at('3-old-rollback-reopen-save').manifestHasSqlHashes=(await manifest()).workspace.cells.some(c=>'sourceSha256' in c);
 
   // 4 new: recovery after the older save, then a tampered hash is refused and recovered from a copy.
   await session('4-new-recover-tamper-restore','new',async(page,step)=>{
@@ -242,11 +295,18 @@ try{
     await page.reload({waitUntil:'domcontentloaded'});await connect(page);
     await openFromStore(page,step);
     await expectReopened(page,shas);
+    if(site){
+      // The newer runtime serves the site run back by hash after every restart: nothing recomputed.
+      const r=await fetch(`${RORIGIN}/api/notebook/v1/store/results/${site}`,{headers:{'X-Datapass-Token':token}});
+      if(!r.ok||sha(Buffer.from(await r.arrayBuffer()))!==site)fail('the newer runtime does not serve the saved site run by its hash');
+      step.siteRunReopened=site;
+    }
   });
   const m4=await manifest();
   for(const c of m4.workspace.cells)if(c.sourceSha256!==want[c.cellId])fail('hashes not restored after recovery');
-  if(JSON.stringify(resultsOf(record.steps[3].store))!==JSON.stringify(savedResults))fail('result files changed during recovery');
-  await currentNotebookIntact(record.steps[3].store);
+  if(JSON.stringify(resultsOf(at('4-new-recover-tamper-restore').store))!==JSON.stringify(savedResults))fail('result files changed during recovery');
+  await currentNotebookIntact(at('4-new-recover-tamper-restore').store);
+  await siteRunKept(at('4-new-recover-tamper-restore').store,'4');
   record.ok=true;
 }finally{
   await stopRuntime().catch(()=>{});await stopWeb();

@@ -14,6 +14,9 @@ replaced by a newer explicit save. No token or secret is accepted into any store
 only stores the notebook, cell sources, outputs, bounded tables and run references it is given, and
 refuses payloads that contain its own runtime token.
 
+Client sites (F206) save allowlisted-model run results through `POST /store/results` (results only, opt-in per
+run): new entries under `site-<appId>-<taskId>` cell ids, same entry and result shapes, workspace untouched.
+
 Re-opening reads the files back and verifies their hashes; nothing is recomputed and no kernel state
 (heap, variables) is restored. A run that was still `running` when a previous service process ended
 is reported as `unknown`: its outcome was never observed.
@@ -51,6 +54,9 @@ _WB_ID = re.compile(r"^[a-z][a-zA-Z0-9_-]{0,79}$")
 _JOB = re.compile(r"^job-[0-9a-f]{16}$")
 JOB_FINAL = ("succeeded", "failed", "interrupted", "cancelled", "disconnected", "unknown")
 CELL_KINDS = ("sql", "jupyter", "python")
+# F206: client-site runs share the store with the notebook under their own cell ids (never a notebook cell id).
+SITE_CELL_PREFIX = "site-"
+RUNTIME_ORIGIN = "datapass.runtime/1"
 
 
 class StoreError(Exception):
@@ -272,8 +278,59 @@ class ResultStore:
         old = self.manifest()
         old_nb = (old.get("workspace") or {}).get("notebookSha256")
         entries = list(old.get("entries", []))
-        known = {(e.get("cellId"), e.get("resultSha256")) for e in entries}
         now = _now()
+        new_files = self._stage(entries, prepared, now)
+        nb_path = self.root / "notebooks" / f"{notebook_sha}.ipynb"
+        if not nb_path.exists():
+            new_files.append((nb_path, notebook_bytes))
+        cells = nb_payload.get("cells") or []
+        doc = {**old, "workspace": {"notebookSha256": notebook_sha, "savedAt": now,
+                                    "cells": [_workspace_cell(c) for c in cells if isinstance(c, dict)]},
+               "entries": entries}
+        old_nb_bytes = 0
+        if old_nb and old_nb != notebook_sha:
+            try:
+                old_nb_bytes = (self.root / "notebooks" / f"{old_nb}.ipynb").stat().st_size
+            except OSError:
+                old_nb_bytes = 0
+        self._write_and_commit(doc, new_files, now)
+        if old_nb and old_nb != notebook_sha and old_nb_bytes:
+            try:
+                (self.root / "notebooks" / f"{old_nb}.ipynb").unlink()
+            except OSError:
+                pass
+        return {"notebookSha256": notebook_sha, "results": [{"cellId": i["cellId"], "resultSha256": sha} for i, _, sha in prepared],
+                "store": self.describe()}
+
+    @_serialized
+    def save_results(self, payload: Any) -> dict[str, Any]:
+        """Results-only save for client-site runs (F206): `{results: [...]}` with the same entry shape as `save`.
+
+        The manifest's `workspace` and the saved notebook are left untouched; entries keep today's shape. Only
+        allowlisted-model results of a site (`cellId` "site-...", `cellKind` "python", origin `datapass.runtime/1`)
+        are accepted here; notebook cells keep saving through `save`, so a notebook and its manifest never diverge."""
+        if not isinstance(payload, dict) or set(payload) != {"results"}:
+            raise StoreError("results: expected {results}")
+        items = payload.get("results")
+        if not isinstance(items, list) or not 1 <= len(items) <= 100:
+            raise StoreError("results: 1 to 100 results per save")
+        prepared = [self._validate_result(i) for i in items]
+        for item, data, _ in prepared:
+            if not item["cellId"].startswith(SITE_CELL_PREFIX) or item["cellKind"] != "python" or item["result"].get("origin") != RUNTIME_ORIGIN:
+                raise StoreError("results: only site runs of allowlisted models (cellId site-..., cellKind python, origin "
+                                 f"{RUNTIME_ORIGIN}) are saved without a notebook")
+            self._check_secrets(data)
+            self._check_secrets(canonical(item.get("run") or {}))
+        old = self.manifest()
+        entries = list(old.get("entries", []))
+        now = _now()
+        new_files = self._stage(entries, prepared, now)
+        self._write_and_commit({**old, "entries": entries}, new_files, now)
+        return {"results": [{"cellId": i["cellId"], "resultSha256": sha} for i, _, sha in prepared], "store": self.describe()}
+
+    def _stage(self, entries: list[dict[str, Any]], prepared: list[tuple[dict[str, Any], bytes, str]], now: str) -> list[tuple[Path, bytes]]:
+        """Append manifest entries for new (cellId, result) pairs and list the result files still to write."""
+        known = {(e.get("cellId"), e.get("resultSha256")) for e in entries}
         new_files: list[tuple[Path, bytes]] = []
         for item, data, sha in prepared:
             path = self.root / "results" / f"{sha}.json"
@@ -288,20 +345,11 @@ class ResultStore:
                 known.add((item["cellId"], sha))
         if len(entries) > MAX_ENTRIES:
             raise StoreFull(f"The store holds {MAX_ENTRIES} results; delete some explicitly before saving more. Nothing was changed.")
-        nb_path = self.root / "notebooks" / f"{notebook_sha}.ipynb"
-        if not nb_path.exists():
-            new_files.append((nb_path, notebook_bytes))
-        cells = nb_payload.get("cells") or []
-        doc = {**old, "workspace": {"notebookSha256": notebook_sha, "savedAt": now,
-                                    "cells": [_workspace_cell(c) for c in cells if isinstance(c, dict)]},
-               "entries": entries}
+        return new_files
+
+    def _write_and_commit(self, doc: dict[str, Any], new_files: list[tuple[Path, bytes]], now: str) -> None:
+        """Quota check, then the new immutable files, then the manifest last: any failure leaves the previous state."""
         manifest_bytes = len(canonical({**doc, "updatedAt": now}))
-        old_nb_bytes = 0
-        if old_nb and old_nb != notebook_sha:
-            try:
-                old_nb_bytes = (self.root / "notebooks" / f"{old_nb}.ipynb").stat().st_size
-            except OSError:
-                old_nb_bytes = 0
         try:
             current_manifest = (self.root / "manifest.json").stat().st_size
         except OSError:
@@ -323,13 +371,6 @@ class ResultStore:
                     except OSError:
                         pass
             raise StoreFull(f"Writing to the result store failed ({error.strerror or error}). The previous saved state is unchanged.") from None
-        if old_nb and old_nb != notebook_sha and old_nb_bytes:
-            try:
-                (self.root / "notebooks" / f"{old_nb}.ipynb").unlink()
-            except OSError:
-                pass
-        return {"notebookSha256": notebook_sha, "results": [{"cellId": i["cellId"], "resultSha256": sha} for i, _, sha in prepared],
-                "store": self.describe()}
 
     def result_bytes(self, sha: str) -> bytes:
         if not _SHA.match(sha):
@@ -492,6 +533,13 @@ def create_notebook_router(store: ResultStore | None) -> APIRouter:
         try:
             return need_store().save(body, export_notebook)
         except (StoreError, NotebookError) as error:
+            raise fail(error) from None
+
+    @router.post("/store/results")
+    def save_results(body: dict[str, Any] = Body(...)) -> dict[str, Any]:
+        try:
+            return need_store().save_results(body)
+        except StoreError as error:
             raise fail(error) from None
 
     @router.get("/store/results/{sha}")
