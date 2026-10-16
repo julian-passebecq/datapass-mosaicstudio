@@ -32,6 +32,22 @@ Foil'O physics, model accuracy or validation is claimed.
 Run slots `run-1` ... `run-8` follow the sorted run ids (at most 8 runs; the source note says when more were found).
 No SQL engine, DuckDB, SQLRooms, Three.js or service ships in the client bundle.
 
+## Optional product loop (F212): the "Saved runs" page
+
+The static pages above work without Python. The **Saved runs** page adds the V2 loop for a local user who starts the
+approved producer `py/serve.py`: the unchanged runtime of `py/service/app.py` plus one allowlisted model,
+`foil-wind-compare`, which compares two run slots of the committed hand-made placeholder with the build step's own
+`build_data.compare_pair` (one row per metric). It never reads `FOIL_EXPORT_DIR` or a local export.
+
+```sh
+DATAPASS_SERVICE_ORIGINS=http://127.0.0.1:21481 python clients/foil-wind/py/serve.py --port 24812 --results-dir <folder outside Git>
+STUDIO_CLIENT=foil-wind npx vite preview --config vite.client.config.ts --strictPort --port 21481
+```
+
+Open the printed link and press Connect; run, save, compare two saved results A/B, export a provenance bundle, and
+reopen them by hash after a restart ("Not recomputed"). The client CSP allows exactly `http://127.0.0.1:24812`.
+`npm run test:product-loop` runs the journey on this client and on `contoso-shape-analytics`.
+
 ## Commands
 
 ```sh

@@ -151,6 +151,11 @@ jobs:
         run: npm run test:browser
       - name: Isolated clients and eight fresh family/scaffold checks
         run: npm run test:client-builds
+      - name: V2 product loop on two consumers (F212, synthetic)
+        run: |
+          npm run build:client -- contoso-shape-analytics
+          npm run build:client -- foil-wind
+          npm run test:product-loop
       - name: Record genuinely generated contract and dependency artifacts once
         if: success() && github.event_name == 'push' && github.ref == 'refs/heads/feat/studio2-framework-kit'
         run: |

@@ -1,0 +1,9 @@
+{
+  "format": "datapass.client-profile",
+  "version": 1,
+  "family": "analytics",
+  "status": "prototype",
+  "csp": {
+    "connect": ["http://127.0.0.1:24811"]
+  }
+}

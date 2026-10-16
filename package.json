@@ -53,7 +53,8 @@
     "runtime:pack": "node scripts/runtime-pack.mjs",
     "runtime:verify": "node scripts/runtime-verify.mjs dist-runtime",
     "preview:validate": "node scripts/preview-validate.mjs",
-    "doctor": "node --experimental-strip-types scripts/doctor.mjs"
+    "doctor": "node --experimental-strip-types scripts/doctor.mjs",
+    "test:product-loop": "playwright test -c tests/product-loop/playwright.config.ts"
   },
   "overrides": {
     "@duckdb/duckdb-wasm": "1.32.0"
