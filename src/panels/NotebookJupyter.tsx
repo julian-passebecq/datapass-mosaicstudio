@@ -8,6 +8,7 @@ import {jupyterOrigin,validJupyterToken,type KernelInfo,type NbOutput,type Table
 import {renderOutputs} from '../workspace/outputs';
 import type {StoreManifest,LossItem} from '../workspace/results';
 import type {Cell,InertCell} from '../workspace/notebook';
+import {runStateFromStoreJob,runStateLabel} from '../framework/compute/run-state';
 
 export type JupyterState={status:'disconnected'|'connecting'|'connected'|'unavailable'|'denied'|'lost';origin:string;message?:string;kernel?:KernelInfo};
 export const DEFAULT_JUPYTER_ORIGIN='http://127.0.0.1:28888';
@@ -76,7 +77,7 @@ export function StorePanel({manifest,cells,onDelete,onRefresh}:{manifest:StoreMa
       <span>{title(e.cellId)}</span> <span className="mono">{e.resultSha256.slice(0,12)}</span> &middot; {e.bytes.toLocaleString()} B &middot; {new Date(e.savedAt).toLocaleString()} {!e.present&&<b>(file missing)</b>}
       {confirm===e.resultSha256?<><Button size="small" appearance="primary" onClick={()=>{setConfirm(null);onDelete(e.resultSha256);}}>Confirm delete</Button><Button size="small" onClick={()=>setConfirm(null)}>Keep</Button></>:<Button size="small" icon={<Trash2 size={14}/>} aria-label={`Delete saved result ${e.resultSha256.slice(0,12)}`} onClick={()=>setConfirm(e.resultSha256)}>Delete</Button>}
     </li>)}</ul>
-    {manifest.jobs.filter(j=>j.status!=='succeeded').slice(-10).map(j=><p key={j.jobId} className="footnote" data-testid="store-job" data-status={j.status}>Run of {title(j.cellId)} started {new Date(j.startedAt).toLocaleString()}: <b>{j.status}</b>{j.detail?' — '+j.detail:''}</p>)}
+    {manifest.jobs.filter(j=>j.status!=='succeeded').slice(-10).map(j=><p key={j.jobId} className="footnote" data-testid="store-job" data-status={j.status} data-run-state={runStateFromStoreJob(j.status)}>Run of {title(j.cellId)} started {new Date(j.startedAt).toLocaleString()}: <b>{runStateLabel(runStateFromStoreJob(j.status))}</b>{j.detail?' — '+j.detail:''}</p>)}
     <Button size="small" onClick={onRefresh}>Refresh</Button>
   </details>;
 }

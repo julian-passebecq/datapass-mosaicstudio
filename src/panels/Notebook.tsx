@@ -14,6 +14,7 @@ import {checkInputs,connectionFromHash,RuntimeClient,RuntimeError,runtimeOrigin,
 import {importWorkspace,type RunRef} from '../workspace/persist';
 import {JupyterClient,JupyterError,tableObjects,type ExecuteOutcome,type NbOutput,type TablePayload} from '../workspace/jupyter';
 import {artifactOutputs,NotebookService,NotebookServiceError,RESULT_FORMAT,resultTable,sourceSha256,storedArtifact,storedTable,type CellResultDoc,type StoredRun,type ExportPayload,type ImportedNotebook,type LossItem,type SaveItem,type StoreManifest} from '../workspace/results';
+import {runStateFromCell,runStateFromRuntime,runStateFromStoreJob,runStateLabel} from '../framework/compute/run-state';
 import {DEFAULT_JUPYTER_ORIGIN,InertBody,JupyterBar,LossReport,OutputsView,StorePanel,TableView,type JupyterState} from './NotebookJupyter';
 
 type Preview={columns:{name:string;type:string}[];rows:Record<string,unknown>[];total:number};
@@ -384,7 +385,7 @@ export default function Notebook(){
       const m=await svc.current.manifest();setManifest(m);
       for(const c of imported.cells){const sha=imported.results[c.id];if(sha&&await loadStored(c,sha))reopened++;}
       // Runs whose outcome was never observed (service or browser stopped) are reported, not turned into results.
-      for(const c of imported.cells){const job=m.jobs.filter(j=>j.cellId===c.id).at(-1);if(job&&job.status!=='succeeded'&&job.status!=='running')patch(c.id,prev=>({...(prev??{status:'unknown'}),jobNote:`Last recorded run (started ${new Date(job.startedAt).toLocaleString()}): ${job.status}.${job.detail?' '+job.detail:''}`}));}
+      for(const c of imported.cells){const job=m.jobs.filter(j=>j.cellId===c.id).at(-1);if(job&&job.status!=='succeeded'&&job.status!=='running')patch(c.id,prev=>({...(prev??{status:'unknown'}),jobNote:`Last recorded run (started ${new Date(job.startedAt).toLocaleString()}): ${runStateLabel(runStateFromStoreJob(job.status))}.${job.detail?' '+job.detail:''}`}));}
     }
     const refs=Object.keys(imported.results).length;
     setNotice(`${label}: ${imported.cells.length} cell${imported.cells.length===1?'':'s'} (nbformat ${imported.nbformat}). Nothing was run.${refs?` ${reopened} of ${refs} saved result${refs===1?'':'s'} reopened from the result store without recomputation.`:''}${fromStore?'':' Imported outputs are shown as untrusted data.'}`);
@@ -489,9 +490,12 @@ function CellCard({cell,index,notebook,result,stale,runtime,runs,restoredRunIds,
   let plan:string[]=[];try{plan=runnable(cell)?executionPlan(notebook,cell.id):[];}catch{plan=[];}
   const title=(id:string)=>notebook.cells.find(c=>c.id===id)?.title??id;
   const kindLabel=cell.kind==='sql'?'SQL':cell.kind==='python'?'Python model':cell.kind==='jupyter'?'Python':cell.kind==='inert'?'Inert':'Note';
-  return <li className={'cell cell-'+cell.kind} data-testid="cell" data-cell-id={cell.id} data-kind={cell.kind} data-status={result?.status??'idle'} data-result-sha={result?.stored?.sha??''} aria-label={`Cell ${index+1}: ${cell.title}`}>
+  // F203: display state from the shared vocabulary; data-status keeps the cell's own value.
+  const state=result?runStateFromCell(result.status):null;
+  return <li className={'cell cell-'+cell.kind} data-testid="cell" data-cell-id={cell.id} data-kind={cell.kind} data-status={result?.status??'idle'} data-run-state={state??undefined} data-result-sha={result?.stored?.sha??''} aria-label={`Cell ${index+1}: ${cell.title}`}>
     <header>
       <span className="cell-kind">{kindLabel}</span>
+      {state&&<span className="cell-run-state run-state" data-testid="cell-run-state" data-run-state={state}>{runStateLabel(state)}</span>}
       <input className="cell-title" aria-label="Cell title" value={cell.title} maxLength={120} onChange={e=>onChange({...cell,title:e.target.value.trim()?e.target.value:'Untitled'})}/>
       <span className="cell-actions">
       {runnable(cell)&&(running?<Button size="small" icon={<Ban size={14}/>} onClick={onCancel}>{cell.kind==='jupyter'?'Interrupt':'Cancel'}</Button>:<Button size="small" appearance="primary" icon={<Play size={14}/>} disabled={!ready} onClick={onRun} aria-label={plan.length>1?`Run ${cell.title} after ${plan.length-1} dependenc${plan.length===2?'y':'ies'}`:`Run ${cell.title}`}>{plan.length>1?`Run (${plan.length} cells)`:'Run'}</Button>)}
@@ -545,7 +549,7 @@ function CellResult({cell,result,stale,onChart}:{cell:Cell;result?:Result;stale:
   if(!result)return runnable(cell)?<p className="cell-idle">Not run in this session.</p>:null;
   const record=result.record,failed=FAILED.includes(result.status);
   return <div className="cell-result" aria-live="polite">
-    {result.status==='running'&&<p role="status" className="cell-status">{record?`Run ${record.runId}: ${record.status}`:cell.kind==='jupyter'?'Running on the kernel... (Interrupt stops it)':'Running...'}</p>}
+    {result.status==='running'&&<p role="status" className="cell-status">{record?`Run ${record.runId}: ${runStateLabel(runStateFromRuntime(record.status))}`:cell.kind==='jupyter'?'Running on the kernel... (Interrupt stops it)':'Running...'}</p>}
     {result.status==='running'&&cell.kind==='jupyter'&&result.outputs&&<OutputsView outputs={result.outputs} label="Live kernel output"/>}
     {result.status!=='running'&&result.message&&<div className={'notice '+(failed?'error':result.status==='imported'?'imported':'')} role={failed?'alert':'status'} data-testid="cell-message">{result.message}</div>}
     {stale&&result.status==='done'&&<div className="notice stale" role="status">Stale: {stale} Run again to refresh.</div>}
