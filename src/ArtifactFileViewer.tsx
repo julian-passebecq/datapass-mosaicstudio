@@ -93,8 +93,8 @@ export default function ArtifactFileViewer(){
       {opened!.bundle&&<section data-testid="bundle-files" data-bundle-sha={opened!.bundle.bundleSha256} aria-label="Provenance bundle" className="foundation-artifact-provenance" style={{marginTop:12,overflowWrap:'anywhere'}}>
         <h2 style={{fontSize:15}}>Provenance bundle (datapass.bundle v1, candidate)</h2>
         <p><small>Every hash below was recomputed from the exact embedded text and matches SHA256SUMS. Bundle <code>{opened!.bundle.bundleSha256}</code> (SHA-256 of SHA256SUMS). {opened!.bundle.runs.length} run reference{opened!.bundle.runs.length===1?'':'s'}; showing <code>{opened!.bundle.artifacts[0]!.path}</code>. Nothing was rerun.</small></p>
-        <div style={{overflowX:'auto'}}><table><thead><tr><th>File</th><th>SHA-256</th><th>Bytes</th></tr></thead>
-          <tbody>{opened!.bundle.files.map(f=><tr key={f.path} data-path={f.path} data-sha={f.sha256}><td><code>{f.path}</code></td><td><code>{f.sha256}</code></td><td>{f.bytes.toLocaleString()}</td></tr>)}</tbody></table></div>
+        <div style={{overflowX:'auto'}}><table style={{width:'100%',overflowWrap:'normal',fontSize:12}}><thead><tr><th style={{textAlign:'left'}}>File</th><th style={{textAlign:'left'}}>SHA-256</th><th style={{textAlign:'right'}}>Bytes</th></tr></thead>
+          <tbody>{opened!.bundle.files.map(f=><tr key={f.path} data-path={f.path} data-sha={f.sha256}><td style={{whiteSpace:'nowrap',paddingRight:12}}><code>{f.path}</code></td><td style={{wordBreak:'break-all',minWidth:'16ch'}}><code>{f.sha256}</code></td><td style={{textAlign:'right',paddingLeft:12}}>{f.bytes.toLocaleString()}</td></tr>)}</tbody></table></div>
       </section>}
       {!opened!.bundle&&<section data-testid="artifact-bundle-export" aria-label="Export as provenance bundle" className="foundation-artifact-provenance" style={{marginTop:12,overflowWrap:'anywhere'}}>
         <h2 style={{fontSize:15}}>Export as a provenance bundle</h2>
