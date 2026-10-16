@@ -6,3 +6,4 @@ export {ArtifactSource,artifactSource,useArtifactSource} from './ArtifactSource'
 export {ContextInspector} from './ContextInspector';
 export {LineageGraph,SourcePanel,LineageExplorer} from './lineage/index.ts';
 export {DurableRuns} from './DurableRuns';
+export {SavedComparison} from './SavedComparison';
