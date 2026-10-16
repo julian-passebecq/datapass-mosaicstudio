@@ -29,6 +29,7 @@
 .cell[data-status=running]{border-color:#7fa9b8}.cell[data-status=error]{border-color:#e2b9b0}
 .cell>header{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px}.cell-actions{display:flex;gap:4px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .cell-kind{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:#eef1f4;color:#4f5b6b;border-radius:4px;padding:2px 6px}
+.cell-run-state{font-size:11px;color:#4f5b6b;border:1px solid #d5dbe2;border-radius:4px;padding:1px 6px;white-space:nowrap}.cell-run-state[data-run-state=failed]{color:#a4262c;border-color:#e8b4b6}.cell-run-state[data-run-state=not-observed]{border-style:dashed}
 .cell-title{border:1px solid transparent;border-radius:4px;font-weight:600;font-size:13px;padding:3px 6px;min-width:0;flex:1 1 160px;background:transparent}.cell-title:focus,.cell-title:hover{border-color:var(--line)}
 .cell-code,.cell-note{width:100%;box-sizing:border-box;font:12px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;border:1px solid var(--line);border-radius:6px;padding:8px;resize:vertical;background:#fbfcfd}
 .cell-note{font-family:inherit}

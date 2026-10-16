@@ -30,3 +30,23 @@ defineApp({manifest,bindings,resources:{runs:{experiments:runResource}},runHisto
 - **Limits and reset.** At most `maxRefs` (default 20, max 100) newest references are saved; restored references share the journal record limit and are evicted first. "Reset saved run history" (Record tab) is the only way the main key is cleared: it removes the saved references (or a refused value left in place, which also resumes saving) and the restored references; it keeps `.rejected`, which the client or user clears deliberately. Runs already shown in that tab stay until reload but are no longer saved. If storage is unavailable, a notice says history stays in memory.
 
 The default workbench and the other reference clients do not opt in. `foundation-reference` is the consumer that proves it.
+
+## One run-state vocabulary (notebook and site runs)
+
+The notebook (local runtime and Jupyter cells, result-store jobs) and the site runs (`RunJournal`, saved run references) show the same label for the same observed outcome. The mapping is a pure display module, `src/framework/compute/run-state.ts` (exported from `src/framework/compute/index.ts`). It does not execute, schedule or store anything, and every stored value keeps its spelling: `datapass.run-history` v1 still saves `unobserved`, the result store still records `disconnected`/`unknown`, and notebook cells keep their `data-status`. The display state is added next to them as `data-run-state`.
+
+| Display label (`RunState`) | Local runtime `RunStatus` | Jupyter `ExecuteStatus` | Journal status / saved `RunOutcome` | Result-store job | Notebook cell `data-status` |
+|---|---|---|---|---|---|
+| queued (`queued`) | `queued` | | | | |
+| running (`running`) | `running` | | `running` (journal only) | `running` | `running` |
+| succeeded (`succeeded`) | `succeeded` | `ok` | `succeeded` | `succeeded` | `done` |
+| failed (`failed`) | `failed` | `error` | `failed` | `failed` | `error`, `failed` |
+| cancelled (`cancelled`) | `cancelled` | | `cancelled` | `cancelled` | `cancelled` |
+| interrupted (`interrupted`) | | `interrupted` | | `interrupted` | `interrupted` |
+| superseded (`superseded`) | | | `superseded` | | |
+| timed out (`timed-out`) | | | `timed-out` | | |
+| not observed (`not-observed`) | | `disconnected`, `unknown` | `unobserved` | `disconnected`, `unknown` | `disconnected`, `unknown` |
+
+- **Not observed is never cancelled or failed.** An outcome the page did not see (reload during a run, kernel connection closed, unknown) is "not observed". Restored references keep the reason "Outcome not observed (page reloaded)" under the label. An input value the module does not know (a newer producer, a corrupted record) also displays as "not observed", not as a failure.
+- **Not every cell state is a run.** `skipped` (a dependency did not finish), `imported` (output read from a notebook file) and `missing` (saved result file absent) have no run state; the cell shows its own message instead.
+- Labels are lower case and identical in both surfaces. A client that renders its own run list calls `runStateFromOutcome` and `runStateLabel` rather than printing the raw status.
