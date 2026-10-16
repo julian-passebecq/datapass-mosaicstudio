@@ -59,6 +59,25 @@ npm run client:new -- my-client --family content
 
 The archive has no `.git` folder: builds then record `sourceCommit: null` in their `preview.json`. Keep the `sdk-release.json` next to the consumer as the provenance record.
 
+### The `datapass` command (unreleased, F211)
+
+`package.json` declares `bin: {"datapass": "scripts/datapass.mjs"}`. It is a thin dispatcher with no logic of its own: each command runs the same script with the same Node flags as its npm script, from the package root, passes the remaining arguments through and returns the script's exit code. The npm scripts keep working unchanged.
+
+| `datapass …` | Same as |
+|---|---|
+| `new <id> [--family …]` | `npm run client:new -- …` |
+| `check [<id>]` | `npm run client:check -- …` |
+| `context <id>` | `npm run client:context -- …` |
+| `dev <id>` | `npm run client:dev -- …` |
+| `build <id>` | `npm run build:client -- …` |
+| `preview-validate <preview.json>` | `npm run preview:validate -- …` |
+| `concept-validate <spec>` | `npm run concept:validate -- …` |
+| `pack` | `npm run sdk:pack -- …` (local folder only, nothing published) |
+| `verify <dir>` | `npm run sdk:verify -- …` |
+| `doctor` | `npm run doctor -- …` |
+
+From an unpacked release it runs without linking: `node sdk/scripts/datapass.mjs context my-client`. Paths given as arguments are resolved from the package root, as with `npm run`. Artifact validation stays in Python, from `py/` of the source repository (not in the SDK archive): `python -m datapass_artifact validate <file>`; the bare form `python py/datapass_artifact.py <file>` still works.
+
 ## 3. Standalone concept viewer (single file)
 
 `dist-standalone/concept-viewer.html` (also copied into every release folder) is one self-contained HTML file: open it by double-click or serve it from any static host. It needs no build and no network unless `?src=` asks for a URL. Its first lines carry the source commit and build date; its `sha256` is in `sdk-release.json`. Embedding and options: `spec/concept/v1/README.md`.
