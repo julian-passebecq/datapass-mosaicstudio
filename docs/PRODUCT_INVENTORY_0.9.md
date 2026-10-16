@@ -182,6 +182,7 @@ Clients in `clients/`. "Public reference" = listed in `AGENTS.md` rule 17. Famil
 | `animated-coding-lab` | content | not in rule 17 (client prototype) | `npm run test:coding-lab` |
 | `galaxy-finition` | knowledge | not in rule 17 (client prototype) | owner-supplied snapshot of the Galaxy Finition pass; table, metric, architecture |
 | `foil-wind` | analytics | not in rule 17 (client prototype) | runs, measurements, SQL (sqlite3 at build time) and a run-vs-run comparison task over synthetic foil.export v1 captures; committed data is a hand-made placeholder |
+| `contoso-shape-analytics` | analytics | not in rule 17 (client prototype) | V2 product-loop consumer (F212): ILLUSTRATIVE, SYNTHETIC scenario over the Contoso-shape interop fixture, run on the allowlisted runtime |
 
 "Client prototype" is this document's label for folders with no declared status; none of them says "draft" in the files read. Check each README before relying on it.
 
