@@ -44,3 +44,6 @@ clients/python-wind-reference/public/artifacts/wind-aep-live-file.json
 
 # SDK release folder (npm run sdk:pack)
 dist-sdk/
+
+# Python runtime companion folder (npm run runtime:pack)
+dist-runtime/
