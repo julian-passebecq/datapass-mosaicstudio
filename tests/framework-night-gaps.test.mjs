@@ -34,9 +34,9 @@ test('client CSP rejects non-loopback http, paths, wildcards, schemes and unknow
 test('client profile accepts a valid csp block and rejects an invalid one',async()=>{
   const root=await mkdtemp(path.join(tmpdir(),'studio-profile-csp-'));try{await mkdir(path.join(root,'clients','lab'),{recursive:true});
     const file=path.join(root,'clients','lab','client.config.json');
-    await writeFile(file,JSON.stringify({format:'datapass.client-profile',version:1,family:'analytics',csp:{wasm:true,connect:['http://127.0.0.1:8000']}}));
+    await writeFile(file,JSON.stringify({format:'datapass.client-profile',version:1,family:'analytics',status:'prototype',csp:{wasm:true,connect:['http://127.0.0.1:8000']}}));
     assert.deepEqual((await readClientProfile('lab',root)).csp,{wasm:true,connect:['http://127.0.0.1:8000']});
-    await writeFile(file,JSON.stringify({format:'datapass.client-profile',version:1,family:'analytics',csp:{connect:['http://example.org']}}));
+    await writeFile(file,JSON.stringify({format:'datapass.client-profile',version:1,family:'analytics',status:'prototype',csp:{connect:['http://example.org']}}));
     await assert.rejects(readClientProfile('lab',root),/loopback/);
   }finally{await rm(root,{recursive:true,force:true});}
 });

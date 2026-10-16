@@ -32,3 +32,22 @@ export function clientCspFor(clientDir){
   if(!existsSync(file))return clientCsp();
   return clientCsp(validateClientCsp(JSON.parse(readFileSync(file,'utf8')).csp));
 }
+/**
+ * Client status (F213): every clients/<id>/client.config.json declares "status". It labels the client in
+ * the ?sites catalog only; it never changes capability plans, CSP or which clients a build includes.
+ */
+export const CLIENT_STATUSES=Object.freeze(['reference','prototype','draft','frozen']);
+export const CLIENT_STATUS_MISSING='DP-CLI-001';
+export const CLIENT_STATUS_INVALID='DP-CLI-002';
+const statusFix=id=>`Fix: add "status": "prototype" (one of ${CLIENT_STATUSES.join(', ')}) to clients/${id}/client.config.json; a client without that file needs {"format":"datapass.client-profile","version":1,"family":"content","status":"prototype"} (choose its family).`;
+export function validateClientStatus(value,id='<id>'){
+  if(value===undefined)throw new Error(`${CLIENT_STATUS_MISSING} Client ${id} declares no status. ${statusFix(id)}`);
+  if(typeof value!=='string'||!CLIENT_STATUSES.includes(value))throw new Error(`${CLIENT_STATUS_INVALID} Client ${id} has an unknown status ${JSON.stringify(value)}. ${statusFix(id)}`);
+  return value;
+}
+/** Synchronous read for the client registry; a missing profile is refused like a missing status. */
+export function clientStatusFor(clientDir){
+  const id=path.basename(clientDir),file=path.join(clientDir,'client.config.json');
+  if(!existsSync(file))return validateClientStatus(undefined,id);
+  return validateClientStatus(JSON.parse(readFileSync(file,'utf8')).status,id);
+}

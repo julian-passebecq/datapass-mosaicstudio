@@ -1,1 +1,6 @@
-{"format":"datapass.client-profile","version":1,"family":"analytics"}
+{
+  "format": "datapass.client-profile",
+  "version": 1,
+  "family": "analytics",
+  "status": "prototype"
+}

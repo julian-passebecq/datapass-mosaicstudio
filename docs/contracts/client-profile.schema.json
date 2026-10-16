@@ -19,6 +19,15 @@
         "replay"
       ]
     },
+    "status": {
+      "enum": [
+        "reference",
+        "prototype",
+        "draft",
+        "frozen"
+      ],
+      "description": "Catalog label only (F213): reference = AGENTS.md rule 17 public reference, prototype = working client, draft = provisional, frozen = kept but no further changes. Never changes capabilities, CSP or build inclusion."
+    },
     "csp": {
       "type": "object",
       "additionalProperties": false,
@@ -45,6 +54,7 @@
   "required": [
     "format",
     "version",
-    "family"
+    "family",
+    "status"
   ]
 }

@@ -1,5 +1,6 @@
 {
   "format": "datapass.client-profile",
   "version": 1,
-  "family": "spatial"
+  "family": "spatial",
+  "status": "reference"
 }

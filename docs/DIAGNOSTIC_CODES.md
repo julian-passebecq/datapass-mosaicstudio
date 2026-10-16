@@ -23,7 +23,7 @@ JSON lines) report the **same code for the same file**. The differential corpus 
 | Prefix | Area | Owner | Table |
 |---|---|---|---|
 | `DP-ART` | `datapass.artifact` v1 validators, TypeScript and Python | F209 | `src/framework/diagnostics/artifact.ts` |
-| `DP-ENV` | doctor: author and consumer environment checks | F210 (reserved, empty) | `src/framework/diagnostics/env.ts` |
+| `DP-ENV` | doctor: author and consumer environment checks | F210 | `src/framework/diagnostics/env.ts` |
 | `DP-CLI` | client profile and client checks | F213 (reserved, empty) | `src/framework/diagnostics/client.ts` |
 | `DP-STO` | workspace, run and result storage | F205 (001-009), F206-F207 (reserved) | `src/framework/diagnostics/storage.ts` |
 | `DP-BUN` | export bundles | F208 (reserved, empty) | `src/framework/diagnostics/bundle.ts` |
@@ -95,6 +95,37 @@ $ python py/datapass_artifact.py tests/fixtures/artifact-corpus/invalid/s-format
 ```ts
 artifactDecision(value); // {ok:false,gate:'structure',path:'/format',message:'/format: Unsupported artifact format',code:'DP-ART-013'}
 ```
+
+## DP-ENV codes (doctor)
+
+`npm run doctor` (`scripts/doctor.mjs`) is a read-only environment report for authors and consumers: it starts no
+service and writes nothing; it reads this checkout, asks node, npm and python for their versions and briefly binds,
+then releases, loopback ports. `npm run doctor -- --json` prints
+`{"format":"datapass.doctor","version":1,"checks":[{"id","code","status","detail","fix"}]}`. Status is `pass`, `warn`,
+`fail` or `skip`; every `warn` and `fail` names one `fix` (`null` otherwise). The exit code is 1 when any check fails.
+
+- `--ci` reports failures of environment-only families that a CI runner cannot change (today only `ports`) as warnings.
+  CI runs `npm run doctor -- --json --ci` after the Python install, so a stale `dist/_headers`, a wrong upstream pin or
+  a Python package at another version than its pin still fails the job.
+- Python is optional (SQL, client sites and the allowlisted runtime models do not need it): no interpreter, no venv or a
+  missing package is a warning; a package installed at another version than its pin is a failure. The interpreter is
+  `--python <exe>`, else `DATAPASS_PYTHON`, else `.venv` of the checkout, else `python`.
+- `--results-dir <dir>` (else `DATAPASS_RESULTS_DIR`) checks that the opt-in ResultStore folder is outside Git; without
+  either the check is skipped.
+
+| Code | Gate | Rule | Reported by | Meaning |
+|---|---|---|---|---|
+| `DP-ENV-001` | node | `node-version` | TS | Node.js is older than `engines.node` of `package.json`. |
+| `DP-ENV-002` | node | `npm-missing` | TS | npm cannot be found or does not report a version. |
+| `DP-ENV-010` | upstream | `upstream-missing` | TS | A pin of `upstreams.lock.json` is not bootstrapped under `.upstream/` (fix: `npm run bootstrap`). |
+| `DP-ENV-011` | upstream | `upstream-pin-mismatch` | TS | `.upstream/<id>/.source-commit` differs from the lock pin. |
+| `DP-ENV-020` | python | `python-missing` | TS | No Python interpreter answers (warning). |
+| `DP-ENV-021` | python | `python-not-venv` | TS | The interpreter is not a virtual environment (warning). |
+| `DP-ENV-022` | python | `python-requirement-missing` | TS | A package pinned in `py/service/requirements*.txt` is not installed (warning). |
+| `DP-ENV-023` | python | `python-requirement-version` | TS | An installed package differs from its pin. |
+| `DP-ENV-030` | ports | `port-busy` | TS | One of 21481, 21491, 24190, 24799, 24811, 24812 on 127.0.0.1 cannot be bound. |
+| `DP-ENV-040` | headers | `headers-drift` | TS | `dist/_headers` differs from `WORKBENCH_HEADERS` (skipped when `dist/` is absent). |
+| `DP-ENV-050` | store | `results-dir-in-git` | TS | The ResultStore folder is inside a Git work tree. |
 
 ## DP-STO codes
 
