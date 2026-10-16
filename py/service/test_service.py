@@ -4,9 +4,12 @@
 """
 from __future__ import annotations
 
+import os
 import sys
+import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
@@ -17,7 +20,7 @@ except ImportError:  # pragma: no cover - service deps are optional
     TestClient = None  # type: ignore
 
 if TestClient is not None:
-    from app import LIVE_ARTIFACT_ID, MAX_BODY_BYTES, create_app
+    from app import ARTIFACT_DIR_ENV, CHECKOUT_ARTIFACT_DIR, LIVE_ARTIFACT_ID, MAX_BODY_BYTES, create_app, resolve_artifact_dir
     from datapass_artifact import validate
 
 ORIGIN = "http://127.0.0.1:5173"
@@ -91,6 +94,29 @@ class ServiceTest(unittest.TestCase):
         self.assertEqual(validate(response.json())["id"], "wind-aep-weibull")
         self.assertEqual(self.client.get("/artifacts/missing-one").status_code, 404)
         self.assertEqual(self.client.get("/artifacts/Bad..id").status_code, 422)
+
+
+    def test_artifact_dir_from_env_outside_a_checkout(self) -> None:
+        """F201: the runtime companion points DATAPASS_ARTIFACT_DIR at its own folder; a missing folder answers 404."""
+        source = CHECKOUT_ARTIFACT_DIR / "wind-aep-weibull.json"
+        with tempfile.TemporaryDirectory() as tmp:
+            folder = Path(tmp) / "artifacts"
+            with mock.patch.dict(os.environ, {ARTIFACT_DIR_ENV: str(folder)}):
+                self.assertEqual(resolve_artifact_dir(), folder)
+                client = TestClient(create_app(origins=(ORIGIN,), allowed_hosts=("testserver",)))
+                self.assertEqual(client.get("/artifacts/wind-aep-weibull").status_code, 404)  # folder missing
+                folder.mkdir()
+                self.assertEqual(client.get("/artifacts/wind-aep-weibull").status_code, 404)  # folder empty
+                (folder / "wind-aep-weibull.json").write_text(source.read_text(encoding="utf-8"), encoding="utf-8")
+                response = client.get("/artifacts/wind-aep-weibull")
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual(response.json()["id"], "wind-aep-weibull")
+                validate(response.json())
+            with mock.patch.dict(os.environ, {ARTIFACT_DIR_ENV: "  "}):
+                self.assertEqual(resolve_artifact_dir(), CHECKOUT_ARTIFACT_DIR)  # blank means unset
+        env = {k: v for k, v in os.environ.items() if k != ARTIFACT_DIR_ENV}
+        with mock.patch.dict(os.environ, env, clear=True):
+            self.assertEqual(resolve_artifact_dir(), CHECKOUT_ARTIFACT_DIR)
 
 
 if __name__ == "__main__":
