@@ -825,10 +825,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     """Validate artifact files; print one JSON decision per file (or one for the whole --set). Exit 1 on any rejection."""
     import sys
     args = list(sys.argv[1:] if argv is None else argv)
+    if args[:1] == ["validate"]:  # `python -m datapass_artifact validate FILE...` (F211); the bare-file form is kept
+        args = args[1:]
     as_set = "--set" in args
     files = [a for a in args if a != "--set"]
     if not files:
-        print("usage: python py/datapass_artifact.py [--set] FILE...", file=sys.stderr)
+        print("usage: python -m datapass_artifact [validate] [--set] FILE...  (or python py/datapass_artifact.py ...)",
+              file=sys.stderr)
         return 2
     results = []
     loaded = []
