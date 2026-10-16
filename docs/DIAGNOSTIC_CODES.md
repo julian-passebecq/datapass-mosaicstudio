@@ -25,7 +25,7 @@ JSON lines) report the **same code for the same file**. The differential corpus 
 | `DP-ART` | `datapass.artifact` v1 validators, TypeScript and Python | F209 | `src/framework/diagnostics/artifact.ts` |
 | `DP-ENV` | doctor: author and consumer environment checks | F210 (reserved, empty) | `src/framework/diagnostics/env.ts` |
 | `DP-CLI` | client profile and client checks | F213 (reserved, empty) | `src/framework/diagnostics/client.ts` |
-| `DP-STO` | workspace, run and result storage | F205-F207 (reserved, empty) | `src/framework/diagnostics/storage.ts` |
+| `DP-STO` | workspace, run and result storage | F205 (001-009), F206-F207 (reserved) | `src/framework/diagnostics/storage.ts` |
 | `DP-BUN` | export bundles | F208 (reserved, empty) | `src/framework/diagnostics/bundle.ts` |
 
 ## DP-ART codes
@@ -95,3 +95,14 @@ $ python py/datapass_artifact.py tests/fixtures/artifact-corpus/invalid/s-format
 ```ts
 artifactDecision(value); // {ok:false,gate:'structure',path:'/format',message:'/format: Unsupported artifact format',code:'DP-ART-013'}
 ```
+
+## DP-STO codes
+
+Cross-tab workspace revisions (F205). The `datapass.workspace` v1 document is unchanged; the revision lives in the sidecar
+key `datapass.workspace.revision` = `{rev,tab,sha256}` (`src/workspace/revision.ts`). TypeScript only.
+
+| Code | Gate | Rule | Reported by | Meaning |
+|---|---|---|---|---|
+| `DP-STO-001` | workspace-revision | `workspace-conflict` | TS | Another tab or writer saved (or reset) the workspace after this tab loaded it. Nothing is written until the user keeps mine, takes theirs or exports both. |
+| `DP-STO-002` | workspace-revision | `revision-sidecar-mismatch` | TS | The sidecar is missing, unreadable or does not hash to the stored document: an older studio or an unknown writer saved it. Still a conflict; the writer is shown as unknown. |
+| `DP-STO-003` | workspace-revision | `theirs-invalid` | TS | Take theirs refused: the other document failed `validateWorkspace`. This tab and the conflict are unchanged. |

@@ -28,7 +28,8 @@ class DiagnosticCodeTests(unittest.TestCase):
         self.assertEqual(da.ARTIFACT_CODES, expected)
 
     def test_typescript_only_codes_are_not_claimed_by_python(self):
-        ts_only = {row["code"] for row in CONTRACT["codes"] if row["languages"] == ["ts"]}
+        ts_only = {row["code"] for row in CONTRACT["codes"]
+                   if row["code"].startswith("DP-ART-") and row["languages"] == ["ts"]}
         self.assertEqual(ts_only, {"DP-ART-059"})
         self.assertFalse(ts_only & {code for code, _ in da.ARTIFACT_CODES.values()})
 

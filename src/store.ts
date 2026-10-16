@@ -10,8 +10,9 @@ import {tableId} from './core/queries';
 import {modules} from './core/host';
 import {demoPipeline,type Pipeline,validatePipeline} from './core/pipeline';
 import {validateNotebook,type Notebook} from './workspace/notebook';
-import {loadWorkspace,saveWorkspace,resetWorkspace as clearSavedWorkspace,type RunRef,type WorkspaceDoc,type SourceRef} from './workspace/persist';
+import {loadWorkspace,resetWorkspace as clearSavedWorkspace,WORKSPACE_KEY,WORKSPACE_REVISION_KEY,type RunRef,type WorkspaceDoc,type SourceRef} from './workspace/persist';
 import {browserPreferences,createStorageAdapter} from './framework/storage';
+import {WorkspaceRevisionGuard,type WorkspaceConflict} from './workspace/revision';
 
 export type DatasetInfo={table:string; name:string; kind:'synthetic'|'user-file'; bytes?:number; registeredFile?:string;};
 export type BoardCard={id:string; title:string; lane:'Backlog'|'In progress'|'Review'|'Done'};
@@ -21,9 +22,12 @@ export type DataPassSlice={datapass:{
   /** Run refs loaded from a saved/imported workspace and not observed again in this tab. A queued/running one is
    * displayed as "not observed since reload" (rule 32); the stored v1 document itself is unchanged. */
   restoredRunIds:string[];
+  /** Open cross-tab conflict (F205): another writer changed the saved workspace. Nothing is saved while it is open. */
+  conflict:(WorkspaceConflict&{error:string|null})|null;
   openModule(id:string):void; selectTable(id:string):void; importFile(file:File):Promise<void>; setError(error:string|null):void; setPipeline(p:Pipeline):void; setCards(cards:BoardCard[]):void;
   loadSamples():Promise<void>; setNotice(notice:string|null):void; setNotebook(notebook:Notebook):void; recordRun(run:RunRef):void; setRuntimeOrigin(origin:string|null):void;
   applyWorkspace(doc:WorkspaceDoc,notice:string|null):void; resetWorkspace():void; workspaceDocument():WorkspaceDoc;
+  resolveConflict(choice:'mine'|'theirs'):void;
 }};
 export type RoomState=RoomShellSliceState&MosaicSliceState&SqlEditorSliceState&DataPassSlice;
 export const MODULE_IDS=modules.map(m=>m.id);
@@ -36,6 +40,8 @@ const storage=storageAdapter.preferences;
 // `?workspace=blank` never loads samples for this visit; `?sample=operations` opts into the synthetic sample.
 const restored=params.get('embed')==='1'?{doc:null,notice:null}:loadWorkspace(storage,MODULE_IDS);
 const saved=restored.doc;
+// One revision guard per tab, created after the load (which may move a rejected document aside). Embeds never write.
+const guard=params.get('embed')!=='1'&&storage?new WorkspaceRevisionGuard(storage,MODULE_IDS):null;
 const samples=params.get('sample')==='operations'?true:params.get('workspace')==='blank'?false:saved?.samples??false;
 // URL overrides apply to this visit only; the saved choice changes only when the user loads the sample.
 let persistedSamples=saved?.samples??false;
@@ -64,7 +70,7 @@ export const {roomStore,useRoomStore}=createRoomStore<RoomState>((set,get,store)
   initialize:async()=>{await get().db.refreshTableSchemas();},
   datapass:{module:initialModule,selectedTable:samples?SAMPLE_TABLE:'',datasets:(samples?{[SAMPLE_TABLE]:SAMPLE_DATASET}:{}) as Record<string,DatasetInfo>,importing:false,error:null,pipeline:saved?.pipeline?validatePipeline(saved.pipeline):structuredClone(demoPipeline),
     cards:saved?.cards??DEMO_CARDS.map(c=>({...c})),
-    samples,loadingSamples:false,notice:startupNotice,notebook:saved?.notebook??{cells:[]},runs:saved?.runs??[],restoredRunIds:(saved?.runs??[]).map(r=>r.runId),runtimeOrigin:saved?.runtimeOrigin??null,missingSources,
+    samples,loadingSamples:false,notice:startupNotice,notebook:saved?.notebook??{cells:[]},runs:saved?.runs??[],restoredRunIds:(saved?.runs??[]).map(r=>r.runId),runtimeOrigin:saved?.runtimeOrigin??null,missingSources,conflict:null,
     openModule(module){if(!modules.some(m=>m.id===module))return;set(s=>({datapass:{...s.datapass,module}}));},
     selectTable(selectedTable){set(s=>({datapass:{...s.datapass,selectedTable,module:'explore'}}));},
     setError(error){set(s=>({datapass:{...s.datapass,error}}));},
@@ -93,7 +99,11 @@ export const {roomStore,useRoomStore}=createRoomStore<RoomState>((set,get,store)
       if(doc.samples&&!get().datapass.samples)void get().datapass.loadSamples();
     },
     resetWorkspace(){
-      clearSavedWorkspace(storage);persistedSamples=false;
+      if(guard){
+        const outcome=guard.reset();
+        if(outcome.status==='conflict'){set(s=>({datapass:{...s.datapass,conflict:{...outcome.conflict,error:s.datapass.conflict?.error??null},notice:'Another tab changed the saved workspace. Resolve the conflict before resetting.'}}));return;}
+      }else clearSavedWorkspace(storage);
+      persistedSamples=false;
       const sqlEditor=get().sqlEditor;
       sqlEditor.setConfig({...sqlEditor.config,queries:[{...BLANK_QUERY}],selectedQueryId:BLANK_QUERY.id,openTabs:[BLANK_QUERY.id]});
       set(s=>({datapass:{...s.datapass,module:'notebook',notebook:{cells:[]},runs:[],restoredRunIds:[],runtimeOrigin:null,pipeline:structuredClone(demoPipeline),cards:DEMO_CARDS.map(c=>({...c})),missingSources:[],notice:'The saved workspace was reset. Tables already open in this tab stay until reload.'}}));
@@ -106,6 +116,26 @@ export const {roomStore,useRoomStore}=createRoomStore<RoomState>((set,get,store)
       const selected=queries.find(q=>q.id===s.sqlEditor.config.selectedQueryId)?.id??null;
       let collapsed=false;try{collapsed=s.layout.isCollapsed('catalog-area');}catch{/* layout not ready */}
       return {format:'datapass.workspace',version:1,savedAt:new Date().toISOString(),samples:persistedSamples,module:d.module,catalogCollapsed:collapsed,queries,selectedQueryId:selected,notebook:d.notebook,runs:d.runs,sources:sources.slice(0,50),runtimeOrigin:d.runtimeOrigin,pipeline:d.pipeline,cards:d.cards};
+    },
+    /** Keep mine overwrites the other writer explicitly; take theirs validates their whole document first (rule 8). */
+    resolveConflict(choice){
+      if(!guard||!get().datapass.conflict)return;
+      if(choice==='mine'){
+        const outcome=guard.keepMine(get().datapass.workspaceDocument());
+        if(outcome.status==='saved')set(s=>({datapass:{...s.datapass,conflict:null,notice:"Kept this tab's workspace; the other tab's saved version was replaced."}}));
+        else set(s=>({datapass:{...s.datapass,conflict:s.datapass.conflict&&{...s.datapass.conflict,error:outcome.status==='error'?outcome.message:'The conflict changed; choose again.'}}}));
+        return;
+      }
+      let taken:WorkspaceDoc|null;
+      try{taken=guard.takeTheirs().doc;}
+      catch(error){set(s=>({datapass:{...s.datapass,conflict:s.datapass.conflict&&{...s.datapass.conflict,error:(error as Error).message}}}));return;}
+      set(s=>({datapass:{...s.datapass,conflict:null}}));
+      if(taken){persistedSamples=taken.samples;get().datapass.applyWorkspace(taken,'Loaded the workspace saved by the other tab. Nothing was run.');}
+      else{
+        const sqlEditor=get().sqlEditor;persistedSamples=false;
+        sqlEditor.setConfig({...sqlEditor.config,queries:[{...BLANK_QUERY}],selectedQueryId:BLANK_QUERY.id,openTabs:[BLANK_QUERY.id]});
+        set(s=>({datapass:{...s.datapass,module:'notebook',notebook:{cells:[]},runs:[],restoredRunIds:[],runtimeOrigin:null,pipeline:structuredClone(demoPipeline),cards:DEMO_CARDS.map(c=>({...c})),missingSources:[],notice:'The other tab reset the saved workspace; this tab now matches it. Tables already open stay until reload.'}}));
+      }
     },
     async importFile(file){
       if(get().datapass.importing)return;
@@ -134,15 +164,32 @@ export const {roomStore,useRoomStore}=createRoomStore<RoomState>((set,get,store)
 }));
 
 // Autosave authored state (debounced). Embeds and storage-less browsers never write.
-if(params.get('embed')!=='1'&&storage){
+// Every save goes through the revision guard: a document another tab saved since this one loaded opens the conflict
+// banner instead of being overwritten (F205), and nothing is written until the user resolves it.
+if(guard){
   let timer:ReturnType<typeof setTimeout>|undefined,last='';
+  const openConflict=(conflict:WorkspaceConflict)=>{
+    const current=roomStore.getState().datapass.conflict;
+    if(current&&current.theirsRaw===conflict.theirsRaw&&current.sidecarMatches===conflict.sidecarMatches)return;
+    roomStore.setState(s=>({datapass:{...s.datapass,conflict:{...conflict,error:null}}}));
+  };
   roomStore.subscribe(()=>{
     clearTimeout(timer);
     timer=setTimeout(()=>{
-      const doc=roomStore.getState().datapass.workspaceDocument(),key=JSON.stringify({...doc,savedAt:''});
-      if(key===last)return;last=key;
-      const problem=saveWorkspace(storage,doc,MODULE_IDS);
-      if(problem&&roomStore.getState().datapass.notice!==problem)roomStore.getState().datapass.setNotice(problem);
+      const state=roomStore.getState().datapass;
+      if(state.conflict)return;
+      const doc=state.workspaceDocument(),key=JSON.stringify({...doc,savedAt:''});
+      if(key===last)return;
+      const outcome=guard.save(doc);
+      if(outcome.status==='conflict'){openConflict(outcome.conflict);return;}
+      last=key;
+      if(outcome.status==='error'&&roomStore.getState().datapass.notice!==outcome.message)roomStore.getState().datapass.setNotice(outcome.message);
     },400);
+  });
+  // Another tab's write arrives as a storage event (never in the writing tab); `key===null` is a clear().
+  window.addEventListener('storage',(event:StorageEvent)=>{
+    if(event.key!==null&&event.key!==WORKSPACE_KEY&&event.key!==WORKSPACE_REVISION_KEY)return;
+    const conflict=guard.detect();
+    if(conflict)openConflict(conflict);
   });
 }
