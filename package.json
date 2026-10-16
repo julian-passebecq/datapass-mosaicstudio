@@ -49,7 +49,8 @@
     "sdk:verify": "node scripts/sdk-verify.mjs",
     "runtime:pack": "node scripts/runtime-pack.mjs",
     "runtime:verify": "node scripts/runtime-verify.mjs dist-runtime",
-    "preview:validate": "node scripts/preview-validate.mjs"
+    "preview:validate": "node scripts/preview-validate.mjs",
+    "doctor": "node --experimental-strip-types scripts/doctor.mjs"
   },
   "overrides": {
     "@duckdb/duckdb-wasm": "1.32.0"

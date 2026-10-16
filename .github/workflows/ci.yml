@@ -145,6 +145,8 @@ jobs:
             npx playwright install --with-deps chromium
             echo 'Playwright-managed Chromium' > qa/browser-version.txt
           fi
+      - name: Doctor environment report (JSON; busy ports are warnings under --ci)
+        run: npm run doctor -- --json --ci
       - name: Real HTTP workbench and framework browser tests
         run: npm run test:browser
       - name: Isolated clients and eight fresh family/scaffold checks
