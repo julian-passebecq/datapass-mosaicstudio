@@ -152,19 +152,22 @@ export class RunJournal{
     return JSON.stringify(validateRunRecord(record),null,2);
   }
 }
-/** Like-for-like comparison only; no conversion or implied physical equivalence. */
-export function compareRuns(a:RunRecord,b:RunRecord){
-  // A restored reference has no result and fails record validation: it can never feed a comparison.
-  validateRunRecord(a);validateRunRecord(b);
-  if(a.modelId!==b.modelId||a.modelVersion!==b.modelVersion||a.taskId!==b.taskId||a.appId!==b.appId||a.appVersion!==b.appVersion||a.providerId!==b.providerId)throw new Error('Runs do not share the same declared model/task/provider contract');
-  if(a.status!=='succeeded'||b.status!=='succeeded')throw new Error('Compare successful runs only');
-  const metrics:{id:string;title:string;before:Scalar;after:Scalar;delta:number|null;unit:string}[]=[];
-  if(a.artifact?.payload.kind==='table'&&b.artifact?.payload.kind==='table'){
-    const left=a.artifact.payload,right=b.artifact.payload;
+export type MetricDelta={id:string;title:string;before:Scalar;after:Scalar;delta:number|null;unit:string};
+export type ParameterDelta={id:string;before:Scalar;after:Scalar;changed:boolean};
+/** Pure: captured parameter values side by side (a value missing on one side is null). */
+export function parameterDeltas(a:Readonly<Record<string,Scalar>>,b:Readonly<Record<string,Scalar>>):ParameterDelta[]{
+  return [...new Set([...Object.keys(a),...Object.keys(b)])].sort().map(id=>({id,before:a[id]??null,after:b[id]??null,changed:!Object.is(a[id],b[id])}));
+}
+/** Pure: declared metric representations present in both artifacts with the same row, column and unit.
+ * Both tables must share columns and row key; no unit conversion or aggregation. Shared by compareRuns (F207). */
+export function artifactMetricDeltas(a:Artifact|null,b:Artifact|null):MetricDelta[]{
+  const metrics:MetricDelta[]=[];
+  if(a?.payload.kind==='table'&&b?.payload.kind==='table'){
+    const left=a.payload,right=b.payload;
     if(JSON.stringify(left.columns)===JSON.stringify(right.columns)&&left.rowKey===right.rowKey){
-      for(const rep of a.artifact.representations){
+      for(const rep of a.representations){
         if(rep.kind!=='metric')continue;
-        const other=b.artifact.representations.find(r=>r.id===rep.id);
+        const other=b.representations.find(r=>r.id===rep.id);
         if(other?.kind!=='metric'||other.row!==rep.row||other.column!==rep.column||other.unit!==rep.unit)continue;
         const before=left.rows.find(r=>String(r[left.rowKey])===rep.row)?.[rep.column]??null;
         const after=right.rows.find(r=>String(r[right.rowKey])===other.row)?.[other.column]??null;
@@ -172,7 +175,35 @@ export function compareRuns(a:RunRecord,b:RunRecord){
       }
     }
   }
-  return {parameters:[...new Set([...Object.keys(a.parameters),...Object.keys(b.parameters)])].sort().map(id=>({id,before:a.parameters[id]??null,after:b.parameters[id]??null,changed:!Object.is(a.parameters[id],b.parameters[id])})),durationDeltaMs:b.durationMs-a.durationMs,metrics};
+  return metrics;
+}
+export type RowDeltaCell={before:number|null;after:number|null;delta:number|null};
+export type RowDeltas=
+  |{comparable:true;rowKey:string;columns:{id:string;label:string;unit:string}[];rows:{key:string;cells:RowDeltaCell[]}[];truncated:boolean}
+  |{comparable:false;reason:string};
+/** Pure: per-row differences (B - A) of the number columns of two tables with identical columns and row key.
+ * Rows are matched by row key only; a row present on one side only has null on the other. Bounded to `maxRows`. */
+export function artifactRowDeltas(a:Artifact,b:Artifact,maxRows=500):RowDeltas{
+  if(a.payload.kind!=='table'||b.payload.kind!=='table')return {comparable:false,reason:'Both results must be tables to compare their rows.'};
+  const left=a.payload,right=b.payload;
+  if(left.rowKey!==right.rowKey||JSON.stringify(left.columns)!==JSON.stringify(right.columns))return {comparable:false,reason:'The two tables do not share the same columns and row key; no row is compared.'};
+  const columns=left.columns.filter(c=>c.type==='number'&&c.id!==left.rowKey);
+  const index=(rows:typeof left.rows)=>new Map(rows.map(r=>[String(r[left.rowKey]),r]));
+  const l=index(left.rows),r=index(right.rows),keys=[...new Set([...l.keys(),...r.keys()])];
+  const num=(v:unknown)=>typeof v==='number'&&Number.isFinite(v)?v:null;
+  const rows=keys.slice(0,maxRows).map(key=>({key,cells:columns.map(c=>{
+    const before=num(l.get(key)?.[c.id]),after=num(r.get(key)?.[c.id]);
+    return {before,after,delta:before!==null&&after!==null&&Number.isFinite(after-before)?after-before:null};
+  })}));
+  return {comparable:true,rowKey:left.rowKey,columns:columns.map(c=>({id:c.id,label:c.label,unit:c.unit??''})),rows,truncated:keys.length>maxRows};
+}
+/** Like-for-like comparison only; no conversion or implied physical equivalence. */
+export function compareRuns(a:RunRecord,b:RunRecord){
+  // A restored reference has no result and fails record validation: it can never feed a comparison.
+  validateRunRecord(a);validateRunRecord(b);
+  if(a.modelId!==b.modelId||a.modelVersion!==b.modelVersion||a.taskId!==b.taskId||a.appId!==b.appId||a.appVersion!==b.appVersion||a.providerId!==b.providerId)throw new Error('Runs do not share the same declared model/task/provider contract');
+  if(a.status!=='succeeded'||b.status!=='succeeded')throw new Error('Compare successful runs only');
+  return {parameters:parameterDeltas(a.parameters,b.parameters),durationDeltaMs:b.durationMs-a.durationMs,metrics:artifactMetricDeltas(a.artifact,b.artifact)};
 }
 
 export type RunResource={specs:RunSpec[];maxRecords?:number;maxBytes?:number};

@@ -3,7 +3,8 @@ export {validateArtifact,tableArtifact,artifactDefinition,artifactExport,artifac
 export type {Artifact,Representation,ViewProfile} from './artifact.ts';
 export {loadArtifact,artifactUrl,ARTIFACT_DIRECTORY,loadHttpArtifact,loadArtifactSource,httpArtifactUrl,HTTP_REQUEST_BYTES} from './artifact-loader.ts';
 export type {ArtifactLoadState,ArtifactSourceSpec} from './artifact-loader.ts';
-export {RunJournal,validateRunRecord,validateRunSpec,validateRunResource,compareRuns} from './journal.ts';
+export {RunJournal,validateRunRecord,validateRunSpec,validateRunResource,compareRuns,parameterDeltas,artifactMetricDeltas,artifactRowDeltas} from './journal.ts';
+export type {MetricDelta,ParameterDelta,RowDeltas,RowDeltaCell} from './journal.ts';
 export type {RunRecord,RunSpec,RunResource,JournalSnapshot,JournalOptions} from './journal.ts';
 export {validateRunReference,validateRunHistory,toReference,loadRunHistory,saveRunHistory,resetRunHistory,runHistoryKey,bindRunHistory,RUN_HISTORY_FORMAT,RUN_REF_FORMAT} from './run-history.ts';
 export type {RunReference,RunHistoryDoc,RunHistoryStore,RunHistoryBinding,RunOutcome} from './run-history.ts';
