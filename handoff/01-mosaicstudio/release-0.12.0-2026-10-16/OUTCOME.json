@@ -1,0 +1,108 @@
+{
+  "app_key": "01-mosaicstudio",
+  "state": "RELEASE_BUILT_AND_DELIVERED_PRIVATE",
+  "package_version": "0.12.0",
+  "reason": "Package the approved V2 block F201-F213 and the CSP-1 fix (#77, zod jitless) as one private release; first delivery of the Python runtime companion.",
+  "canonical_source_sha": "c6f5b97bfa3e4d80a4844e7f82470d1ff9159d9b",
+  "package_source_sha": "c6f5b97bfa3e4d80a4844e7f82470d1ff9159d9b",
+  "source_tree": "76eeae05b5f79dcd65fa031af7ccc4a41e7b326f",
+  "contains": ["#77 CSP-1", "#80 F204", "#81 F203", "#82 F209", "#83 F201", "#84 F202", "#85 F213", "#86 F205", "#87 F210", "#88 F206", "#89 F211", "#90 F207", "#91 F208", "#92 F212", "#94 release commit"],
+  "mandatory_ci": "PASS",
+  "mandatory_ci_evidence": [
+    {"pr": 94, "head": "0ecd067ce238348bf86d00b5b6675642561cdba1", "check": "web", "workflow": "Studio web gate", "conclusion": "success", "url": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38933904200"},
+    {"sha": "c6f5b97bfa3e4d80a4844e7f82470d1ff9159d9b", "workflow": "Studio web gate", "event": "push", "conclusion": "success", "url": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/38936093714"}
+  ],
+  "delta_vs_0_11_1": {
+    "contracts_added": ["spec/bundle/v1/bundle.schema.json", "docs/contracts/diagnostic-codes.json"],
+    "contracts_changed": ["docs/contracts/client-profile.schema.json (F213 status)"],
+    "persist_ts_changed": false,
+    "workbench": {"files_0_11_1": 112, "files_0_12_0": 117, "unchanged": 51, "changed": ["index.html"], "added": 65, "removed": 60, "note": "added/removed are renamed hashed bundles under assets/; _headers unchanged"},
+    "sdk_archive": {"files_0_11_1": 347, "files_0_12_0": 385, "added": 38, "removed": 0},
+    "concept_viewer": "content changed, same byte size",
+    "new_artifact": "datapass-runtime-companion-0.12.0.tar.gz (11 files, service datapass-artifact-service 0.4.0)",
+    "detail": "qa/REL-0.12.0/diff-vs-0.11.1.json"
+  },
+  "distribution": [
+    {"name": "datapass-mosaicstudio-sdk-0.12.0.tar.gz", "bytes": 789228, "sha256": "405921afe5230da53eded7ae624d421c4a9ae708c3298e7b368f063f53d0a352", "archive_files": 385},
+    {"name": "datapass-mosaicstudio-workbench-0.12.0.zip", "bytes": 20642967, "sha256": "1eb9789b7d7b4b251e8e86a5fe22d8ce095cf9b0e5db9ef16837be148ef09a25", "dist_files": 117, "dist_bytes": 90759990, "deterministic_rebuild_identical": true},
+    {"name": "datapass-runtime-companion-0.12.0.tar.gz", "bytes": 41390, "sha256": "b4c1614d02a72dc07d29a8966d6387b9843b31ce9bd5ee70710559e9201d5f87", "archive_files": 11},
+    {"name": "concept-viewer.html", "bytes": 974386, "sha256": "d98d78cd2f74e69ce9c19069ffa6e9c99512d143af1aaf3503f429a6c6159b81"},
+    {"name": "sdk-release.json", "bytes": 65447, "sha256": "49a1c3b04b153a6c4f93d88fc02565d5f39370306dea795adcf62116d60e00e3", "sourceTreeClean": true},
+    {"name": "runtime-companion.json", "bytes": 4198, "sha256": "cf846106d316e56d0f8acfed585c5b5689e94069ece009070686a3070ff9fc16", "sourceTreeClean": true},
+    {"name": "release-manifest.json", "bytes": 20818, "sha256": "443079233befef078cd608466a271f86fb857cfad3b68896494a7cbe080fa4ae", "sourceTreeClean": true},
+    {"name": "SHA256SUMS", "bytes": 668, "sha256": "2272ec0445324e5762d9f254b8bdbeeef0b8e5f9c69048248281149bd600fabd", "check": "7/7 OK"}
+  ],
+  "package_sha256": "405921afe5230da53eded7ae624d421c4a9ae708c3298e7b368f063f53d0a352",
+  "download_sha256": "405921afe5230da53eded7ae624d421c4a9ae708c3298e7b368f063f53d0a352",
+  "tests": [
+    {"id": "unit suite node --test tests/*.test.mjs", "at": "release branch #94", "result": "PASS (exit 0, about 797 passing)", "status": "VERIFIED"},
+    {"id": "typecheck", "result": "PASS", "status": "VERIFIED"},
+    {"id": "contracts:check", "result": "PASS (artifact corpus 119, bundle corpus 23)", "status": "VERIFIED"},
+    {"id": "license-inventory --check", "result": "PASS (792 npm packages, 27 to review)", "status": "VERIFIED"},
+    {"id": "test:python-runtime / test:python", "result": "49 OK / 40 OK", "status": "VERIFIED"},
+    {"id": "sdk:verify (release folder, datapass verify, re-download)", "result": "PASS", "status": "VERIFIED"},
+    {"id": "runtime-verify (build output, release folder, --no-start)", "result": "PASS", "status": "VERIFIED"}
+  ],
+  "qualification": [
+    {"id": "Q1 installed workbench", "verdict": "PASS", "checks": [
+      {"id": "static-headers on the unzipped release zip", "result": "PASS"},
+      {"id": "JOURNEY-01 under _headers with paired Jupyter", "result": "PASS", "detail": "15/15 steps, 0 CSP violations (CSP-1 fixed), reopen Not recomputed with 0 POST /runs and 0 Jupyter calls", "evidence": "qa/REL-0.12.0/journey01/"},
+      {"id": "security probe", "result": "PASS", "evidence": "qa/REL-0.12.0/security/c-security-probe.json"},
+      {"id": "no T3 present or contacted", "result": "PASS", "evidence": "qa/REL-0.12.0/security/d-t3-independence.md"}
+    ]},
+    {"id": "Q2 SDK, CLI, clients", "verdict": "PASS", "checks": [
+      {"id": "JOURNEY-02 from the extracted SDK", "result": "PASS", "evidence": "qa/REL-0.12.0/sdk-clients/journey02-browser.json"},
+      {"id": "datapass CLI and doctor", "result": "PASS"},
+      {"id": "10 selected-client builds, isolation, optional 3D, no wasm", "result": "PASS", "evidence": "qa/REL-0.12.0/sdk-clients/client-builds.json"},
+      {"id": "F213 missing status refused (DP-CLI-001)", "result": "PASS"},
+      {"id": "runtime companion install, start, runtime-verify", "result": "PASS"}
+    ]},
+    {"id": "Q3 A/B, product loop, rollback", "verdict": "PASS", "checks": [
+      {"id": "F212 test:product-loop", "result": "PASS (2/2)", "evidence": "qa/REL-0.12.0/ab-rollback/loop-receipts.json"},
+      {"id": "F207 A/B survives reopen", "result": "PASS"},
+      {"id": "F208 bundle export/re-import", "result": "PASS"},
+      {"id": "F205 cross-tab conflict", "result": "PASS"},
+      {"id": "rollback 0.11.1 -> 0.12.0 -> 0.11.1 -> 0.12.0", "result": "PASS", "evidence": "qa/REL-0.12.0/ab-rollback/rollback-check.json"},
+      {"id": "stock release-upgrade-check.mjs", "result": "NOT_APPLICABLE", "detail": "step 5 hard-codes the 0.9.0 -> 0.10.0 refusal of Jupyter cells; 0.11.1 already supports them. Steps 1-4 pass.", "evidence": "qa/REL-0.12.0/ab-rollback/upgrade-stock-script.json"},
+      {"id": "unknown cell kind kept aside across 0.12.0 and 0.11.1", "result": "PASS", "evidence": "qa/REL-0.12.0/ab-rollback/upgrade-unknown-kind.json"},
+      {"id": "0.11.1 folder integrity", "result": "PASS (SHA256SUMS 3548a06e...)"}
+    ]}
+  ],
+  "not_run": [
+    {"id": "negative test: no runtime call before Connect", "status": "NOT_RUN"},
+    {"id": "Edge/Positron/other channels, cross-OS, real user profiles", "status": "NOT_RUN"},
+    {"id": "E2E-05 joint run", "status": "PARTIAL", "note": "optional evidence, not a release gate"},
+    {"id": "E2E-06 native agent in T3", "status": "NOT_RUN/BLOCKED", "note": "history only; T3 is not a dependency of 0.12.0 or later (owner, 2026-10-16)"}
+  ],
+  "t3_dependency": false,
+  "private_delivery": "DELIVERED",
+  "private_delivery_receipt": {
+    "destination": "existing private vault (generic package datapass-mosaicstudio-sdk), pre-granted new immutable path (owner rules V5.7, 2026-10-13)",
+    "version_path": "0.12.0-c6f5b97",
+    "files": 8,
+    "previous_versions_untouched": ["0.10.0-e7db854 (1 file)", "0.11.0-0bc8c8c (6 files)", "0.11.1-3575e6b (6 files)"],
+    "pre_upload_absent": "every file of the new version path answered an authenticated 404 before upload; HEAD before each PUT",
+    "confidentiality_scan": "PASS (518 files; benign hits only)",
+    "uploaded_utc": "2026-10-16T17:40Z",
+    "remote_hash_verified": true,
+    "remote_hash_evidence": "registry file_sha256 equals the local release for 8/8 files; authenticated re-download into a fresh folder: sha256sum -c 7/7 OK, SHA256SUMS 2272ec04..., sdk:verify PASS",
+    "anonymous_access_refused": true,
+    "anonymous_access_evidence": "package file requests without credentials: HTTP 401; project API: HTTP 404",
+    "urls_recorded": false,
+    "urls_note": "Public repository: vault location, URLs and identifiers are deliberately not recorded here."
+  },
+  "omissions": [
+    "Standalone viewer header names 9a9c0212ca2d (built on the release branch before the squash); sources identical.",
+    "release-manifest.json does not list the runtime companion; runtime-companion.json and SHA256SUMS do.",
+    "Reused JOURNEY-01 spec still labels step 1 'identical to 3575e6b'; the runtime was the 0.12.0 companion py/.",
+    "datapass new without id and context <unknown> print a raw Node stack trace (exit 1).",
+    "Carried: lineage table layout, npm 11 esbuild postinstall warning, App chunk > 2000 kB, E2E-05 PARTIAL, E2E-06 NOT_RUN/BLOCKED (history).",
+    "No tag, public publication or deployment; no licence decision."
+  ],
+  "owner_gates": [
+    {"gate": "licence/public publication", "state": "NOT_AUTHORIZED"}
+  ],
+  "previous_release": {"version": "0.11.1", "outcome": "handoff/01-mosaicstudio/release-0.11.1-2026-10-14/OUTCOME.json", "state": "unchanged"},
+  "next_action": "Agent: optional fixes from the omissions (short CLI errors, companion in release-manifest, viewer header from the merged commit); V3 stays CANDIDATE until the owner approves it. Owner: licence decision before any public publication.",
+  "receipt": "qa/REL-0.12.0.md"
+}

@@ -18,6 +18,8 @@ All 13 approved V2 features merged by squash on green GitHub Actions ("Studio we
 | F208 provenance bundle | MERGED | #91 | 972b7f2 | PASS | `datapass.bundle` v1, candidate |
 | F212 product loop on 2 consumers | MERGED | #92 | 03c52dc | n/a (no storage change) | **PASS**: `npm run test:product-loop` 2/2 (contoso-shape-analytics, foil-wind), also a CI step |
 
+**Release:** all 13 features ship in **0.12.0**, built from `c6f5b97` (#94) and delivered privately under `0.12.0-c6f5b97`, with the runtime companion (the F201 owner default "not delivered" is lifted by the release act); receipt [`qa/REL-0.12.0.md`](../../../qa/REL-0.12.0.md).
+
 F212 receipts (sha256 of saved results, reopened after service restart, "Not recomputed"; run ids differ per run, so hashes are per-run): `qa/V2-LOOP/receipts.json`.
 
 Owner defaults applied (BLOCKED_OWNER, see WAVES.md §4): no durable browser-task results (needs an ADR for a new cell-result origin); runtime CSP names the exact port; companion not delivered to the vault; `datapass.bundle` v1 and `datapass.ab-pair` v1 names; F213 refuses a missing client status (out-of-tree consumers add one line, CONSUMING.md).

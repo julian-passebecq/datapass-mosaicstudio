@@ -1,0 +1,105 @@
+{
+  "format": "datapass.upgrade-check",
+  "version": 1,
+  "origin": "http://127.0.0.1:24456",
+  "channel": "playwright-chromium",
+  "old": {
+    "dir": "uc-old",
+    "version": "0.11.1"
+  },
+  "new": {
+    "dir": "uc-new",
+    "version": "0.12.0"
+  },
+  "steps": [
+    {
+      "step": "1-old-author",
+      "served": "uc-old",
+      "version": "0.11.1",
+      "browser": "153.0.8010.12",
+      "notice": null,
+      "storedSha256": {
+        "workspace": "9b1d14a2033c340d03c030746951863a168b89a7785fe79a24148c177486c1ab",
+        "rejected": null
+      },
+      "cells": [
+        "sql"
+      ],
+      "pageErrors": []
+    },
+    {
+      "step": "2-new-upgrade",
+      "served": "uc-new",
+      "version": "0.12.0",
+      "browser": "153.0.8010.12",
+      "notice": null,
+      "storedSha256": {
+        "workspace": "9b1d14a2033c340d03c030746951863a168b89a7785fe79a24148c177486c1ab",
+        "rejected": null
+      },
+      "cells": [
+        "sql"
+      ],
+      "pageErrors": []
+    },
+    {
+      "step": "3-old-rollback-sql-only",
+      "served": "uc-old",
+      "version": "0.11.1",
+      "browser": "153.0.8010.12",
+      "notice": null,
+      "storedSha256": {
+        "workspace": "72fa2a2069d6ac41fc2ecfaf30bbeab9d09a9526992ea6db25280751e6f73681",
+        "rejected": null
+      },
+      "cells": [
+        "sql"
+      ],
+      "pageErrors": []
+    },
+    {
+      "step": "4-new-add-jupyter-cell",
+      "served": "uc-new",
+      "version": "0.12.0",
+      "browser": "153.0.8010.12",
+      "notice": null,
+      "storedSha256": {
+        "workspace": "329710d050fc47fb70a025ba55c506746e6ca8de123f3424c54add08bb72f863",
+        "rejected": null
+      },
+      "cells": [
+        "sql",
+        "jupyter"
+      ],
+      "pageErrors": []
+    },
+    {
+      "step": "5-new-unknown-kind",
+      "served": "uc-new",
+      "version": "0.12.0",
+      "browser": "153.0.8010.12",
+      "notice": "The saved workspace was not restored: cell: unknown kind It was kept aside under \"datapass.workspace.rejected\"; a blank workspace is open.",
+      "storedSha256": {
+        "workspace": "438d07a6ea1e029d5e5e4915b091086b07a9cebd55aada624bfde50683d5d25d",
+        "rejected": "be16c6b32e29c792c1b6c28c1a8a2e12bab76571782dc89e21a537597d1f87ce"
+      },
+      "cells": [],
+      "pageErrors": []
+    },
+    {
+      "step": "6-old-unknown-kind",
+      "served": "uc-old",
+      "version": "0.11.1",
+      "browser": "153.0.8010.12",
+      "notice": null,
+      "storedSha256": {
+        "workspace": "e6b488701a21e55b6ef4a95040401c94867fbb930fa84af3f2202f723b8ae1ed",
+        "rejected": "be16c6b32e29c792c1b6c28c1a8a2e12bab76571782dc89e21a537597d1f87ce"
+      },
+      "cells": [],
+      "pageErrors": []
+    }
+  ],
+  "ok": true,
+  "injectedSha256": "be16c6b32e29c792c1b6c28c1a8a2e12bab76571782dc89e21a537597d1f87ce"
+}
