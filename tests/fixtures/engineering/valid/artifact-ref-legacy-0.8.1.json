@@ -1,0 +1,10 @@
+{
+  "format": "datapass.engineering",
+  "version": 1,
+  "kind": "artifact-ref",
+  "id": "wind-aep-weibull",
+  "sha256": "edb1de122518f010f48f68ff7ef0b84611bce25475156e5fa00b48b1205fbc62",
+  "mediaType": "application/json",
+  "bytes": 6202,
+  "scope": "public"
+}

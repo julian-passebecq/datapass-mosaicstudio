@@ -1,0 +1,10 @@
+{
+  "format": "datapass.engineering",
+  "version": 1,
+  "kind": "artifact-ref",
+  "id": "synthetic-aep-table",
+  "sha256": "d323ede27f5b2415aef49dc5530241715dc08adf77a8b715d4a3788a067a8104",
+  "mediaType": "application/json",
+  "bytes": -1,
+  "scope": "public"
+}

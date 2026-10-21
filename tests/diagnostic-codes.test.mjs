@@ -3,17 +3,17 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {ART,ARTIFACT_DIAGNOSTICS,DIAGNOSTICS,DIAGNOSTIC_PREFIXES,ENV_DIAGNOSTICS,CLI_DIAGNOSTICS,STO_DIAGNOSTICS,BUN_DIAGNOSTICS,diagnostic,diagnosticCodesContract} from '../src/framework/diagnostics/index.ts';
+import {ART,ARTIFACT_DIAGNOSTICS,DIAGNOSTICS,DIAGNOSTIC_PREFIXES,ENV_DIAGNOSTICS,CLI_DIAGNOSTICS,STO_DIAGNOSTICS,BUN_DIAGNOSTICS,ENG_DIAGNOSTICS,diagnostic,diagnosticCodesContract} from '../src/framework/diagnostics/index.ts';
 import {artifactDecision,checkArtifactEnvelope,validateArtifact,ArtifactValidationError} from '../src/framework/foundation/artifact.ts';
 
 const corpus='tests/fixtures/artifact-corpus/';
 const load=file=>JSON.parse(readFileSync(corpus+file,'utf8'));
 
 test('codes are unique, well formed and under their reserved prefix',()=>{
-  assert.deepEqual(Object.keys(DIAGNOSTIC_PREFIXES).sort(),['DP-ART','DP-BUN','DP-CLI','DP-ENV','DP-STO']);
+  assert.deepEqual(Object.keys(DIAGNOSTIC_PREFIXES).sort(),['DP-ART','DP-BUN','DP-CLI','DP-ENG','DP-ENV','DP-STO']);
   const codes=DIAGNOSTICS.map(row=>row.code);
   assert.equal(new Set(codes).size,codes.length);
-  for(const row of DIAGNOSTICS){assert.match(row.code,/^DP-(ART|ENV|CLI|STO|BUN)-\d{3}$/);assert.match(row.rule,/^[a-z][a-z0-9-]*$/);assert.ok(row.summary.length>10);assert.ok(row.languages.length>0);}
+  for(const row of DIAGNOSTICS){assert.match(row.code,/^DP-(ART|ENV|CLI|STO|BUN|ENG)-\d{3}$/);assert.match(row.rule,/^[a-z][a-z0-9-]*$/);assert.ok(row.summary.length>10);assert.ok(row.languages.length>0);}
   assert.equal(new Set(ARTIFACT_DIAGNOSTICS.map(row=>row.rule)).size,ARTIFACT_DIAGNOSTICS.length,'one rule, one code');
   assert.ok(Object.isFrozen(DIAGNOSTICS)&&Object.isFrozen(DIAGNOSTICS[0]));
 });
@@ -22,6 +22,7 @@ test('reserved areas start empty (F206-F207, F213 own them); DP-ENV is filled by
   for(const rows of [CLI_DIAGNOSTICS])assert.deepEqual(rows,[]);
   assert.deepEqual(BUN_DIAGNOSTICS.map(row=>row.code),Array.from({length:10},(_,i)=>'DP-BUN-'+String(i+1).padStart(3,'0')));
   assert.ok(ENV_DIAGNOSTICS.length>0&&ENV_DIAGNOSTICS.every(row=>row.code.startsWith('DP-ENV-')));
+  assert.deepEqual(ENG_DIAGNOSTICS.map(row=>row.code),Array.from({length:16},(_,i)=>'DP-ENG-'+String(i+1).padStart(3,'0')));
   assert.deepEqual(STO_DIAGNOSTICS.map(row=>[row.code,row.rule]),[['DP-STO-001','workspace-conflict'],['DP-STO-002','revision-sidecar-mismatch'],['DP-STO-003','theirs-invalid']]);
 
 });

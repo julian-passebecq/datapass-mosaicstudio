@@ -5,3 +5,5 @@ spec/**/*.json text eol=lf
 dist-standalone/*.html -text
 # datapass.preview/1 consumer fixtures are hashed byte for byte in their preview.json: never convert line endings.
 spec/preview/v1/fixtures/** -text
+# datapass.engineering/1 corpus: inputs, canonical bytes and the legacy 0.8.1 artifact are hashed byte for byte: never convert.
+tests/fixtures/engineering/** -text

@@ -1,0 +1,11 @@
+{
+  "format": "datapass.engineering",
+  "version": 1,
+  "kind": "artifact-ref",
+  "id": "private-result",
+  "sha256": "9b8e674d81f7325ffa4bc4759df212e9a7024ab96587c1da5c790feb48fd52cf",
+  "mediaType": "text/plain; charset=utf-8",
+  "bytes": 0,
+  "scope": "private",
+  "locator": "vault:runs/2026-10-22/private-result"
+}

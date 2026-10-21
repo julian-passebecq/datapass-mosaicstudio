@@ -7,7 +7,8 @@
     "DP-ENV": "doctor: author and consumer environment checks",
     "DP-CLI": "client profile and client checks",
     "DP-STO": "workspace, run and result storage",
-    "DP-BUN": "export bundles"
+    "DP-BUN": "export bundles",
+    "DP-ENG": "datapass.engineering/1 sidecar records and datapass-c14n/1"
   },
   "codes": [
     {
@@ -692,6 +693,166 @@
       "summary": "A file would contain the in-memory runtime token; the export is refused before any byte is written.",
       "languages": [
         "ts"
+      ]
+    },
+    {
+      "code": "DP-ENG-001",
+      "gate": "envelope",
+      "rule": "engineering-envelope",
+      "summary": "The record is not one bounded, inert JSON object (not JSON, not an object, over 1 MiB or 32 levels, non-finite number, lone surrogate).",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ENG-002",
+      "gate": "envelope",
+      "rule": "format",
+      "summary": "format is not datapass.engineering.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ENG-003",
+      "gate": "envelope",
+      "rule": "version",
+      "summary": "version is not 1.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ENG-004",
+      "gate": "envelope",
+      "rule": "kind",
+      "summary": "kind is not one of artifact-ref, run-receipt, selection-binding, approval-request, parameter-diff.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ENG-005",
+      "gate": "structure",
+      "rule": "unknown-key",
+      "summary": "An object in the record has a key its kind does not define.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ENG-006",
+      "gate": "structure",
+      "rule": "missing-key",
+      "summary": "An object in the record lacks a required key.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ENG-007",
+      "gate": "structure",
+      "rule": "field-invalid",
+      "summary": "A field has the wrong JSON type, pattern, range or list length.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ENG-008",
+      "gate": "structure",
+      "rule": "digest",
+      "summary": "A digest is not {alg: sha256, over: bytes | datapass-c14n/1, value: 64 lowercase hex} or an artifact sha256 is not 64 lowercase hex.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ENG-009",
+      "gate": "semantic",
+      "rule": "duplicate-id",
+      "summary": "An id, signal, check or parameter appears twice in the same list.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ENG-010",
+      "gate": "semantic",
+      "rule": "run-status",
+      "summary": "Run status, timestamps and cancelRequested contradict each other (order, missing start/finish, cancelled without a request).",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ENG-011",
+      "gate": "semantic",
+      "rule": "model-resolution",
+      "summary": "model.resolved is null without a reason, or a reason is given while the resolved model is known or absent.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ENG-012",
+      "gate": "semantic",
+      "rule": "disjoint-lists",
+      "summary": "A check is both performed and not performed, or a parameter is in more than one coverage list.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ENG-013",
+      "gate": "semantic",
+      "rule": "binding-status",
+      "summary": "A binding status contradicts its fields (unmapped with an entity or source, sourced without both, inferred without an entity).",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ENG-014",
+      "gate": "semantic",
+      "rule": "approval-state",
+      "summary": "An approval request carries approval state or presentationOnly is not true: Studio never issues or stores approvals.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ENG-015",
+      "gate": "semantic",
+      "rule": "diff-change",
+      "summary": "A parameter change is a no-op (from equals to, or both null) or changes the value type.",
+      "languages": [
+        "ts",
+        "py"
+      ]
+    },
+    {
+      "code": "DP-ENG-016",
+      "gate": "c14n",
+      "rule": "c14n-value",
+      "summary": "datapass-c14n/1 refused a value: NaN, Infinity, a lone surrogate, undefined, a function or a non-plain object.",
+      "languages": [
+        "ts",
+        "py"
       ]
     }
   ]

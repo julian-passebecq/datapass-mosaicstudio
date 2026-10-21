@@ -1,0 +1,56 @@
+{
+  "format": "datapass.engineering",
+  "version": 1,
+  "kind": "parameter-diff",
+  "baseRevision": {
+    "alg": "sha256",
+    "over": "datapass-c14n/1",
+    "value": "D451F356A53CC3452A7C30EF4C14CCB11B3BB9FE520EA706D74CFE5F6F8EDA1C"
+  },
+  "changes": [
+    {
+      "id": "blade.chord_root",
+      "unit": "m",
+      "from": 1.2,
+      "to": 1.35,
+      "consumedBy": [
+        "geometry",
+        "power-curve"
+      ]
+    },
+    {
+      "id": "foil.count",
+      "unit": "",
+      "from": 3,
+      "to": 4,
+      "consumedBy": [
+        "geometry"
+      ]
+    },
+    {
+      "id": "foil.profile",
+      "unit": "",
+      "from": "NACA 0012",
+      "to": "NACA 0015 – révisé 風",
+      "consumedBy": []
+    },
+    {
+      "id": "control.pitch_lock",
+      "unit": "",
+      "from": false,
+      "to": true,
+      "consumedBy": [
+        "kinematics"
+      ]
+    },
+    {
+      "id": "tower.offset",
+      "unit": "m",
+      "from": null,
+      "to": 0.5,
+      "consumedBy": [
+        "geometry"
+      ]
+    }
+  ]
+}
