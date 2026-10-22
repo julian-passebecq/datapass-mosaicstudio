@@ -1,0 +1,202 @@
+{
+  "format": "foil.handoff.execution-outcome/1",
+  "template": false,
+  "instruction": "Populate only from actual execution. This is not an implementation receipt.",
+  "lane": "01",
+  "execution": {
+    "repository": "julian-passebecq/datapass-mosaicstudio",
+    "branch": "main (squash merges #96-#100); build from detached release commit",
+    "source_commit": "7adbbb7973756373090ce4872c54bf5f3ea2dacc",
+    "source_tree": "4323aa2c982794df1f9dff04ad3037ad7e9b462c",
+    "baseline_commit": "6ab07569c7c3053bac83e2bb172558d50bec1a1d",
+    "worktree_clean": true,
+    "worktree_clean_evidence": "git status --porcelain empty before and after every build step; sdk-release.json, runtime-companion.json, release-manifest.json record sourceTreeClean true",
+    "started_at": null,
+    "started_at_reason": "Lane start time not recorded; first CI evidence is PR #96 run 39695255859 started 2026-10-21T23:43:36Z.",
+    "finished_at": "2026-10-22T02:50:22Z",
+    "finished_at_note": "End of private upload; the receipt PR followed.",
+    "operating_system": "Windows 11 Pro 10.0.26300 (local qualification); ubuntu GitHub Actions runner (CI)",
+    "runtime_versions": {
+      "node": "v26.9.0",
+      "python": "3.14.7 (fresh venv, pinned py/service/requirements*.txt + duckdb==1.4.3)",
+      "browser": "Chromium 153.0.8010.12 (Playwright, headless)",
+      "service": "datapass-artifact-service 0.5.0",
+      "marimo": "not installed in the release venv (NOT_QUALIFIED); 0.25.2 in a temporary local venv for #98"
+    },
+    "model_provider": null,
+    "model_id": null,
+    "model_version": null,
+    "model_variant": null,
+    "model_metadata_limitations": [
+      "Lane 01 runs no AI/LLM model: the model_* fields concern live inference, which is not part of Studio. The coding agent that wrote the code is not a model under test."
+    ],
+    "kernel_version": null,
+    "kernel_version_reason": "No CAD kernel in Studio. Jupyter Server is used only by the JOURNEY-01 notebook cells; its version is not recorded in the 0.13.0 evidence.",
+    "cloud_scope_verified": false
+  },
+  "statuses": {
+    "workStatus": "DONE_LANE_01_PRIVATE_CANDIDATE",
+    "captureStatus": "RECEIPT_COMMITTED (qa/REL-0.13.0.md, this file, IMPLEMENTATION_MANIFEST.json)",
+    "archiveStatus": "NOT_PERFORMED",
+    "propagationStatus": "NOT_PERFORMED",
+    "backupStatus": "NOT_VERIFIED",
+    "backupStatus_note": "The private vault holds a delivered copy (re-download verified) but no backup policy was verified.",
+    "implementation": "PASS",
+    "local_qualification": "PASS",
+    "live_inference": "NOT_APPLICABLE_WITH_REASON: Studio runs no model inference",
+    "agent_framework_integration": "NOT_APPLICABLE_WITH_REASON: lane 03 scope",
+    "cad_qualification": "NOT_APPLICABLE_WITH_REASON: lane 02 scope; Studio has no CAD kernel",
+    "ci_qualification": "PASS",
+    "scientific_acceptance": "NOT_GRANTED",
+    "scientific_acceptance_note": "NOT_APPLICABLE_WITH_REASON: Studio performs no science; models ILLUSTRATIVE, fixtures synthetic.",
+    "azure_preparation": "NOT_STARTED",
+    "azure_deployment": "NOT_RUN",
+    "publication": "PRIVATE_VAULT_ONLY_NOT_PUBLIC"
+  },
+  "gate_results": [
+    {
+      "id": "S01",
+      "status": "PASS",
+      "source_commit": "d20ecd6a3b9e3a74ab497b3c425d1ce2ec649eb5",
+      "command_or_journey": "Baseline 6ab0756 inspected per gate (lane plan); contract freeze #96; npm run test:engineering-corpus; npm run contracts:check",
+      "exit_code": 0,
+      "evidence_path": "https://github.com/julian-passebecq/datapass-mosaicstudio/pull/96",
+      "evidence_sha256": null,
+      "evidence_sha256_reason": "Evidence is a PR and CI run, not a file.",
+      "limitations": ["Schema spec/engineering/v1/engineering.schema.json sha256 6ba8ee851986425c79ce2554d2f990cd0977f825986f6608292b6af81b4f5a83, unchanged through 7adbbb7."]
+    },
+    {
+      "id": "S02",
+      "status": "PASS",
+      "source_commit": "7adbbb7973756373090ce4872c54bf5f3ea2dacc",
+      "command_or_journey": "node scripts/runtime-verify.mjs on the shipped companion (safe + demo start); start --profile safe, probe /health /ready /compute /docs /openapi.json, stop",
+      "exit_code": 0,
+      "evidence_path": "<releases>/datapass-mosaicstudio/evidence-0.13.0-7adbbb7/q1-runtime/runtime-verify-shipped.log",
+      "evidence_sha256": "c464bb85f84ac541e327052bbb430d77698c3974fa9b7198bcab834def58cd61",
+      "limitations": ["44 PASS, 0 FAIL. Start/ready/stop record: q1-runtime/start-ready-stop.json sha256 5992cdea5fee8806d54418138c31edeefdc63430e1dae3310e0a4ce20072ccd5. Implementation #97."]
+    },
+    {
+      "id": "S03",
+      "status": "PASS",
+      "source_commit": "7cb3e4da105adfd5f5e88cbc7571ae0a3e6ec17a",
+      "command_or_journey": "DATAPASS_REQUIRE_RUNTIME=1 node --experimental-strip-types --test tests/runtime-lifecycle.test.mjs (CI step); npm run test:product-loop",
+      "exit_code": 0,
+      "evidence_path": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/39707125006",
+      "evidence_sha256": null,
+      "evidence_sha256_reason": "Evidence is a CI run.",
+      "limitations": ["Cancel is cooperative only.", "Late/out-of-order/dropped answers covered by a labelled fault-injection stub; the genuine half runs the unchanged service create_app with slow and failing fixture models."]
+    },
+    {
+      "id": "S04",
+      "status": "PASS",
+      "source_commit": "1d6402494656546b0a32c9430aab327a5498d0ea",
+      "command_or_journey": "npx playwright test tests/browser/engineering-selection.spec.ts tests/browser/model-assets.spec.ts (20/20 local; full browser suite in CI)",
+      "exit_code": 0,
+      "evidence_path": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/39704726911",
+      "evidence_sha256": null,
+      "evidence_sha256_reason": "Evidence is a CI run.",
+      "limitations": ["3D round trip qualified through the part label buttons, not canvas picking."]
+    },
+    {
+      "id": "S05",
+      "status": "PASS",
+      "source_commit": "7adbbb7973756373090ce4872c54bf5f3ea2dacc",
+      "command_or_journey": "npm run test:product-loop (ports rewritten in a copy); JOURNEY-01 reopen on the unzipped workbench zip",
+      "exit_code": 0,
+      "evidence_path": "<releases>/datapass-mosaicstudio/evidence-0.13.0-7adbbb7/release-commit-tests/product-loop-receipts.json",
+      "evidence_sha256": "876d557750dff028e858f970699756dfa3eb582a69ecfea949feb7a70cb839e9",
+      "limitations": ["Journey log q2-journey/journey01-log.json sha256 6b7f36bd663e2540fdf56f8fefbf272b4617cf2322f7613b5a8294cc6d0cf85e: reopen 0 POST /runs, 0 Jupyter calls.", "No LLM or build request exists in the reopen path."]
+    },
+    {
+      "id": "S06",
+      "status": "PASS",
+      "source_commit": "7adbbb7973756373090ce4872c54bf5f3ea2dacc",
+      "command_or_journey": "tampered bundle spec on the shipped workbench; release-rollback-check.mjs tampered SQL hash; unknown-cell-kind variant",
+      "exit_code": 0,
+      "evidence_path": "<releases>/datapass-mosaicstudio/evidence-0.13.0-7adbbb7/q2-journey/q2b-bundle.json",
+      "evidence_sha256": "b4688c893448e47dce8b17b0d44284dab3bdde0bcff7e156c8279573df0270ab",
+      "limitations": ["Unknown kind: q4-upgrade-rollback/upgrade-unknown/upgrade-rollback.json sha256 208da7ecbc7a99ccdaf97b530d7d039230190669276e6dde73dc6ca446c344b9.", "Unit mismatch and invalid engineering imports covered by unit/browser tests in #98/#99 CI."]
+    },
+    {
+      "id": "S07",
+      "status": "PASS",
+      "source_commit": "7adbbb7973756373090ce4872c54bf5f3ea2dacc",
+      "command_or_journey": "npm run test:python (includes py/test_marimo_producer.py)",
+      "exit_code": 0,
+      "evidence_path": "<releases>/datapass-mosaicstudio/evidence-0.13.0-7adbbb7/release-commit-tests/test-python.log",
+      "evidence_sha256": "f22388b519ed0526bce332a3518aee50f9710ed326212562fd77af02cd13afe8",
+      "limitations": ["54 OK, 1 skipped: marimo execution NOT_QUALIFIED (marimo not installed) in CI and in the release venv; qualified once locally with marimo 0.25.2 (#98)."]
+    },
+    {
+      "id": "S08",
+      "status": "PASS",
+      "source_commit": "7adbbb7973756373090ce4872c54bf5f3ea2dacc",
+      "command_or_journey": "SDK tarball npm-installed in a fresh consumer; corpus and c14n vectors in TS and companion Python; legacy 0.8.1 artifact validation",
+      "exit_code": 0,
+      "evidence_path": "<releases>/datapass-mosaicstudio/evidence-0.13.0-7adbbb7/q3-sdk-consumer/consumer-check.json",
+      "evidence_sha256": "563f869cf7e03ea0c110c165536fd686b9837be26b412f3753fc07a840639508",
+      "limitations": ["59/59 records, 17/17 c14n vectors, Python 59/59; 0.8.1 artifact byte-exact (edb1de12...)."]
+    },
+    {
+      "id": "S09",
+      "status": "PASS",
+      "source_commit": "7adbbb7973756373090ce4872c54bf5f3ea2dacc",
+      "command_or_journey": "clean build; sdk:pack/sdk:verify; runtime-pack/runtime-verify; confidentiality scan; private upload; authenticated re-download sha256sum -c and sdk:verify",
+      "exit_code": 0,
+      "evidence_path": "<releases>/datapass-mosaicstudio/evidence-0.13.0-7adbbb7/qualification.json",
+      "evidence_sha256": "5b1c68f6ce510b23339aa55be42e32267463992aba5a2e781a9d81a11af3145a",
+      "limitations": ["Publish receipt (contains private vault identifiers, kept local): publish/receipt.json sha256 ea63ed4319a88fc58100d33a34f09bc85daa213c20c793da0b777cde94446ecc.", "Scan 532 files, 0 real hits."]
+    },
+    {
+      "id": "S10",
+      "status": "PASS",
+      "source_commit": "b59e57d52b9d43d2546851b72e0b8927d72ba0db",
+      "command_or_journey": "GitHub Actions 'Studio web gate' check web on each PR head",
+      "exit_code": 0,
+      "evidence_path": "https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/39709507701",
+      "evidence_sha256": null,
+      "evidence_sha256_reason": "Evidence is a CI run.",
+      "limitations": [
+        "#96 acd0e58a574c0028da376e6429373aba39cf68ca run 39695255859 success",
+        "#97 c3001f2bab2f225592dfa440daec7637afdc986a run 39701193940 success",
+        "#98 c21e6b58bf4893b5991c9db614a9b67f8a391a02 run 39704726911 success",
+        "#99 fd440a068394c060817c2d7ae8847f3771488655 run 39707125006 success (duplicate runs 39707123141 and 39707119219 cancelled by the concurrency group)",
+        "#100 b59e57d52b9d43d2546851b72e0b8927d72ba0db run 39709507701 success; main push 7adbbb7 run 39711109567 success",
+        "CI does not install marimo."
+      ]
+    }
+  ],
+  "gate_result_shape": {
+    "id": null,
+    "status": "NOT_RUN",
+    "source_commit": null,
+    "command_or_journey": null,
+    "exit_code": null,
+    "evidence_path": null,
+    "evidence_sha256": null,
+    "limitations": []
+  },
+  "packages": [
+    {"name": "datapass-mosaicstudio-sdk-0.13.0.tar.gz", "path": "<releases>/datapass-mosaicstudio/0.13.0-7adbbb7/datapass-mosaicstudio-sdk-0.13.0.tar.gz", "bytes": 837859, "sha256": "db0d32b04fc073c5fcff53e3d22c21f15c42f0096afff59afaa2109ce1d0fe6b", "archive_files": 396},
+    {"name": "datapass-mosaicstudio-workbench-0.13.0.zip", "path": "<releases>/datapass-mosaicstudio/0.13.0-7adbbb7/datapass-mosaicstudio-workbench-0.13.0.zip", "bytes": 20655553, "sha256": "d4df7b096d64241d449a8091c2ba162f72dea2774175bafe0c98319b623a2c1b", "deterministic_rebuild_identical": true},
+    {"name": "datapass-runtime-companion-0.13.0.tar.gz", "path": "<releases>/datapass-mosaicstudio/0.13.0-7adbbb7/datapass-runtime-companion-0.13.0.tar.gz", "bytes": 53577, "sha256": "51e4399cc0baedc5082c5276d01ecff9cab02c150a5da89b502597d158ced88d", "archive_files": 12},
+    {"name": "concept-viewer.html", "bytes": 974386, "sha256": "382381cd7728b1af8c62bc25e094aa904d16a45a0d54eea156f3e0f7c80658b5"},
+    {"name": "SHA256SUMS", "bytes": 668, "sha256": "16bfbdbe671eb76db13852d7c0a4b5563c222e067bc7901cc316220b4366f8fd", "check": "7/7 OK"},
+    {"private_delivery": "existing private vault, generic package datapass-mosaicstudio-sdk, version path 0.13.0-7adbbb7, 8 files, registry sha256 8/8 match, re-download 7/7 OK, anonymous 401"}
+  ],
+  "changed_files": [
+    {"range": "6ab0756..7adbbb7", "files": 148, "insertions": 8468, "deletions": 202, "command": "git diff --stat 6ab0756 7adbbb7", "prs": [96, 97, 98, 99, 100]}
+  ],
+  "blockers": [],
+  "next_action": "Lane 02 (foil-studio-3d) vendors datapass.engineering/1 at d20ecd6 and consumes the private 0.13.0-7adbbb7 package (UPGRADE_NOTES_FOIL_STUDIO.md). Optional lane-01 fixes: companion in release-manifest, viewer header from the merged commit. Owner: licence decision before any public publication.",
+  "operator_start_command": "python py/service/app.py --profile safe --port <port>  (from the extracted runtime companion, its .venv Python; see docs/RUNTIME_COMPANION.md)",
+  "operator_stop_command": null,
+  "operator_stop_command_reason": "No stop command exists; the service is stopped by ending its process (Ctrl+C, or taskkill on its PID as in Q1).",
+  "remote_operations_performed": [
+    "GitHub: PRs #96-#100 squash-merged on green CI, branches deleted",
+    "Private vault: upload of new immutable version path 0.13.0-7adbbb7 (8 files), authenticated re-download"
+  ],
+  "pending_authorization_requests": [
+    "Licence decision and any public publication (owner gate, not requested)"
+  ]
+}
