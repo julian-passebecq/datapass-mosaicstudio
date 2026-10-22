@@ -12,7 +12,9 @@ const LOOPBACK=new Set(['127.0.0.1','localhost']); // [::1] is not reachable thr
 export type RunStatus='queued'|'running'|'succeeded'|'failed'|'cancelled';
 export type RuntimeInput={id:string;label:string;unit?:string|null;type:'number';min:number;max:number;default:number;step?:number|null};
 export type RuntimeModel={id:string;version:string;title:string;description:string;illustrative:boolean;artifactId:string;inputs:RuntimeInput[]};
-export type RunRecord={runId:string;model:string;modelVersion:string;status:RunStatus;inputs:Record<string,number|string|boolean>;inputHash:string;submittedAt:string;startedAt:string|null;finishedAt:string|null;error:string|null;artifactId:string|null;artifactSha256:string|null};
+/** `cancelRequested` is the additive datapass.runtime/1 field (spec/engineering/v1/README.md): true once a cancel was
+ * accepted, while `status` stays `running` until the worker confirms. A runtime that predates it reads as false. */
+export type RunRecord={runId:string;model:string;modelVersion:string;status:RunStatus;inputs:Record<string,number|string|boolean>;inputHash:string;submittedAt:string;startedAt:string|null;finishedAt:string|null;error:string|null;artifactId:string|null;artifactSha256:string|null;cancelRequested:boolean};
 export type RuntimeConnection={origin:string;token:string};
 type FetchLike=(url:string,init:{method:'GET'|'POST';headers:Record<string,string>;body?:string;signal?:AbortSignal;credentials:'omit';cache:'no-store';mode:'cors'})=>Promise<{ok:boolean;status:number;headers:{get(name:string):string|null};text():Promise<string>}>;
 
@@ -59,7 +61,8 @@ export function validateRunRecord(v:unknown):RunRecord{
   const inputs:Record<string,number|string|boolean>={};
   for(const [k,value] of Object.entries(v.inputs)){if(!(typeof value==='boolean'||typeof value==='string'&&value.length<=400||typeof value==='number'&&Number.isFinite(value)))throw new RuntimeError('The runtime returned a malformed input value.','malformed');inputs[k]=value;}
   const model=str(v.model,'model',80)!;identifier(model,'runtime model');
-  return {runId,model,modelVersion:str(v.modelVersion,'model version',80)!,status:status as RunStatus,inputs,inputHash,submittedAt:str(v.submittedAt,'time',40)!,startedAt:str(v.startedAt,'time',40,true),finishedAt:str(v.finishedAt,'time',40,true),error:str(v.error,'error',500,true),artifactId:str(v.artifactId,'artifact id',80,true),artifactSha256:sha};
+  if(v.cancelRequested!==undefined&&typeof v.cancelRequested!=='boolean')throw new RuntimeError('The runtime returned a malformed cancelRequested flag.','malformed');
+  return {runId,model,modelVersion:str(v.modelVersion,'model version',80)!,status:status as RunStatus,inputs,inputHash,submittedAt:str(v.submittedAt,'time',40)!,startedAt:str(v.startedAt,'time',40,true),finishedAt:str(v.finishedAt,'time',40,true),error:str(v.error,'error',500,true),artifactId:str(v.artifactId,'artifact id',80,true),artifactSha256:sha,cancelRequested:v.cancelRequested===true};
 }
 function validateModels(v:unknown):RuntimeModel[]{
   if(!isObject(v)||!Array.isArray(v.models)||v.models.length>32)throw new RuntimeError('The runtime returned a malformed model list.','malformed');
@@ -95,14 +98,36 @@ async function sha256Hex(text:string):Promise<string>{
   return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 
+/** Submit attempts per user submit: the first one plus at most one more, only when the runtime was unavailable
+ * (network error, timeout, 5xx). Every attempt carries the same Idempotency-Key, so the runtime answers a repeated
+ * submission with the first record instead of starting a second run. */
+export const SUBMIT_ATTEMPTS=2;
+/** Consecutive transient (unavailable) status polls tolerated before the run is reported as not observed. */
+export const POLL_TRANSIENT_FAILURES=3;
+const IDEMPOTENCY_KEY=/^[A-Za-z0-9._:-]{8,128}$/;
+/** One key per user submit (a UUID); reused only for the bounded resubmission of that same submit. */
+export function newIdempotencyKey():string{
+  const c=(globalThis as {crypto?:{randomUUID?:()=>string}}).crypto;
+  if(!c?.randomUUID)throw new Error('crypto.randomUUID is unavailable; the run cannot be submitted idempotently.');
+  return c.randomUUID();
+}
+export type SubmitOptions={idempotencyKey?:string};
+const pause=(ms:number,signal?:AbortSignal)=>new Promise<void>((resolve,reject)=>{
+  if(signal?.aborted){reject(new RuntimeError('The request was aborted.','aborted'));return;}
+  const stop=()=>{clearTimeout(t);reject(new RuntimeError('The request was aborted.','aborted'));};
+  const t=setTimeout(()=>{signal?.removeEventListener('abort',stop);resolve();},ms);
+  signal?.addEventListener('abort',stop,{once:true});
+});
+
 export class RuntimeClient{
-  readonly origin:string;readonly #token:string;readonly #fetch:FetchLike;readonly #timeoutMs:number;
-  constructor(connection:RuntimeConnection,options:{fetch?:FetchLike;timeoutMs?:number}={}){
+  readonly origin:string;readonly #token:string;readonly #fetch:FetchLike;readonly #timeoutMs:number;readonly #resubmitDelayMs:number;
+  constructor(connection:RuntimeConnection,options:{fetch?:FetchLike;timeoutMs?:number;resubmitDelayMs?:number}={}){
     this.origin=runtimeOrigin(connection.origin);
     if(!validToken(connection.token))throw new Error('The runtime token is malformed.');
     this.#token=connection.token;this.#fetch=options.fetch??(globalThis.fetch.bind(globalThis) as unknown as FetchLike);this.#timeoutMs=options.timeoutMs??15000;
+    this.#resubmitDelayMs=options.resubmitDelayMs??250;
   }
-  async #request(path:string,options:{method?:'GET'|'POST';body?:unknown;signal?:AbortSignal}={}):Promise<{json:unknown;text:string}>{
+  async #request(path:string,options:{method?:'GET'|'POST';body?:unknown;signal?:AbortSignal;headers?:Record<string,string>}={}):Promise<{json:unknown;text:string}>{
     if(options.signal?.aborted)throw new RuntimeError('The request was aborted.','aborted');
     let body:string|undefined;
     if(options.body!==undefined){body=JSON.stringify(options.body);if(new TextEncoder().encode(body).byteLength>RUNTIME_REQUEST_BYTES)throw new RuntimeError(`The request is above ${RUNTIME_REQUEST_BYTES} bytes.`,'rejected');}
@@ -110,7 +135,7 @@ export class RuntimeClient{
     const relay=()=>controller.abort(options.signal?.reason);options.signal?.addEventListener('abort',relay,{once:true});
     let response;
     try{
-      response=await this.#fetch(this.origin+path,{method:options.method??'GET',headers:{'X-Datapass-Token':this.#token,...(body===undefined?{}:{'Content-Type':'application/json'})},...(body===undefined?{}:{body}),signal:controller.signal,credentials:'omit',cache:'no-store',mode:'cors'});
+      response=await this.#fetch(this.origin+path,{method:options.method??'GET',headers:{'X-Datapass-Token':this.#token,...(body===undefined?{}:{'Content-Type':'application/json'}),...options.headers},...(body===undefined?{}:{body}),signal:controller.signal,credentials:'omit',cache:'no-store',mode:'cors'});
     }catch(error){
       if(options.signal?.aborted)throw new RuntimeError('The request was aborted.','aborted');
       if(controller.signal.aborted)throw new RuntimeError(`The local runtime at ${this.origin} did not answer within ${Math.round(this.#timeoutMs/1000)} s.`,'unavailable');
@@ -135,9 +160,19 @@ export class RuntimeClient{
     return {models:json.models.filter((m):m is string=>typeof m==='string').slice(0,32),version:String(json.version??'').slice(0,80)};
   }
   async models(signal?:AbortSignal):Promise<RuntimeModel[]>{return validateModels((await this.#request('/api/runtime/v1/models',{signal})).json);}
-  async submit(model:string,inputs:Record<string,number>,signal?:AbortSignal):Promise<RunRecord>{
+  /** Submit one run. The Idempotency-Key (given, else a new UUID) goes with every attempt; an unavailable runtime gets
+   * at most SUBMIT_ATTEMPTS attempts. A 409 (the key was used with another payload) is surfaced as a 'conflict' error. */
+  async submit(model:string,inputs:Record<string,number>,signal?:AbortSignal,options:SubmitOptions={}):Promise<RunRecord>{
     identifier(model,'runtime model');
-    return validateRunRecord((await this.#request('/api/runtime/v1/runs',{method:'POST',body:{model,inputs},signal})).json);
+    const key=options.idempotencyKey??newIdempotencyKey();
+    if(!IDEMPOTENCY_KEY.test(key))throw new Error('The idempotency key is malformed.');
+    for(let attempt=1;;attempt++){
+      try{return validateRunRecord((await this.#request('/api/runtime/v1/runs',{method:'POST',body:{model,inputs},signal,headers:{'Idempotency-Key':key}})).json);}
+      catch(error){
+        if(!(error instanceof RuntimeError)||error.kind!=='unavailable'||attempt>=SUBMIT_ATTEMPTS||signal?.aborted)throw error;
+        await pause(this.#resubmitDelayMs,signal);
+      }
+    }
   }
   async status(runId:string,signal?:AbortSignal):Promise<RunRecord>{
     if(!RUN_ID.test(runId))throw new Error('Invalid run id.');
@@ -164,13 +199,25 @@ export class RuntimeClient{
   }
 }
 
-/** Poll one run to a terminal state. Abort stops polling only; cancelling the run is a separate explicit request. */
+/** Poll one run to a terminal state. Abort stops polling only; cancelling the run is a separate explicit request.
+ * Up to POLL_TRANSIENT_FAILURES consecutive unavailable polls are tolerated; the next one, or any other error (a refused
+ * token or an unknown run after a runtime restart), ends the wait and the caller reports the run as not observed. */
 export async function waitForRun(client:RuntimeClient,run:RunRecord,options:{signal?:AbortSignal;onUpdate?:(r:RunRecord)=>void;intervalMs?:number;maxPolls?:number}={}):Promise<RunRecord>{
-  let current=run,polls=0;const interval=options.intervalMs??250,max=options.maxPolls??2400;
+  let current=run,polls=0,transient=0;const interval=options.intervalMs??250,max=options.maxPolls??2400;
   while(current.status==='queued'||current.status==='running'){
     if(++polls>max)throw new RuntimeError('The run did not finish within the polling budget; it may still be running on the runtime.','unavailable');
     await new Promise<void>((resolve,reject)=>{const t=setTimeout(resolve,interval);options.signal?.addEventListener('abort',()=>{clearTimeout(t);reject(new RuntimeError('Stopped following the run.','aborted'));},{once:true});});
-    current=await client.status(current.runId,options.signal);options.onUpdate?.(current);
+    let next:RunRecord;
+    try{next=await client.status(current.runId,options.signal);}
+    catch(error){
+      const unavailable=error instanceof RuntimeError&&error.kind==='unavailable';
+      if(unavailable&&++transient<=POLL_TRANSIENT_FAILURES&&!options.signal?.aborted)continue;
+      if(unavailable)throw new RuntimeError(`Lost contact with the runtime after ${POLL_TRANSIENT_FAILURES+1} failed status requests. ${(error as Error).message}`,'unavailable',(error as RuntimeError).status);
+      throw error;
+    }
+    transient=0;
+    if(next.runId!==current.runId)throw new RuntimeError(`The runtime answered for ${next.runId}, not ${current.runId}.`,'malformed');
+    current=next;options.onUpdate?.(current);
   }
   return current;
 }

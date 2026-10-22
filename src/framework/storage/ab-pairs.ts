@@ -124,11 +124,27 @@ export function deltaArtifact(a:ReopenedSiteRun,b:ReopenedSiteRun,rows:RowDeltas
     provenance:{kind:synthetic?'synthetic':'computed',source:`${synthetic?'SYNTHETIC. ':''}Difference of saved results A ${short(a.resultSha256)} and B ${short(b.resultSha256)}, computed in this page from the stored rows; not a model run.`},
     payload:{kind:'table',rowKey:key.id,columns,rows:data},representations});
 }
+/** S06: the reason two results are not compared because a quantity they share is recorded in different units (a
+ * column of both tables, or a metric representation with the same id), or null. Values are never converted. */
+export function unitMismatch(a:Artifact,b:Artifact):string|null{
+  const say=(what:string,ua:string|undefined,ub:string|undefined)=>`Units differ for ${what}: A is in ${ua||'no unit'}, B is in ${ub||'no unit'}. Values in different units are not compared or converted.`;
+  if(a.payload.kind==='table'&&b.payload.kind==='table'){
+    const right=new Map(b.payload.columns.map(c=>[c.id,c]));
+    for(const c of a.payload.columns){const o=right.get(c.id);if(o&&(c.unit??'')!==(o.unit??''))return say(`${c.label} (${c.id})`,c.unit,o.unit);}
+  }
+  for(const rep of a.representations){
+    const other=b.representations.find(r=>r.id===rep.id);
+    if(rep.kind==='metric'&&other?.kind==='metric'&&rep.column===other.column&&(rep.unit??'')!==(other.unit??''))return say(`the metric ${rep.title} (${rep.id})`,rep.unit,other.unit);
+  }
+  return null;
+}
 /** Compare two reopened saved runs under the compareRuns contract. Throws AbPairError('incompatible') with the reason. */
 export function compareSavedRuns(a:ReopenedSiteRun,b:ReopenedSiteRun):SavedComparison{
   const ok=abCompatibility(a.entry,b.entry);
   if(!ok.ok)throw new AbPairError(ok.reason,'incompatible');
   if(a.run.model!==b.run.model||a.run.modelVersion!==b.run.modelVersion)throw new AbPairError(`Model versions differ in the stored results: A ${a.run.model} ${a.run.modelVersion}, B ${b.run.model} ${b.run.modelVersion}.`,'incompatible');
+  const units=unitMismatch(a.artifact,b.artifact);
+  if(units)throw new AbPairError(units,'incompatible');
   const rows=artifactRowDeltas(a.artifact,b.artifact);
   return {parameters:parameterDeltas(a.entry.run!.site.values,b.entry.run!.site.values),metrics:artifactMetricDeltas(a.artifact,b.artifact),rows,deltaArtifact:deltaArtifact(a,b,rows)};
 }

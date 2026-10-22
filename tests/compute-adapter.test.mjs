@@ -115,6 +115,22 @@ test('runtime run: submit polls the runtime state only, verifies the artifact, l
   assert.equal(calls.filter(c=>c==='POST /api/runtime/v1/runs').length,1,'no retry, no second submission');
 });
 
+test('runtime run: every submit carries its own Idempotency-Key; cancelRequested is read additively',async()=>{
+  const keys=[];let cancelRequested;
+  const base={runId:'run-00000000000000dd',model:'wind-reference',modelVersion:'v1',inputs:{k:2},inputHash:'d'.repeat(64),submittedAt:'2026-10-22T00:00:00.000Z',startedAt:null,finishedAt:'2026-10-22T00:00:00.002Z',error:'stopped',artifactId:null,artifactSha256:null};
+  const fetch=async(url,init)=>{if(init.method==='POST'){keys.push(init.headers['Idempotency-Key']);return reply(202,{...base,status:'cancelled',...(cancelRequested===undefined?{}:{cancelRequested})});}return reply(404,{detail:'Not Found'});};
+  const client=new RuntimeClient({origin:'http://127.0.0.1:24330',token:TOKEN},{fetch});
+  const adapter=createRuntimeRunAdapter(client,MODEL,{intervalMs:1});
+  assert.equal((await adapter.submit({k:2})).state,'cancelled');
+  cancelRequested=true;
+  assert.equal((await adapter.submit({k:2})).state,'cancelled');
+  assert.equal(keys.length,2);assert.ok(keys.every(k=>/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(k)));
+  assert.notEqual(keys[0],keys[1],'a new user submit gets a new key');
+  assert.equal((await client.cancel('run-00000000000000dd')).cancelRequested,true);
+  cancelRequested=undefined;assert.equal((await client.cancel('run-00000000000000dd')).cancelRequested,false,'an older runtime without the field');
+  cancelRequested='yes';await assert.rejects(client.cancel('run-00000000000000dd'),/malformed cancelRequested/);
+});
+
 test('runtime run: stopping the poll is reported as not observed, never as cancelled',async()=>{
   const fetch=async(url,init)=>new URL(url).pathname.endsWith('/runs')&&init.method==='POST'
     ?reply(202,{runId:'run-00000000000000cc',model:'wind-reference',modelVersion:'v1',status:'running',inputs:{k:2},inputHash:'d'.repeat(64),submittedAt:'t',startedAt:'t',finishedAt:null,error:null,artifactId:null,artifactSha256:null})

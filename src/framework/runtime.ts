@@ -7,7 +7,7 @@ import type {AppDefinition, Manifest, Values, Rows, Scalar, ValueRef, Snapshot, 
 import {validateDefinition, validateRows, validateValue, object, parseSavedState} from './validate.ts';
 function freeze<T>(value: T): T {if (value && typeof value==='object' && !Object.isFrozen(value)) {Object.freeze(value); Object.values(value).forEach(freeze);} return value;}
 /** A fresh object over a client's runtime task handle: freezing the definition never freezes the client's own object. */
-const wrapTask=(t:RuntimeTask):RuntimeTask=>({taskId:t.taskId,model:t.model,capabilities:t.capabilities,handler:t.handler,latest:()=>t.latest(),subscribe:(fn:()=>void)=>t.subscribe(fn)});
+const wrapTask=(t:RuntimeTask):RuntimeTask=>({taskId:t.taskId,model:t.model,capabilities:t.capabilities,handler:t.handler,latest:()=>t.latest(),active:()=>t.active?.()??null,subscribe:(fn:()=>void)=>t.subscribe(fn)});
 const errorText=(e:unknown)=>e instanceof Error?e.message:String(e);
 type Cache={key:string; rows:Rows; version:number};
 /** Small website state/data adapter, NOT a SQL engine or replacement Mosaic coordinator. */
