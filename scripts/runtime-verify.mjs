@@ -81,12 +81,17 @@ export async function verifyRuntimeCompanion(dir){
 /** Extract a verified archive into `target` (files only; paths were checked by archiveFiles). Returns the companion root. */
 export async function extractCompanion(gz,target){
   const {root}=archiveFiles(gz);
-  for(const e of readTarGz(gz)){
-    if(e.type!=='file')continue;
-    const rel=e.path.slice(root.length+1),file=path.join(target,root,...rel.split('/'));
-    await mkdir(path.dirname(file),{recursive:true});await writeFile(file,e.data);
+  const destination=path.resolve(target);
+  // Preflight every destination before the first write, even if a future parser changes path handling.
+  const files=readTarGz(gz).filter(e=>e.type==='file').map(e=>{
+    const file=path.resolve(destination,...e.path.split('/')),rel=path.relative(destination,file);
+    if(!rel||rel==='..'||rel.startsWith('..'+path.sep)||path.isAbsolute(rel))throw new Error('Unsafe archive path: '+e.path);
+    return {file,data:e.data};
+  });
+  for(const {file,data} of files){
+    await mkdir(path.dirname(file),{recursive:true});await writeFile(file,data);
   }
-  return path.join(target,root);
+  return path.join(destination,root);
 }
 
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
