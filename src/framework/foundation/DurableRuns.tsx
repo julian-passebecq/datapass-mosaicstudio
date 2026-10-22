@@ -4,7 +4,8 @@ import {ArtifactView} from './ArtifactView';
 import {capabilityReason} from '../compute/adapter';
 import {SITE_TASK_CAPABILITIES} from '../compute/site-task';
 import type {RuntimeConnection} from '../compute/runtime-client';
-import type {RuntimeTask,RuntimeTaskRun} from '../compute/runtime-task';
+import type {RuntimeTask,RuntimeTaskActivity,RuntimeTaskRun} from '../compute/runtime-task';
+import {runtimeDisplayLabel} from '../compute/run-state';
 import {SiteRunError,SiteRunStore,relinkCandidates,type ReopenedSiteRun,type SavedSiteRun} from '../storage/site-runs';
 import type {Scalar} from '../types';
 
@@ -12,7 +13,11 @@ import type {Scalar} from '../types';
  * Save is explicit and per run; reopen reads the immutable result back by hash and never recomputes. A missing or
  * corrupt result offers Relink (another saved result of the task, chosen by the user) or Run again; no fallback. */
 const NOT_RECOMPUTED='Not recomputed: reopened from the result store by hash';
-const noLatest={subscribe:()=>()=>{},latest:()=>null} as const;
+/** S03: after a failed or cancelled run the last valid result stays visible under this label; the failed run itself
+ * keeps its own outcome and is never relabelled. */
+export const PREVIOUS_RESULT='Previous result — not this run\'s output';
+const noLatest={subscribe:()=>()=>{},latest:()=>null,active:()=>null} as const;
+const noActivity=()=>null;
 const short=(sha:string)=>sha.slice(0,12);
 const valuesText=(values:Readonly<Record<string,Scalar>>)=>Object.entries(values).map(([k,v])=>`${k}=${String(v)}`).join(', ')||'no inputs';
 const message=(error:unknown)=>error instanceof Error?error.message:String(error);
@@ -48,8 +53,12 @@ export function DurableRuns({resource,taskId}:{resource:string;taskId:string}){
   const handle:RuntimeTask|undefined=binding.tasks.find(t=>t.taskId===taskId);
   const source=handle??noLatest;
   const latest:RuntimeTaskRun|null=useSyncExternalStore(source.subscribe,source.latest,source.latest);
+  const activeOf=source.active?()=>source.active!():noActivity;
+  const active:RuntimeTaskActivity|null=useSyncExternalStore(source.subscribe,activeOf,activeOf);
   const task=runtime.manifest.tasks.find(t=>t.id===taskId)!,inputs=runtime.manifest.datasets.find(d=>d.id===task.output)!.inputs;
-  const current=!!latest&&site.tasks[taskId].status==='ready'&&inputs.every(id=>Object.is(latest.values[id],site.values[id]));
+  const status=site.tasks[taskId].status;
+  const current=!!latest&&status==='ready'&&inputs.every(id=>Object.is(latest.values[id],site.values[id]));
+  const previous=latest&&(status==='error'||status==='cancelled')?latest:null;
 
   async function save(){
     if(!store||!latest)return;
@@ -84,6 +93,8 @@ export function DurableRuns({resource,taskId}:{resource:string;taskId:string}){
     {listError&&<p className="foundation-notice" role="alert" data-testid="durable-store-error">{listError.message}</p>}
     {handle?<p><button type="button" data-testid="durable-save" disabled={!store||!current||busy} onClick={()=>void save()}>Save this run to the result store</button> <small className="foundation-note">{!latest?'Run the task on the runtime first.':!current?'The latest runtime result does not match the current inputs; run the task again.':`Run ${latest.record.runId}, ${latest.model.title}, model ${latest.record.modelVersion}.`}</small></p>
       :<p className="foundation-note" data-testid="durable-unsupported">Durable result: not available for this task. {browserTaskReason}</p>}
+    {active&&<p className="foundation-note" role="status" data-testid="durable-run-state" data-state={active.state}>Latest submit{active.runId?` (run ${active.runId})`:''}: <span className="run-state" data-run-state={active.state}>{runtimeDisplayLabel(active.state)}</span>{active.message?'. '+active.message:''}</p>}
+    {previous&&<section className="foundation-previous" data-testid="durable-previous" data-run-id={previous.record.runId}><p><em className="foundation-badge">{PREVIOUS_RESULT}</em> This run did not produce a result. Shown below: run {previous.record.runId}, model {previous.record.modelVersion}, inputs {valuesText(previous.values)}.</p><ArtifactView artifact={previous.artifact}/></section>}
     {saved&&<div data-testid="durable-saved">{saved.runs.length?<ul>{saved.runs.map(r=><li key={r.cellId+r.resultSha256} data-testid="durable-saved-run" data-result-sha={r.resultSha256} data-present={r.present}>
         <strong>{r.taskId}</strong> <small>{r.savedAt} / {r.run?valuesText(r.run.site.values):'no run reference'} / result {short(r.resultSha256)}{r.present?'':' (file missing)'}</small> <button type="button" disabled={busy} onClick={()=>void reopen(r)}>Reopen</button></li>)}</ul>
       :<p className="foundation-note">No saved run for this site yet.</p>}

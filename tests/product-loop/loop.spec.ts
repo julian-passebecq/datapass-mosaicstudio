@@ -119,6 +119,66 @@ function validatePy(file:string){
   return JSON.parse(out.stdout.trim()) as {bundleSha256:string;files:{path:string;sha256:string}[]};
 }
 
+const runPosts=(seen:{runtime:string[]})=>seen.runtime.filter(r=>r==='POST /api/runtime/v1/runs').length;
+/** S03 in the real browser against the real producer, after the saved runs and the export:
+ *  1. view-only changes (tabs, run selection, follow latest) send 0 POST /api/runtime/v1/runs;
+ *  2. a second run is cancelled while its status answers are HELD by the test (a Playwright route delays them; the
+ *     producer itself is untouched): the task ends cancelled, an explicit cancel reaches the producer, nothing is applied;
+ *  3. one controlled failure: the test refuses the connection for both submit attempts (route.abort), so the run fails;
+ *     both attempts carry the same Idempotency-Key, the failed run stays failed, and the last valid result stays visible
+ *     labelled "Previous result — not this run's output". */
+async function lifecycleChecks(page:Page,consumer:Consumer,origin:string,seen:{runtime:string[];errors:string[]}){
+  const task=page.getByTestId('task-'+consumer.taskId),runs=page.getByTestId('runs');
+  const saveNote=await page.getByTestId('durable-save').locator('xpath=..').textContent();
+  const lastRun=/Run (run-[0-9a-f]{16})/.exec(saveNote??'')![1];
+  // 1. View-only changes.
+  const before=runPosts(seen);
+  for(const name of ['Compare','Record','Result'])await tab(page,name);
+  await runs.getByRole('button',{name:'Inspect run 1',exact:true}).click();
+  await expect(runs).toHaveAttribute('data-selected-status','succeeded');
+  await runs.getByRole('button',{name:'Follow latest',exact:true}).click();
+  await page.waitForTimeout(300);
+  expect(runPosts(seen),'a view-only change (tab, selection) sends no run').toBe(before);
+  // 2. Cancel a second run.
+  let release:()=>void=()=>{};const held=new Promise<void>(r=>{release=r;});
+  const statusRoute=new RegExp('^'+origin.replace(/[.]/g,'\\.')+'/api/runtime/v1/runs/run-[0-9a-f]{16}$');
+  await page.route(statusRoute,async route=>{if(route.request().method()==='GET')await held;try{await route.continue();}catch{/* the page aborted it */}});
+  await page.getByRole('button',{name:consumer.taskLabel,exact:true}).click();
+  await expect(task).toHaveText('running');
+  await expect.poll(()=>runPosts(seen)).toBe(before+1);
+  await expect(page.getByTestId('durable-run-state')).toHaveAttribute('data-state',/queued|running/);
+  const cancelsBefore=seen.runtime.filter(r=>r.endsWith('/cancel')).length;
+  await page.getByRole('button',{name:'Cancel task',exact:true}).click();
+  await expect(task).toHaveText('cancelled');
+  await expect.poll(()=>seen.runtime.filter(r=>r.endsWith('/cancel')).length,{message:'an explicit cancel reaches the producer'}).toBe(cancelsBefore+1);
+  await expect(page.getByTestId('durable-run-state')).toHaveAttribute('data-state',/cancel-requested|cancelled|succeeded/);
+  const cancelState=await page.getByTestId('durable-run-state').getAttribute('data-state');
+  release();await page.unroute(statusRoute);
+  await expect(page.getByTestId('durable-previous')).toHaveAttribute('data-run-id',lastRun);
+  await expect(runs).toHaveAttribute('data-selected-status','cancelled');
+  // 3. One controlled failure.
+  const keys:string[]=[];
+  const submitRoute=origin+'/api/runtime/v1/runs';
+  await page.route(submitRoute,async route=>{if(route.request().method()==='POST'){keys.push(route.request().headers()['idempotency-key']??'');await route.abort('connectionrefused');}else await route.continue();});
+  const errorsBefore=seen.errors.length;
+  await page.getByRole('button',{name:consumer.taskLabel,exact:true}).click();
+  await expect(task).toHaveText('error');
+  await page.unroute(submitRoute);
+  expect(keys.length,'one submit plus one more attempt, not more').toBe(2);
+  expect(keys[0]).toMatch(/^[0-9a-f-]{36}$/);expect(keys[1],'the same Idempotency-Key on the second attempt').toBe(keys[0]);
+  const previous=page.getByTestId('durable-previous');
+  await expect(previous).toContainText('Previous result — not this run\'s output');
+  await expect(previous).toHaveAttribute('data-run-id',lastRun);
+  await expect(previous.getByTestId('artifact')).toBeVisible();
+  await expect(runs,'the failed run keeps its own outcome').toHaveAttribute('data-selected-status','failed');
+  await expect(page.getByTestId('durable-save')).toBeDisabled();
+  await expect(page.getByTestId('durable-run-state'),'this submit is shown as failed').toHaveAttribute('data-state','failed');
+  expect(seen.errors.slice(errorsBefore).filter(e=>!/ERR_CONNECTION_REFUSED|ERR_ABORTED|Failed to load resource|net::ERR_FAILED/.test(e)),'only the refused connections of the controlled failure').toEqual([]);
+  seen.errors.splice(errorsBefore);
+  return {viewOnlyRunPosts:0,cancel:{taskState:'cancelled',cancelSent:true,displayState:cancelState},
+    failure:{submitAttempts:keys.length,sameIdempotencyKey:true,previousResultLabelled:true,failedRunState:'failed'}};
+}
+
 async function loop(browser:Browser,consumer:Consumer){
   const resultsDir=await mkdtemp(path.join(os.tmpdir(),`dp-f212-${consumer.id}-`));
   const producer=new Producer(consumer,resultsDir);
@@ -185,6 +245,8 @@ async function loop(browser:Browser,consumer:Consumer){
     await page.screenshot({path:test.info().outputPath(consumer.id+'-mobile.png'),fullPage:true});
     expect(seen1.errors,'no browser errors (CSP included)').toEqual([]);
     expect(seen1.external,'only the site and its paired runtime').toEqual([]);
+    await page.setViewportSize({width:1440,height:960});
+    const lifecycle=await lifecycleChecks(page,consumer,producer.origin,seen1);
     const storage=await first.storageState();
     await first.close();
 
@@ -220,7 +282,7 @@ async function loop(browser:Browser,consumer:Consumer){
       steps:inspected,savedResultSha256:saved,reopenedAfterRestart:saved.map(sha=>({resultSha256:sha,sameHash:true,state:reopened[sha]})),
       ab:{a,b,metricDeltas:deltas,sameAfterReopen:true},
       bundle:{bundleSha256:shown,files:ts.files,typescript:'valid',python:'valid',tokenFree:true},
-      runtimeRunRequestsAfterReopen:0,verdict:'PASS'});
+      runtimeRunRequestsAfterReopen:0,lifecycle,verdict:'PASS'});
   }finally{
     await producer.stop().catch(()=>{});
     await rm(resultsDir,{recursive:true,force:true});

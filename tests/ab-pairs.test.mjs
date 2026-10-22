@@ -113,6 +113,21 @@ test('an incompatible pair (different modelVersion) is refused with the reason, 
   assert.match(abCompatibility(more.bySha(more.shas[0]),{...more.bySha(more.shas[2]),run:null}).reason,/no run reference/);
 });
 
+test('S06: results that record a shared quantity in different units are refused with a unit-mismatch reason, never converted',async()=>{
+  const {unitMismatch}=await import('../src/framework/storage/ab-pairs.ts');
+  const {s,shas,bySha}=await seeded([{gain:2},{gain:5}]);
+  const a=await s.store.open(APP,bySha(shas[0])),b=await s.store.open(APP,bySha(shas[1]));
+  assert.equal(unitMismatch(a.artifact,b.artifact),null);
+  const inMW=JSON.parse(JSON.stringify(b.artifact));inMW.payload.columns[1].unit='MW';
+  const column={...b,artifact:validateArtifact(inMW)};
+  assert.match(unitMismatch(a.artifact,column.artifact),/Units differ for Value \(value\): A is in kW, B is in MW/);
+  assert.throws(()=>compareSavedRuns(a,column),e=>e instanceof AbPairError&&e.kind==='incompatible'&&/Units differ for Value/.test(e.message)&&/not compared or converted/.test(e.message));
+  const metric=JSON.parse(JSON.stringify(b.artifact));metric.representations[1].unit='MW';
+  assert.match(unitMismatch(a.artifact,validateArtifact(metric)),/Units differ for the metric Row b \(peak\): A is in kW, B is in MW/);
+  const unitless=JSON.parse(JSON.stringify(b.artifact));delete unitless.payload.columns[1].unit;
+  assert.match(unitMismatch(a.artifact,validateArtifact(unitless)),/B is in no unit/,'a missing unit is not the same unit');
+});
+
 test('a kept comparison reopens after a browser and service restart with the same deltas, without recompute',async()=>{
   const {disk,s,shas,bySha}=await seeded([{gain:2},{gain:5}]);
   const port=memoryKeyValue();

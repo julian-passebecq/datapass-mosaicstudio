@@ -8,8 +8,8 @@
 import type {Artifact} from '../foundation/artifact.ts';
 import type {Rows,TaskContext,Values} from '../types.ts';
 import {describeCapabilities,supported,type CapabilityDescriptor} from './adapter.ts';
-import {runStateLabel} from './run-state.ts';
-import {RUNTIME_RUN_CAPABILITIES,createRuntimeRunAdapter} from './runtime-run.ts';
+import {CANCEL_REQUESTED,runStateLabel,runtimeDisplayState,type RuntimeDisplayState} from './run-state.ts';
+import {CANCEL_REQUESTED_MESSAGE,RUNTIME_RUN_CAPABILITIES,createRuntimeRunAdapter} from './runtime-run.ts';
 import {RuntimeClient,connectionFromHash,runtimeOrigin,validToken,type RunRecord,type RuntimeConnection,type RuntimeModel} from './runtime-client.ts';
 
 export const RUNTIME_LINK_KEY='datapass.site-runtime-link';
@@ -73,8 +73,33 @@ export type RuntimeTask={
   /** Bind it as `bindings.tasks[taskId]`. */
   readonly handler:(context:TaskContext)=>Promise<Rows>;
   latest():RuntimeTaskRun|null;
+  /** What the newest submit of this task looks like right now (display only; cancel-requested included). */
+  active?():RuntimeTaskActivity|null;
   subscribe(listener:()=>void):()=>void;
 };
+/** Display of the newest submit: `cancel-requested` while the runtime accepted a cancel without confirming it. */
+export type RuntimeTaskActivity={readonly runId:string|null;readonly state:RuntimeDisplayState;readonly message:string};
+export const LATE_RESULT='A newer run or a cancel replaced this run; its late result was not applied.';
+
+/** S03 late-response rule, as a pure gate. Each user submit opens a ticket for its input key; an outcome is published
+ * only if its ticket is still the newest one, its input key is still the current one and it was not cancelled. A late,
+ * retried, cancelled or out-of-order response never wins by arriving last. It schedules nothing. */
+export type OutcomeTicket={readonly ticket:number;readonly inputKey:string};
+export type OutcomeGate={open(inputKey:string):OutcomeTicket;cancel(ticket:OutcomeTicket):void;accepts(ticket:OutcomeTicket,currentInputKey?:string):boolean;current():OutcomeTicket|null};
+export function createOutcomeGate():OutcomeGate{
+  let sequence=0,current:OutcomeTicket|null=null;
+  const cancelled=new WeakSet<OutcomeTicket>();
+  return Object.freeze({
+    open(inputKey:string){current=Object.freeze({ticket:++sequence,inputKey});return current;},
+    cancel(ticket:OutcomeTicket){cancelled.add(ticket);},
+    accepts(ticket:OutcomeTicket,currentInputKey?:string){
+      return current!==null&&ticket===current&&!cancelled.has(ticket)&&(currentInputKey===undefined||currentInputKey===ticket.inputKey);
+    },
+    current:()=>current,
+  });
+}
+/** Input key of a submit: the model and its inputs, keys sorted. */
+export const inputKey=(model:string,inputs:Readonly<Record<string,number>>)=>JSON.stringify([model,Object.keys(inputs).sort().map(k=>[k,inputs[k]])]);
 type ClientOptions=ConstructorParameters<typeof RuntimeClient>[1];
 export type RuntimeTaskOptions={
   taskId:string;model:string;link:RuntimeLink;
@@ -87,7 +112,7 @@ const freeze=<T>(value:T):T=>{if(value&&typeof value==='object'&&!Object.isFroze
 
 export function createRuntimeTask(options:RuntimeTaskOptions):RuntimeTask{
   const {taskId,model:modelId,link}=options;
-  let client:RuntimeClient|null=null,key='',model:Promise<RuntimeModel>|null=null,latest:RuntimeTaskRun|null=null;
+  let client:RuntimeClient|null=null,key='',model:Promise<RuntimeModel>|null=null,latest:RuntimeTaskRun|null=null,active:RuntimeTaskActivity|null=null;
   const listeners=new Set<()=>void>();
   const clientFor=(connection:RuntimeConnection)=>{
     const k=connection.origin+' '+connection.token;
@@ -103,30 +128,51 @@ export function createRuntimeTask(options:RuntimeTaskOptions):RuntimeTask{
     model.catch(()=>{model=null;});
     return model;
   };
+  const gate=createOutcomeGate();
+  const cancelAnswer=(r:RunRecord)=>r.status==='cancelled'?'The runtime confirmed the cancel.'
+    :r.status==='queued'||r.status==='running'?(r.cancelRequested?'The runtime accepted the cancel and has not confirmed it yet.':'The runtime did not report the cancel request (older runtime); the run may still finish there.')
+    :`The run had already ended on the runtime (${r.status}); this page does not apply its result.`;
+  const notify=()=>{for(const fn of [...listeners])try{fn();}catch{/* presentation only */}};
+  const show=(ticket:OutcomeTicket,next:RuntimeTaskActivity)=>{if(gate.current()===ticket){active=freeze(next);notify();}};
   async function handler({values,signal}:TaskContext):Promise<Rows>{
     const connection=link.get();
     if(!connection)throw new Error(NOT_PAIRED);
     const c=clientFor(connection),m=await modelFor(c,signal);
     const inputs=(options.inputs??defaultInputs)(values,m);
+    const ticket=gate.open(inputKey(m.id,inputs));
     let runId:string|null=null;
-    // Following stops with the signal; the run itself is cancelled on the runtime by an explicit request.
-    const cancel=()=>{if(runId)void c.cancel(runId).catch(()=>{});};
+    show(ticket,{runId:null,state:'queued',message:'Submitting to the runtime.'});
+    // Following stops with the signal; the run itself is cancelled on the runtime by an explicit request, and the
+    // outcome of this ticket can no longer be published, whatever arrives later.
+    const cancel=()=>{
+      gate.cancel(ticket);
+      if(!runId){show(ticket,{runId:null,state:'not-observed',message:'Stopped before the runtime answered the submit; if it accepted the run, it may still finish there.'});return;}
+      const id=runId;
+      show(ticket,{runId:id,state:CANCEL_REQUESTED,message:'Cancel sent; waiting for the runtime to confirm.'});
+      void c.cancel(id).then(r=>show(ticket,{runId:id,state:runtimeDisplayState(r.status,r.cancelRequested),message:cancelAnswer(r)}),
+        ()=>show(ticket,{runId:id,state:'not-observed',message:'The cancel request did not reach the runtime; the run may still finish there.'}));
+    };
     signal.addEventListener('abort',cancel,{once:true});
     try{
-      const outcome=await createRuntimeRunAdapter(c,m,{intervalMs:options.intervalMs,maxPolls:options.maxPolls}).submit(inputs,{signal,onUpdate:o=>{runId=o.runId;}});
+      const outcome=await createRuntimeRunAdapter(c,m,{intervalMs:options.intervalMs,maxPolls:options.maxPolls}).submit(inputs,{signal,onUpdate:o=>{runId=o.runId;if(!signal.aborted)show(ticket,{runId:o.runId,state:o.message===CANCEL_REQUESTED_MESSAGE?CANCEL_REQUESTED:o.state,message:o.message});}});
       if(signal.aborted)throw new Error('Task stopped; a cancel request was sent to the runtime.');
+      show(ticket,{runId:outcome.runId,state:outcome.state,message:outcome.message});
       if(outcome.state!=='succeeded'||!outcome.result)throw new Error(outcome.message||`The runtime run ${outcome.runId} ended: ${runStateLabel(outcome.state)}.`);
       const artifact=outcome.result;
       if(artifact.payload.kind!=='table')throw new Error(`The runtime artifact ${artifact.id} has no table for task ${taskId}.`);
       const record=await c.status(outcome.runId,signal);
       if(record.status!=='succeeded')throw new Error(`Run ${record.runId} is ${record.status} on the runtime.`);
-      if(!signal.aborted){
-        latest=freeze({taskId,values:{...values},inputs:{...inputs},record,artifact,model:m,origin:c.origin});
-        for(const fn of [...listeners])try{fn();}catch{/* presentation only */}
-      }
+      // Late-response rule: only the current ticket with the current inputs, never a cancelled one, is published.
+      if(signal.aborted||record.cancelRequested||!gate.accepts(ticket,inputKey(m.id,inputs)))throw new Error(LATE_RESULT);
+      latest=freeze({taskId,values:{...values},inputs:{...inputs},record,artifact,model:m,origin:c.origin});
+      notify();
       return artifact.payload.rows;
+    }catch(error){
+      // A submit the runtime never accepted (unreachable, refused, conflict) is shown as this submit's failure.
+      if(!signal.aborted&&runId===null)show(ticket,{runId:null,state:'failed',message:'The submit failed: '+(error instanceof Error?error.message:String(error))});
+      throw error;
     }finally{signal.removeEventListener('abort',cancel);}
   }
-  return Object.freeze({taskId,model:modelId,capabilities:RUNTIME_TASK_CAPABILITIES,handler,latest:()=>latest,
+  return Object.freeze({taskId,model:modelId,capabilities:RUNTIME_TASK_CAPABILITIES,handler,latest:()=>latest,active:()=>active,
     subscribe:(fn:()=>void)=>{listeners.add(fn);return()=>{listeners.delete(fn);};}});
 }

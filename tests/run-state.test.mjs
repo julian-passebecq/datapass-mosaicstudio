@@ -77,3 +77,15 @@ test('the framework module stays pure and both surfaces use it; stored values ke
   assert.match(notebook,/data-status=\{result\?\.status\?\?'idle'\}/);
   assert.match(await src('../src/panels/NotebookJupyter.tsx'),/data-status=\{j\.status\}/);
 });
+
+test('S03 cancel-requested is display only: additive, never a run state, and absent for runtimes without the field',async()=>{
+  const {CANCEL_REQUESTED,CANCEL_REQUESTED_LABEL,runtimeDisplayState,runtimeDisplayLabel}=await import('../src/framework/compute/run-state.ts');
+  assert.equal(CANCEL_REQUESTED,'cancel-requested');assert.ok(!isRunState(CANCEL_REQUESTED));assert.ok(!RUN_STATES.includes(CANCEL_REQUESTED));
+  assert.equal(runtimeDisplayState('running',true),'cancel-requested');assert.equal(runtimeDisplayState('queued',true),'cancel-requested');
+  assert.equal(runtimeDisplayState('running',false),'running');assert.equal(runtimeDisplayState('running',undefined),'running','a runtime without cancelRequested');
+  assert.equal(runtimeDisplayState('running','true'),'running','only a real boolean counts');
+  for(const s of ['succeeded','failed','cancelled'])assert.equal(runtimeDisplayState(s,true),s,'a confirmed outcome wins over the request');
+  assert.equal(runtimeDisplayState('paused',true),'not-observed');
+  assert.equal(runtimeDisplayLabel('cancel-requested'),CANCEL_REQUESTED_LABEL);assert.equal(runtimeDisplayLabel('not-observed'),'not observed');
+  assert.ok(!Object.values(RUN_STATE_LABELS).includes(CANCEL_REQUESTED_LABEL));
+});

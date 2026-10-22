@@ -52,3 +52,15 @@ export const isRunState=(value:unknown):value is RunState=>typeof value==='strin
 export const runStateLabel=(state:RunState):string=>RUN_STATE_LABELS[state];
 /** Terminal states: no further change will be observed for this run. */
 export const isTerminalRunState=(state:RunState):boolean=>state!=='queued'&&state!=='running';
+
+/** S03 display only (additive): a queued or running runtime run whose cancel the runtime accepted but has not confirmed
+ * (`cancelRequested: true`). It is NOT a run state: the stored status stays `running` and RUN_STATES is unchanged; it
+ * ends as whatever the runtime confirms (usually cancelled). A runtime without the field never shows it. */
+export const CANCEL_REQUESTED='cancel-requested' as const;
+export type RuntimeDisplayState=RunState|typeof CANCEL_REQUESTED;
+export const CANCEL_REQUESTED_LABEL='cancel requested';
+export const runtimeDisplayState=(status:RuntimeRunStatus|string,cancelRequested?:unknown):RuntimeDisplayState=>{
+  const state=runStateFromRuntime(status);
+  return cancelRequested===true&&(state==='queued'||state==='running')?CANCEL_REQUESTED:state;
+};
+export const runtimeDisplayLabel=(state:RuntimeDisplayState):string=>state===CANCEL_REQUESTED?CANCEL_REQUESTED_LABEL:runStateLabel(state);

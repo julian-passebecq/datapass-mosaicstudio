@@ -2,8 +2,8 @@
  * waitForRun only; the runtime keeps its own bounded queue (8 active), workers and retained records. */
 import type {Artifact} from '../foundation/artifact.ts';
 import {describeCapabilities,errorMessage,isAbort,refuse,supported,unsupported,type ComputeAdapter,type ComputeObservation,type ComputeOutcome,type ComputeSubmitOptions} from './adapter.ts';
-import {runStateFromRuntime} from './run-state.ts';
-import {checkInputs,waitForRun,type RunRecord,type RuntimeClient,type RuntimeModel} from './runtime-client.ts';
+import {CANCEL_REQUESTED,runStateFromRuntime,runtimeDisplayState} from './run-state.ts';
+import {checkInputs,newIdempotencyKey,waitForRun,type RunRecord,type RuntimeClient,type RuntimeModel} from './runtime-client.ts';
 
 export const RUNTIME_RUN_CAPABILITIES=describeCapabilities({
   submit:supported('Submits an allowlisted model run to the local runtime; the browser never sends code.'),
@@ -16,7 +16,10 @@ export const RUNTIME_RUN_CAPABILITIES=describeCapabilities({
   inputs:supported('The numeric inputs and bounds the model declares.'),
 });
 
-const observe=(record:RunRecord):ComputeObservation=>({runId:record.runId,state:runStateFromRuntime(record.status),progress:null,message:record.error??''});
+/** A cancel the runtime accepted but has not confirmed stays `running` (S03); the observation message says so. */
+export const CANCEL_REQUESTED_MESSAGE='Cancel requested; waiting for the runtime to confirm.';
+const observe=(record:RunRecord):ComputeObservation=>({runId:record.runId,state:runStateFromRuntime(record.status),progress:null,
+  message:record.error??(runtimeDisplayState(record.status,record.cancelRequested)===CANCEL_REQUESTED?CANCEL_REQUESTED_MESSAGE:'')});
 
 export type RuntimeRunAdapter=ComputeAdapter<Readonly<Record<string,number>>,Artifact>&{readonly model:RuntimeModel;readonly origin:string};
 
@@ -25,7 +28,8 @@ export function createRuntimeRunAdapter(client:RuntimeClient,model:RuntimeModel,
   async function submit(values:Readonly<Record<string,number>>={},submitOptions:ComputeSubmitOptions={}):Promise<ComputeOutcome<Artifact>>{
     const checked=checkInputs(model,values);
     const {signal,onUpdate}=submitOptions;
-    const submitted=await client.submit(model.id,checked,signal);
+    // One Idempotency-Key per user submit; the client reuses it if it has to send this same submit again.
+    const submitted=await client.submit(model.id,checked,signal,{idempotencyKey:newIdempotencyKey()});
     onUpdate?.(observe(submitted));
     let final:RunRecord;
     try{final=await waitForRun(client,submitted,{signal,onUpdate:r=>onUpdate?.(observe(r)),intervalMs:options.intervalMs,maxPolls:options.maxPolls});}
