@@ -53,7 +53,7 @@ Expected failure proofs: initial archive regressions 4 failed/1 passed; initial 
 
 The coordinator owns CI submission. The requested final core checkpoint is `327866b`; all its requested gate inputs (package.json, scripts, src and the two regression files) are byte-identical at `70c55bf`, verified by the command in `ci-summary.json`. A receipt for an earlier SHA is not silently promoted to whole-product CI. Hosted CI was not enqueued; commits carry `[skip ci]`. Private carrier identifiers are omitted from this public repository. Whole-product hosted CI, provider/native and family release acceptance are not established by this pass.
 
-## Local candidate
+## Candidate and private delivery
 
 The immutable local folder is `candidate-70c55bf` under the campaign evidence directory; the parent campaign's private `result.json` records its absolute path. Candidate source is clean `70c55bf784d5fc1fee6cf939c679c3107902d9da`. No candidate binaries were uploaded to this public repository.
 
@@ -66,9 +66,23 @@ The immutable local folder is `candidate-70c55bf` under the campaign evidence di
 | `dist-sdk/datapass-mosaicstudio-sdk-0.13.0.tar.gz` | 838,624 | `64d053a0e2135088d82595649686dac799e5148ae94b833616fdeb89cd7c4dec` |
 | `dist-sdk/sdk-release.json` | 67,542 | `c1138f6aa4d64bcd5990c10a5a0fd7bd8ae2578a97cdbd54f1838b1745f347ac` |
 
-The workbench ZIP uses sorted paths, fixed timestamps and permissions. Every ZIP entry was read back and compared to the build. All six declared candidate hashes were checked, then the verifiers shipped inside the extracted SDK ran against the candidate. The standalone viewer is the unchanged committed 0.13.0 viewer, with its existing embedded provenance. `tools/package_candidate.py` and `tools/verify_candidate.py` reproduce packaging/verification of trusted local outputs; they refuse existing output directories. Local candidate verification is not remote package publication.
+The workbench ZIP uses sorted paths, fixed timestamps and permissions. Every ZIP entry was read back and compared to the build. All six declared candidate hashes were checked, then the verifiers shipped inside the extracted SDK ran against the candidate. The standalone viewer is the unchanged committed 0.13.0 viewer, with its existing embedded provenance. `tools/package_candidate.py` and `tools/verify_candidate.py` reproduce packaging/verification of trusted local outputs; they refuse existing output directories. The original local verification was followed by the private publication receipt below.
 
 After a clean checkout, dependencies and production build, the packaging recipe is `npm run sdk:pack`, `npm run runtime:pack`, then `python tools/package_candidate.py <repo> <new-candidate-dir>` and `python tools/verify_candidate.py <candidate-dir> <new-consumer-dir>` (use the scripts in this receipt's tools folder). Run the extracted SDK's `scripts/runtime-verify.mjs <candidate-dir>/dist-runtime --python <pinned-python> --port <free-port-above-20000>` for the live 44-probe check. For browser verification, serve `<new-consumer-dir>/workbench` with Vite preview on 127.0.0.1:4173, set `PW_REUSE_SERVER=1`, and run the documented Playwright files; the full suite requires the pinned Jupyter environment. Do not collide with another owner's ports.
+
+
+The tested candidate was subsequently published as a separately named review bundle
+on the campaign's existing private prerelease. Both assets were downloaded and
+compared byte-for-byte; all **50 bundle entries** and all **six original candidate
+files** passed hash verification. The bundle includes the exact `70c55bf` source
+archive and the `35b78f6` evidence snapshot, so later receipt-only commits do not
+change the tested package identity. Bundle SHA-256:
+`032262997571695aee50ad82da72e1fbbd73235198804d50fb7ce420ea6034cd`.
+See `private-publication-verification.json`; authenticated URLs stay in the
+campaign's private handoff. This is a private qualified candidate, with the
+remaining acceptance gates below still open. All 40 original public evidence
+files were independently downloaded from the exact GitHub commit archive and
+compared to local Git object bytes (`github-evidence-verification.json`).
 
 ## Visual evidence
 
