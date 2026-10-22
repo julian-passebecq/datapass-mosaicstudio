@@ -41,7 +41,7 @@ function paxRecords(data){
  * paths or sizes differently from verification. Types: 'file', 'dir', 'symlink', 'other'.
  */
 export function readTarGz(gz){
-  const buf=gunzipSync(gz),entries=[];let offset=0,pax={};
+  const buf=gunzipSync(gz),entries=[];let offset=0,pax=null;
   while(offset+512<=buf.length){
     const header=buf.subarray(offset,offset+512);if(header.every(b=>b===0))break;
     const sum=octal(header,148,8);let check=0;for(let i=0;i<512;i++)check+=i>=148&&i<156?32:header[i];if(sum!==check)throw new Error('Tar header checksum mismatch at byte '+offset);
@@ -49,14 +49,16 @@ export function readTarGz(gz){
     const data=buf.subarray(offset+512,offset+512+size);if(data.length!==size)throw new Error('Truncated tar entry');
     offset+=512+Math.ceil(size/512)*512;
     if(flag==='g'||flag==='x'){
+      if(pax!==null)throw new Error('Redundant metadata after per-entry pax header');
       const records=paxRecords(data),allowed=flag==='g'?'comment':'path';
       if(Object.keys(records).some(key=>key!==allowed))throw new Error('Unsupported pax metadata');
       if(flag==='x')pax=records;
       continue;
     }
-    const full=pax.path??(prefix?prefix+'/'+name:name);pax={};
+    const full=pax?.path??(prefix?prefix+'/'+name:name);pax=null;
     entries.push({path:full,type:flag==='0'||flag==='\0'||flag==='7'?'file':flag==='5'?'dir':flag==='2'?'symlink':'other',data});
   }
+  if(pax!==null)throw new Error('Orphan per-entry pax header');
   return entries;
 }
 /** Files of an SDK archive: strips the single top-level folder, rejects symlinks, unsafe or duplicate paths. */

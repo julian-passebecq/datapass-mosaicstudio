@@ -27,6 +27,8 @@ test('PAX path overrides are checked and unsupported extraction metadata is refu
   for(const [type,key,value] of [['g','path','root/../../outside'],['g','size','0'],['x','size','0'],['x','linkpath','../outside']])
     assert.throws(()=>archiveFiles(archive([{name:'pax',type,text:pax(key,value)},{name:'root/good.txt'}])),/Unsupported pax metadata/);
   assert.throws(()=>archiveFiles(archive([{name:'pax',type:'x',text:pax('path','../outside')},{name:'root/good.txt'}])),/Unsafe archive path/);
+  assert.throws(()=>archiveFiles(archive([{name:'pax',type:'x',text:pax('path','root/../../outside')},{name:'pax',type:'x',text:pax('path','root/safe')},{name:'root/file'}])),/Redundant metadata/);
+  assert.throws(()=>archiveFiles(archive([{name:'root/file'},{name:'pax',type:'x',text:pax('path','root/orphan')}])),/Orphan per-entry/);
   const valid=archiveFiles(archive([{name:'pax',type:'g',text:pax('comment','a'.repeat(40))},{name:'pax',type:'x',text:pax('path','root/nested/file.txt')},{name:'placeholder'}]));
   assert.deepEqual(valid.files.map(f=>f.path),['nested/file.txt']);
 });
