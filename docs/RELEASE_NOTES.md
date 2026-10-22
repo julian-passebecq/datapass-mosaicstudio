@@ -1,5 +1,24 @@
 # Release notes
 
+## 0.13.1 (2026-10-23)
+
+Patch release of 0.13.0: the V1 hardening (#102) and the notebook lineage fix (#103). Built from the merge of this release commit. A patch version because no contract, stored format or wire changes (`docs/API_VERSION_MIGRATION_POLICY.md`): `datapass.engineering/1` is unchanged (schema sha256 `6ba8ee851986425c79ce2554d2f990cd0977f825986f6608292b6af81b4f5a83`), and so are `datapass.artifact/1`, `datapass.concept-spec/1`, `datapass.preview/1`, `datapass.workspace` v1, `datapass.result-store` / `datapass.cell-result` v1, `datapass.run-history` v1, `datapass.bundle` v1 candidate and `datapass.runtime/1`. The Python service stays `datapass-artifact-service` 0.5.0 in the `safe` profile. Upgrade and rollback: [`CONSUMING.md`](CONSUMING.md#0130--0131). Nothing is tagged, published or deployed.
+
+**Changes**
+
+- **Release archive extraction (#102).** `sdk-verify` and `runtime-verify` check every archive path before writing anything: the root and directories before root stripping, traversal, Windows aliases, device names and alternate streams, duplicate or case-colliding paths, file/directory collisions, empty archives and ambiguous or orphan PAX metadata are refused, without partial writes (`tests/archive-boundary.test.mjs`).
+- **Runtime pairing (#102).** When browser storage fails, the runtime link keeps the last validated pairing in page memory; an explicit replacement or disconnect wins within the page, and a memory-only connect removes an older stored pairing whenever removal works (`src/framework/compute/runtime-task.ts`, `tests/runtime-link-storage.test.mjs`).
+- **Mobile engineering provenance (#102).** The Source column of the model-reference engineering consumer keeps a readable minimum width on phones, with compact rows and keyboard-accessible local scrolling, without page overflow.
+- **Notebook lineage records `k` (#103).** `build_artifact(rows, k=...)` in `py/wind_reference_model.py` writes the Weibull shape `k` that `table()` used into the artifact title, source, declared inputs and `inputHash` (default 2.0; non-finite or non-positive values are refused before writing). The Jupyter and marimo notebooks pass the same `k` to both. Packaging does not rerun the calculation. The committed default artifact of `python-wind-reference` was regenerated at `k=2` (6,188 bytes, sha256 `7ca77cb8…3b10`; only the source sentence changed, the rows are identical).
+
+**Limits**
+
+- If browser storage refuses both the write and the removal, an older stored pairing can come back after a reload; this is tested and documented, not fixed.
+- An artifact exported by 0.13.0 from a notebook with `k` other than 2 still says `k=2` in its lineage: re-export it with 0.13.1. Artifacts exported at the default `k=2` are correct in both versions.
+- marimo stays qualified locally only (CI reports `NOT_QUALIFIED`). The models stay ILLUSTRATIVE and every fixture is synthetic.
+
+**Delivery.** SDK archive, workbench, standalone viewer and the Python runtime companion (rebuilt from this commit; it ships the fixed `py/wind_reference_model.py`) are delivered privately. Release 0.13.0 stays as delivered.
+
 ## 0.13.0 (2026-10-22)
 
 Lane 01 (engineering consumer): a new frozen contract, `datapass.engineering/1`, the runtime boundary hardened with the `safe` profile as the default, and the client run lifecycle that consumes both (#96-#99). Built from the merge of this release commit. A minor version because a contract is added and the default service profile changes (`docs/API_VERSION_MIGRATION_POLICY.md`). The stored formats of 0.12.0 keep their versions (`datapass.workspace` v1, `datapass.result-store` / `datapass.cell-result` v1, `datapass.run-history` v1, `datapass.artifact/1`, `datapass.concept-spec/1`, `datapass.preview/1`, `datapass.bundle` v1 candidate); the `datapass.runtime/1` wire only gains additive fields and headers. One operational change is breaking: the Python service starts in the `safe` profile, so the legacy `/compute/wind-reference`, `/artifacts/*` and `/docs` routes answer 404 unless it is started with `--profile demo`. Upgrade and rollback: [`CONSUMING.md`](CONSUMING.md#0120--0130). Consumer guide for a 0.8.1 framework snapshot (foil-studio-3d): [`UPGRADE_FOIL_STUDIO_0.13.md`](UPGRADE_FOIL_STUDIO_0.13.md). Nothing is tagged, published or deployed.
