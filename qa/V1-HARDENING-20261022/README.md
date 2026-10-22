@@ -48,10 +48,11 @@ Expected failure proofs: initial archive regressions 4 failed/1 passed; initial 
 | Exact tested source | Narrow Oracle ARM64 result | Downloaded CI artifact SHA-256 |
 |---|---|---|
 | `2412000` | 11 passed | `0d59f4b05388719a49fa47f2fd97f23bacb30def61800489d1978e7949adf390` |
+| `327866b` | **13 passed, 0 failed/skipped** | `198e9e1694e003fadd5ca553687925c048b704ecba3f1464a3530d27ebe98250` |
 
-**Pending at publication:** no receipt for the final 13-test core request at `327866b` has arrived. The 11-test receipt at `2412000` does not qualify the later reload fix.
+**Final narrow CI is complete:** the coordinator ran the 13-test core request at `327866b` once on Oracle ARM64. Downloaded archive bytes match the receipt; the embedded receipt and log hashes were independently checked. All 309 selected input files have identical paths, modes and Git blob IDs at final client source `70c55bf`. This qualifies the narrow archive/pairing regression gate only. The earlier 11-test receipt is preserved as a checkpoint.
 
-The coordinator owns CI submission. The requested final core checkpoint is `327866b`; all its requested gate inputs (package.json, scripts, src and the two regression files) are byte-identical at `70c55bf`, verified by the command in `ci-summary.json`. A receipt for an earlier SHA is not silently promoted to whole-product CI. Hosted CI was not enqueued; commits carry `[skip ci]`. Private carrier identifiers are omitted from this public repository. Whole-product hosted CI, provider/native and family release acceptance are not established by this pass.
+The coordinator owns CI submission. The completed final core checkpoint is `327866b`; all its requested gate inputs (package.json, scripts, src and the two regression files) are byte-identical at `70c55bf`, verified by the command in `ci-summary.json`. A receipt for an earlier SHA is not silently promoted to whole-product CI. Hosted CI was not enqueued; commits carry `[skip ci]`. Private carrier identifiers are omitted from this public repository. Whole-product hosted CI, provider/native and family release acceptance are not established by this pass.
 
 ## Candidate and private delivery
 
@@ -100,3 +101,5 @@ The first Operations captures showed “Loading chart…” and were excluded fr
 - Resume from `70c55bf784d5fc1fee6cf939c679c3107902d9da` and this receipt. Preserve prior candidates `2412000` and `327866b`; do not overwrite them. Do not rerun unchanged suites or submit duplicate CI. Follow any new changes with affected qualification and a new candidate.
 
 `checks.json` retains exact source/times/exit codes. Browser summaries retain per-test outcomes without raw traces. Sanitized logs and screenshot/file hashes are included for external review. Raw traces and private runner receipts stay in the campaign evidence folder. `releasePass=false`.
+
+The immutable private bundle contains the earlier evidence snapshot where final narrow CI was pending. This later source-repository supplement closes that narrow gate without replacing the bundle or changing its candidate bytes.

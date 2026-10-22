@@ -12,6 +12,19 @@
         "todo": 0
       },
       "artifactsSha256": "0d59f4b05388719a49fa47f2fd97f23bacb30def61800489d1978e7949adf390"
+    },
+    {
+      "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+      "state": "PASS_ARTIFACT_BYTES_VERIFIED",
+      "testSummary": {
+        "tests": 13,
+        "pass": 13,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0,
+        "todo": 0
+      },
+      "artifactsSha256": "198e9e1694e003fadd5ca553687925c048b704ecba3f1464a3530d27ebe98250"
     }
   ],
   "scope": "Narrow Oracle ARM64 archive/runtime-link regressions only. No full-product CI, native, provider or release acceptance.",
@@ -19,5 +32,21 @@
   "finalSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
   "gateInputsEqualRequestedSha": true,
   "equalityCommand": "git diff --quiet 327866b 70c55bf -- package.json scripts src tests/archive-boundary.test.mjs tests/runtime-link-storage.test.mjs",
-  "privateCarrierIdentifiersOmitted": true
+  "privateCarrierIdentifiersOmitted": true,
+  "finalNarrowGateStatus": "PASS_DOWNLOADED_ARTIFACT_BYTES_VERIFIED",
+  "selectedInputsIdentical": {
+    "testedSourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "finalClientSourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "sourcePaths": [
+      "package.json",
+      "scripts",
+      "src",
+      "tests/archive-boundary.test.mjs",
+      "tests/runtime-link-storage.test.mjs"
+    ],
+    "allSelectedGitPathsModesBlobIdsIdentical": true,
+    "selectedFiles": 309,
+    "inventorySha256": "c727578ec2c03dad74223cf9d755eee7a2239a5610e0424808a03855084735f3",
+    "scope": "Only the narrow gate input set is identical; does not qualify final client UI or all source"
+  }
 }
