@@ -183,8 +183,11 @@ class RuntimeTest(unittest.TestCase):
         self.assertEqual(prov["inputHash"], record["inputHash"])
         self.assertEqual(prov["producer"], {"kind": "service", "name": "py/service runtime: wind-reference"})
         self.assertEqual({i["id"]: i["value"] for i in prov["inputs"]}, {"k": 2.0, "c": 8.0, "hubHeight": 120.0})
-        legacy = self.client.post("/compute/wind-reference", json={"k": 2.0, "c": 8.0, "hubHeight": 120}).json()
+        self.assertFalse(done["cancelRequested"])
+        legacy = service.compute_wind_reference(service.WindReferenceInputs(k=2.0, c=8.0, hubHeight=120))
         self.assertEqual(artifact["payload"]["rows"], legacy["payload"]["rows"])  # same computation as level 3
+        self.assertEqual(self.client.post("/compute/wind-reference", json={"k": 2.0, "c": 8.0, "hubHeight": 120}).status_code,
+                         404)  # level 3 only in the demo profile
         self.assertEqual(self.client.get(f"{API}/runs").json()["runs"][0]["runId"], record["runId"])
         if NODE:
             node = subprocess.run([NODE, "--experimental-strip-types", "--input-type=module", "-e", NODE_VALIDATE],
@@ -244,6 +247,141 @@ class RuntimeTest(unittest.TestCase):
         self.assertEqual(again, done)  # terminal: unchanged, not pretended cancelled
         self.assertEqual(self.wait(queued["runId"])["status"], "cancelled")  # never started afterwards
         self.assertIsNone(self.client.get(f"{API}/runs/{queued['runId']}").json()["startedAt"])
+        self.assertTrue(self.client.get(f"{API}/runs/{queued['runId']}").json()["cancelRequested"])
+        self.assertFalse(done["cancelRequested"])
+
+    # -- S03 server side: cancelRequested, idempotency, readiness ---------------------------------
+    def test_cancel_requested_is_reported_until_the_worker_confirms(self) -> None:
+        observed, release = threading.Event(), threading.Event()
+
+        def stubborn(inputs, should_cancel):  # checks the cancel flag only once it is released
+            observed.set()
+            release.wait(10)
+            if should_cancel():
+                raise Cancelled()
+            return _rows(inputs.n)
+
+        app = service.create_app(origins=(ORIGIN,), allowed_hosts=("testserver",), token=TOKEN,
+                                 models={"stubborn": _model("stubborn", stubborn)})
+        client = TestClient(app, headers={"X-Datapass-Token": TOKEN})
+        try:
+            run_id = client.post(f"{API}/runs", json={"model": "stubborn", "inputs": {}}).json()["runId"]
+            self.assertTrue(observed.wait(5))
+            response = client.post(f"{API}/runs/{run_id}/cancel").json()
+            self.assertEqual((response["status"], response["cancelRequested"]), ("running", True))
+            time.sleep(0.05)
+            still = client.get(f"{API}/runs/{run_id}").json()
+            self.assertEqual((still["status"], still["cancelRequested"], still["finishedAt"]), ("running", True, None))
+            release.set()
+            deadline = time.monotonic() + 10
+            while client.get(f"{API}/runs/{run_id}").json()["status"] == "running" and time.monotonic() < deadline:
+                time.sleep(0.01)
+            final = client.get(f"{API}/runs/{run_id}").json()
+            self.assertEqual((final["status"], final["cancelRequested"]), ("cancelled", True))
+            self.assertIsNotNone(final["finishedAt"])
+        finally:
+            release.set()
+            app.state.runs.shutdown()
+
+    def test_idempotency_key_replays_the_first_record_and_refuses_a_changed_payload(self) -> None:
+        key = {"Idempotency-Key": "submit-0001-abcdef"}
+        body = {"model": "wind-reference", "inputs": {"k": 2.0, "c": 8.0, "hubHeight": 120}}
+        first = self.client.post(f"{API}/runs", json=body, headers=key)
+        self.assertEqual(first.status_code, 202, first.text)
+        reordered = {"inputs": {"hubHeight": 120, "c": 8.0, "k": 2.0}, "model": "wind-reference"}
+        again = self.client.post(f"{API}/runs", json=reordered, headers=key)  # same canonical payload
+        self.assertEqual(again.status_code, 200)
+        self.assertEqual(again.json()["runId"], first.json()["runId"])
+        self.assertEqual(len(self.client.get(f"{API}/runs").json()["runs"]), 1)
+        changed = self.client.post(f"{API}/runs", json={**body, "inputs": {"k": 2.5}}, headers=key)
+        self.assertEqual(changed.status_code, 409)
+        self.assertEqual(changed.json()["code"], "DP-RT-IDEMPOTENCY-CONFLICT")
+        other_model = self.client.post(f"{API}/runs", json={"model": "gate", "inputs": {"k": 2.0, "c": 8.0, "hubHeight": 120}},
+                                       headers=key)
+        self.assertEqual(other_model.status_code, 409)
+        self.assertEqual(len(self.client.get(f"{API}/runs").json()["runs"]), 1)
+        fresh = self.client.post(f"{API}/runs", json=body, headers={"Idempotency-Key": "submit-0002-abcdef"})
+        self.assertEqual(fresh.status_code, 202)
+        self.assertNotEqual(fresh.json()["runId"], first.json()["runId"])
+        self.assertEqual(self.client.post(f"{API}/runs", json=body).status_code, 202)  # the header stays optional
+
+    def test_idempotency_key_format_and_bounded_window(self) -> None:
+        body = {"model": "wind-reference", "inputs": {}}
+        for bad in ("short", "x" * 129, "has space here", "../../etc/x", "ключ-ключ-ключ"):
+            with self.subTest(key=bad):
+                response = self.client.post(f"{API}/runs", json=body, headers={"Idempotency-Key": bad.encode("utf-8")})
+                self.assertEqual(response.status_code, 422)
+                self.assertEqual(response.json()["code"], "DP-RT-IDEMPOTENCY-KEY")
+        unknown = self.client.post(f"{API}/runs", json={"model": "nope", "inputs": {}}, headers={"Idempotency-Key": "unknown-model-1"})
+        self.assertEqual(unknown.status_code, 404)  # refused submissions do not consume the key
+        self.assertEqual(self.client.post(f"{API}/runs", json=body, headers={"Idempotency-Key": "unknown-model-1"}).status_code, 202)
+        store = service.RunStore({"gate": _model("gate", self.gate)}, idempotency_window=3, retained=50)
+        try:
+            model = store.models["gate"]
+            self.gate.release.set()
+            ids = [store.submit(model, TestInputs(), idempotency=(f"key-{i:05d}", "d"))["runId"] for i in range(4)]
+            self.assertEqual(len(store._keys), 3)
+            self.assertIsNone(store.replay("key-00000", "d"))  # oldest key left the window
+            self.assertEqual(store.replay("key-00003", "d")["runId"], ids[3])
+        finally:
+            store.shutdown()
+
+    def test_ready_reports_checks_without_secrets(self) -> None:
+        self.assertEqual(self.client.get(f"{API}/ready", headers={"X-Datapass-Token": ""}).status_code, 401)
+        response = self.client.get(f"{API}/ready")
+        self.assertEqual(response.status_code, 200)
+        ready = response.json()
+        self.assertEqual(set(ready), {"live", "ready", "checks"})
+        self.assertTrue(ready["live"])
+        self.assertTrue(ready["ready"], ready)
+        ids = {c["id"] for c in ready["checks"]}
+        self.assertTrue({"workers", "run-capacity", "models", "result-store", "notebook-routes", "profile"} <= ids)
+        for check in ready["checks"]:
+            self.assertEqual(set(check), {"id", "ok", "detail"})
+            self.assertIsInstance(check["ok"], bool)
+        self.assertNotIn(TOKEN, response.text)
+        self.assertNotIn(str(ROOT), response.text)
+        self.assertNotIn(str(ROOT).replace("\\", "\\\\"), response.text)
+        ids = [self.submit("gate").json()["runId"] for _ in range(8)]
+        full = self.client.get(f"{API}/ready").json()
+        self.assertFalse(full["ready"])
+        self.assertFalse(next(c for c in full["checks"] if c["id"] == "run-capacity")["ok"])
+        for run_id in ids:
+            self.client.post(f"{API}/runs/{run_id}/cancel")
+        self.app.state.runs.shutdown()
+        closed = self.client.get(f"{API}/ready").json()
+        self.assertFalse(closed["ready"])
+        self.assertFalse(next(c for c in closed["checks"] if c["id"] == "workers")["ok"])
+
+    def test_traversal_run_ids_are_422_after_auth(self) -> None:
+        for path in ("/runs/%2e%2e", "/runs/%2e%2e%2f%2e%2e%2fhealth", "/runs/..%2f..%2fhealth/artifact", "/runs/..%5chealth",
+                     "/runs/run-0123456789abcdef%2f..%2fx/cancel"):
+            with self.subTest(path=path):
+                self.assertEqual(self.client.get(API + path, headers={"X-Datapass-Token": ""}).status_code, 401)
+                response = self.client.get(API + path)
+                self.assertEqual(response.status_code, 422, response.text)
+                self.assertEqual(response.json()["code"], "DP-RT-PATH")
+
+    def test_markup_in_requests_is_echoed_json_escaped(self) -> None:
+        markup = "<img src=x onerror=alert(1)>"
+        for body in ({"model": markup, "inputs": {}}, {"model": "wind-reference", "inputs": {markup: 1}}):
+            with self.subTest(body=body):
+                response = self.client.post(f"{API}/runs", json=body)
+                self.assertIn(response.status_code, (404, 422))
+                self.assertTrue(response.headers["content-type"].startswith("application/json"))
+                self.assertEqual(response.headers["x-content-type-options"], "nosniff")
+                self.assertNotIn("<img", response.text)
+                self.assertIn("\\u003cimg", response.text)
+                self.assertIn(markup, json.dumps(response.json()))
+        malformed = self.client.post(f"{API}/runs", json={"model": "wind-reference", "inputs": {}, markup: 1})
+        self.assertEqual(malformed.status_code, 422)
+        self.assertNotIn("<img", malformed.text)
+
+    def test_cors_allows_the_idempotency_header(self) -> None:
+        preflight = self.client.options(f"{API}/runs", headers={"Origin": ORIGIN, "Access-Control-Request-Method": "POST",
+                                                                "Access-Control-Request-Headers": "content-type,x-datapass-token,idempotency-key"})
+        self.assertEqual(preflight.status_code, 200)
+        self.assertIn("idempotency-key", preflight.headers.get("access-control-allow-headers", "").lower())
 
     def test_failing_model_reports_bounded_error(self) -> None:
         record = self.submit("boom").json()

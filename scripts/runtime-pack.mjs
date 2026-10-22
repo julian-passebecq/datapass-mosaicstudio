@@ -25,28 +25,33 @@ export const RUNTIME_COMPANION_FORMAT='datapass.runtime-companion';
 export const RUNTIME_MANIFEST='runtime-companion.json';
 export const RUNTIME_ENTRY='py/service/app.py';
 export const RUNTIME_HEALTH='/api/runtime/v1/health';
+/** The packaged start command: always the safe profile (no unauthenticated demo routes, no OpenAPI pages). */
+export const RUNTIME_PROFILE='safe';
+export const RUNTIME_READY='/api/runtime/v1/ready';
+export const RUNTIME_START=Object.freeze(['py/service/app.py','--profile',RUNTIME_PROFILE]);
 /** git pathspecs of the companion (relative to the repository root). */
 export const RUNTIME_SURFACE=Object.freeze([
   'py/service/*.py','py/service/requirements.txt','py/service/requirements-jupyter.txt',
-  'py/datapass_artifact.py','py/wind_reference_model.py','docs/RUNTIME_COMPANION.md',
+  'py/datapass_artifact.py','py/datapass_engineering.py','py/wind_reference_model.py','docs/RUNTIME_COMPANION.md',
 ]);
 export const RUNTIME_EXCLUDE=Object.freeze([':(exclude,glob)py/service/test_*.py']);
 /** Every archived path must match one of these. */
 export const RUNTIME_ALLOWED=Object.freeze([/^py\/service\/(?!test_)[a-z][a-z0-9_]*\.py$/,/^py\/service\/requirements(-[a-z]+)?\.txt$/,
-  /^py\/(datapass_artifact|wind_reference_model)\.py$/,/^docs\/RUNTIME_COMPANION\.md$/]);
+  /^py\/(datapass_artifact|datapass_engineering|wind_reference_model)\.py$/,/^docs\/RUNTIME_COMPANION\.md$/]);
 /** Never in a companion, even if the allowlist were widened by mistake. */
 export const RUNTIME_FORBIDDEN=Object.freeze([/^clients\//,/^qa\//,/^tests?\//,/(^|\/)test_[^/]*\.py$/,/(^|\/)node_modules\//,/^\.upstream\//,
   /^py\/(notebooks|examples)\//,/^dist(-[a-z]+)?\//,/(^|\/)\.env(\.[^/]*)?$/,/\.(pem|key|p12|pfx|keystore)$/i,/(^|\/)id_(rsa|ed25519|ecdsa)/,
   /(^|\/)\.npmrc$/,/(^|\/)credentials?(\.[a-z]+)?$/i,/(^|\/)__pycache__\//,/\.ipynb$/]);
 export const RUNTIME_REQUIRED=Object.freeze([RUNTIME_ENTRY,'py/service/runtime.py','py/service/result_store.py','py/service/requirements.txt',
-  'py/datapass_artifact.py','py/wind_reference_model.py','docs/RUNTIME_COMPANION.md']);
+  'py/datapass_artifact.py','py/datapass_engineering.py','py/wind_reference_model.py','docs/RUNTIME_COMPANION.md']);
 export const RUNTIME_PUBLICATION=Object.freeze({public:false,
   statement:'Private companion for the owner\'s machines and approved private destinations only. Never published publicly (no PyPI, npm, public release, tag or Marketplace). Delivery to a private vault is a separate, explicit release act.'});
 export const RUNTIME_ENV=Object.freeze({
   DATAPASS_RUNTIME_TOKEN:'16-128 URL-safe characters; required header X-Datapass-Token for /api/runtime/v1 (random when unset)',
-  DATAPASS_ARTIFACT_DIR:'folder of precomputed artifacts for GET /artifacts/{id}; a missing folder answers 404',
+  DATAPASS_ARTIFACT_DIR:'demo profile only: folder of precomputed artifacts for GET /artifacts/{id}; a missing folder answers 404',
   DATAPASS_SERVICE_PORT:'loopback port (default 8765; use one above 20000 for checks)',
   DATAPASS_SERVICE_ORIGINS:'comma-separated browser origins allowed by CORS and the runtime guard',
+  DATAPASS_SERVICE_PROFILE:'safe (default) or demo; --profile wins. The packaged start command passes --profile safe',
 });
 const PIN=/^[A-Za-z0-9][A-Za-z0-9._-]*(\[[A-Za-z0-9,._-]+\])?==[0-9][0-9A-Za-z.+!-]*$/;
 
@@ -91,7 +96,7 @@ export async function packRuntime({out=path.join(repo,'dist-runtime'),allowDirty
   const data=new Map(readTarGz(gz).filter(e=>e.type==='file').map(e=>[e.path.slice(base.length+1),e.data]));
   const requirements=files.filter(f=>/requirements(-[a-z]+)?\.txt$/.test(f.path)).map(f=>({path:f.path,sha256:f.sha256,pins:pinnedRequirements(data.get(f.path).toString('utf8'),f.path)}));
   const app=data.get(RUNTIME_ENTRY).toString('utf8');
-  const service={entry:RUNTIME_ENTRY,name:pyConstant(app,'SERVICE_NAME'),version:pyConstant(app,'SERVICE_VERSION'),modelVersion:pyConstant(app,'MODEL_VERSION'),health:RUNTIME_HEALTH,host:'127.0.0.1'};
+  const service={entry:RUNTIME_ENTRY,name:pyConstant(app,'SERVICE_NAME'),version:pyConstant(app,'SERVICE_VERSION'),modelVersion:pyConstant(app,'MODEL_VERSION'),health:RUNTIME_HEALTH,ready:RUNTIME_READY,host:'127.0.0.1',profile:RUNTIME_PROFILE,start:[...RUNTIME_START]};
   if(!service.name||!service.version||!service.modelVersion)throw new Error(RUNTIME_ENTRY+': SERVICE_NAME, SERVICE_VERSION or MODEL_VERSION not found');
   await mkdir(out,{recursive:true});
   for(const name of await readdir(out))if(/^datapass-runtime-companion-.*\.tar\.gz$/.test(name)||name===RUNTIME_MANIFEST)await rm(path.join(out,name),{force:true});
