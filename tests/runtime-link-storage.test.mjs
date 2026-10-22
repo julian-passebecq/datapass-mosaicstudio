@@ -22,6 +22,26 @@ test('explicit new pairing wins over stale storage after a failed write',()=>{
   port.failWrite=true;link.connect(second);assert.deepEqual(link.get(),second);
   port.failWrite=false;assert.deepEqual(link.get(),second,'storage recovery never silently selects the old runtime');
 });
+test('a memory-only pairing removes the previous stored runtime before reload when removal works',()=>{
+  for(const denied of ['write','read']){
+    const port=session(JSON.stringify(first)),link=createRuntimeLink(port);assert.deepEqual(link.get(),first);
+    if(denied==='write')port.failWrite=true;
+    else{port.failRead=true;assert.deepEqual(link.get(),first);port.failRead=false;}
+    link.connect(second);assert.deepEqual(link.get(),second);
+    assert.equal(port.getItem(RUNTIME_LINK_KEY),null,denied+' failure must not leave the old runtime persisted');
+    assert.equal(createRuntimeLink(port).get(),null,'a reload must ask for pairing again');
+  }
+});
+test('denied writes and removals cannot override explicit pairing within the page',()=>{
+  const port=session(JSON.stringify(first)),link=createRuntimeLink(port);
+  port.failWrite=true;port.failRemove=true;
+  link.connect(second);assert.deepEqual(link.get(),second);
+  link.clear();assert.equal(link.get(),null);
+  // If the browser denies removal too, persisted bytes cannot be erased by this page.
+  assert.deepEqual(createRuntimeLink(port).get(),first);
+  port.failRemove=false;link.connect(second);
+  assert.equal(createRuntimeLink(port).get(),null);
+});
 test('disconnect stays disconnected after a denied removal',()=>{
   const port=session(JSON.stringify(first)),link=createRuntimeLink(port);assert.deepEqual(link.get(),first);
   port.failRemove=true;link.clear();assert.equal(link.get(),null);

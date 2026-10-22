@@ -55,6 +55,9 @@ export function createRuntimeLink(session:SessionPort|null):RuntimeLink{
       memory=value;
       // A failed write must not silently restore the previous runtime on the next read.
       if(session&&!memoryOnly)try{session.setItem(RUNTIME_LINK_KEY,JSON.stringify(value));}catch{memoryOnly=true;}
+      // Remove an older persisted pairing before reload whenever the browser still permits it.
+      // If removal is denied too, only this page's memory can remain authoritative.
+      if(session&&memoryOnly)try{session.removeItem(RUNTIME_LINK_KEY);}catch{/* Storage cannot be revoked across reload. */}
       return value;
     },
     clear(){memory=null;if(session)try{session.removeItem(RUNTIME_LINK_KEY);}catch{memoryOnly=true;}},
