@@ -3,7 +3,7 @@
  "version": 1,
  "package": {
   "name": "datapass-mosaicstudio",
-  "version": "0.13.0"
+  "version": "0.13.1"
  },
  "project": {
   "spdx": null,
@@ -8141,7 +8141,7 @@
    },
    {
     "name": "pycparser",
-    "version": "3.11",
+    "version": "3.12",
     "license": "BSD-3-Clause",
     "declared": {
      "licenseExpression": "BSD-3-Clause",
