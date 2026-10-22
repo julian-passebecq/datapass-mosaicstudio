@@ -40,7 +40,7 @@
     "record:gallery": "node tools/record_gallery.mjs",
     "test:python": "python -m unittest discover -s py -p \"test_*.py\"",
     "test:python-bridge": "node scripts/smoke-python-bridge.mjs",
-    "service:python": "python py/service/app.py",
+    "service:python": "python py/service/app.py --profile demo",
     "test:python-service": "node scripts/smoke-python-service.mjs",
     "test:static-headers": "node scripts/smoke-static-headers.mjs",
     "test:artifact-watch": "node scripts/smoke-artifact-watch.mjs",

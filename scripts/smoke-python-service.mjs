@@ -29,7 +29,7 @@ const server=createServer(async(req,res)=>{
 await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));
 const pageOrigin=`http://127.0.0.1:${server.address().port}`;
 
-let service=spawn(python,['py/service/app.py','--port',String(servicePort)],{env:{...process.env,DATAPASS_SERVICE_ORIGINS:pageOrigin},stdio:['ignore','ignore','pipe']});
+let service=spawn(python,['py/service/app.py','--profile','demo','--port',String(servicePort)],{env:{...process.env,DATAPASS_SERVICE_ORIGINS:pageOrigin},stdio:['ignore','ignore','pipe']});
 let serviceErr='';service.stderr.on('data',d=>{serviceErr+=d;});
 const stopService=()=>new Promise(resolve=>{if(!service||service.exitCode!==null||service.signalCode!==null){resolve();return;}service.once('exit',resolve);service.kill();});
 const browser=await chromium.launch({...(process.env.CI_BROWSER_PATH?{executablePath:process.env.CI_BROWSER_PATH}:{})});
