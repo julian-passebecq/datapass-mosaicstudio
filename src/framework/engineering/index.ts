@@ -8,3 +8,4 @@ export type {EngineeringKind,RunStatus,BindingStatus,Digest,ArtifactRef,RunRecei
  *  './EngineeringBlocks.tsx', so this entry keeps loading no React. */
 export {receiptFromRunRecord,parameterDiffView,coverageBadges,comparisonIncompatibility,digestText} from './receipt.ts';
 export type {ObservedRun,ReceiptOptions,DiffRow,DiffView,CoverageBadge,ComparableSide} from './receipt.ts';
+export {VIEW_STATE_KEYS,readSelectionBinding,resolveBinding,mayAnimate,designDigest,type BindingResolution} from './binding.ts';

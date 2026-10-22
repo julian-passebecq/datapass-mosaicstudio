@@ -1,0 +1,44 @@
+{
+  "format": "datapass.engineering",
+  "version": 1,
+  "kind": "selection-binding",
+  "entityId": "plate",
+  "geometryRevision": {
+    "alg": "sha256",
+    "over": "datapass-c14n/1",
+    "value": "f63a96a1dbe2134aef495820fad0964ee62fbc56fba50a3d671227266c311623"
+  },
+  "viewToken": "synthetic.foil-adapter.1",
+  "bindings": [
+    {
+      "signal": "foil.heave",
+      "entityId": "plate",
+      "status": "sourced",
+      "source": "SYNTHETIC adapter table row heave_mm -> plate (fixture only; not FOIL data, mapping owned by the consumer)"
+    },
+    {
+      "signal": "foil.pitch-angle",
+      "entityId": "plate",
+      "status": "inferred",
+      "source": "SYNTHETIC adapter hint; the consumer has not confirmed that this channel moves the plate"
+    },
+    {
+      "signal": "pto.power",
+      "entityId": "module",
+      "status": "sourced",
+      "source": "SYNTHETIC adapter table row pto_power_kw -> module (fixture only)"
+    },
+    {
+      "signal": "foil.hydro-load",
+      "entityId": "hydrofoil",
+      "status": "sourced",
+      "source": "SYNTHETIC adapter row naming an entity this generic geometry does not contain"
+    },
+    {
+      "signal": "mooring.tension",
+      "entityId": null,
+      "status": "unmapped"
+    }
+  ],
+  "timeCursor": 0
+}
