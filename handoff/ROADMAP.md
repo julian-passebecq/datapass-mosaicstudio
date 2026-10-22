@@ -4,6 +4,7 @@
 - 2026-10-14 · Tech-lead product plan V1 existing / V2 / V3 / V4 / R&D, proposals evaluated against the code, Anatomy evaluation: [`docs/roadmap/tech-lead-2026-10-14/PLAN.md`](../docs/roadmap/tech-lead-2026-10-14/PLAN.md). Every item not built is CANDIDATE. **2026-10-16: V2 (F201-F213) APPROVED**; V3, V4 and R&D (R01-R05) stay CANDIDATE.
 
 ## Releases
+- 2026-10-22 · **0.13.0** (lane 01 engineering consumer, #96-#99: `datapass.engineering/1`, runtime `safe` profile default, additive runtime wire, client run lifecycle): release commit `release/0.13.0`; private build and delivery follow the 0.12.0 recipe. 0.12.0 (`c6f5b97`) stays as delivered.
 - 2026-10-16 · **0.12.0** (V2 F201-F213 + CSP-1 #77): built from `c6f5b97` (#94), qualified on the shipped bytes and delivered privately under `0.12.0-c6f5b97` (SDK, workbench zip, runtime companion, viewer); receipt [`qa/REL-0.12.0.md`](../qa/REL-0.12.0.md). No tag, public release or deployment. 0.11.1 (`3575e6b`) stays as delivered.
 - 2026-10-16 · **T3 is out of the critical path (Julian, 16 Oct).** E2E-06 (native agent in T3) stays NOT_RUN/BLOCKED as history only; it is explicitly not a dependency of 0.12.0 or of any later Mosaic release or package.
 

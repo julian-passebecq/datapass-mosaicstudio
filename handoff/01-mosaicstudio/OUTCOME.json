@@ -171,7 +171,8 @@
     "No LICENSE file; manifest states this",
     "Full browser suite had one load-sensitive flake (concept-standalone embed fit) locally; passes alone and in CI"
   ],
-  "next_safe_action": "Superseded (2026-10-16): 0.12.0 built from c6f5b97 and delivered privately under 0.12.0-c6f5b97; receipt qa/REL-0.12.0.md, outcome handoff/01-mosaicstudio/release-0.12.0-2026-10-16/OUTCOME.json, resume handoff/01-mosaicstudio/RESUME.md. Nothing waits on T3: E2E-06 stays NOT_RUN/BLOCKED as history, not a dependency (Julian, 16 Oct). Owner: licence decision before any public publication.",
+  "next_safe_action": "Superseded (2026-10-22): release commit for 0.13.0 (lane 01, #96-#99) on branch release/0.13.0; see handoff/01-mosaicstudio/RESUME.md. Agent: build and privately deliver 0.13.0 from the merged release commit with the 0.12.0 recipe (qa/REL-0.12.0.md). Owner: licence decision before any public publication.",
+  "next_safe_action_0_12_0_delivery": "Superseded (2026-10-16): 0.12.0 built from c6f5b97 and delivered privately under 0.12.0-c6f5b97; receipt qa/REL-0.12.0.md, outcome handoff/01-mosaicstudio/release-0.12.0-2026-10-16/OUTCOME.json, resume handoff/01-mosaicstudio/RESUME.md. Nothing waits on T3: E2E-06 stays NOT_RUN/BLOCKED as history, not a dependency (Julian, 16 Oct). Owner: licence decision before any public publication.",
   "next_safe_action_0_12_0_build": "Agent: build and privately deliver 0.12.0 from the merged release commit with the 0.11.1 recipe (done 2026-10-16).",
   "next_safe_action_0_9_0": "Owner/PM reviews the PR and merges on green CI; optionally add a CORS+browser-consent path to datapass-mosaic-vscode runtime in its own lane"
 }

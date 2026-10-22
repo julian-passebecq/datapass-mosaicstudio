@@ -55,12 +55,12 @@ never printed. Both processes are stopped and the folder removed. Exit 0 = every
 ## Install and start outside a checkout
 
 A Python 3 that installs the pinned `py/service/requirements.txt` (CI uses the runner's Python). Use a folder you own; the commands create a virtual environment inside it, nothing global.
-Replace `0.12.0` with the version in the archive name, and check the hash first.
+Replace `0.13.0` with the version in the archive name, and check the hash first.
 
 ### PowerShell
 
 ```powershell
-$v = "0.12.0"
+$v = "0.13.0"
 $dir = "$env:LOCALAPPDATA\DataPass\runtime-companion"
 New-Item -ItemType Directory -Force $dir | Out-Null
 Copy-Item "dist-runtime\datapass-runtime-companion-$v.tar.gz", "dist-runtime\runtime-companion.json" $dir
@@ -81,7 +81,7 @@ $env:DATAPASS_SERVICE_ORIGINS = "http://127.0.0.1:5173" # the origin of the work
 ### Git Bash
 
 ```bash
-v=0.12.0
+v=0.13.0
 dir="$LOCALAPPDATA/DataPass/runtime-companion"     # or "$HOME/.datapass/runtime-companion" elsewhere
 mkdir -p "$dir"
 cp "dist-runtime/datapass-runtime-companion-$v.tar.gz" dist-runtime/runtime-companion.json "$dir/"
