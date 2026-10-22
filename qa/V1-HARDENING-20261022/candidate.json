@@ -1,0 +1,40 @@
+{
+  "format": "datapass.local-hardening-candidate/1",
+  "sourceCommit": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+  "sourceTreeClean": true,
+  "publicPublication": false,
+  "ga": false,
+  "workbenchFiles": 119,
+  "files": [
+    {
+      "path": "datapass-mosaicstudio-workbench-0.13.0-hardening.zip",
+      "bytes": 20646329,
+      "sha256": "6aa09ffbc61b384f863a7a1d236542d1053a9c553e66a22ef46a1e261ab6bd23"
+    },
+    {
+      "path": "dist-runtime/datapass-runtime-companion-0.13.0.tar.gz",
+      "bytes": 53576,
+      "sha256": "58fae596eed0bd3758d6dba0f8f4afb175d3dec99117964383cdc25eee37942d"
+    },
+    {
+      "path": "dist-runtime/runtime-companion.json",
+      "bytes": 4646,
+      "sha256": "96c8b73ed4b0240e9d5fc0d060e494fcb1db408ad96179b2937543767ba633fc"
+    },
+    {
+      "path": "dist-sdk/concept-viewer.html",
+      "bytes": 974386,
+      "sha256": "382381cd7728b1af8c62bc25e094aa904d16a45a0d54eea156f3e0f7c80658b5"
+    },
+    {
+      "path": "dist-sdk/datapass-mosaicstudio-sdk-0.13.0.tar.gz",
+      "bytes": 838624,
+      "sha256": "64d053a0e2135088d82595649686dac799e5148ae94b833616fdeb89cd7c4dec"
+    },
+    {
+      "path": "dist-sdk/sdk-release.json",
+      "bytes": 67542,
+      "sha256": "c1138f6aa4d64bcd5990c10a5a0fd7bd8ae2578a97cdbd54f1838b1745f347ac"
+    }
+  ]
+}

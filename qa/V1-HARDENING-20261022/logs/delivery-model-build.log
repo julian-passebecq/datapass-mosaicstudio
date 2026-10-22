@@ -1,0 +1,34 @@
+
+> datapass-mosaicstudio@0.13.0 build:client
+> node --experimental-strip-types scripts/build-client.mjs model-reference
+
+Verified cached vizforge 7aaa8fa601c5fa2c9f8acfd7a4d4eb54b887b9ef
+Verified cached conceptmotion 30e69639bfc3929c348fd8f9c6c38a2cb61984d8
+Verified cached sqlrooms-examples cb3b6d01609b6373e68af096c3724ed17f6f19dc
+Mapped 94 actual Fluent icon exports to public subpaths.
+Client OK: model-reference / 1 pages / 0 datasets / reference
+vite v7.1.5 building for production...
+transforming...
+✓ 2914 modules transformed.
+rendering chunks...
+computing gzip size...
+dist-clients/model-reference/robots.txt                                 0.03 kB │ gzip:   0.05 kB
+dist-clients/model-reference/favicon.svg                                0.20 kB │ gzip:   0.17 kB
+dist-clients/model-reference/studio-build.json                          0.25 kB │ gzip:   0.18 kB
+dist-clients/model-reference/_headers                                   0.29 kB
+dist-clients/model-reference/studio-publication.json                    0.37 kB │ gzip:   0.25 kB
+dist-clients/model-reference/index.html                                 1.02 kB │ gzip:   0.48 kB
+dist-clients/model-reference/assets/EngineeringConsumer-DIqEaux4.css    3.06 kB │ gzip:   1.07 kB
+dist-clients/model-reference/assets/ModelBlock-v5wIy8nu.css            16.32 kB │ gzip:   3.41 kB
+dist-clients/model-reference/assets/index-CCyeBlUp.css                 19.10 kB │ gzip:   4.36 kB
+dist-clients/model-reference/assets/Scene3D-Uvhi7Jhd.js                 2.31 kB │ gzip:   0.90 kB
+dist-clients/model-reference/assets/app-Be0EXyPt.js                     5.21 kB │ gzip:   2.23 kB
+dist-clients/model-reference/assets/ModelBlock-CRzspAAP.js             12.45 kB │ gzip:   4.49 kB
+dist-clients/model-reference/assets/EngineeringConsumer-DGL7DLGP.js    25.31 kB │ gzip:   9.64 kB
+dist-clients/model-reference/assets/ModelViewport-BO8zh-N7.js          57.83 kB │ gzip:  17.82 kB
+dist-clients/model-reference/assets/Story-BjtgqU6q.js                 208.50 kB │ gzip:  65.76 kB
+dist-clients/model-reference/assets/index-DHvvlOyw.js                 333.74 kB │ gzip: 104.13 kB
+dist-clients/model-reference/assets/SceneViewport-cUl70ThM.js         563.09 kB │ gzip: 143.79 kB
+✓ built in 7.24s
+Preview descriptor: dist-clients/model-reference/preview.json (18 files, 0 artifacts).
+Client model-reference built to dist-clients/model-reference. No deployment was performed.

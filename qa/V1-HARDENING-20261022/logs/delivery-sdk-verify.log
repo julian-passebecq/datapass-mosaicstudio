@@ -1,0 +1,5 @@
+
+> datapass-mosaicstudio@0.13.0 sdk:verify
+> node scripts/sdk-verify.mjs dist-sdk
+
+SDK 0.13.0 verified: datapass-mosaicstudio-sdk-0.13.0.tar.gz (396 files), 1 standalone file(s), 4 contract(s); commit 70c55bf784d5.

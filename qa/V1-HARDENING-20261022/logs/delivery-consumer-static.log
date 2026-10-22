@@ -1,0 +1,9 @@
+SDK 0.13.0 verified: datapass-mosaicstudio-sdk-0.13.0.tar.gz (396 files), 1 standalone file(s), 4 contract(s); commit 70c55bf784d5.
+Runtime companion 0.13.0 verified: datapass-runtime-companion-0.13.0.tar.gz (12 files, 7 pinned requirements); service datapass-artifact-service 0.5.0; start py/service/app.py --profile safe; commit 70c55bf784d5.
+{
+  "filesVerified": 6,
+  "sourceCommit": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+  "shippedSdkVerifier": "PASS",
+  "shippedRuntimeVerifierStatic": "PASS",
+  "workbenchFiles": 119
+}
