@@ -34,15 +34,16 @@ function checked(value:unknown):RuntimeConnection|null{
 }
 /** `session` is sessionStorage (or null when unavailable: the connection then lives in page memory only). */
 export function createRuntimeLink(session:SessionPort|null):RuntimeLink{
-  let memory:RuntimeConnection|null=null;
+  let memory:RuntimeConnection|null=null,memoryOnly=!session;
   const read=():RuntimeConnection|null=>{
-    if(!session)return memory;
+    if(memoryOnly||!session)return memory;
     let raw:string|null=null;
-    try{raw=session.getItem(RUNTIME_LINK_KEY);}catch{return memory;}
-    if(raw===null)return null;
+    try{raw=session.getItem(RUNTIME_LINK_KEY);}catch{memoryOnly=true;return memory;}
+    if(raw===null){memory=null;return null;}
     let value:RuntimeConnection|null=null;
     try{value=checked(JSON.parse(raw));}catch{value=null;}
-    if(!value)try{session.removeItem(RUNTIME_LINK_KEY);}catch{/* unavailable */}
+    memory=value;
+    if(!value)try{session.removeItem(RUNTIME_LINK_KEY);}catch{memoryOnly=true;}
     return value;
   };
   return {
@@ -52,10 +53,14 @@ export function createRuntimeLink(session:SessionPort|null):RuntimeLink{
       const value=checked(connection);
       if(!value)throw new Error('The runtime connection is malformed.');
       memory=value;
-      if(session)try{session.setItem(RUNTIME_LINK_KEY,JSON.stringify(value));}catch{/* page memory only */}
+      // A failed write must not silently restore the previous runtime on the next read.
+      if(session&&!memoryOnly)try{session.setItem(RUNTIME_LINK_KEY,JSON.stringify(value));}catch{memoryOnly=true;}
+      // Remove an older persisted pairing before reload whenever the browser still permits it.
+      // If removal is denied too, only this page's memory can remain authoritative.
+      if(session&&memoryOnly)try{session.removeItem(RUNTIME_LINK_KEY);}catch{/* Storage cannot be revoked across reload. */}
       return value;
     },
-    clear(){memory=null;if(session)try{session.removeItem(RUNTIME_LINK_KEY);}catch{/* unavailable */}},
+    clear(){memory=null;if(session)try{session.removeItem(RUNTIME_LINK_KEY);}catch{memoryOnly=true;}},
   };
 }
 

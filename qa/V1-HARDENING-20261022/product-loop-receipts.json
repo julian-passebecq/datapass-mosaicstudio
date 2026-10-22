@@ -1,0 +1,221 @@
+{
+  "format": "datapass.v2-loop-receipts",
+  "version": 1,
+  "feature": "F212",
+  "notice": "SYNTHETIC data only. Hashes and verdicts from one run of tests/product-loop/loop.spec.ts; run ids differ per run, so hashes differ between runs. Not a signature, release or validation.",
+  "consumers": [
+    {
+      "consumer": "contoso-shape-analytics",
+      "producer": {
+        "script": "clients/contoso-shape-analytics/py/serve.py",
+        "model": "contoso-shape-scenario"
+      },
+      "synthetic": true,
+      "steps": [
+        {
+          "step": "price +10%, cost 0%",
+          "views": [
+            "table",
+            "margin-chart",
+            "total-revenue",
+            "total-margin",
+            "margin-rate",
+            "json"
+          ],
+          "requests": 0
+        },
+        {
+          "step": "price +10%, cost +5%",
+          "views": [
+            "table",
+            "margin-chart",
+            "total-revenue",
+            "total-margin",
+            "margin-rate",
+            "json"
+          ],
+          "requests": 0
+        }
+      ],
+      "savedResultSha256": [
+        "acff8cf3a26fd74966e6790ed0e2873c963d546891e6663d6b0d5581ae0ec0b7",
+        "fd4391037cab70edffeb1d4d2689f40bf9ccdddae45443d9b6f02737ff528ee3"
+      ],
+      "reopenedAfterRestart": [
+        {
+          "resultSha256": "acff8cf3a26fd74966e6790ed0e2873c963d546891e6663d6b0d5581ae0ec0b7",
+          "sameHash": true,
+          "state": "Not recomputed"
+        },
+        {
+          "resultSha256": "fd4391037cab70edffeb1d4d2689f40bf9ccdddae45443d9b6f02737ff528ee3",
+          "sameHash": true,
+          "state": "Not recomputed"
+        }
+      ],
+      "ab": {
+        "a": "acff8cf3a26fd74966e6790ed0e2873c963d546891e6663d6b0d5581ae0ec0b7",
+        "b": "fd4391037cab70edffeb1d4d2689f40bf9ccdddae45443d9b6f02737ff528ee3",
+        "metricDeltas": [
+          "Total revenue USD | 38,583.6 | 38,583.6 | 0",
+          "Total margin USD | 21,045.6 | 20,168.7 | -876.9",
+          "Margin rate ratio | 0.5455 | 0.5227 | -0.0228"
+        ],
+        "sameAfterReopen": true
+      },
+      "bundle": {
+        "bundleSha256": "90b45c284ae19e817a1bdba898491fddc9a2f5cd53376ea9253b3a72f19f2c73",
+        "files": [
+          {
+            "path": "SHA256SUMS",
+            "sha256": "90b45c284ae19e817a1bdba898491fddc9a2f5cd53376ea9253b3a72f19f2c73"
+          },
+          {
+            "path": "artifacts/output-1.json",
+            "sha256": "ddc95a4c44d7625adabfe93cdde52ebc0bdf610a6cadb98a0f4dc97bbb9f65e5"
+          },
+          {
+            "path": "artifacts/output-2.json",
+            "sha256": "d05a06d5222bb1436d9edfb452c0a239d96627b8157742bdff2199c343217b44"
+          },
+          {
+            "path": "inputs.json",
+            "sha256": "1973b1094dbb4e806c5b8aade81dcedd1f36c237baedf311220959fc80d027d9"
+          },
+          {
+            "path": "lineage.json",
+            "sha256": "e22568100bf0e559033152b8eef184db56444de4e3ea3f493268414e9cc8dda9"
+          },
+          {
+            "path": "runs.json",
+            "sha256": "92e6ced9050192fa7633462bdd6c1278aba5630d1a84b5ba27571c365f82eb85"
+          }
+        ],
+        "typescript": "valid",
+        "python": "valid",
+        "tokenFree": true
+      },
+      "runtimeRunRequestsAfterReopen": 0,
+      "lifecycle": {
+        "viewOnlyRunPosts": 0,
+        "cancel": {
+          "taskState": "cancelled",
+          "cancelSent": true,
+          "displayState": "succeeded"
+        },
+        "failure": {
+          "submitAttempts": 2,
+          "sameIdempotencyKey": true,
+          "previousResultLabelled": true,
+          "failedRunState": "failed"
+        }
+      },
+      "verdict": "PASS"
+    },
+    {
+      "consumer": "foil-wind",
+      "producer": {
+        "script": "clients/foil-wind/py/serve.py",
+        "model": "foil-wind-compare"
+      },
+      "synthetic": true,
+      "steps": [
+        {
+          "step": "run-2 against run-1",
+          "views": [
+            "table",
+            "change-chart",
+            "power-delta",
+            "wind-delta",
+            "json"
+          ],
+          "requests": 0
+        },
+        {
+          "step": "run-3 against run-1",
+          "views": [
+            "table",
+            "change-chart",
+            "power-delta",
+            "wind-delta",
+            "json"
+          ],
+          "requests": 0
+        }
+      ],
+      "savedResultSha256": [
+        "1113b2c3471ee772074dfe5feb64aa98053226e139a3a86ffbb3d407606e2e5d",
+        "4ba0e33f816ffb876d449e17b1feb07d2bae70443aae6610aa0cbae30389266a"
+      ],
+      "reopenedAfterRestart": [
+        {
+          "resultSha256": "1113b2c3471ee772074dfe5feb64aa98053226e139a3a86ffbb3d407606e2e5d",
+          "sameHash": true,
+          "state": "Not recomputed"
+        },
+        {
+          "resultSha256": "4ba0e33f816ffb876d449e17b1feb07d2bae70443aae6610aa0cbae30389266a",
+          "sameHash": true,
+          "state": "Not recomputed"
+        }
+      ],
+      "ab": {
+        "a": "4ba0e33f816ffb876d449e17b1feb07d2bae70443aae6610aa0cbae30389266a",
+        "b": "1113b2c3471ee772074dfe5feb64aa98053226e139a3a86ffbb3d407606e2e5d",
+        "metricDeltas": [
+          "Mean power proxy, B - A kW | 1.1333 | 0.3 | -0.8333",
+          "Mean wind, B - A m/s | 2.0833 | 0.9583 | -1.125"
+        ],
+        "sameAfterReopen": true
+      },
+      "bundle": {
+        "bundleSha256": "23a419a0fc022a709b3f7f4bebf85312e831e61e8ac4c82f25444db0a2a53e1e",
+        "files": [
+          {
+            "path": "SHA256SUMS",
+            "sha256": "23a419a0fc022a709b3f7f4bebf85312e831e61e8ac4c82f25444db0a2a53e1e"
+          },
+          {
+            "path": "artifacts/output-1.json",
+            "sha256": "4ed28baf2a0660ddecf84dd56ee5feffe4f595ef4e01358ede60fe4cd053a847"
+          },
+          {
+            "path": "artifacts/output-2.json",
+            "sha256": "cf2ddc6c0a89ad36d85c4e5c1039c7204585115b9d10939cd5b7699c15114e50"
+          },
+          {
+            "path": "inputs.json",
+            "sha256": "c870920d89241cdab68622915f1a29079ba10ebc9edab2fab0ac88849b14dbdd"
+          },
+          {
+            "path": "lineage.json",
+            "sha256": "d3ef31cf97695a20e7811cd35f16fedf05017c03f954e222911a145e7d000c96"
+          },
+          {
+            "path": "runs.json",
+            "sha256": "2f2e66a2e91658a8432032141b8b751db1b07a3eaa29e56997e113b4f0683053"
+          }
+        ],
+        "typescript": "valid",
+        "python": "valid",
+        "tokenFree": true
+      },
+      "runtimeRunRequestsAfterReopen": 0,
+      "lifecycle": {
+        "viewOnlyRunPosts": 0,
+        "cancel": {
+          "taskState": "cancelled",
+          "cancelSent": true,
+          "displayState": "succeeded"
+        },
+        "failure": {
+          "submitAttempts": 2,
+          "sameIdempotencyKey": true,
+          "previousResultLabelled": true,
+          "failedRunState": "failed"
+        }
+      },
+      "verdict": "PASS"
+    }
+  ]
+}

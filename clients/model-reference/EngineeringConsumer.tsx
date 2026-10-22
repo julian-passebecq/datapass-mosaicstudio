@@ -85,7 +85,7 @@ export function EngineeringConsumer(){
             <rect x={r.x} y={r.y} width={r.w} height={r.h} rx="5"/><text x={r.x+r.w/2} y={r.y+r.h/2+4} textAnchor="middle">{p.label.split(' ')[0]}</text></g>;})}
       </svg><figcaption>Authored 2D positions. Motion is a finite offset from the selected sample, not a simulation; no autoplay.</figcaption></figure>
     </div>
-    <div className="eng-table-wrap"><table className="eng-results"><caption>SYNTHETIC signal results and their bindings</caption>
+    <div className="eng-table-wrap" role="region" aria-label="Signal results" tabIndex={0}><table className="eng-results"><caption>SYNTHETIC signal results and their bindings</caption>
       <thead><tr><th scope="col">Signal</th><th scope="col">Bound part</th><th scope="col">Binding</th><th scope="col">Value at {time} s</th><th scope="col">Source</th></tr></thead>
       <tbody>{record.bindings.map(b=>{const v=sample(b.signal);return <tr key={b.signal} data-signal={b.signal} data-entity={b.entityId??''} aria-selected={b.entityId!==null&&b.entityId===selected}>
         <th scope="row">{b.signal}</th>

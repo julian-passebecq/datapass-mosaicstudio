@@ -1,0 +1,178 @@
+{
+  "sourceUnchanged": true,
+  "clients": [
+    {
+      "id": "operations-reference",
+      "files": 13,
+      "javascriptFiles": 4,
+      "javascriptGzipBytes": 188661,
+      "totalBytes": 616846,
+      "requests": 7,
+      "status": "passed"
+    },
+    {
+      "id": "wind-reference",
+      "files": 16,
+      "javascriptFiles": 7,
+      "javascriptGzipBytes": 325026,
+      "totalBytes": 1147439,
+      "requests": 7,
+      "status": "passed"
+    },
+    {
+      "id": "architecture-reference",
+      "files": 18,
+      "javascriptFiles": 8,
+      "javascriptGzipBytes": 224965,
+      "totalBytes": 782839,
+      "requests": 9,
+      "status": "passed"
+    },
+    {
+      "id": "experience-reference",
+      "files": 28,
+      "javascriptFiles": 16,
+      "javascriptGzipBytes": 436699,
+      "totalBytes": 1547784,
+      "requests": 10,
+      "status": "passed"
+    },
+    {
+      "id": "energy-replay-reference",
+      "files": 20,
+      "javascriptFiles": 10,
+      "javascriptGzipBytes": 326805,
+      "totalBytes": 1158648,
+      "requests": 10,
+      "status": "passed"
+    },
+    {
+      "id": "motion-reference",
+      "files": 14,
+      "javascriptFiles": 5,
+      "javascriptGzipBytes": 158655,
+      "totalBytes": 547502,
+      "requests": 8,
+      "status": "passed"
+    },
+    {
+      "id": "foundation-reference",
+      "files": 20,
+      "javascriptFiles": 9,
+      "javascriptGzipBytes": 226142,
+      "totalBytes": 746682,
+      "requests": 14,
+      "status": "passed"
+    },
+    {
+      "id": "model-reference",
+      "files": 19,
+      "javascriptFiles": 8,
+      "javascriptGzipBytes": 348755,
+      "totalBytes": 1255597,
+      "requests": 12,
+      "status": "passed"
+    },
+    {
+      "id": "portfolio-showcase",
+      "files": 25,
+      "javascriptFiles": 2,
+      "javascriptGzipBytes": 129040,
+      "totalBytes": 4800652,
+      "requests": 15,
+      "status": "passed"
+    },
+    {
+      "id": "animated-coding-lab",
+      "files": 20,
+      "javascriptFiles": 5,
+      "javascriptGzipBytes": 171620,
+      "totalBytes": 631817,
+      "requests": 11,
+      "status": "passed"
+    },
+    {
+      "id": "concept-viewer",
+      "files": 19,
+      "javascriptFiles": 7,
+      "javascriptGzipBytes": 313592,
+      "totalBytes": 1160716,
+      "requests": 9,
+      "status": "passed"
+    },
+    {
+      "id": "acceptance-fresh",
+      "files": 11,
+      "javascriptFiles": 2,
+      "javascriptGzipBytes": 106846,
+      "totalBytes": 371365,
+      "requests": 5,
+      "status": "passed"
+    },
+    {
+      "id": "acceptance-knowledge",
+      "files": 14,
+      "javascriptFiles": 4,
+      "javascriptGzipBytes": 170522,
+      "totalBytes": 591552,
+      "requests": 6,
+      "status": "passed"
+    },
+    {
+      "id": "acceptance-spatial",
+      "files": 16,
+      "javascriptFiles": 6,
+      "javascriptGzipBytes": 301876,
+      "totalBytes": 1108508,
+      "requests": 7,
+      "status": "passed"
+    },
+    {
+      "id": "acceptance-analytics",
+      "files": 13,
+      "javascriptFiles": 4,
+      "javascriptGzipBytes": 187647,
+      "totalBytes": 613945,
+      "requests": 7,
+      "status": "passed"
+    },
+    {
+      "id": "acceptance-replay",
+      "files": 18,
+      "javascriptFiles": 8,
+      "javascriptGzipBytes": 194010,
+      "totalBytes": 638147,
+      "requests": 9,
+      "status": "passed"
+    },
+    {
+      "id": "acceptance-motion",
+      "files": 14,
+      "javascriptFiles": 5,
+      "javascriptGzipBytes": 155301,
+      "totalBytes": 535223,
+      "requests": 8,
+      "status": "passed"
+    },
+    {
+      "id": "acceptance-foundation",
+      "files": 18,
+      "javascriptFiles": 8,
+      "javascriptGzipBytes": 217533,
+      "totalBytes": 717092,
+      "requests": 9,
+      "status": "passed"
+    },
+    {
+      "id": "acceptance-model",
+      "files": 16,
+      "javascriptFiles": 6,
+      "javascriptGzipBytes": 272218,
+      "totalBytes": 1015085,
+      "requests": 9,
+      "status": "passed"
+    }
+  ],
+  "implementationCheckpoint": "2412000ec812a99799eb1a2bf0974c6d43998202",
+  "limitation": "src digest unchanged. Two test-only reload regressions were added during the last generated builds; those preview descriptors reported a dirty tree. This is not a final clean-package receipt."
+}

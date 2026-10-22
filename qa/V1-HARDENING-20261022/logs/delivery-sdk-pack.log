@@ -1,0 +1,5 @@
+
+> datapass-mosaicstudio@0.13.0 sdk:pack
+> node scripts/sdk-pack.mjs
+
+SDK 0.13.0 packed: dist-sdk\datapass-mosaicstudio-sdk-0.13.0.tar.gz · 396 files · 819 KB · sha256 64d053a0e2135088… · commit 70c55bf784d5. Nothing was published.

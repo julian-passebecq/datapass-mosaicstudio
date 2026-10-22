@@ -1,0 +1,211 @@
+{
+  "schema": "galaxy.v1-github-snapshot-verification/1",
+  "repository": "julian-passebecq/datapass-mosaicstudio",
+  "commit": "35b78f6e1bcb0fe99e41336019882ca0b32eea29",
+  "checkedAtUtc": "2026-10-22T16:32:04.595317+00:00",
+  "remoteArchiveSha256": "fe87ce673e95afcc2fe5c3319807871e0afa4391035f4bbfd62b5dadd53d2e6b",
+  "comparedTo": "local Git commit blobs (not checkout newline conversion)",
+  "allFilesByteIdentical": true,
+  "files": [
+    {
+      "path": "qa/V1-HARDENING-20261022/README.md",
+      "bytes": 11188,
+      "sha256": "1761ee90c0e209c5998f5c166756ada6435500f3c567df800643aaaaf4ae13e4"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/SHA256SUMS",
+      "bytes": 3629,
+      "sha256": "7dd42c957429a370f5f77fdf016fc6630a0d731d5c0481466a25ff3b4f6bfc57"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/candidate.json",
+      "bytes": 1292,
+      "sha256": "ddc4a604ba2284e985d9c99d9cb9b596f757fb48a4db46c3ade644c5e7419a40"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/checks.json",
+      "bytes": 7156,
+      "sha256": "0fb6acfea7d8bac93e8d59c913255b26c6d384ba6dc08564c7ca3e654250bb7e"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/ci-summary.json",
+      "bytes": 883,
+      "sha256": "c5695377ba4a027acfff2650355e94e5f01cfdf7ee971b638cebb3a3ecc84e66"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/delivery-browser-summary.json",
+      "bytes": 10297,
+      "sha256": "cf4ca70f93496e8271902cf43f3f831cee79d4c3d6ab479193d6db6773ece596"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/edge-browser-summary.json",
+      "bytes": 2186,
+      "sha256": "b40542e18570776ffe244aea31afac844362723fd1a88a9779867e41bbfaa808"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/environment.json",
+      "bytes": 303,
+      "sha256": "2999a12100975dfc06b02ba72aa900dbfa2c3131ada509cd27ff471a4c84ec1b"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/final-browser-summary.json",
+      "bytes": 45452,
+      "sha256": "df7e1bcb51fcaa60999e7ca502290adb294ea935622457fca2ea545835400843"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/delivery-browser.log",
+      "bytes": 5116,
+      "sha256": "64b747a6aa27fdcba04e9cc1ed73e6587fa1df2efbf5bfc1de2513d8f05e8faf"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/delivery-build.log",
+      "bytes": 21035,
+      "sha256": "a0ba2d295782f2a91400ce9c979f3cb5de29dcdbf85e5b7faa97989a5d75caa4"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/delivery-clients.log",
+      "bytes": 1383,
+      "sha256": "3d107f68a73851edf8ea09643f8a3ef6f6c8588210be8df2603966d6ecbca263"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/delivery-consumer-runtime.log",
+      "bytes": 3665,
+      "sha256": "c63ddec8e2ad4dc0160c3daba86d3d55ed43036303a70b111e54e28b5ac542a3"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/delivery-consumer-static.log",
+      "bytes": 531,
+      "sha256": "f4ed245a576bd20d95b5c9876a54f846ba4cd5058faf60f0937898066ba3ac10"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/delivery-contracts.log",
+      "bytes": 910,
+      "sha256": "8b92d2716e61a7ea58f47f5464c221e74e078f30a9ee56536e5549ef99d85e44"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/delivery-focused.log",
+      "bytes": 1977,
+      "sha256": "07dfa2d5d378ad7386095b70c7dcef82c18413497c93f26045eb65b5206f4be6"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/delivery-model-build.log",
+      "bytes": 2457,
+      "sha256": "1ab6c018c5945eae94c87a78a971c1a0291376382fdc1eb7584c84a4c2f818ed"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/delivery-product-loop.log",
+      "bytes": 1269,
+      "sha256": "8e5f12ef71c23d44fe8e1b7a98474700cd5b6f6e3898ce61a3b9e0a3441b1ff4"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/delivery-runtime-pack.log",
+      "bytes": 279,
+      "sha256": "ddbca333dfac1e85cd9cefb3da4e095a9f9b5627752f34720bcaab301e9161a1"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/delivery-sdk-pack.log",
+      "bytes": 238,
+      "sha256": "f6600a536a8bf01721305b12152f4b0441a5f4a554c8d23bb75f76c0dd50ffa9"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/delivery-sdk-verify.log",
+      "bytes": 215,
+      "sha256": "24be055a054f82fc3a2bc0dc65e1f564a1572c2890e78b4a2085b76ad0adae81"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/delivery-visual-contracts.log",
+      "bytes": 1409,
+      "sha256": "3e4f8cfccc78195d5c2a394d3c89dc9d2f9a89136f050f047381adff39207a72"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/edge-browser.log",
+      "bytes": 1151,
+      "sha256": "7ce8f26630d439c1aea0f7ed924d76b2829564fb49021af5ebc984ef1db54f86"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/final-browser.log",
+      "bytes": 20900,
+      "sha256": "2a8ba3f5cb65625f792e5495a2753c0972f63dcb93757242e618f4abc58281db"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/final-contracts.log",
+      "bytes": 910,
+      "sha256": "8b92d2716e61a7ea58f47f5464c221e74e078f30a9ee56536e5549ef99d85e44"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/final-python-runtime.log",
+      "bytes": 514,
+      "sha256": "dae1c750ebd1d14e6e1b81002c253d42aeb4152ad23441abecd86feaebed527a"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/final-python.log",
+      "bytes": 502,
+      "sha256": "0971bffc8aeb50367a9297a8079dc2955059988ccc826048ed5a9eb95dc1fbbf"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/final-unit.log",
+      "bytes": 74043,
+      "sha256": "6203c2e32c16144fffe66fc1fe7888af5c162a35a620f370a05e39e5e60e9650"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/logs/mobile-readability-before.log",
+      "bytes": 3315,
+      "sha256": "aa0aae9560a72449bf4c0ff00937352290d9665a2dc35f23ed26604c76a4a0de"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/model-build.json",
+      "bytes": 247,
+      "sha256": "3c00aafffe7d83fdadc7a71f24613947960e3fbab218785648e4cbef8178ce11"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/product-loop-receipts.json",
+      "bytes": 6945,
+      "sha256": "6b274505006849721ad8b4fe33464ef8d653cc730bd8a9838170350e54b8f9e8"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/screenshots/engineering-desktop.png",
+      "bytes": 205123,
+      "sha256": "50d25218ab4cae15cf0603db117942460816f94f9585fe72e0a6031cf12586c2"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/screenshots/engineering-mobile-before.png",
+      "bytes": 154169,
+      "sha256": "e9e538d6d10d70e0deee6941298c8da11d2b21229cee641765073519a8d58eeb"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/screenshots/engineering-mobile-source.png",
+      "bytes": 8964,
+      "sha256": "5714a39a6bfc806a2b9d243cb773001e688cb496d20792474ec823425442c21a"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/screenshots/engineering-mobile.png",
+      "bytes": 148310,
+      "sha256": "87ae7bec7df482db478e2fcd8aa684bcfc1e89cbd159435aa0da95eb545219d9"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/screenshots/operations-desktop.png",
+      "bytes": 50583,
+      "sha256": "af8e9c412d7daf26cf9c81990736ff9e5539aa3f9d5bfdd93364e70283e254ab"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/screenshots/operations-mobile.png",
+      "bytes": 60573,
+      "sha256": "fb4b947e8e397361b7f01cfb92207bec35210e2207d20dc39e6ecc3db4397214"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/selected-clients.json",
+      "bytes": 4249,
+      "sha256": "11610f2844b719c0964024b1738ad7d8bde2aa6d1ecdc4df56d7aae4a6959c49"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/tools/package_candidate.py",
+      "bytes": 2154,
+      "sha256": "a547c60ddc7c93ab0ea5f7f4f189ce71a871547abf854ec571f4ac90fdc43737"
+    },
+    {
+      "path": "qa/V1-HARDENING-20261022/tools/verify_candidate.py",
+      "bytes": 1522,
+      "sha256": "493b8e803cff746c6fab82523cc812ab65cff4c91497b9eeb210a20cfa35f83b"
+    }
+  ]
+}

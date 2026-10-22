@@ -1,0 +1,397 @@
+{
+  "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+  "stats": {
+    "startTime": "2026-10-22T16:16:51.332Z",
+    "duration": 109919.429,
+    "expected": 32,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  },
+  "cases": [
+    {
+      "file": "engineering-selection.spec.ts",
+      "title": "selection round-trips tree -> 2D -> results -> 3D -> tree through one view field",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 3252
+        }
+      ]
+    },
+    {
+      "file": "engineering-selection.spec.ts",
+      "title": "unmapped never animates, sourced follows the cursor, inferred is badged and animates only after opt-in",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 1513
+        }
+      ]
+    },
+    {
+      "file": "engineering-selection.spec.ts",
+      "title": "camera, selection, explode, isolate and time cursor leave the design digest unchanged",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2322
+        }
+      ]
+    },
+    {
+      "file": "engineering-selection.spec.ts",
+      "title": "a SYNTHETIC FOIL adapter record is consumed through the same mechanism; invalid imports change nothing",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 1200
+        }
+      ]
+    },
+    {
+      "file": "engineering-selection.spec.ts",
+      "title": "markup in an imported record renders as inert text",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 1535
+        }
+      ]
+    },
+    {
+      "file": "engineering-selection.spec.ts",
+      "title": "without WebGL the tree, 2D schematic and results keep working",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 1761
+        }
+      ]
+    },
+    {
+      "file": "engineering-selection.spec.ts",
+      "title": "the part tree is keyboard navigable with roving focus",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 1838
+        }
+      ]
+    },
+    {
+      "file": "engineering-selection.spec.ts",
+      "title": "reduced motion and a 390 px viewport keep every projection usable without page overflow",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 1919
+        }
+      ]
+    },
+    {
+      "file": "engineering-selection.spec.ts",
+      "title": "the current artifact consumer renders the byte-exact 0.8.1 artifact",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 932
+        }
+      ]
+    },
+    {
+      "file": "framework-responsive.spec.ts",
+      "title": "3D controls remain fully within the narrow card, not merely within the document",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 1932
+        }
+      ]
+    },
+    {
+      "file": "framework-restore.spec.ts",
+      "title": "restore preserves manual 3D values across a different shared-story index",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 3482
+        }
+      ]
+    },
+    {
+      "file": "framework.spec.ts",
+      "title": "business client binds one filter to metrics, original D3 and paginated rows",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 1533
+        }
+      ]
+    },
+    {
+      "file": "framework.spec.ts",
+      "title": "numeric drafts reject invalid values, and empty results are not fake metrics",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 742
+        }
+      ]
+    },
+    {
+      "file": "framework.spec.ts",
+      "title": "input exports are reviewed and invalid/cross-client restores are atomic",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 1252
+        }
+      ]
+    },
+    {
+      "file": "framework.spec.ts",
+      "title": "real Three renderer, component selection, explode and PNG export",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 4557
+        }
+      ]
+    },
+    {
+      "file": "framework.spec.ts",
+      "title": "one VizForge story controls 3D, original figure and narrative; restore pauses it",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2121
+        }
+      ]
+    },
+    {
+      "file": "framework.spec.ts",
+      "title": "client model reacts, explicit task cancels and stale results cannot masquerade as current",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 1842
+        }
+      ]
+    },
+    {
+      "file": "framework.spec.ts",
+      "title": "architecture client uses the existing artifact viewer, and mobile pages stay bounded",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2220
+        }
+      ]
+    },
+    {
+      "file": "framework.spec.ts",
+      "title": "WebGL failure is explicit and keeps accessible component explanations",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 897
+        }
+      ]
+    },
+    {
+      "file": "model-assets.spec.ts",
+      "title": "outline loads neither geometry nor the optional model renderer",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 941
+        }
+      ]
+    },
+    {
+      "file": "model-assets.spec.ts",
+      "title": "approved GLB loads into the shared renderer with real semantic part ownership",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2140
+        }
+      ]
+    },
+    {
+      "file": "model-assets.spec.ts",
+      "title": "explosion interpolates to exact authored offsets and reassembly preserves identity",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 3673
+        }
+      ]
+    },
+    {
+      "file": "model-assets.spec.ts",
+      "title": "wireframe, isolation and cutaway change only the presentation",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2792
+        }
+      ]
+    },
+    {
+      "file": "model-assets.spec.ts",
+      "title": "authored cameras settle despite selected-part changes and can be reset after direct orbit",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2225
+        }
+      ]
+    },
+    {
+      "file": "model-assets.spec.ts",
+      "title": "annotation links, source evidence and saved-state restore use the same IDs",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2555
+        }
+      ]
+    },
+    {
+      "file": "model-assets.spec.ts",
+      "title": "wrong asset identity shows a recoverable error instead of publishing geometry",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2121
+        }
+      ]
+    },
+    {
+      "file": "model-assets.spec.ts",
+      "title": "late model responses cannot mount a renderer after leaving the model tab",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2182
+        }
+      ]
+    },
+    {
+      "file": "model-assets.spec.ts",
+      "title": "no-WebGL fallback keeps source and part context fully usable",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 1478
+        }
+      ]
+    },
+    {
+      "file": "model-assets.spec.ts",
+      "title": "original story controls drive imported geometry without a new playback engine",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2500
+        }
+      ]
+    },
+    {
+      "file": "model-assets.spec.ts",
+      "title": "mobile and reduced motion preserve controls without full-page overflow",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2191
+        }
+      ]
+    },
+    {
+      "file": "release-qualification.spec.ts",
+      "title": "production workbench: blank start, a real DuckDB SQL cell, autosave and reload",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 8522
+        }
+      ]
+    },
+    {
+      "file": "release-qualification.spec.ts",
+      "title": "standalone concept viewer over file://: identifies 0.10.0, renders, makes no network request",
+      "status": "expected",
+      "expectedStatus": "passed",
+      "results": [
+        {
+          "status": "passed",
+          "duration": 2027
+        }
+      ]
+    }
+  ]
+}

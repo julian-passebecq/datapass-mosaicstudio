@@ -1,0 +1,12 @@
+{
+  "python": "3.14.7 (tags/v3.14.7:823f032, Aug  5 2026, 10:51:32) [MSC v.1944 64 bit (AMD64)]",
+  "packages": {
+    "fastapi": "0.142.2",
+    "uvicorn": "0.54.0",
+    "pydantic": "2.13.5",
+    "duckdb": "1.4.3",
+    "jupyter-server": "2.21.1",
+    "ipykernel": "7.3.0",
+    "nbformat": "5.11.1"
+  }
+}

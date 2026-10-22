@@ -1,0 +1,24 @@
+
+> datapass-mosaicstudio@0.13.0 client:check
+> node --experimental-strip-types scripts/check-clients.mjs
+
+Client OK: animated-coding-lab / 2 pages / 0 datasets / prototype
+Client OK: arch-atlas / 1 pages / 0 datasets / prototype
+Client OK: architecture-reference / 3 pages / 0 datasets / reference
+Client OK: concept-viewer / 1 pages / 0 datasets / prototype
+Client OK: contoso-shape-analytics / 1 pages / 1 datasets / prototype
+Client OK: energy-replay-reference / 2 pages / 0 datasets / reference
+Client OK: experience-reference / 4 pages / 2 datasets / reference
+Client OK: fabric-bricks / 1 pages / 0 datasets / draft
+Client OK: fabric-gallery-reference / 2 pages / 0 datasets / prototype
+Client OK: foil-wind / 5 pages / 2 datasets / prototype
+Client OK: foundation-reference / 3 pages / 1 datasets / reference
+Client OK: galaxy-finition / 2 pages / 4 datasets / prototype
+Client OK: galaxy-navigator / 1 pages / 0 datasets / prototype
+Client OK: model-reference / 1 pages / 0 datasets / reference
+Client OK: motion-reference / 3 pages / 0 datasets / reference
+Client OK: operations-reference / 2 pages / 4 datasets / reference
+Client OK: param-lab / 1 pages / 0 datasets / prototype
+Client OK: portfolio-showcase / 1 pages / 0 datasets / prototype
+Client OK: python-wind-reference / 2 pages / 0 datasets / prototype
+Client OK: wind-reference / 3 pages / 5 datasets / reference

@@ -1,0 +1,88 @@
+TAP version 13
+# Subtest: PAX path overrides are checked and unsupported extraction metadata is refused
+ok 1 - PAX path overrides are checked and unsupported extraction metadata is refused
+  ---
+  duration_ms: 9.138804
+  type: 'test'
+  ...
+# Subtest: archive paths validate the root and directories before stripping the root
+ok 2 - archive paths validate the root and directories before stripping the root
+  ---
+  duration_ms: 4.2922
+  type: 'test'
+  ...
+# Subtest: portable release paths refuse Windows aliases, device names and alternate data streams
+ok 3 - portable release paths refuse Windows aliases, device names and alternate data streams
+  ---
+  duration_ms: 2.869546
+  type: 'test'
+  ...
+# Subtest: archive extraction rejects a late unsafe entry before writing any valid earlier file
+ok 4 - archive extraction rejects a late unsafe entry before writing any valid earlier file
+  ---
+  duration_ms: 13.470803
+  type: 'test'
+  ...
+# Subtest: ordinary nested release files still extract with identical bytes
+ok 5 - ordinary nested release files still extract with identical bytes
+  ---
+  duration_ms: 4.675963
+  type: 'test'
+  ...
+# Subtest: empty archives fail SDK and runtime verification even with consistent archive hashes
+ok 6 - empty archives fail SDK and runtime verification even with consistent archive hashes
+  ---
+  duration_ms: 10.323495
+  type: 'test'
+  ...
+# Subtest: pairing survives denied storage writes when storage was empty
+ok 7 - pairing survives denied storage writes when storage was empty
+  ---
+  duration_ms: 2.126259
+  type: 'test'
+  ...
+# Subtest: explicit new pairing wins over stale storage after a failed write
+ok 8 - explicit new pairing wins over stale storage after a failed write
+  ---
+  duration_ms: 0.383084
+  type: 'test'
+  ...
+# Subtest: a memory-only pairing removes the previous stored runtime before reload when removal works
+ok 9 - a memory-only pairing removes the previous stored runtime before reload when removal works
+  ---
+  duration_ms: 0.640886
+  type: 'test'
+  ...
+# Subtest: denied writes and removals cannot override explicit pairing within the page
+ok 10 - denied writes and removals cannot override explicit pairing within the page
+  ---
+  duration_ms: 0.562645
+  type: 'test'
+  ...
+# Subtest: disconnect stays disconnected after a denied removal
+ok 11 - disconnect stays disconnected after a denied removal
+  ---
+  duration_ms: 0.453845
+  type: 'test'
+  ...
+# Subtest: a stored connection remains in page memory if storage later becomes unreadable
+ok 12 - a stored connection remains in page memory if storage later becomes unreadable
+  ---
+  duration_ms: 0.213002
+  type: 'test'
+  ...
+# Subtest: invalid pairing and corrupted storage cannot revive an earlier connection
+ok 13 - invalid pairing and corrupted storage cannot revive an earlier connection
+  ---
+  duration_ms: 0.851008
+  type: 'test'
+  ...
+1..13
+# tests 13
+# suites 0
+# pass 13
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 384.357215

@@ -1,0 +1,24 @@
+
+> datapass-mosaicstudio@0.13.0 test:visual-contracts
+> node scripts/check-visuals.mjs
+
+Original VizForge / ConceptMotion contracts OK: animated-coding-lab
+Original VizForge / ConceptMotion contracts OK: arch-atlas
+Original VizForge / ConceptMotion contracts OK: architecture-reference
+Original VizForge / ConceptMotion contracts OK: concept-viewer
+Original VizForge / ConceptMotion contracts OK: contoso-shape-analytics
+Original VizForge / ConceptMotion contracts OK: energy-replay-reference
+Original VizForge / ConceptMotion contracts OK: experience-reference
+Original VizForge / ConceptMotion contracts OK: fabric-bricks
+Original VizForge / ConceptMotion contracts OK: fabric-gallery-reference
+Original VizForge / ConceptMotion contracts OK: foil-wind
+Original VizForge / ConceptMotion contracts OK: foundation-reference
+Original VizForge / ConceptMotion contracts OK: galaxy-finition
+Original VizForge / ConceptMotion contracts OK: galaxy-navigator
+Original VizForge / ConceptMotion contracts OK: model-reference
+Original VizForge / ConceptMotion contracts OK: motion-reference
+Original VizForge / ConceptMotion contracts OK: operations-reference
+Original VizForge / ConceptMotion contracts OK: param-lab
+Original VizForge / ConceptMotion contracts OK: portfolio-showcase
+Original VizForge / ConceptMotion contracts OK: python-wind-reference
+Original VizForge / ConceptMotion contracts OK: wind-reference

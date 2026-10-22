@@ -1,0 +1,228 @@
+[
+  {
+    "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "exitCode": 0,
+    "name": "final-unit",
+    "startedAt": "2026-10-22T15:44:46.9564343Z",
+    "finishedAt": "2026-10-22T15:46:49.8245306Z"
+  },
+  {
+    "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "exitCode": 0,
+    "name": "final-python",
+    "startedAt": "2026-10-22T15:46:49.8618329Z",
+    "finishedAt": "2026-10-22T15:47:19.8695180Z"
+  },
+  {
+    "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "exitCode": 0,
+    "name": "final-python-runtime",
+    "startedAt": "2026-10-22T15:47:19.8772230Z",
+    "finishedAt": "2026-10-22T15:47:54.7985563Z"
+  },
+  {
+    "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "exitCode": 0,
+    "name": "final-fixtures",
+    "startedAt": "2026-10-22T15:47:54.8225909Z",
+    "finishedAt": "2026-10-22T15:47:58.9086824Z"
+  },
+  {
+    "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "exitCode": 0,
+    "name": "final-contracts",
+    "startedAt": "2026-10-22T15:47:58.9370931Z",
+    "finishedAt": "2026-10-22T15:48:05.7727648Z"
+  },
+  {
+    "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "exitCode": 0,
+    "name": "final-clients",
+    "startedAt": "2026-10-22T15:48:05.7800260Z",
+    "finishedAt": "2026-10-22T15:48:15.1057439Z"
+  },
+  {
+    "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "exitCode": 0,
+    "name": "final-visual-contracts",
+    "startedAt": "2026-10-22T15:48:15.1095803Z",
+    "finishedAt": "2026-10-22T15:48:20.1995879Z"
+  },
+  {
+    "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "exitCode": 0,
+    "name": "final-build",
+    "startedAt": "2026-10-22T15:48:20.2040239Z",
+    "finishedAt": "2026-10-22T15:51:44.9977669Z"
+  },
+  {
+    "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "exitCode": 0,
+    "name": "final-sdk-pack",
+    "startedAt": "2026-10-22T15:51:45.0030084Z",
+    "finishedAt": "2026-10-22T15:51:53.1541123Z"
+  },
+  {
+    "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "exitCode": 0,
+    "name": "final-sdk-verify",
+    "startedAt": "2026-10-22T15:51:53.1722500Z",
+    "finishedAt": "2026-10-22T15:51:55.8358631Z"
+  },
+  {
+    "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "exitCode": 0,
+    "name": "final-runtime-pack",
+    "startedAt": "2026-10-22T15:51:55.8859003Z",
+    "finishedAt": "2026-10-22T15:51:59.1565147Z"
+  },
+  {
+    "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "exitCode": 0,
+    "name": "final-candidate-pack",
+    "startedAt": "2026-10-22T15:51:59.1651202Z",
+    "finishedAt": "2026-10-22T15:52:12.4830983Z"
+  },
+  {
+    "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "exitCode": 0,
+    "name": "final-consumer-static",
+    "startedAt": "2026-10-22T15:52:12.4911147Z",
+    "finishedAt": "2026-10-22T15:52:15.9155380Z"
+  },
+  {
+    "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "exitCode": 0,
+    "name": "final-consumer-runtime",
+    "startedAt": "2026-10-22T15:52:15.9198901Z",
+    "finishedAt": "2026-10-22T15:52:33.8083675Z"
+  },
+  {
+    "name": "final-browser",
+    "sourceSha": "327866b9e4f33351d8654237b3f3741cd4cce906",
+    "workbench": "extracted candidate ZIP",
+    "startedAt": "2026-10-22T15:52:51.1115626Z",
+    "exitCode": 0,
+    "finishedAt": "2026-10-22T16:09:22.9432527Z"
+  },
+  {
+    "name": "delivery-focused",
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "exitCode": 0,
+    "finishedAt": "2026-10-22T16:11:29.0055526Z",
+    "startedAt": "2026-10-22T16:11:28.1729547Z"
+  },
+  {
+    "name": "delivery-contracts",
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "exitCode": 0,
+    "finishedAt": "2026-10-22T16:11:32.2206424Z",
+    "startedAt": "2026-10-22T16:11:29.0668708Z"
+  },
+  {
+    "name": "delivery-clients",
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "exitCode": 0,
+    "finishedAt": "2026-10-22T16:11:37.0142082Z",
+    "startedAt": "2026-10-22T16:11:32.2313712Z"
+  },
+  {
+    "name": "delivery-visual-contracts",
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "exitCode": 0,
+    "finishedAt": "2026-10-22T16:11:40.4738528Z",
+    "startedAt": "2026-10-22T16:11:37.0182332Z"
+  },
+  {
+    "name": "delivery-build",
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "exitCode": 0,
+    "finishedAt": "2026-10-22T16:13:32.7903708Z",
+    "startedAt": "2026-10-22T16:11:40.4808334Z"
+  },
+  {
+    "name": "delivery-model-build",
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "exitCode": 0,
+    "finishedAt": "2026-10-22T16:13:54.6876904Z",
+    "startedAt": "2026-10-22T16:13:32.7946766Z"
+  },
+  {
+    "name": "delivery-sdk-pack",
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "exitCode": 0,
+    "finishedAt": "2026-10-22T16:13:58.4030206Z",
+    "startedAt": "2026-10-22T16:13:54.6915463Z"
+  },
+  {
+    "name": "delivery-sdk-verify",
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "exitCode": 0,
+    "finishedAt": "2026-10-22T16:13:59.1374753Z",
+    "startedAt": "2026-10-22T16:13:58.4061783Z"
+  },
+  {
+    "name": "delivery-runtime-pack",
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "exitCode": 0,
+    "finishedAt": "2026-10-22T16:14:00.4375920Z",
+    "startedAt": "2026-10-22T16:13:59.1397324Z"
+  },
+  {
+    "name": "delivery-candidate-pack",
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "exitCode": 0,
+    "finishedAt": "2026-10-22T16:14:15.0116235Z",
+    "startedAt": "2026-10-22T16:14:00.4443713Z"
+  },
+  {
+    "name": "delivery-consumer-static",
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "exitCode": 0,
+    "finishedAt": "2026-10-22T16:14:18.7959139Z",
+    "startedAt": "2026-10-22T16:14:15.0251830Z"
+  },
+  {
+    "name": "delivery-consumer-runtime",
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "exitCode": 0,
+    "finishedAt": "2026-10-22T16:14:42.7745921Z",
+    "startedAt": "2026-10-22T16:14:18.8039777Z"
+  },
+  {
+    "workbench": "extracted candidate ZIP",
+    "name": "delivery-browser",
+    "exitCode": 0,
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "finishedAt": "2026-10-22T16:18:41.8289786Z",
+    "startedAt": "2026-10-22T16:16:50.4348220Z"
+  },
+  {
+    "startedAt": "2026-10-22T16:19:26.3693089Z",
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "name": "delivery-contoso-build",
+    "finishedAt": "2026-10-22T16:19:57.1228655Z",
+    "exitCode": 0
+  },
+  {
+    "startedAt": "2026-10-22T16:19:57.1484297Z",
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "name": "delivery-foil-build",
+    "finishedAt": "2026-10-22T16:20:17.9292852Z",
+    "exitCode": 0
+  },
+  {
+    "startedAt": "2026-10-22T16:20:17.9326738Z",
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "name": "delivery-product-loop",
+    "finishedAt": "2026-10-22T16:21:02.7137907Z",
+    "exitCode": 0
+  },
+  {
+    "sourceSha": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+    "name": "edge-browser",
+    "startedAt": "2026-10-22T16:22:43.6061553Z",
+    "finishedAt": "2026-10-22T16:22:59.5913747Z",
+    "exitCode": 0
+  }
+]

@@ -124,7 +124,20 @@ test.describe('engineering selection binding (model-reference)',()=>{
     await expect(in2d(page,'plate')).toHaveClass(/reduced/);expect(await in2d(page,'plate').evaluate(el=>getComputedStyle(el).transitionDuration)).toBe('0s');
     await item(page,'Linkage').click();await expectSelected(page,'linkage');await page.getByRole('button',{name:'Select Conversion module from results',exact:true}).click();await expectSelected(page,'module');
     expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBe(true);
+    const results=page.locator('.eng-table-wrap');
+    const readability=await results.evaluate(el=>({
+      sourceWidth:Math.min(...Array.from(el.querySelectorAll('.eng-source'),cell=>cell.getBoundingClientRect().width)),
+      rowHeight:Math.max(...Array.from(el.querySelectorAll('tbody tr'),row=>row.getBoundingClientRect().height)),
+    }));
+    expect(readability.sourceWidth,'provenance must remain readable instead of wrapping character by character').toBeGreaterThanOrEqual(180);
+    expect(readability.rowHeight,'the supplied short source excerpts must not become hundreds of pixels tall').toBeLessThan(160);
+    await expect(results).toHaveAttribute('role','region');await expect(results).toHaveAttribute('aria-label','Signal results');
+    await results.focus();await page.keyboard.press('ArrowRight');
+    await expect.poll(()=>results.evaluate(el=>el.scrollLeft),'keyboard users can reach the source column').toBeGreaterThan(0);
     await page.screenshot({path:info.outputPath('engineering-mobile.png'),fullPage:true});
+    await results.evaluate(el=>{el.scrollLeft=el.scrollWidth;});
+    await expect(results.locator('.eng-source').first()).toBeInViewport();
+    await results.screenshot({path:info.outputPath('engineering-mobile-source.png')});
   });
 });
 

@@ -16,52 +16,73 @@ import {fileURLToPath} from 'node:url';
 
 export const SDK_RELEASE_FORMAT='datapass.sdk-release';
 export const sha256=bytes=>createHash('sha256').update(bytes).digest('hex');
-/** Relative POSIX path: no absolute, no backslash, no empty, "." or ".." segment. */
+/** Portable relative path: no traversal, Windows aliases/devices or alternate data streams. */
 export function safeRelativePath(p){
-  return typeof p==='string'&&p.length>0&&p.length<=400&&!p.includes('\\')&&!p.startsWith('/')&&!/^[A-Za-z]:/.test(p)
-    &&!/[\u0000-\u001f]/.test(p)&&p.split('/').every(s=>s!==''&&s!=='.'&&s!=='..');
+  return typeof p==='string'&&p.length>0&&p.length<=400&&!/[\\<>:"|?*\u0000-\u001f\u007f]/.test(p)
+    &&p.split('/').every(s=>s!==''&&s!=='.'&&s!=='..'&&!/[. ]$/.test(s)
+      &&!/^(con|prn|aux|nul|com[1-9¹²³]|lpt[1-9¹²³])(?:\.|$)/i.test(s));
 }
 
 const field=(buf,offset,length)=>{const raw=buf.subarray(offset,offset+length),end=raw.indexOf(0);return raw.subarray(0,end<0?length:end).toString('utf8');};
 const octal=(buf,offset,length)=>{const s=field(buf,offset,length).trim();return s?parseInt(s,8):0;};
 function paxRecords(data){
   // Each record is "<decimal byte length> <key>=<value>\n"; the length counts bytes, including itself.
-  const out={};let i=0;
-  while(i<data.length){const space=data.indexOf(0x20,i);if(space<0)break;const len=Number(data.subarray(i,space).toString('latin1'));
-    if(!Number.isSafeInteger(len)||len<=space-i||i+len>data.length)throw new Error('Corrupt pax header');
-    const body=data.subarray(space+1,i+len-1).toString('utf8'),eq=body.indexOf('=');if(eq>0)out[body.slice(0,eq)]=body.slice(eq+1);i+=len;}
+  const out=Object.create(null);let i=0;
+  while(i<data.length){const space=data.indexOf(0x20,i);if(space<0)throw new Error('Corrupt pax header');
+    const digits=data.subarray(i,space).toString('latin1'),len=Number(digits);
+    if(!/^[0-9]+$/.test(digits)||!Number.isSafeInteger(len)||len<=space-i+1||i+len>data.length||data[i+len-1]!==10)throw new Error('Corrupt pax header');
+    const body=data.subarray(space+1,i+len-1).toString('utf8'),eq=body.indexOf('=');if(eq<=0)throw new Error('Corrupt pax header');
+    out[body.slice(0,eq)]=body.slice(eq+1);i+=len;}
   return out;
 }
 /**
  * Read a gzip'd tar (as written by `git archive`) into [{path, type, data}]. Handles ustar prefixes and pax
- * `path` records; global pax headers are skipped. Types: 'file', 'dir', 'symlink', 'other'.
+ * `path` records and git's global `comment`. Other pax metadata is refused so extraction cannot interpret
+ * paths or sizes differently from verification. Types: 'file', 'dir', 'symlink', 'other'.
  */
 export function readTarGz(gz){
-  const buf=gunzipSync(gz),entries=[];let offset=0,pax={};
+  const buf=gunzipSync(gz),entries=[];let offset=0,pax=null;
   while(offset+512<=buf.length){
     const header=buf.subarray(offset,offset+512);if(header.every(b=>b===0))break;
     const sum=octal(header,148,8);let check=0;for(let i=0;i<512;i++)check+=i>=148&&i<156?32:header[i];if(sum!==check)throw new Error('Tar header checksum mismatch at byte '+offset);
     const size=octal(header,124,12),flag=String.fromCharCode(header[156]||48),prefix=field(header,345,155),name=field(header,0,100);
     const data=buf.subarray(offset+512,offset+512+size);if(data.length!==size)throw new Error('Truncated tar entry');
     offset+=512+Math.ceil(size/512)*512;
-    if(flag==='g')continue;
-    if(flag==='x'){pax=paxRecords(data);continue;}
-    const full=pax.path??(prefix?prefix+'/'+name:name);pax={};
+    if(flag==='g'||flag==='x'){
+      if(pax!==null)throw new Error('Redundant metadata after per-entry pax header');
+      const records=paxRecords(data),allowed=flag==='g'?'comment':'path';
+      if(Object.keys(records).some(key=>key!==allowed))throw new Error('Unsupported pax metadata');
+      if(flag==='x')pax=records;
+      continue;
+    }
+    const full=pax?.path??(prefix?prefix+'/'+name:name);pax=null;
     entries.push({path:full,type:flag==='0'||flag==='\0'||flag==='7'?'file':flag==='5'?'dir':flag==='2'?'symlink':'other',data});
   }
+  if(pax!==null)throw new Error('Orphan per-entry pax header');
   return entries;
 }
 /** Files of an SDK archive: strips the single top-level folder, rejects symlinks, unsafe or duplicate paths. */
 export function archiveFiles(gz){
-  const entries=readTarGz(gz),files=[];let root=null;
+  const entries=readTarGz(gz),files=[],paths=new Map(),declared=new Set();let root=null;
   for(const e of entries){
-    const cut=e.path.replace(/\/$/,''),slash=cut.indexOf('/');const top=slash<0?cut:cut.slice(0,slash);
+    const cut=e.type==='dir'?e.path.replace(/\/$/,''):e.path;
+    // Check the complete path, including the root and directory records, before stripping anything.
+    if(!safeRelativePath(cut))throw new Error('Unsafe archive path: '+e.path);
+    if(e.type!=='dir'&&e.type!=='file')throw new Error('Archive entry is not a regular file: '+e.path);
+    const slash=cut.indexOf('/'),top=slash<0?cut:cut.slice(0,slash);
     root??=top;if(top!==root)throw new Error('Archive has more than one top-level folder: '+e.path);
+    const segments=cut.split('/');
+    for(let i=1;i<=segments.length;i++){
+      const name=segments.slice(0,i).join('/'),key=name.toLowerCase(),type=i<segments.length?'dir':e.type,prior=paths.get(key);
+      if(prior&&(prior.path!==name||prior.type!==type))throw new Error('Archive path collision or file/directory conflict: '+e.path);
+      paths.set(key,{path:name,type});
+    }
+    if(declared.has(cut))throw new Error('Duplicate archive path: '+e.path);declared.add(cut);
     if(e.type==='dir')continue;
-    if(e.type!=='file')throw new Error('Archive entry is not a regular file: '+e.path);
     const rel=cut.slice(slash+1);if(slash<0||!safeRelativePath(rel))throw new Error('Unsafe archive path: '+e.path);
     files.push({path:rel,bytes:e.data.length,sha256:sha256(e.data)});
   }
+  if(!files.length)throw new Error('Archive has no regular files');
   files.sort((a,b)=>a.path<b.path?-1:a.path>b.path?1:0);
   for(let i=1;i<files.length;i++)if(files[i].path===files[i-1].path)throw new Error('Duplicate archive path: '+files[i].path);
   return {root,files};

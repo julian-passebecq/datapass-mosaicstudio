@@ -1,0 +1,27 @@
+✔ PAX path overrides are checked and unsupported extraction metadata is refused (9.8263ms)
+✔ archive paths validate the root and directories before stripping the root (4.9125ms)
+✔ portable release paths refuse Windows aliases, device names and alternate data streams (2.2626ms)
+✔ archive extraction rejects a late unsafe entry before writing any valid earlier file (23.3905ms)
+✔ ordinary nested release files still extract with identical bytes (21.3001ms)
+✔ empty archives fail SDK and runtime verification even with consistent archive hashes (32.1298ms)
+✔ pairing survives denied storage writes when storage was empty (2.7126ms)
+✔ explicit new pairing wins over stale storage after a failed write (0.511ms)
+✔ a memory-only pairing removes the previous stored runtime before reload when removal works (0.4498ms)
+✔ denied writes and removals cannot override explicit pairing within the page (0.2949ms)
+✔ disconnect stays disconnected after a denied removal (0.225ms)
+✔ a stored connection remains in page memory if storage later becomes unreadable (0.2024ms)
+✔ invalid pairing and corrupted storage cannot revive an earlier connection (0.6949ms)
+✔ durable runs are a trusted, opt-in binding: runtime tasks only, used resources only, never in the manifest (10.7914ms)
+✔ pairing: the fragment is parsed, nothing connects without consent, and the token stays in session storage (7.1673ms)
+✔ a runtime task runs through SiteRuntime; Cancel sends an explicit runtime cancel and keeps no result (30.148ms)
+✔ save is explicit; reopen after a browser and service restart is by hash and not recomputed (8.4571ms)
+✔ missing, corrupt, foreign and unreachable results are reported, never replaced; Relink candidates are explicit (39.7917ms)
+✔ only a completed runtime run can be saved; the stored item never carries the token (5.4799ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 19
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 667.3768

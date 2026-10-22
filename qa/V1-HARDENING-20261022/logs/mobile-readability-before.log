@@ -1,0 +1,42 @@
+
+Running 1 test using 1 worker
+
+(node:17048) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  x  1 tests\browser\engineering-selection.spec.ts:121:3 › engineering selection binding (model-reference) › reduced motion and a 390 px viewport keep every projection usable without page overflow (5.3s)
+
+
+  1) tests\browser\engineering-selection.spec.ts:121:3 › engineering selection binding (model-reference) › reduced motion and a 390 px viewport keep every projection usable without page overflow
+
+    Error: provenance must remain readable instead of wrapping character by character
+
+    expect(received).toBeGreaterThanOrEqual(expected)
+
+    Expected: >= 180
+    Received:    50.3125
+
+      130 |       rowHeight:Math.max(...Array.from(el.querySelectorAll('tbody tr'),row=>row.getBoundingClientRect().height)),
+      131 |     }));
+    > 132 |     expect(readability.sourceWidth,'provenance must remain readable instead of wrapping character by character').toBeGreaterThanOrEqual(180);
+          |                                                                                                                  ^
+      133 |     expect(readability.rowHeight,'the supplied short source excerpts must not become hundreds of pixels tall').toBeLessThan(160);
+      134 |     await expect(results).toHaveAttribute('role','region');await expect(results).toHaveAttribute('aria-label','Signal results');
+      135 |     await results.focus();await page.keyboard.press('ArrowRight');
+        at <worktree>\tests\browser\engineering-selection.spec.ts:132:114
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results\engineering-selection-engi-c62f8-sable-without-page-overflow\test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results\engineering-selection-engi-c62f8-sable-without-page-overflow\error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results\engineering-selection-engi-c62f8-sable-without-page-overflow\trace.zip
+    Usage:
+
+        npx playwright show-trace test-results\engineering-selection-engi-c62f8-sable-without-page-overflow\trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  1 failed
+    tests\browser\engineering-selection.spec.ts:121:3 › engineering selection binding (model-reference) › reduced motion and a 390 px viewport keep every projection usable without page overflow

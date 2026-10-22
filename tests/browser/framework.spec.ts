@@ -86,7 +86,7 @@ test('client model reacts, explicit task cancels and stale results cannot masque
 });
 test('architecture client uses the existing artifact viewer, and mobile pages stay bounded',async({page},info)=>{
   await client(page,'architecture-reference');await expect(page.locator('.arch-node')).toHaveCount(8);await page.getByRole('button',{name:'Select Site performance',exact:true}).click();await expect(page.locator('.arch-inspector')).toContainText('2 differences');
-  await client(page,'operations-reference');await page.setViewportSize({width:390,height:844});await expect(page.getByLabel('Region filter',{exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();await page.screenshot({path:info.outputPath('framework-mobile-business.png'),fullPage:true});
+  await client(page,'operations-reference');await page.setViewportSize({width:390,height:844});await expect(page.getByLabel('Region filter',{exact:true})).toBeVisible();await expect(page.locator('.site-viz svg')).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();await page.screenshot({path:info.outputPath('framework-mobile-business.png'),fullPage:true});
   await client(page,'wind-reference');await expect(page.locator('.site-render-status')).toHaveText('3D ready');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1)).toBeTruthy();await page.screenshot({path:info.outputPath('framework-mobile-turbine.png'),fullPage:true});
 });
 test('WebGL failure is explicit and keeps accessible component explanations',async({page})=>{

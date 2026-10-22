@@ -1,0 +1,10 @@
+
+> datapass-mosaicstudio@0.13.0 contracts:check
+> node --experimental-strip-types scripts/export-contracts.mjs --check && node scripts/concept-validate.mjs --strict spec/concept/v1/example.minimal.concept.json spec/concept/v1/example.forecast-app.concept.json && node scripts/make-artifact-corpus.mjs --check && node --experimental-strip-types scripts/make-bundle-corpus.mjs --check && node --experimental-strip-types scripts/make-engineering-corpus.mjs --check
+
+App, snapshot, scene, component-catalog and published concept spec contracts match their sources.
+OK   spec/concept/v1/example.minimal.concept.json  minimal-orders · 2 layers, 2 nodes, 1 flows
+OK   spec/concept/v1/example.forecast-app.concept.json  forecast-app · 6 layers, 14 nodes, 16 flows
+Artifact corpus matches its generator (119 files).
+Bundle corpus matches its generator (23 files).
+Engineering corpus matches its generator (80 files).

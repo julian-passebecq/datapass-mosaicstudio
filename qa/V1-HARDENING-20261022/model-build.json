@@ -1,0 +1,12 @@
+{
+  "format": "datapass.client-build",
+  "version": 1,
+  "client": "model-reference",
+  "capabilities": [
+    "stories",
+    "spatial",
+    "models"
+  ],
+  "containsThree": true,
+  "note": "Build evidence, not runtime health or access control."
+}

@@ -1,0 +1,21 @@
+
+> datapass-mosaicstudio@0.13.0 test:product-loop
+> playwright test -c tests/product-loop/playwright.config.ts
+
+[WebServer] (node:77612) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:44768) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:75316) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:42084) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 2 tests using 1 worker
+
+(node:76924) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ok 1 tests\product-loop\loop.spec.ts:292:33 › F212 product loop: contoso-shape-analytics (16.9s)
+  ok 2 tests\product-loop\loop.spec.ts:292:33 › F212 product loop: foil-wind (16.2s)
+
+  2 passed (43.1s)

@@ -1,0 +1,27 @@
+{
+  "schema": "galaxy.mosaicstudio-private-delivery-verification/1",
+  "checkedAtUtc": "2026-10-22T16:33:24.527868+00:00",
+  "sourceCommit": "70c55bf784d5fc1fee6cf939c679c3107902d9da",
+  "evidenceCommit": "35b78f6e1bcb0fe99e41336019882ca0b32eea29",
+  "repositoryPrivate": true,
+  "prerelease": true,
+  "releasePass": false,
+  "filesVerified": 50,
+  "originalCandidateFilesVerified": 6,
+  "allDownloadedBytesIdentical": true,
+  "assets": [
+    {
+      "name": "mosaicstudio-0.13.0-hardening-70c55bf-review.zip",
+      "bytes": 63192192,
+      "sha256": "032262997571695aee50ad82da72e1fbbd73235198804d50fb7ce420ea6034cd",
+      "downloadedBytesIdentical": true
+    },
+    {
+      "name": "mosaicstudio-0.13.0-hardening-70c55bf-review.manifest.json",
+      "bytes": 10636,
+      "sha256": "d24851a30477d5fcf666227fd03d32a12668d926ca40c6abab2cb56a400cc147",
+      "downloadedBytesIdentical": true
+    }
+  ],
+  "privateLocation": "The campaign private result.json records the authenticated release and asset URLs."
+}
