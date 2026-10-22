@@ -35,9 +35,9 @@ def _(k, mo, model):
 
 
 @app.cell
-def _(mo, model, rows):
+def _(k, mo, model, rows):
     # Writes clients/python-wind-reference/public/artifacts/wind-aep-weibull.json + manifest.json
-    artifact = model.build_artifact(rows)
+    artifact = model.build_artifact(rows, k=k.value)
     mo.md(f"Wrote artifact `{artifact['id']}` ({len(artifact['payload']['rows'])} rows). Open `?app=python-wind-reference`.")
     return
 

@@ -23,7 +23,7 @@ DEFAULT_OUT = ROOT / "clients" / "python-wind-reference" / "public" / "artifacts
 DEFAULT_SOURCES = DEFAULT_OUT.parent / "sources"
 MODEL_PATH = "py/wind_reference_model.py"
 SOURCE = ("py/wind_reference_model.py (run as a script, from Jupyter or from marimo). ILLUSTRATIVE: generic 3 MW-class "
-          "power curve, Rayleigh-like Weibull k=2, no losses. Not FOIL data, not a site assessment.")
+          "power curve, no losses. Not FOIL data, not a site assessment.")
 
 
 def power_kw(v: float) -> float:
@@ -91,11 +91,18 @@ def lineage(k: float = 2.0) -> tuple[dict, list[dict]]:
 
 
 def build_artifact(rows: list[dict], out_dir: Path | None = DEFAULT_OUT, run_id: str | None = None,
-                   sources_dir: Path | None = None) -> dict:
-    producer, inputs = lineage()
+                   sources_dir: Path | None = None, *, k: float = 2.0) -> dict:
+    """Package already-computed rows; pass the same k used by table() for truthful lineage.
+
+    The default keeps the plain script's k=2 call compatible. No calculation is rerun here.
+    """
+    if isinstance(k, bool) or not isinstance(k, (int, float)) or not math.isfinite(k) or k <= 0:
+        raise ValueError("Weibull shape k must be a finite positive number")
+    k = float(k)
+    producer, inputs = lineage(k)
     artifact = to_artifact(
-        rows, id=ARTIFACT_ID, row_key="id", provenance="computed", source=SOURCE, run_id=run_id,
-        title="ILLUSTRATIVE annual energy vs mean wind speed (Weibull k=2)",
+        rows, id=ARTIFACT_ID, row_key="id", provenance="computed", source=f"{SOURCE} Weibull k={k:g}.", run_id=run_id,
+        title=f"ILLUSTRATIVE annual energy vs mean wind speed (Weibull k={k:g})",
         labels={"id": "Case", "meanSpeed": "Mean wind speed", "weibullScale": "Weibull scale c",
                 "aep": "Annual energy (gross)", "capacityFactor": "Capacity factor"},
         units={"meanSpeed": "m/s", "weibullScale": "m/s", "aep": "MWh/yr", "capacityFactor": "%"},

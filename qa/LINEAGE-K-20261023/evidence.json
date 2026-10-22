@@ -1,0 +1,62 @@
+{
+  "export": {
+    "driver": "marimo run (real app UI), keyboard ArrowRight x7 on the Weibull shape k slider",
+    "sliderAriaValueNow": 2.7,
+    "default": {
+      "file": "clients/python-wind-reference/public/artifacts/wind-aep-weibull.json",
+      "sha256": "7ca77cb86fd3ae0d480a21a9e285a935930840aa929daa69265af9aea2973b10",
+      "title": "ILLUSTRATIVE annual energy vs mean wind speed (Weibull k=2)",
+      "declaredK": 2,
+      "source": "py/wind_reference_model.py (run as a script, from Jupyter or from marimo). ILLUSTRATIVE: generic 3 MW-class power curve, no losses. Not FOIL data, not a site assessment. Weibull k=2.",
+      "inputHash": "de3e05a027f57c5ea70f374a206c631d0c449b2f5669a19d997ffa08c5222804",
+      "rows": 11,
+      "aep8": 9925.5
+    },
+    "changed": {
+      "file": "clients/python-wind-reference/public/artifacts/wind-aep-weibull.json",
+      "sha256": "cf5fc4e6113498301cb79dea8ecea575322f51adecb7b36b94bad1a26d677bf3",
+      "title": "ILLUSTRATIVE annual energy vs mean wind speed (Weibull k=2.7)",
+      "declaredK": 2.7,
+      "source": "py/wind_reference_model.py (run as a script, from Jupyter or from marimo). ILLUSTRATIVE: generic 3 MW-class power curve, no losses. Not FOIL data, not a site assessment. Weibull k=2.7.",
+      "inputHash": "e5ed7952c9470f2d7f8ef3189b68726b8e3216384eb272466bcbe7b5278eb32b",
+      "rows": 11,
+      "aep8": 9823.9
+    },
+    "checks": {
+      "rowsChanged": true,
+      "titleChanged": true,
+      "declaredKChanged": true,
+      "inputHashChanged": true
+    }
+  },
+  "reopen": {
+    "viewer": "built python-wind-reference client (dist-clients) under the production CSP; marimo server stopped before reopen",
+    "builtArtifactSha256": "cf5fc4e6113498301cb79dea8ecea575322f51adecb7b36b94bad1a26d677bf3",
+    "lineageHeading": "ILLUSTRATIVE annual energy vs mean wind speed (Weibull k=2.7)",
+    "lineageInputK": "input: Weibull shape k. 2.7",
+    "lineageArtifactNode": "artifact: wind-aep-weibull. computed / no run id / inputs e5ed7952c947",
+    "requests": [
+      "GET /",
+      "GET /assets/index-DQnu440a.js",
+      "GET /assets/index-CCyeBlUp.css",
+      "GET /assets/app-t1vvnYfv.js",
+      "GET /assets/app-m2Lve7XM.css",
+      "GET /artifacts/wind-aep-weibull.json",
+      "GET /assets/Chart-BxnVfgBa.js",
+      "GET /assets/ChartViz-DUFdz56R.js",
+      "GET /assets/ChartViz-BikGunwx.css",
+      "GET /artifacts/wind-aep-weibull.json",
+      "GET /sources/py/wind_reference_model.py.txt"
+    ],
+    "websockets": [],
+    "consoleErrors": [],
+    "checks": {
+      "declaredK27": true,
+      "title27": true,
+      "inputHashShown": true,
+      "inputHashDiffersFromDefault": true,
+      "noKernelOrTaskCall": true,
+      "artifactNotRewritten": true
+    }
+  }
+}
