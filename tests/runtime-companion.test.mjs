@@ -28,7 +28,9 @@ test('runtime:pack writes a versioned archive and a datapass.runtime-companion v
   assert.equal(manifest.publication.public,false);assert.match(manifest.publication.statement,/Never published publicly/);
   assert.equal(manifest.service.entry,'py/service/app.py');assert.equal(manifest.service.health,'/api/runtime/v1/health');
   assert.match(manifest.service.version,/^\d+\.\d+\.\d+$/);assert.equal(manifest.service.name,'datapass-artifact-service');
-  assert.ok(manifest.env.DATAPASS_ARTIFACT_DIR&&manifest.env.DATAPASS_RUNTIME_TOKEN);
+  assert.ok(manifest.env.DATAPASS_ARTIFACT_DIR&&manifest.env.DATAPASS_RUNTIME_TOKEN&&manifest.env.DATAPASS_SERVICE_PROFILE);
+  assert.equal(manifest.service.profile,'safe');assert.deepEqual(manifest.service.start,['py/service/app.py','--profile','safe']);
+  assert.equal(manifest.service.ready,'/api/runtime/v1/ready');
   assert.equal(manifest.guide,'docs/RUNTIME_COMPANION.md');
 });
 
@@ -36,7 +38,7 @@ test('the archive holds exactly the companion: service modules, artifact library
   const paths=manifest.files.map(f=>f.path);
   assert.deepEqual(paths,[...paths].sort((a,b)=>a<b?-1:a>b?1:0));
   for(const need of RUNTIME_REQUIRED)assert.ok(paths.includes(need),'missing '+need);
-  const expected=git(['ls-files','py/service/*.py','py/datapass_artifact.py','py/wind_reference_model.py','py/service/requirements*.txt','docs/RUNTIME_COMPANION.md'])
+  const expected=git(['ls-files','py/service/*.py','py/datapass_artifact.py','py/datapass_engineering.py','py/wind_reference_model.py','py/service/requirements*.txt','docs/RUNTIME_COMPANION.md'])
     .split('\n').filter(p=>p&&!/\/test_[^/]*\.py$/.test(p)).sort();
   assert.deepEqual(paths,expected);
   assert.deepEqual(companionPathProblems(paths),[]);
@@ -88,6 +90,11 @@ test('runtime:verify (static) passes on a fresh pack and fails on any tampering'
   dir=await copy('pins');m=await readManifest(dir);m.requirements[0].pins=[...m.requirements[0].pins,'evil==1.0'];await writeManifest(dir,m);
   assert.match((await verifyRuntimeCompanion(dir)).problems.join('\n'),/pins differ/);
 
+  dir=await copy('profile');m=await readManifest(dir);m.service.start=['py/service/app.py','--profile','demo'];await writeManifest(dir,m);
+  assert.match((await verifyRuntimeCompanion(dir)).problems.join('\n'),/--profile safe/);
+  dir=await copy('noprofile');m=await readManifest(dir);delete m.service.start;delete m.service.profile;await writeManifest(dir,m);
+  assert.match((await verifyRuntimeCompanion(dir)).problems.join('\n'),/--profile safe/);
+
   dir=await copy('public');m=await readManifest(dir);m.publication.public=true;await writeManifest(dir,m);
   assert.match((await verifyRuntimeCompanion(dir)).problems.join('\n'),/public:false/);
 
@@ -125,4 +132,6 @@ test('the companion starts outside the checkout and answers health, token guard,
   assert.equal(live.ok,true,live.problems.join('\n'));
   assert.ok(live.checks.some(c=>/outside any checkout/.test(c)));
   assert.ok(live.checks.some(c=>/succeeded/.test(c)));
+  for(const name of ['404 in safe: POST /compute/wind-reference','404 in safe: GET /openapi.json','cancelRequested:true (not cancelled yet)','replays the first record','409','JSON-escaped','demo: POST /compute'])
+    assert.ok(live.probes.some(p=>p.ok&&p.name.includes(name)),'probe missing or failed: '+name);
 });

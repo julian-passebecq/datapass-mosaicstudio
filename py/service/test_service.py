@@ -4,6 +4,7 @@
 """
 from __future__ import annotations
 
+import io
 import os
 import sys
 import tempfile
@@ -20,16 +21,20 @@ except ImportError:  # pragma: no cover - service deps are optional
     TestClient = None  # type: ignore
 
 if TestClient is not None:
-    from app import ARTIFACT_DIR_ENV, CHECKOUT_ARTIFACT_DIR, LIVE_ARTIFACT_ID, MAX_BODY_BYTES, create_app, resolve_artifact_dir
+    from app import (ARTIFACT_DIR_ENV, CHECKOUT_ARTIFACT_DIR, LIVE_ARTIFACT_ID, MAX_BODY_BYTES, PROFILE_ENV, PROFILES,
+                     SERVICE_NAME, SERVICE_VERSION, create_app, resolve_artifact_dir, resolve_profile)
     from datapass_artifact import validate
 
 ORIGIN = "http://127.0.0.1:5173"
+TOKEN = "service-test-token-0123456789"
 
 
 @unittest.skipIf(TestClient is None, "fastapi not installed (pip install -r py/service/requirements.txt)")
 class ServiceTest(unittest.TestCase):
+    """Level 3 routes: they exist in the `demo` profile only (S02)."""
+
     def setUp(self) -> None:
-        self.client = TestClient(create_app(origins=(ORIGIN,), allowed_hosts=("testserver", "127.0.0.1")))
+        self.client = TestClient(create_app(origins=(ORIGIN,), allowed_hosts=("testserver", "127.0.0.1"), profile="demo"))
 
     def compute(self, body: dict):
         return self.client.post("/compute/wind-reference", json=body)
@@ -103,7 +108,7 @@ class ServiceTest(unittest.TestCase):
             folder = Path(tmp) / "artifacts"
             with mock.patch.dict(os.environ, {ARTIFACT_DIR_ENV: str(folder)}):
                 self.assertEqual(resolve_artifact_dir(), folder)
-                client = TestClient(create_app(origins=(ORIGIN,), allowed_hosts=("testserver",)))
+                client = TestClient(create_app(origins=(ORIGIN,), allowed_hosts=("testserver",), profile="demo"))
                 self.assertEqual(client.get("/artifacts/wind-aep-weibull").status_code, 404)  # folder missing
                 folder.mkdir()
                 self.assertEqual(client.get("/artifacts/wind-aep-weibull").status_code, 404)  # folder empty
@@ -117,6 +122,83 @@ class ServiceTest(unittest.TestCase):
         env = {k: v for k, v in os.environ.items() if k != ARTIFACT_DIR_ENV}
         with mock.patch.dict(os.environ, env, clear=True):
             self.assertEqual(resolve_artifact_dir(), CHECKOUT_ARTIFACT_DIR)
+
+    def test_demo_legacy_routes_keep_the_origin_and_host_guards(self) -> None:
+        body = {"k": 2.0, "c": 8.0, "hubHeight": 120}
+        foreign = self.client.post("/compute/wind-reference", json=body, headers={"Origin": "http://evil.example"})
+        self.assertEqual(foreign.status_code, 403)
+        self.assertEqual(self.client.get("/artifacts/wind-aep-weibull", headers={"Origin": "http://evil.example"}).status_code, 403)
+        self.assertEqual(self.client.post("/compute/wind-reference", json=body, headers={"Origin": ORIGIN}).status_code, 200)
+        self.assertEqual(self.client.post("/compute/wind-reference", json=body, headers={"Host": "evil.example"}).status_code, 400)
+        self.assertEqual(self.client.get("/health").json()["profile"], "demo")
+        self.assertEqual(self.client.get("/openapi.json").status_code, 200)
+        self.assertEqual(self.client.get("/docs").status_code, 200)
+
+
+@unittest.skipIf(TestClient is None, "fastapi not installed (pip install -r py/service/requirements.txt)")
+class SafeProfileTest(unittest.TestCase):
+    """S02: the default `safe` profile serves no unauthenticated computation, artifact or OpenAPI route."""
+
+    def setUp(self) -> None:
+        env = {k: v for k, v in os.environ.items() if k != PROFILE_ENV}
+        with mock.patch.dict(os.environ, env, clear=True):
+            self.app = create_app(origins=(ORIGIN,), allowed_hosts=("testserver", "127.0.0.1"), token=TOKEN)
+        self.client = TestClient(self.app)
+
+    def tearDown(self) -> None:
+        self.app.state.runs.shutdown()
+
+    def test_safe_is_the_default(self) -> None:
+        self.assertEqual(self.app.state.profile, "safe")
+        with mock.patch.dict(os.environ, {PROFILE_ENV: ""}):
+            self.assertEqual(resolve_profile(), "safe")
+
+    def test_legacy_and_openapi_routes_are_404(self) -> None:
+        for method, path in (("get", "/artifacts/wind-aep-weibull"), ("post", "/compute/wind-reference"), ("get", "/docs"),
+                             ("get", "/redoc"), ("get", "/openapi.json"), ("get", "/docs/oauth2-redirect")):
+            with self.subTest(path=path):
+                kwargs = {"json": {"k": 2.0, "c": 8.0, "hubHeight": 120}} if method == "post" else {}
+                for token in ("", TOKEN):  # not even with the runtime token
+                    response = getattr(self.client, method)(path, headers={"X-Datapass-Token": token}, **kwargs)
+                    self.assertEqual(response.status_code, 404, (path, response.text))
+                    self.assertEqual(response.headers["x-content-type-options"], "nosniff")
+
+    def test_health_is_minimal_liveness(self) -> None:
+        response = self.client.get("/health")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"status": "ok", "service": SERVICE_NAME, "version": SERVICE_VERSION, "profile": "safe"})
+        self.assertNotIn(TOKEN, response.text)
+        self.assertEqual(SERVICE_VERSION, "0.5.0")
+
+    def test_profile_from_env_and_refusals(self) -> None:
+        with mock.patch.dict(os.environ, {PROFILE_ENV: "demo"}):
+            self.assertEqual(resolve_profile(), "demo")
+            self.assertEqual(resolve_profile("safe"), "safe")  # explicit wins over the env
+        with mock.patch.dict(os.environ, {PROFILE_ENV: "  "}):
+            self.assertEqual(resolve_profile(), "safe")
+        self.assertEqual(PROFILES, ("safe", "demo"))
+        for bad in ("open", "DEMO", "all"):
+            with self.subTest(profile=bad), self.assertRaises(ValueError):
+                resolve_profile(bad)
+        with mock.patch.dict(os.environ, {PROFILE_ENV: "everything"}):
+            with self.assertRaises(ValueError):
+                create_app(token=TOKEN)
+
+    def test_cli_profile_flag(self) -> None:
+        import app as service
+        quiet = mock.patch("sys.stderr", new_callable=io.StringIO)  # the connect line carries the token: never print it
+        with quiet, mock.patch.object(service, "app", self.app), mock.patch("uvicorn.run") as run:
+            service.main(["--port", "24391", "--profile", "demo"])
+            served = run.call_args.args[0]
+            self.assertEqual(served.state.profile, "demo")
+            self.assertEqual(served.state.runtime_token, TOKEN)
+            served.state.runs.shutdown()
+        with quiet, mock.patch.object(service, "app", create_app(token=TOKEN)), mock.patch("uvicorn.run") as run:
+            service.main(["--port", "24391"])
+            self.assertEqual(run.call_args.args[0].state.profile, "safe")
+            run.call_args.args[0].state.runs.shutdown()
+        with quiet, self.assertRaises(SystemExit):
+            service.main(["--profile", "open"])
 
 
 if __name__ == "__main__":

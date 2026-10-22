@@ -1,18 +1,23 @@
 """Levels 3 and 4 of the Python bridge: compute on demand, same `datapass.artifact` v1 contract.
 
-PROTOTYPE, loopback only. The level 3 endpoints below have no authentication; the
-level 4 runs API (`/api/runtime/v1/*`, see runtime.py) needs the X-Datapass-Token header. It binds 127.0.0.1, answers only
-loopback Host headers (DNS-rebinding guard), allows CORS only from the Vite dev
-origins and refuses request bodies above 2 KB. Do not expose it on a network.
+PROTOTYPE, loopback only. The level 4 runs API (`/api/runtime/v1/*`, see runtime.py) needs the X-Datapass-Token
+header. It binds 127.0.0.1, answers only loopback Host headers (DNS-rebinding guard), allows CORS only from the
+configured origins and refuses request bodies above 2 KB. Do not expose it on a network.
 
-    python py/service/app.py                 # http://127.0.0.1:8765
-    python py/service/app.py --port 8766
+Profiles (--profile, else $DATAPASS_SERVICE_PROFILE, else `safe`):
+    safe   default. Only /health (minimal liveness) and the token-protected /api/runtime/v1 and /api/notebook/v1
+           routes. The unauthenticated level 3 routes and /docs, /redoc, /openapi.json answer 404.
+    demo   adds the level 3 demo routes below (no token; loopback Host, and a request carrying an Origin header
+           must come from an allowed origin) and /docs + /openapi.json. For local demos and smoke tests only.
+
+    python py/service/app.py                          # safe, http://127.0.0.1:8765
+    python py/service/app.py --profile demo --port 8766
 
 Endpoints
-    GET  /health                     liveness + model version
-    GET  /artifacts/{id}             a precomputed artifact ($DATAPASS_ARTIFACT_DIR, else clients/python-wind-reference/public/artifacts)
-    POST /compute/wind-reference     {k, c, hubHeight} -> ILLUSTRATIVE artifact `wind-aep-live`
-    /api/runtime/v1/...              token-protected runs of allowlisted models (`datapass.runtime/1`)
+    GET  /health                     liveness {status, service, version, profile}
+    /api/runtime/v1/...              token-protected runs of allowlisted models (`datapass.runtime/1`), incl. GET /ready
+    GET  /artifacts/{id}             demo only: a precomputed artifact ($DATAPASS_ARTIFACT_DIR, else clients/python-wind-reference/public/artifacts)
+    POST /compute/wind-reference     demo only: {k, c, hubHeight} -> ILLUSTRATIVE artifact `wind-aep-live`
 
 The numbers are ILLUSTRATIVE (generic power curve, Weibull wind, power-law shear,
 no losses). Not FOIL data, not a site assessment.
@@ -35,6 +40,8 @@ sys.path.insert(0, str(HERE.parent))
 sys.path.insert(0, str(HERE))
 
 from fastapi import FastAPI, HTTPException  # noqa: E402
+from fastapi.encoders import jsonable_encoder  # noqa: E402
+from fastapi.exceptions import RequestValidationError  # noqa: E402
 from fastapi.middleware.cors import CORSMiddleware  # noqa: E402
 from fastapi.middleware.trustedhost import TrustedHostMiddleware  # noqa: E402
 from fastapi.responses import JSONResponse  # noqa: E402
@@ -44,12 +51,17 @@ from datapass_artifact import ArtifactError, to_artifact, validate  # noqa: E402
 from wind_reference_model import HOURS, RATED_KW, annual_energy_mwh, power_kw  # noqa: E402
 from result_store import (DEFAULT_MAX_BYTES as DEFAULT_RESULTS_MAX_BYTES, MAX_BODY_BYTES as NOTEBOOK_BODY_BYTES,  # noqa: E402
                           NOTEBOOK_PREFIX, NotebookGuard, ResultStore, StoreError, create_notebook_router)
-from runtime import (Cancelled, InputSpec, ModelResult, RunStore, RuntimeGuard, RuntimeModel,  # noqa: E402
-                     ShouldCancel, create_router, resolve_token)
+from runtime import (IDEMPOTENCY_HEADER, Cancelled, InputSpec, ModelResult, RunStore, RuntimeGuard,  # noqa: E402
+                     RuntimeModel, SafeJSONResponse, ShouldCancel, create_router, ready_check, resolve_token)
+from starlette.exceptions import HTTPException as StarletteHTTPException  # noqa: E402
 
 MODEL_VERSION = "wind-reference-live-1"
 SERVICE_NAME = "datapass-artifact-service"
-SERVICE_VERSION = "0.4.0"
+SERVICE_VERSION = "0.5.0"
+PROFILES = ("safe", "demo")
+DEFAULT_PROFILE = "safe"
+PROFILE_ENV = "DATAPASS_SERVICE_PROFILE"
+LEGACY_PREFIXES = ("/artifacts", "/compute")
 LIVE_ARTIFACT_ID = "wind-aep-live"
 REFERENCE_HEIGHT_M = 100.0
 SHEAR_EXPONENT = 0.14
@@ -73,6 +85,14 @@ def resolve_artifact_dir() -> Path:
 
 
 ARTIFACT_DIR = resolve_artifact_dir()
+
+
+def resolve_profile(profile: str | None = None) -> str:
+    """Explicit profile, else $DATAPASS_SERVICE_PROFILE, else `safe`. Anything else is refused."""
+    chosen = (profile if profile is not None else os.environ.get(PROFILE_ENV, "")).strip() or DEFAULT_PROFILE
+    if chosen not in PROFILES:
+        raise ValueError(f"profile must be one of {', '.join(PROFILES)} (got {chosen[:40]!r})")
+    return chosen
 _ID = re.compile(r"^[a-z][a-zA-Z0-9_-]{0,79}$")
 SOURCE = ("py/service/app.py POST /compute/wind-reference. ILLUSTRATIVE: generic 3 MW-class power curve, "
           "Weibull wind with scale c given at 100 m, power-law shear 0.14, no losses. Not FOIL data, not a site assessment.")
@@ -271,26 +291,59 @@ class _BodyLimit:
         await self.app(scope, receive, send)
 
 
+class _LegacyOriginGuard:
+    """Demo profile: a level 3 request that carries an Origin header must come from an allowed origin (403)."""
+
+    def __init__(self, app: Any, *, origins: tuple[str, ...]) -> None:
+        self.app, self.origins = app, frozenset(origins)
+
+    async def __call__(self, scope: dict, receive: Any, send: Any) -> None:
+        path = scope.get("path", "") if scope["type"] == "http" else ""
+        if any(path == p or path.startswith(p + "/") for p in LEGACY_PREFIXES):
+            origin = dict(scope.get("headers") or []).get(b"origin")
+            if origin is not None and origin.decode("latin-1") not in self.origins:
+                await SafeJSONResponse({"detail": "origin not allowed"}, status_code=403)(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+
 def create_app(*, origins: tuple[str, ...] | None = None, allowed_hosts: tuple[str, ...] = LOOPBACK_HOSTS,
                artifact_dir: Path | None = None, models: dict[str, RuntimeModel] | None = None,
                token: str | None = None, results_dir: Path | str | None = None,
-               results_max_bytes: int = DEFAULT_RESULTS_MAX_BYTES) -> FastAPI:
+               results_max_bytes: int = DEFAULT_RESULTS_MAX_BYTES, profile: str | None = None) -> FastAPI:
     """`results_dir` (opt-in) enables the durable result store; the nbformat routes need `nbformat` installed.
 
-    `artifact_dir` defaults to resolve_artifact_dir(), read when the app is created.
+    `profile` is `safe` (default; see resolve_profile) or `demo` (adds the unauthenticated level 3 routes and the
+    OpenAPI pages). `artifact_dir` defaults to resolve_artifact_dir(), read when the app is created.
     """
+    profile = resolve_profile(profile)
+    demo = profile == "demo"
     artifact_dir = resolve_artifact_dir() if artifact_dir is None else Path(artifact_dir)
     env_origins = os.environ.get("DATAPASS_SERVICE_ORIGINS")
     origins = origins or (tuple(o.strip() for o in env_origins.split(",") if o.strip()) if env_origins else DEFAULT_ORIGINS)
-    app = FastAPI(title="DataPass artifact service (prototype)", version=MODEL_VERSION, docs_url="/docs", redoc_url=None)
+    app = FastAPI(title="DataPass artifact service (prototype)", version=MODEL_VERSION, redoc_url=None,
+                  docs_url="/docs" if demo else None, openapi_url="/openapi.json" if demo else None)
     runtime_token = resolve_token(token)
     store = RunStore(RUNTIME_MODELS if models is None else models)
     app.state.runtime_token = runtime_token
     app.state.runs = store
+    app.state.profile = profile
+
+    @app.exception_handler(StarletteHTTPException)
+    async def http_error(_request: Any, error: StarletteHTTPException) -> SafeJSONResponse:
+        return SafeJSONResponse({"detail": error.detail}, status_code=error.status_code, headers=getattr(error, "headers", None))
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_error(_request: Any, error: RequestValidationError) -> SafeJSONResponse:
+        return SafeJSONResponse({"detail": jsonable_encoder(error.errors())}, status_code=422)
+
     app.add_middleware(RuntimeGuard, token=runtime_token, origins=tuple(origins))
     app.add_middleware(NotebookGuard, token=runtime_token, origins=tuple(origins))
+    if demo:
+        app.add_middleware(_LegacyOriginGuard, origins=tuple(origins))
     app.add_middleware(CORSMiddleware, allow_origins=list(origins), allow_methods=["GET", "POST"],
-                       allow_headers=["Content-Type", "X-Datapass-Token"], allow_credentials=False, max_age=600)
+                       allow_headers=["Content-Type", "X-Datapass-Token", IDEMPOTENCY_HEADER], allow_credentials=False,
+                       max_age=600)
     app.add_middleware(TrustedHostMiddleware, allowed_hosts=list(allowed_hosts))
     app.add_middleware(_BodyLimit, prefixes={NOTEBOOK_PREFIX: NOTEBOOK_BODY_BYTES})
 
@@ -303,28 +356,44 @@ def create_app(*, origins: tuple[str, ...] | None = None, allowed_hosts: tuple[s
 
     @app.get("/health")
     def health() -> dict[str, Any]:
-        return {"status": "ok", "service": "datapass-artifact-service", "model": MODEL_VERSION, "illustrative": True}
+        """Minimal liveness, no token: never secrets, paths or model lists (those are behind /api/runtime/v1)."""
+        return {"status": "ok", "service": SERVICE_NAME, "version": SERVICE_VERSION, "profile": profile}
 
-    @app.get("/artifacts/{artifact_id}")
-    def get_artifact(artifact_id: str) -> dict[str, Any]:
-        if not _ID.match(artifact_id):
-            raise HTTPException(status_code=422, detail="invalid artifact id")
-        path = artifact_dir / f"{artifact_id}.json"
-        if not path.is_file():
-            raise HTTPException(status_code=404, detail=f"artifact {artifact_id} not found")
-        try:
-            artifact = validate(json.loads(path.read_text(encoding="utf-8")))
-        except (ArtifactError, ValueError) as error:
-            raise HTTPException(status_code=500, detail=f"stored artifact is invalid: {error}") from error
-        if artifact["id"] != artifact_id:
-            raise HTTPException(status_code=500, detail="stored artifact id mismatch")
-        return artifact
+    if demo:
+        @app.get("/artifacts/{artifact_id}")
+        def get_artifact(artifact_id: str) -> dict[str, Any]:
+            if not _ID.match(artifact_id):
+                raise HTTPException(status_code=422, detail="invalid artifact id")
+            path = artifact_dir / f"{artifact_id}.json"
+            if not path.is_file():
+                raise HTTPException(status_code=404, detail=f"artifact {artifact_id} not found")
+            try:
+                artifact = validate(json.loads(path.read_text(encoding="utf-8")))
+            except (ArtifactError, ValueError) as error:
+                raise HTTPException(status_code=500, detail=f"stored artifact is invalid: {error}") from error
+            if artifact["id"] != artifact_id:
+                raise HTTPException(status_code=500, detail="stored artifact id mismatch")
+            return artifact
 
-    @app.post("/compute/wind-reference")
-    def compute(inputs: WindReferenceInputs) -> dict[str, Any]:
-        return compute_wind_reference(inputs)
+        @app.post("/compute/wind-reference")
+        def compute(inputs: WindReferenceInputs) -> dict[str, Any]:
+            return compute_wind_reference(inputs)
 
-    app.include_router(create_router(store, SERVICE_NAME, SERVICE_VERSION))
+    def service_checks() -> list[dict[str, Any]]:
+        checks = [ready_check("profile", True, profile)]
+        store_ = app.state.result_store
+        if store_ is None:
+            checks.append(ready_check("result-store", True, "not configured (opt-in --results-dir); runs stay in memory"))
+        else:
+            root = Path(store_.root)
+            writable = root.is_dir() and os.access(root, os.W_OK)
+            checks.append(ready_check("result-store", writable, "configured and writable" if writable else "configured but not writable"))
+        checks.append(ready_check("notebook-routes", bool(app.state.notebook_routes),
+                                  "available (nbformat)" if app.state.notebook_routes else "optional: unavailable, nbformat is not installed"))
+        return checks
+
+    app.include_router(create_router(store, SERVICE_NAME, SERVICE_VERSION, extra_checks=service_checks,
+                                     optional_checks=frozenset({"notebook-routes"})))
     # Optional notebook routes (FR-02/FR-03): .ipynb exchange through nbformat, and the result store only
     # when a folder was chosen. Missing nbformat leaves the routes out; the runtime above is unchanged.
     result_store = None
@@ -354,6 +423,9 @@ def connect_line(port: int, token: str, workbench_origin: str = DEFAULT_WORKBENC
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="DataPass live artifact service and runtime runs API (loopback prototype)")
     parser.add_argument("--port", type=int, default=int(os.environ.get("DATAPASS_SERVICE_PORT", DEFAULT_PORT)))
+    parser.add_argument("--profile", choices=PROFILES, default=None,
+                        help=f"safe (default, also ${PROFILE_ENV}): token-protected routes only; demo: adds the "
+                             "unauthenticated level 3 demo routes and /docs")
     parser.add_argument("--workbench-origin", default=DEFAULT_WORKBENCH_ORIGIN,
                         help=f"origin printed in the connect line (default {DEFAULT_WORKBENCH_ORIGIN})")
     parser.add_argument("--results-dir", default=None,
@@ -363,13 +435,18 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
     import uvicorn
     application = app
-    if args.results_dir is not None:
+    profile = resolve_profile(args.profile)
+    if args.results_dir is not None or profile != app.state.profile:
         try:
-            application = create_app(token=app.state.runtime_token, results_dir=args.results_dir, results_max_bytes=args.results_max_bytes)
+            application = create_app(token=app.state.runtime_token, results_dir=args.results_dir,
+                                     results_max_bytes=args.results_max_bytes, profile=profile)
         except StoreError as error:
             raise SystemExit(f"Result store refused: {error}") from None
         app.state.runs.shutdown()  # the default app is replaced, not served
-        print(f"Result store: {application.state.result_store.root} (limit {args.results_max_bytes:,} bytes).", file=sys.stderr, flush=True)
+        if application.state.result_store is not None:
+            print(f"Result store: {application.state.result_store.root} (limit {args.results_max_bytes:,} bytes).", file=sys.stderr, flush=True)
+    print(f"Profile: {profile}" + (" (demo routes /compute, /artifacts and /docs enabled; local demos only)" if profile == "demo" else ""),
+          file=sys.stderr, flush=True)
     print(connect_line(args.port, application.state.runtime_token, args.workbench_origin), file=sys.stderr, flush=True)
     try:
         uvicorn.run(application, host="127.0.0.1", port=args.port, log_level="warning")
