@@ -7,3 +7,6 @@
 - 2026-10-16 · Main pushes cancel each other's "Studio web gate" runs (concurrency group); PR runs are the merge evidence.
 - 2026-10-16 · Release qualification: `scripts/release-upgrade-check.mjs` step 5 hard-codes the 0.9.0 → 0.10.0 Jupyter-cell refusal, so it fails against 0.11.1 → 0.12.0+; use an unknown-cell-kind variant (see `qa/REL-0.12.0.md` Q3). `test:product-loop` hard-codes ports (loop spec, config, client CSP): rewrite them in a copy when ports are assigned.
 - 2026-10-16 · Release viewer header: `dist-standalone/concept-viewer.html` is built on the release branch, so its header names the pre-squash commit (0.11.1 and 0.12.0); expected, recorded as an omission.
+- 2026-10-22 · `tests/fixtures/engineering/` is frozen: `tests/engineering.test.mjs` requires exactly the manifest's files and `make-engineering-corpus.mjs` deletes and regenerates the folder. Put consumer fixtures elsewhere (`tests/fixtures/engineering-consumers/`, `tests/fixtures/runtime-lifecycle/`).
+- 2026-10-22 · `tests/browser/model-assets.spec.ts` hard-codes origin port 4173 in its external-request check; patch it only in a local copy when running on a port above 20000.
+- 2026-10-22 · Release qualification under `%TEMP%`: files of a working folder disappeared twice during 0.13.0; keep evidence under `<releases>/` and re-run `sha256sum -c` before each lane.
