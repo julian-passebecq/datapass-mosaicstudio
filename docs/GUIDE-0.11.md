@@ -1,5 +1,7 @@
 # DataPass MosaicStudio 0.11.0: short user guide
 
+For **0.13.1** the steps are the same as for 0.13.0 below: read `0.13.1` wherever a file name or `sdkVersion` says `0.11.0`. Upgrade from and rollback to 0.13.0: [`CONSUMING.md`](CONSUMING.md#0130--0131); what changed: [`RELEASE_NOTES.md`](RELEASE_NOTES.md#0131-2026-10-23).
+
 For **0.13.0** the steps are the same: read `0.13.0` wherever a file name or `sdkVersion` below says `0.11.0`. The Python service now starts in the `safe` profile: the legacy `/compute`, `/artifacts` and `/docs` routes need `--profile demo` (loopback only) or a move to `/api/runtime/v1`. Upgrade from and rollback to 0.12.0: [`CONSUMING.md`](CONSUMING.md#0120--0130); what changed: [`RELEASE_NOTES.md`](RELEASE_NOTES.md#0130-2026-10-22).
 
 For **0.12.0** the install, verify and run steps are the same: read `0.12.0` wherever a file name or `sdkVersion` below says `0.11.0`. Before upgrading, add `"status"` to each `client.config.json` (F213), and if you use the Python runtime outside a checkout, install the private runtime companion with [`RUNTIME_COMPANION.md`](RUNTIME_COMPANION.md). Upgrade from and rollback to 0.11.1: [`CONSUMING.md`](CONSUMING.md#0111--0120); what changed: [`RELEASE_NOTES.md`](RELEASE_NOTES.md#0120-2026-10-16).

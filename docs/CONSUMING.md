@@ -152,11 +152,25 @@ Stored formats keep their versions: everything 0.12.0 reads and writes (`datapas
 4. **`datapass.engineering/1` in another repository.** Vendor it instead of taking the whole SDK: copy `src/framework/engineering/contract.ts`, `spec/engineering/v1/engineering.schema.json` (sha256 `6ba8ee85…5a83`) and `tests/fixtures/engineering/` at one pinned commit, record the commit and file hashes, and run the corpus (decision, code, `where`, bytes and digest must match). Python consumers copy `py/datapass_engineering.py`. Never edit the copy. Steps: [`spec/engineering/v1/README.md`](../spec/engineering/v1/README.md#vendoring); for a 0.8.1 framework snapshot see [`UPGRADE_FOIL_STUDIO_0.13.md`](UPGRADE_FOIL_STUDIO_0.13.md).
 5. Clients that show previous results now see the label "Previous result — not this run's output" after a failed or cancelled run; A/B comparisons with mismatched units are refused with the reason instead of being drawn.
 
+### 0.13.0 → 0.13.1
+
+Nothing stored, no contract and no wire changed: everything 0.13.0 reads and writes is read and written the same way, and `datapass.engineering/1` is byte-identical. Follow the steps above (new SHA or release folder, `npm ci`, `contracts:check`, client checks), then:
+
+1. **SDK and companion.** Replace `datapass-mosaicstudio-sdk-0.13.0.tar.gz` and `datapass-runtime-companion-0.13.0.tar.gz` with the 0.13.1 files of the private delivery and check them with `node scripts/sdk-verify.mjs <folder>` and `node scripts/runtime-verify.mjs <folder>`. These verifiers now refuse unsafe archive paths before extracting anything (#102); a release that 0.13.0 accepted and that 0.13.1 refuses was not a valid release.
+2. **Notebook artifacts.** If you exported the wind reference artifact from a notebook with a Weibull `k` other than 2 under 0.13.0, its title, source, declared input `k` and `inputHash` still said `k=2`: re-export it with 0.13.1 (`build_artifact(rows, k=k)`). The rows were right; only the lineage was wrong. A `k=2` export needs nothing.
+3. **Runtime pairing.** No action. A page whose storage fails now keeps the pairing in memory instead of losing it.
+
 ### Client status is required from 0.12.0 (F213)
 
 `datapass.client-profile` stays version 1 but now requires `status` (`reference`, `prototype`, `draft` or `frozen`). `client:check`, `client:context` and every build refuse a client without it (`DP-CLI-001`, unknown value `DP-CLI-002`), and a client folder without `client.config.json` is refused the same way. Each out-of-tree client adds one line before upgrading, for example `"status": "prototype"`; a client without a profile adds `{"format":"datapass.client-profile","version":1,"family":"content","status":"prototype"}` with its own family. `reference` is reserved for the AGENTS.md rule 17 public references. Status is a catalog label only: capabilities, CSP and build inclusion are unchanged. A profile with `status` is refused by 0.11.1 and older tooling (unknown key), so on rollback remove the line.
 
 ## Rollback
+
+From 0.13.1 to 0.13.0 (nothing stored changed; the upgrade/rollback check is run on the shipped bytes of both versions, see `qa/REL-0.13.1.md`):
+
+- **Stored data and records.** Workspaces, result stores, run history, bundles and engineering records written by 0.13.1 are read by 0.13.0 unchanged. An artifact exported at `k=2.7` by 0.13.1 stays a valid `datapass.artifact/1` and opens in 0.13.0 with its `k=2.7` lineage; it is never recomputed.
+- **Companion.** Start the 0.13.0 companion instead (same service 0.5.0, same `--profile safe`). Its `py/wind_reference_model.py` writes `k=2` into the lineage whatever `k` the notebook used, so do not export notebook artifacts with another `k` after rolling back.
+- **Verifiers.** The 0.13.0 `sdk-verify` and `runtime-verify` lack the #102 archive path checks; verify releases with the 0.13.1 scripts where you can.
 
 From 0.13.0 to 0.12.0 (not executed as a script; from the source of both versions, nothing stored changed):
 
