@@ -18,7 +18,7 @@ CONTRACT = json.loads((Path(__file__).resolve().parents[1] / "docs" / "contracts
 class DiagnosticCodeTests(unittest.TestCase):
     def test_contract_shape(self):
         self.assertEqual((CONTRACT["format"], CONTRACT["version"]), ("datapass.diagnostic-codes", 1))
-        self.assertEqual(sorted(CONTRACT["prefixes"]), ["DP-ART", "DP-BUN", "DP-CLI", "DP-ENV", "DP-STO"])
+        self.assertEqual(sorted(CONTRACT["prefixes"]), ["DP-ART", "DP-BUN", "DP-CLI", "DP-ENG", "DP-ENV", "DP-STO"])
         codes = [row["code"] for row in CONTRACT["codes"]]
         self.assertEqual(len(codes), len(set(codes)))
 

@@ -1,0 +1,32 @@
+{
+  "format": "datapass.engineering",
+  "version": 1,
+  "kind": "selection-binding",
+  "entityId": "rotor/blade-1",
+  "geometryRevision": {
+    "alg": "sha256",
+    "over": "datapass-c14n/1",
+    "value": "d0f7fc6c577de006c30b826a2686b5f24c88ef34fe9b6827bcc9aad1ba14f7f9"
+  },
+  "viewToken": "view.7f3a-2",
+  "bindings": [
+    {
+      "signal": "blade-1.pitch",
+      "entityId": "rotor/blade-1",
+      "status": "sourced",
+      "source": "SYNTHETIC telemetry column pitch_deg_b1"
+    },
+    {
+      "signal": "blade-1.strain",
+      "entityId": "rotor/blade-1",
+      "status": "inferred",
+      "source": "name match on \"blade-1\""
+    },
+    {
+      "signal": "nacelle.vibration-x",
+      "entityId": "nacelle",
+      "status": "unmapped"
+    }
+  ],
+  "timeCursor": 12.5
+}

@@ -1,0 +1,11 @@
+{
+  "format": "datapass.engineering",
+  "version": 1,
+  "kind": "parameter-diff",
+  "baseRevision": {
+    "alg": "sha256",
+    "over": "datapass-c14n/1",
+    "value": "d451f356a53cc3452a7c30ef4c14ccb11b3bb9fe520ea706d74cfe5f6f8eda1c"
+  },
+  "changes": []
+}

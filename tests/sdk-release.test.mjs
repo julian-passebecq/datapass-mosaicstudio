@@ -26,7 +26,7 @@ test('sdk:pack writes the archive, the standalone viewer and a complete manifest
   assert.equal(manifest.commitDate,git(['show','-s','--format=%cI','HEAD']));assert.equal(typeof manifest.sourceTreeClean,'boolean');
   assert.equal(manifest.license.spdx,null);assert.match(manifest.license.statement,/all rights reserved/);
   assert.equal(manifest.archive.name,`datapass-mosaicstudio-sdk-${pkg.version}.tar.gz`);assert.equal(manifest.upgrade,'docs/CONSUMING.md');
-  assert.deepEqual(manifest.contracts.map(c=>c.id),['datapass.concept-spec/1','datapass.artifact/1','datapass.preview/1']);
+  assert.deepEqual(manifest.contracts.map(c=>c.id),['datapass.concept-spec/1','datapass.artifact/1','datapass.preview/1','datapass.engineering/1']);
   assert.deepEqual(manifest.standalone.map(s=>s.path),['concept-viewer.html']);
   const paths=manifest.files.map(f=>f.path);
   assert.deepEqual(paths,[...paths].sort((a,b)=>a<b?-1:a>b?1:0));

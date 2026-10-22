@@ -1,0 +1,19 @@
+{
+  "format": "datapass.engineering",
+  "version": 1,
+  "kind": "approval-request",
+  "purpose": "SYNTHETIC: build the revised rotor geometry for review",
+  "baseRevision": {
+    "alg": "sha256",
+    "over": "datapass-c14n/1",
+    "value": "d451f356a53cc3452a7c30ef4c14ccb11b3bb9fe520ea706d74cfe5f6f8eda1c"
+  },
+  "proposalDigest": {
+    "alg": "sha256",
+    "over": "datapass-c14n/1",
+    "value": "4a93a15d8a7974dfddd41463627868e84bfe106412618e530badc38358c22f36"
+  },
+  "requester": "studio-user",
+  "endpointHint": "/api/../admin",
+  "presentationOnly": true
+}

@@ -1,0 +1,546 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/julian-passebecq/datapass-mosaicstudio/main/spec/engineering/v1/engineering.schema.json",
+  "title": "datapass.engineering/1",
+  "description": "Frozen sidecar records that reference datapass.artifact/1, datapass.runtime/1 and datapass.bundle records without changing them. Digests name their algorithm and what they cover: exact bytes or datapass-c14n/1 (RFC 8785 JCS). Semantic rules, the 1 MiB / 32-level budget and canonicalization are validator gates (src/framework/engineering/contract.ts, py/datapass_engineering.py), not schema. An approval-request is presentation only; a viewToken is not an authorization token.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/artifact-ref"
+    },
+    {
+      "$ref": "#/$defs/run-receipt"
+    },
+    {
+      "$ref": "#/$defs/selection-binding"
+    },
+    {
+      "$ref": "#/$defs/approval-request"
+    },
+    {
+      "$ref": "#/$defs/parameter-diff"
+    }
+  ],
+  "$defs": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._:/@-]{0,159}$"
+    },
+    "digest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "alg",
+        "over",
+        "value"
+      ],
+      "properties": {
+        "alg": {
+          "const": "sha256"
+        },
+        "over": {
+          "enum": [
+            "bytes",
+            "datapass-c14n/1"
+          ]
+        },
+        "value": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "time": {
+      "type": "string",
+      "pattern": "^[1-9][0-9]{3}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+    },
+    "scalar": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "number"
+        },
+        {
+          "type": "string",
+          "maxLength": 4000
+        }
+      ]
+    },
+    "artifact-ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "version",
+        "kind",
+        "id",
+        "sha256",
+        "mediaType",
+        "bytes",
+        "scope"
+      ],
+      "properties": {
+        "format": {
+          "const": "datapass.engineering"
+        },
+        "version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "artifact-ref"
+        },
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z][a-zA-Z0-9_-]{0,79}$"
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$",
+          "description": "SHA-256 of the exact artifact bytes."
+        },
+        "mediaType": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9!#$&^_.+-]{0,63}\\/[a-z0-9][a-z0-9!#$&^_.+-]{0,63}(?:; ?[a-z0-9-]{1,32}=[A-Za-z0-9._-]{1,64})?$"
+        },
+        "bytes": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "scope": {
+          "enum": [
+            "public",
+            "private"
+          ]
+        },
+        "locator": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Opaque and private: never resolved by Studio."
+        }
+      }
+    },
+    "run-receipt": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "version",
+        "kind",
+        "runId",
+        "inputDigest",
+        "code",
+        "model",
+        "status",
+        "cancelRequested",
+        "times",
+        "checks",
+        "coverage",
+        "artifacts",
+        "diagnostics"
+      ],
+      "properties": {
+        "format": {
+          "const": "datapass.engineering"
+        },
+        "version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "run-receipt"
+        },
+        "runId": {
+          "$ref": "#/$defs/id"
+        },
+        "inputDigest": {
+          "$ref": "#/$defs/digest"
+        },
+        "code": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "version"
+          ],
+          "properties": {
+            "version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "commit": {
+              "type": "string",
+              "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$"
+            }
+          }
+        },
+        "model": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "id",
+            "version"
+          ],
+          "properties": {
+            "id": {
+              "$ref": "#/$defs/id"
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "resolved": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "minLength": 1
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "running",
+            "succeeded",
+            "failed",
+            "cancelled"
+          ],
+          "description": "datapass.runtime/1 RunStatus values."
+        },
+        "cancelRequested": {
+          "type": "boolean"
+        },
+        "times": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "submittedAt",
+            "startedAt",
+            "finishedAt"
+          ],
+          "properties": {
+            "submittedAt": {
+              "$ref": "#/$defs/time"
+            },
+            "startedAt": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "finishedAt": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/time"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          }
+        },
+        "checks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "performed",
+            "notPerformed"
+          ],
+          "properties": {
+            "performed": {
+              "type": "array",
+              "maxItems": 200,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/id"
+              }
+            },
+            "notPerformed": {
+              "type": "array",
+              "maxItems": 200,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/id"
+              }
+            }
+          }
+        },
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "consumed",
+            "ignored",
+            "fixed"
+          ],
+          "properties": {
+            "consumed": {
+              "type": "array",
+              "maxItems": 1000,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/id"
+              }
+            },
+            "ignored": {
+              "type": "array",
+              "maxItems": 1000,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/id"
+              }
+            },
+            "fixed": {
+              "type": "array",
+              "maxItems": 1000,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/id"
+              }
+            }
+          }
+        },
+        "artifacts": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "$ref": "#/$defs/artifact-ref"
+          }
+        },
+        "diagnostics": {
+          "type": "array",
+          "maxItems": 200,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "code",
+              "severity",
+              "message"
+            ],
+            "properties": {
+              "code": {
+                "type": "string",
+                "maxLength": 32,
+                "pattern": "^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*$"
+              },
+              "severity": {
+                "enum": [
+                  "info",
+                  "warning",
+                  "error"
+                ]
+              },
+              "message": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "selection-binding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "version",
+        "kind",
+        "entityId",
+        "geometryRevision",
+        "viewToken",
+        "bindings"
+      ],
+      "properties": {
+        "format": {
+          "const": "datapass.engineering"
+        },
+        "version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "selection-binding"
+        },
+        "entityId": {
+          "$ref": "#/$defs/id"
+        },
+        "geometryRevision": {
+          "$ref": "#/$defs/digest"
+        },
+        "viewToken": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9._~-]{1,128}$",
+          "description": "Opaque view identity; NOT an authorization token."
+        },
+        "bindings": {
+          "type": "array",
+          "maxItems": 500,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "signal",
+              "entityId",
+              "status"
+            ],
+            "properties": {
+              "signal": {
+                "$ref": "#/$defs/id"
+              },
+              "entityId": {
+                "anyOf": [
+                  {
+                    "$ref": "#/$defs/id"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "status": {
+                "enum": [
+                  "sourced",
+                  "inferred",
+                  "unmapped"
+                ]
+              },
+              "source": {
+                "type": "string",
+                "minLength": 1
+              }
+            }
+          }
+        },
+        "timeCursor": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Seconds."
+        }
+      }
+    },
+    "approval-request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "version",
+        "kind",
+        "purpose",
+        "baseRevision",
+        "proposalDigest",
+        "requester",
+        "endpointHint",
+        "presentationOnly"
+      ],
+      "properties": {
+        "format": {
+          "const": "datapass.engineering"
+        },
+        "version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "approval-request"
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "baseRevision": {
+          "$ref": "#/$defs/digest"
+        },
+        "proposalDigest": {
+          "$ref": "#/$defs/digest"
+        },
+        "requester": {
+          "$ref": "#/$defs/id"
+        },
+        "endpointHint": {
+          "type": "string",
+          "pattern": "^\\/[A-Za-z0-9._~\\/-]{0,255}$"
+        },
+        "presentationOnly": {
+          "const": true
+        }
+      }
+    },
+    "parameter-diff": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "format",
+        "version",
+        "kind",
+        "baseRevision",
+        "changes"
+      ],
+      "properties": {
+        "format": {
+          "const": "datapass.engineering"
+        },
+        "version": {
+          "const": 1
+        },
+        "kind": {
+          "const": "parameter-diff"
+        },
+        "baseRevision": {
+          "$ref": "#/$defs/digest"
+        },
+        "changes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1000,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "unit",
+              "from",
+              "to",
+              "consumedBy"
+            ],
+            "properties": {
+              "id": {
+                "$ref": "#/$defs/id"
+              },
+              "unit": {
+                "type": "string",
+                "maxLength": 32,
+                "description": "Required; \"\" when dimensionless."
+              },
+              "from": {
+                "$ref": "#/$defs/scalar"
+              },
+              "to": {
+                "$ref": "#/$defs/scalar"
+              },
+              "consumedBy": {
+                "type": "array",
+                "maxItems": 100,
+                "uniqueItems": true,
+                "items": {
+                  "$ref": "#/$defs/id"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

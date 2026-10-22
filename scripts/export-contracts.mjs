@@ -9,6 +9,7 @@ import {conceptSpecJsonSchema} from '../src/framework/concept/json-schema.ts';
 import {checkConceptSpec} from '../src/framework/concept/schema.ts';
 import {diagnosticCodesContract} from '../src/framework/diagnostics/index.ts';
 import {bundleSchema} from '../src/framework/foundation/bundle.ts';
+import {engineeringSchema} from '../src/framework/engineering/contract.ts';
 const checking=process.argv.includes('--check');await mkdir('docs/contracts',{recursive:true});
 for(const [name,value] of Object.entries({'motion-v2.schema.json':motionV2Schema,'model3d.schema.json':modelSchema,...foundationSchemas,'web-app.schema.json':manifestSchema,'web-state.schema.json':savedStateSchema,'scene3d.schema.json':sceneSchema,'components.json':componentCatalog,'explorer.schema.json':explorerSchema,'explanation.schema.json':explanationSchema,'replay.schema.json':replaySchema,'client-profile.schema.json':clientProfileSchema,'families.json':appFamilies,'capabilities.json':capabilityCatalog,'motion.schema.json':motionSchema,'source-artifact.schema.json':sourceArtifactSchema,'concept-spec.schema.json':conceptSpecJsonSchema,'diagnostic-codes.json':diagnosticCodesContract})){
  const file='docs/contracts/'+name,content=JSON.stringify(value,null,2)+'\n';
@@ -21,6 +22,10 @@ await mkdir('spec/concept/v1',{recursive:true});
 // Provenance bundle v1 (candidate, F208): published under spec/bundle/v1/ from src/framework/foundation/bundle.ts.
 await mkdir('spec/bundle/v1',{recursive:true});
 {const file='spec/bundle/v1/bundle.schema.json',content=JSON.stringify(bundleSchema,null,2)+'\n';
+ if(checking){let prior='';try{prior=(await readFile(file,'utf8')).replace(/\r\n/g,'\n');}catch{}if(prior!==content)throw new Error('Contract drift: '+file+' (run npm run contracts)');}else await writeFile(file,content);}
+// Engineering sidecar contract datapass.engineering/1 (frozen): published under spec/engineering/v1/ from src/framework/engineering/contract.ts.
+await mkdir('spec/engineering/v1',{recursive:true});
+{const file='spec/engineering/v1/engineering.schema.json',content=JSON.stringify(engineeringSchema,null,2)+'\n';
  if(checking){let prior='';try{prior=(await readFile(file,'utf8')).replace(/\r\n/g,'\n');}catch{}if(prior!==content)throw new Error('Contract drift: '+file+' (run npm run contracts)');}else await writeFile(file,content);}
 for(const name of (await readdir('spec/concept/v1')).filter(f=>f.endsWith('.concept.json')).sort()){
  const r=checkConceptSpec(JSON.parse(await readFile('spec/concept/v1/'+name,'utf8')));

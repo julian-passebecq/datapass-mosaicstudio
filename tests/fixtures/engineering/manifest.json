@@ -1,0 +1,569 @@
+{
+  "format": "datapass.engineering-corpus",
+  "version": 1,
+  "contract": "datapass.engineering/1",
+  "c14n": "datapass-c14n/1",
+  "note": "Every record is SYNTHETIC (invented values) except legacy-0.8.1/, a byte copy of a public 0.8.1 reference artifact. Decisions, refusal codes, refused locations (JSON pointer), canonical bytes and digests are asserted for src/framework/engineering/contract.ts and py/datapass_engineering.py.",
+  "generator": "scripts/make-engineering-corpus.mjs",
+  "legacy": {
+    "file": "legacy-0.8.1/wind-aep-weibull.json",
+    "from": "studio-v0.8.1:clients/python-wind-reference/public/artifacts/wind-aep-weibull.json",
+    "sha256": "edb1de122518f010f48f68ff7ef0b84611bce25475156e5fa00b48b1205fbc62",
+    "bytes": 6202,
+    "referencedBy": "valid/artifact-ref-legacy-0.8.1.json",
+    "contract": "datapass.artifact/1"
+  },
+  "fixtures": [
+    {
+      "file": "valid/artifact-ref-public.json",
+      "expect": "accept",
+      "kind": "artifact-ref",
+      "digest": "6d620c8e593e08dc97bbde0b0dde94f2a7cf1ad653a1d31c669a66ca53ff1b68",
+      "note": "Public artifact reference: exact-byte sha256 and size."
+    },
+    {
+      "file": "valid/artifact-ref-private-locator.json",
+      "expect": "accept",
+      "kind": "artifact-ref",
+      "digest": "d440f33f74460a0c586de92bb75d366e6e1b87c2abd97483716f6d99a23bdbb1",
+      "note": "Private artifact with an opaque locator Studio never resolves."
+    },
+    {
+      "file": "valid/artifact-ref-legacy-0.8.1.json",
+      "expect": "accept",
+      "kind": "artifact-ref",
+      "digest": "ef03abbc53a5050006bf212e11892894c6842404b89db9d5c05acfa84c6596b2",
+      "note": "References the byte-exact 0.8.1 artifact in legacy-0.8.1/ (sha256 and bytes of the file as stored)."
+    },
+    {
+      "file": "valid/run-receipt-succeeded.json",
+      "expect": "accept",
+      "kind": "run-receipt",
+      "digest": "b46a4e9554356325ab95e2de5f43d8cb0a52c8c1a1fccb0c279f61d3ef312e56",
+      "note": "Succeeded run: resolved model, checks performed and not performed, coverage, two artifact refs (one legacy)."
+    },
+    {
+      "file": "valid/run-receipt-cancel-requested.json",
+      "expect": "accept",
+      "kind": "run-receipt",
+      "digest": "9e704a16d3f7217521f9f92c0669b38c2d87f8f4b1cb93e57fb6f7ac8796b721",
+      "note": "Running run with cancelRequested true (runtime/1 additive flag); provider did not expose a resolved model, so resolved is null with a reason."
+    },
+    {
+      "file": "valid/run-receipt-cancelled-before-start.json",
+      "expect": "accept",
+      "kind": "run-receipt",
+      "digest": "b37703754e4cc6706d99c1eefa5240013789eb6e0e88b6314d47a4c16ff834b1",
+      "note": "Cancelled while queued: never started, finished at cancel time."
+    },
+    {
+      "file": "valid/run-receipt-failed.json",
+      "expect": "accept",
+      "kind": "run-receipt",
+      "digest": "39c5cc4370f3a29f12a6594bc5a6d2d5d76ce63c25270b9bd76d37c72c03df31",
+      "note": "Failed run with an error diagnostic and no artifacts."
+    },
+    {
+      "file": "valid/selection-binding.json",
+      "expect": "accept",
+      "kind": "selection-binding",
+      "digest": "b2bac146448f8fcc03f2452773906ba8f5dd986949b1d5d5f37bc0874dc98003",
+      "note": "One sourced, one inferred (needs consumer opt-in to animate) and one unmapped signal (never animates)."
+    },
+    {
+      "file": "valid/selection-binding-minimal.json",
+      "expect": "accept",
+      "kind": "selection-binding",
+      "digest": "36afe85e9788583518430791c03b038ed9add7a9ee490a2de63b01d6fca39a01",
+      "note": "No bindings and no time cursor."
+    },
+    {
+      "file": "valid/parameter-diff.json",
+      "expect": "accept",
+      "kind": "parameter-diff",
+      "digest": "4a93a15d8a7974dfddd41463627868e84bfe106412618e530badc38358c22f36",
+      "note": "Typed changes with units (\"\" dimensionless), number/string/boolean values, an added value (from null) and non-ASCII text."
+    },
+    {
+      "file": "valid/approval-request.json",
+      "expect": "accept",
+      "kind": "approval-request",
+      "digest": "80ef989aac5c77263e27b70f2691410b6c868b81ba639eff9c325f4064b40cdf",
+      "note": "Presentation-only approval request; proposalDigest is the datapass-c14n/1 digest of valid/parameter-diff.json."
+    },
+    {
+      "file": "invalid/e-not-json.json",
+      "expect": "reject",
+      "code": "DP-ENG-001",
+      "where": "",
+      "note": "Not JSON."
+    },
+    {
+      "file": "invalid/e-array.json",
+      "expect": "reject",
+      "code": "DP-ENG-001",
+      "where": "",
+      "note": "A JSON array, not one object."
+    },
+    {
+      "file": "invalid/e-nan-token.json",
+      "expect": "reject",
+      "code": "DP-ENG-001",
+      "where": "",
+      "note": "NaN is not a JSON token (Python must not accept it either)."
+    },
+    {
+      "file": "invalid/e-lone-surrogate.json",
+      "expect": "reject",
+      "code": "DP-ENG-001",
+      "where": "/purpose",
+      "note": "A string with a lone surrogate cannot be written as UTF-8."
+    },
+    {
+      "file": "invalid/e-too-deep.json",
+      "expect": "reject",
+      "code": "DP-ENG-001",
+      "where": "/x/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0/0",
+      "note": "Nesting deeper than 32 levels."
+    },
+    {
+      "file": "invalid/e-format.json",
+      "expect": "reject",
+      "code": "DP-ENG-002",
+      "where": "/format",
+      "note": "Unsupported format name."
+    },
+    {
+      "file": "invalid/e-version.json",
+      "expect": "reject",
+      "code": "DP-ENG-003",
+      "where": "/version",
+      "note": "Unknown version."
+    },
+    {
+      "file": "invalid/e-version-string.json",
+      "expect": "reject",
+      "code": "DP-ENG-003",
+      "where": "/version",
+      "note": "Version as a string."
+    },
+    {
+      "file": "invalid/e-kind.json",
+      "expect": "reject",
+      "code": "DP-ENG-004",
+      "where": "/kind",
+      "note": "Unknown kind (approvals are not a Studio record)."
+    },
+    {
+      "file": "invalid/k-unknown-key.json",
+      "expect": "reject",
+      "code": "DP-ENG-005",
+      "where": "/url",
+      "note": "artifact-ref with an extra key: references never carry a resolvable URL."
+    },
+    {
+      "file": "invalid/k-nested-unknown-key.json",
+      "expect": "reject",
+      "code": "DP-ENG-005",
+      "where": "/bindings/1/confidence",
+      "note": "A binding with an undocumented confidence score."
+    },
+    {
+      "file": "invalid/k-missing-key.json",
+      "expect": "reject",
+      "code": "DP-ENG-006",
+      "where": "/diagnostics",
+      "note": "run-receipt without diagnostics."
+    },
+    {
+      "file": "invalid/k-unit-missing.json",
+      "expect": "reject",
+      "code": "DP-ENG-006",
+      "where": "/changes/0/unit",
+      "note": "A change without a unit: unit is required (\"\" when dimensionless)."
+    },
+    {
+      "file": "invalid/f-artifact-id.json",
+      "expect": "reject",
+      "code": "DP-ENG-007",
+      "where": "/id",
+      "note": "Artifact id with upper case first letter."
+    },
+    {
+      "file": "invalid/f-bytes.json",
+      "expect": "reject",
+      "code": "DP-ENG-007",
+      "where": "/bytes",
+      "note": "Negative byte count."
+    },
+    {
+      "file": "invalid/f-time.json",
+      "expect": "reject",
+      "code": "DP-ENG-007",
+      "where": "/times/startedAt",
+      "note": "A date that does not exist (30 February)."
+    },
+    {
+      "file": "invalid/f-view-token.json",
+      "expect": "reject",
+      "code": "DP-ENG-007",
+      "where": "/viewToken",
+      "note": "viewToken with a space (it is an opaque view id, not a bearer token)."
+    },
+    {
+      "file": "invalid/f-endpoint-url.json",
+      "expect": "reject",
+      "code": "DP-ENG-007",
+      "where": "/endpointHint",
+      "note": "endpointHint with a host: it is a path hint, never a URL Studio calls."
+    },
+    {
+      "file": "invalid/f-endpoint-dots.json",
+      "expect": "reject",
+      "code": "DP-ENG-007",
+      "where": "/endpointHint",
+      "note": "endpointHint with a dot segment."
+    },
+    {
+      "file": "invalid/f-changes-empty.json",
+      "expect": "reject",
+      "code": "DP-ENG-007",
+      "where": "/changes",
+      "note": "A diff without changes."
+    },
+    {
+      "file": "invalid/f-unit-type.json",
+      "expect": "reject",
+      "code": "DP-ENG-007",
+      "where": "/changes/1/unit",
+      "note": "Unit given as a number."
+    },
+    {
+      "file": "invalid/f-status.json",
+      "expect": "reject",
+      "code": "DP-ENG-007",
+      "where": "/status",
+      "note": "A status runtime/1 does not define."
+    },
+    {
+      "file": "invalid/d-alg.json",
+      "expect": "reject",
+      "code": "DP-ENG-008",
+      "where": "/inputDigest/alg",
+      "note": "Digest algorithm other than sha256."
+    },
+    {
+      "file": "invalid/d-over.json",
+      "expect": "reject",
+      "code": "DP-ENG-008",
+      "where": "/geometryRevision/over",
+      "note": "Digest over an unnamed serialization."
+    },
+    {
+      "file": "invalid/d-value-upper.json",
+      "expect": "reject",
+      "code": "DP-ENG-008",
+      "where": "/baseRevision/value",
+      "note": "Digest value in upper-case hex."
+    },
+    {
+      "file": "invalid/d-artifact-sha.json",
+      "expect": "reject",
+      "code": "DP-ENG-008",
+      "where": "/artifacts/1/sha256",
+      "note": "Embedded artifact ref with a short sha256."
+    },
+    {
+      "file": "invalid/n-nested-format.json",
+      "expect": "reject",
+      "code": "DP-ENG-002",
+      "where": "/artifacts/0/format",
+      "note": "Embedded artifact ref of another format."
+    },
+    {
+      "file": "invalid/u-duplicate-change.json",
+      "expect": "reject",
+      "code": "DP-ENG-009",
+      "where": "/changes/1/id",
+      "note": "The same parameter changed twice."
+    },
+    {
+      "file": "invalid/u-duplicate-signal.json",
+      "expect": "reject",
+      "code": "DP-ENG-009",
+      "where": "/bindings/1/signal",
+      "note": "One signal bound twice."
+    },
+    {
+      "file": "invalid/u-duplicate-artifact.json",
+      "expect": "reject",
+      "code": "DP-ENG-009",
+      "where": "/artifacts/1/id",
+      "note": "Two artifact refs with one id."
+    },
+    {
+      "file": "invalid/u-duplicate-check.json",
+      "expect": "reject",
+      "code": "DP-ENG-009",
+      "where": "/checks/performed/1",
+      "note": "A check listed twice."
+    },
+    {
+      "file": "invalid/r-queued-started.json",
+      "expect": "reject",
+      "code": "DP-ENG-010",
+      "where": "/times",
+      "note": "A queued run with a start time."
+    },
+    {
+      "file": "invalid/r-succeeded-unfinished.json",
+      "expect": "reject",
+      "code": "DP-ENG-010",
+      "where": "/times",
+      "note": "A succeeded run without a finish time."
+    },
+    {
+      "file": "invalid/r-backwards.json",
+      "expect": "reject",
+      "code": "DP-ENG-010",
+      "where": "/times",
+      "note": "Finished before it started."
+    },
+    {
+      "file": "invalid/r-cancelled-unrequested.json",
+      "expect": "reject",
+      "code": "DP-ENG-010",
+      "where": "/cancelRequested",
+      "note": "Cancelled without cancelRequested."
+    },
+    {
+      "file": "invalid/m-null-no-reason.json",
+      "expect": "reject",
+      "code": "DP-ENG-011",
+      "where": "/model/resolved",
+      "note": "Unresolved model without a reason: unknown metadata is null WITH a reason, never invented."
+    },
+    {
+      "file": "invalid/m-reason-resolved.json",
+      "expect": "reject",
+      "code": "DP-ENG-011",
+      "where": "/model/reason",
+      "note": "A reason next to a resolved model."
+    },
+    {
+      "file": "invalid/l-check-both.json",
+      "expect": "reject",
+      "code": "DP-ENG-012",
+      "where": "/checks/notPerformed/1",
+      "note": "A check both performed and not performed."
+    },
+    {
+      "file": "invalid/l-coverage-overlap.json",
+      "expect": "reject",
+      "code": "DP-ENG-012",
+      "where": "/coverage/fixed/0",
+      "note": "A parameter both consumed and fixed: a computation cannot claim a variable it fixes."
+    },
+    {
+      "file": "invalid/b-unmapped-entity.json",
+      "expect": "reject",
+      "code": "DP-ENG-013",
+      "where": "/bindings/2",
+      "note": "An unmapped signal that names an entity."
+    },
+    {
+      "file": "invalid/b-sourced-no-source.json",
+      "expect": "reject",
+      "code": "DP-ENG-013",
+      "where": "/bindings/0",
+      "note": "A sourced binding without its source."
+    },
+    {
+      "file": "invalid/b-inferred-no-entity.json",
+      "expect": "reject",
+      "code": "DP-ENG-013",
+      "where": "/bindings/1",
+      "note": "An inferred binding without an entity."
+    },
+    {
+      "file": "invalid/a-approval-status.json",
+      "expect": "reject",
+      "code": "DP-ENG-014",
+      "where": "/approval_status",
+      "note": "Carries approval_status (as foilai.design-change/1 does): Studio never stores approval state."
+    },
+    {
+      "file": "invalid/a-approved.json",
+      "expect": "reject",
+      "code": "DP-ENG-014",
+      "where": "/approved",
+      "note": "Carries an approved flag."
+    },
+    {
+      "file": "invalid/a-presentation-false.json",
+      "expect": "reject",
+      "code": "DP-ENG-014",
+      "where": "/presentationOnly",
+      "note": "presentationOnly false."
+    },
+    {
+      "file": "invalid/c-noop.json",
+      "expect": "reject",
+      "code": "DP-ENG-015",
+      "where": "/changes/1",
+      "note": "from and to are the same number."
+    },
+    {
+      "file": "invalid/c-type-switch.json",
+      "expect": "reject",
+      "code": "DP-ENG-015",
+      "where": "/changes/0",
+      "note": "A number changed into a string."
+    },
+    {
+      "file": "invalid/c-both-null.json",
+      "expect": "reject",
+      "code": "DP-ENG-015",
+      "where": "/changes/4",
+      "note": "from and to both null."
+    }
+  ],
+  "vectors": [
+    {
+      "id": "key-order",
+      "note": "Keys sorted at every level; arrays keep their order.",
+      "input": "c14n/key-order.json",
+      "expect": "canonical",
+      "canonical": "c14n/key-order.c14n",
+      "sha256": "d7a19538a748ac1ad2425cbe1f5c62fba313992c6aaf09de3b4d209bb6276b0e"
+    },
+    {
+      "id": "utf16-key-order",
+      "note": "Keys sorted by UTF-16 code units: U+1F600 (D83D DE00) sorts before U+FB01, unlike code-point order.",
+      "input": "c14n/utf16-key-order.json",
+      "expect": "canonical",
+      "canonical": "c14n/utf16-key-order.c14n",
+      "sha256": "479aae0db529f57af803860b327235a358474675e5675472215341f7bf48967b"
+    },
+    {
+      "id": "rfc8785-sample",
+      "note": "RFC 8785 section 3.2.2 sample input.",
+      "input": "c14n/rfc8785-sample.json",
+      "expect": "canonical",
+      "canonical": "c14n/rfc8785-sample.c14n",
+      "sha256": "2d5e01a318d0f0879ab568c4be289c8b1f64ef8921a53c6277d5e069978baacb"
+    },
+    {
+      "id": "numbers",
+      "note": "ECMAScript Number-to-String: 1.0 -> 1, -0 -> 0, 1e21 -> 1e+21, 1e20 stays an integer, 1e-7 -> 1e-7, 1e-6 -> 0.000001, 2^53+1 reads as 2^53.",
+      "input": "c14n/numbers.json",
+      "expect": "canonical",
+      "canonical": "c14n/numbers.c14n",
+      "sha256": "5f5c2e64f46b7fd8d965f1ba9646620f61560d65f3284dcd38cb268678e8c5de"
+    },
+    {
+      "id": "strings",
+      "note": "Only \" \\ and control characters are escaped (lower-case \\u00xx); DEL, U+2028, non-ASCII and astral characters are written as UTF-8.",
+      "input": "c14n/strings.json",
+      "expect": "canonical",
+      "canonical": "c14n/strings.c14n",
+      "sha256": "57415ac6be07d704f097bd95dc6912bfca6099cfb45318fe9b86c20fb46a277d"
+    },
+    {
+      "id": "nested",
+      "note": "Nested arrays and objects, empty containers.",
+      "input": "c14n/nested.json",
+      "expect": "canonical",
+      "canonical": "c14n/nested.c14n",
+      "sha256": "e5bad474846ce0b1f556aaa282511c8dd47bf15655d4f8a43c0db7c6acc60425"
+    },
+    {
+      "id": "whitespace",
+      "note": "Insignificant whitespace (CRLF, tabs) disappears.",
+      "input": "c14n/whitespace.json",
+      "expect": "canonical",
+      "canonical": "c14n/whitespace.c14n",
+      "sha256": "ee743f2fa2570a1b5e3270cc405d0456b983ba03ab9cb27552fc6c1a720183c7"
+    },
+    {
+      "id": "scalar",
+      "note": "A top-level scalar.",
+      "input": "c14n/scalar.json",
+      "expect": "canonical",
+      "canonical": "c14n/scalar.c14n",
+      "sha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9"
+    },
+    {
+      "id": "reject-overflow",
+      "note": "1e400 is not a finite double.",
+      "input": "c14n/reject-overflow.json",
+      "expect": "reject",
+      "code": "DP-ENG-016",
+      "where": "/a/0"
+    },
+    {
+      "id": "reject-big-integer",
+      "note": "A 401-digit integer overflows a double.",
+      "input": "c14n/reject-big-integer.json",
+      "expect": "reject",
+      "code": "DP-ENG-016",
+      "where": "/n"
+    },
+    {
+      "id": "reject-lone-surrogate",
+      "note": "A lone surrogate has no UTF-8 form.",
+      "input": "c14n/reject-lone-surrogate.json",
+      "expect": "reject",
+      "code": "DP-ENG-016",
+      "where": "/k"
+    },
+    {
+      "id": "reject-nan",
+      "note": "NaN (a value, not JSON text).",
+      "expect": "reject",
+      "special": "NaN",
+      "code": "DP-ENG-016",
+      "where": "/x/1"
+    },
+    {
+      "id": "reject-infinity",
+      "note": "Infinity.",
+      "expect": "reject",
+      "special": "Infinity",
+      "code": "DP-ENG-016",
+      "where": "/x/1"
+    },
+    {
+      "id": "reject-negative-infinity",
+      "note": "-Infinity.",
+      "expect": "reject",
+      "special": "-Infinity",
+      "code": "DP-ENG-016",
+      "where": "/x/1"
+    },
+    {
+      "id": "reject-undefined",
+      "note": "An undefined member (TypeScript) / a non-JSON object (Python) inside an object.",
+      "expect": "reject",
+      "special": "undefined",
+      "code": "DP-ENG-016",
+      "where": "/x/1/u"
+    },
+    {
+      "id": "reject-function",
+      "note": "A function.",
+      "expect": "reject",
+      "special": "function",
+      "code": "DP-ENG-016",
+      "where": "/x/1"
+    },
+    {
+      "id": "reject-date",
+      "note": "A Date / datetime: not a plain JSON value.",
+      "expect": "reject",
+      "special": "date",
+      "code": "DP-ENG-016",
+      "where": "/x/1"
+    }
+  ]
+}

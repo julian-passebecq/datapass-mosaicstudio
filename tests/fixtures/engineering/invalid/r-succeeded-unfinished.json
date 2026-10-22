@@ -1,0 +1,78 @@
+{
+  "format": "datapass.engineering",
+  "version": 1,
+  "kind": "run-receipt",
+  "runId": "run-0123456789abcdef",
+  "inputDigest": {
+    "alg": "sha256",
+    "over": "datapass-c14n/1",
+    "value": "e7b95e62f953e06b507c72f72804194605b592da5c9d0edb73727020c83e9f2c"
+  },
+  "code": {
+    "version": "0.12.0",
+    "commit": "6ab0756000000000000000000000000000000000"
+  },
+  "model": {
+    "id": "wind-reference",
+    "version": "1",
+    "resolved": "wind-reference@1+weibull-k2"
+  },
+  "status": "succeeded",
+  "cancelRequested": false,
+  "times": {
+    "submittedAt": "2026-10-22T08:00:00.000Z",
+    "startedAt": "2026-10-22T08:00:01.250Z",
+    "finishedAt": null
+  },
+  "checks": {
+    "performed": [
+      "input-bounds",
+      "artifact-schema"
+    ],
+    "notPerformed": [
+      "field-validation",
+      "power-prediction"
+    ]
+  },
+  "coverage": {
+    "consumed": [
+      "meanWindSpeed",
+      "k"
+    ],
+    "ignored": [
+      "airDensity"
+    ],
+    "fixed": [
+      "ratedPower"
+    ]
+  },
+  "artifacts": [
+    {
+      "format": "datapass.engineering",
+      "version": 1,
+      "kind": "artifact-ref",
+      "id": "wind-aep-weibull",
+      "sha256": "edb1de122518f010f48f68ff7ef0b84611bce25475156e5fa00b48b1205fbc62",
+      "mediaType": "application/json",
+      "bytes": 6202,
+      "scope": "public"
+    },
+    {
+      "format": "datapass.engineering",
+      "version": 1,
+      "kind": "artifact-ref",
+      "id": "synthetic-aep-table",
+      "sha256": "d323ede27f5b2415aef49dc5530241715dc08adf77a8b715d4a3788a067a8104",
+      "mediaType": "application/json",
+      "bytes": 1024,
+      "scope": "public"
+    }
+  ],
+  "diagnostics": [
+    {
+      "code": "DP-ART-000",
+      "severity": "info",
+      "message": "SYNTHETIC: illustrative model, not a site assessment."
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "format": "datapass.engineering",
+  "version": 1,
+  "kind": "run-receipt",
+  "runId": "run-0123456789abcdef",
+  "inputDigest": {
+    "alg": "sha256",
+    "over": "datapass-c14n/1",
+    "value": "e7b95e62f953e06b507c72f72804194605b592da5c9d0edb73727020c83e9f2c"
+  },
+  "code": {
+    "version": "0.12.0"
+  },
+  "model": {
+    "id": "wind-reference",
+    "version": "1"
+  },
+  "status": "cancelled",
+  "cancelRequested": true,
+  "times": {
+    "submittedAt": "2026-10-22T08:00:00.000Z",
+    "startedAt": null,
+    "finishedAt": "2026-10-22T08:00:01.250Z"
+  },
+  "checks": {
+    "performed": [],
+    "notPerformed": [
+      "input-bounds"
+    ]
+  },
+  "coverage": {
+    "consumed": [],
+    "ignored": [],
+    "fixed": []
+  },
+  "artifacts": [],
+  "diagnostics": []
+}

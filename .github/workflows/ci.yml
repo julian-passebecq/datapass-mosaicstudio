@@ -135,6 +135,7 @@ jobs:
         run: |
           npm run test:python
           npm run test:python-runtime
+          npm run test:engineering-corpus
       - name: Select and record a real browser
         run: |
           browser="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"

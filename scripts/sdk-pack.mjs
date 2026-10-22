@@ -38,6 +38,7 @@ export const SDK_CONTRACTS=Object.freeze([
   {id:'datapass.concept-spec/1',path:'spec/concept/v1/concept-spec.schema.json'},
   {id:'datapass.artifact/1',path:'src/framework/foundation/artifact.ts'},
   {id:'datapass.preview/1',path:'spec/preview/v1/preview.schema.json'},
+  {id:'datapass.engineering/1',path:'spec/engineering/v1/engineering.schema.json'},
 ]);
 
 const git=(args,options={})=>execFileSync('git',args,{cwd:options.cwd??repo,maxBuffer:1024*1024*1024,...(options.buffer?{}:{encoding:'utf8'})});

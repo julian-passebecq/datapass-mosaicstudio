@@ -27,6 +27,7 @@ JSON lines) report the **same code for the same file**. The differential corpus 
 | `DP-CLI` | client profile and client checks | F213 (reserved, empty) | `src/framework/diagnostics/client.ts` |
 | `DP-STO` | workspace, run and result storage | F205 (001-009), F206-F207 (reserved) | `src/framework/diagnostics/storage.ts` |
 | `DP-BUN` | export bundles (`datapass.bundle` v1, candidate) | F208 | `src/framework/diagnostics/bundle.ts` |
+| `DP-ENG` | `datapass.engineering/1` sidecar records and `datapass-c14n/1` | lane 01 | `src/framework/engineering/contract.ts` (via `src/framework/diagnostics/engineering.ts`) |
 
 ## DP-ART codes
 
@@ -157,3 +158,30 @@ the same refused file (`where`). `DP-BUN-007` also carries the artifact's own `D
 | `DP-BUN-008` | members | `reference-broken` | TS, Python | A run, an input set or a lineage entry names an artifact, hash or run the bundle does not hold, or lineage differs from what the artifact declares. |
 | `DP-BUN-009` | secrets | `secret-key` | TS, Python | A JSON member has a token-shaped key (the key, lowercased without `-`/`_`, ends with token, secret, password, passwd, apikey, authorization, cookie, credential(s) or privatekey). |
 | `DP-BUN-010` | secrets | `secret-value` | TS | Export only: a file would contain the in-memory runtime token. Nothing is exported. |
+
+## DP-ENG codes
+
+Engineering sidecar contract `datapass.engineering/1`, frozen (`src/framework/engineering/contract.ts`,
+`py/datapass_engineering.py`, schema `spec/engineering/v1/engineering.schema.json`, corpus `tests/fixtures/engineering/`,
+guide `spec/engineering/v1/README.md`). Rules run in a fixed order and the first refusal wins; both validators report the
+same code and the same refused location (`where`, a JSON pointer). `DP-ENG-016` is raised by `canonicalJson` /
+`canonical_json` (`datapass-c14n/1`), not by record validation.
+
+| Code | Gate | Rule | Reported by | Meaning |
+|---|---|---|---|---|
+| `DP-ENG-001` | envelope | `engineering-envelope` | TS, Python | Not one bounded, inert JSON object: not JSON (NaN/Infinity tokens included), not an object, over 1 MiB of UTF-8 or 32 levels, or a lone surrogate. |
+| `DP-ENG-002` | envelope | `format` | TS, Python | `format` is not `datapass.engineering` (also for an embedded artifact-ref). |
+| `DP-ENG-003` | envelope | `version` | TS, Python | `version` is not the number 1. |
+| `DP-ENG-004` | envelope | `kind` | TS, Python | `kind` is not `artifact-ref`, `run-receipt`, `selection-binding`, `approval-request` or `parameter-diff`. |
+| `DP-ENG-005` | structure | `unknown-key` | TS, Python | An object has a key its kind does not define (reported in UTF-16 key order). |
+| `DP-ENG-006` | structure | `missing-key` | TS, Python | A required key is missing (a parameter change without `unit` included). |
+| `DP-ENG-007` | structure | `field-invalid` | TS, Python | Wrong JSON type, pattern, range, time or list length. |
+| `DP-ENG-008` | structure | `digest` | TS, Python | A digest is not `{alg: sha256, over: bytes or datapass-c14n/1, value: 64 lowercase hex}`, or an artifact `sha256` is not 64 lowercase hex. |
+| `DP-ENG-009` | semantic | `duplicate-id` | TS, Python | An id, signal, check or parameter appears twice in one list. |
+| `DP-ENG-010` | semantic | `run-status` | TS, Python | Status, times and `cancelRequested` contradict each other. |
+| `DP-ENG-011` | semantic | `model-resolution` | TS, Python | `model.resolved` is null without a `reason`, or a `reason` is given while it is not null. |
+| `DP-ENG-012` | semantic | `disjoint-lists` | TS, Python | A check is both performed and not performed, or a parameter is in two coverage lists. |
+| `DP-ENG-013` | semantic | `binding-status` | TS, Python | `unmapped` with an entity or source, `sourced` without both, `inferred` without an entity. |
+| `DP-ENG-014` | semantic | `approval-state` | TS, Python | An approval request carries approval state (`approved`, `approval_status`, `status`, ...) or `presentationOnly` is not true. |
+| `DP-ENG-015` | semantic | `diff-change` | TS, Python | A change is a no-op (canonically equal, or both null) or switches the value type. |
+| `DP-ENG-016` | c14n | `c14n-value` | TS, Python | `datapass-c14n/1` refused a value: NaN, Infinity, a lone surrogate, undefined, a function or a non-plain object. |
