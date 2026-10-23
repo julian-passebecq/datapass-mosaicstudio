@@ -1,0 +1,61 @@
+{
+  "format": "foil.handoff.integration-manifest/1",
+  "template": false,
+  "instruction": "Pins must refer to newly implemented/tested inputs, not be copied from the handoff baseline.",
+  "lanes": [
+    {
+      "lane": "01",
+      "repository": "julian-passebecq/datapass-mosaicstudio",
+      "implementation_sha": "60c7cac75332cabcf0aa689b2c1988b54130bbae",
+      "package_path": "<releases>/datapass-mosaicstudio/0.13.1-60c7cac/datapass-mosaicstudio-sdk-0.13.1.tar.gz",
+      "package_sha256": "0c7b5449c75bc650bf19d78315e619fba999a3a6b579bb895a5ce8d24384af39",
+      "package_private_delivery": "existing private vault, generic package datapass-mosaicstudio-sdk, version path 0.13.1-60c7cac",
+      "contract_versions": {
+        "datapass.engineering": "1",
+        "datapass-c14n": "1",
+        "datapass.runtime": "1 (additive: Idempotency-Key, cancelRequested, ready)",
+        "datapass.artifact": "1",
+        "datapass.bundle": "1 (candidate)"
+      },
+      "contract_commit": "d20ecd6a3b9e3a74ab497b3c425d1ce2ec649eb5",
+      "engineering_schema_sha256": "6ba8ee851986425c79ce2554d2f990cd0977f825986f6608292b6af81b4f5a83",
+      "ci_sha": "60c7cac75332cabcf0aa689b2c1988b54130bbae",
+      "ci_status": "PASS",
+      "ci_evidence": [
+        "PR #104 head 02c3217f760fcc8130c53f7d2f86233442a08d0a: https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/39872227773 success",
+        "push 60c7cac: https://github.com/julian-passebecq/datapass-mosaicstudio/actions/runs/39874217854 success"
+      ],
+      "receipt": "qa/REL-0.13.1.md"
+    },
+    {
+      "lane": "02",
+      "repository": "julian-passebecq/foil-studio-3d",
+      "implementation_sha": null,
+      "package_path": null,
+      "package_sha256": null,
+      "contract_versions": {},
+      "ci_sha": null,
+      "ci_status": "NOT_RUN",
+      "null_reason": "Not lane 01's scope; filled by lane 02."
+    },
+    {
+      "lane": "03",
+      "repository": "julian-passebecq/foil-ai",
+      "implementation_sha": null,
+      "package_path": null,
+      "package_sha256": null,
+      "contract_versions": {},
+      "ci_sha": null,
+      "ci_status": "NOT_RUN",
+      "null_reason": "Not lane 01's scope; filled by lane 03."
+    }
+  ],
+  "donors": [],
+  "fixture_manifest_sha256": null,
+  "fixture_manifest_sha256_reason": "No combined fixture manifest exists yet (integration step, not lane 01).",
+  "integration_results": [],
+  "data_classification": "SYNTHETIC_ONLY",
+  "vectors_enabled": false,
+  "cloud_enabled": false,
+  "release_classification": "PATCH_0_13_1_PRIVATE_CANDIDATE_LOCAL_AND_CI_QUALIFIED"
+}
