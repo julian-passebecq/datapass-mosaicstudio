@@ -31,6 +31,14 @@ The archive content comes from the HEAD commit, never from uncommitted files, so
 Packing refuses any path outside the allowlist and any test, notebook, example, `clients/`, `qa/`, `.env*`, key or
 credential file, and any requirement line that is not an exact pin.
 
+After packing and verifying the selected outputs, run `node scripts/release-manifest.mjs --out <evidence-dir>`
+to include `dist-runtime/` in the consolidated release inventory. Its `runtime-companion` output hashes the
+archive and manifest bytes; `runtimeArchive` summarizes the identity declared by `runtime-companion.json`.
+This inventory builds, starts and publishes nothing; use `runtime:verify` below to verify the companion.
+A browser-only build needs no companion: it is recorded as absent and `runtimeArchive` is `null`.
+With `--compare <older-release-manifest.json>`, an older manifest that did not inventory the companion
+reports `MISSING` for that comparison. Leave already delivered manifests and packages immutable.
+
 ## Check a companion
 
 ```

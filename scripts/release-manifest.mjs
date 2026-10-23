@@ -2,10 +2,11 @@
 /**
  * Hash the built release outputs of this checkout (FR-07). Builds nothing itself: run, in this order,
  *   npm ci && npm run build && npm run sdk:pack && npm run build:client -- <id>   (for each selected client)
+ *   npm run runtime:pack   (only when the optional Python companion is part of this release)
  * then
  *   node scripts/release-manifest.mjs --out <evidence dir> [--compare <other release-manifest.json>]
  *
- * Writes <out>/release-manifest.json: for every output (workbench dist/, each dist-clients/<id>/, dist-sdk/, the
+ * Writes <out>/release-manifest.json: for every output (workbench dist/, each dist-clients/<id>/, dist-sdk/, dist-runtime/, the
  * committed standalone viewer) the file count, bytes, every file's sha256 and a tree sha256 (sha256 of the sorted
  * "sha256  path" lines), plus the source commit and tree state. --compare reports per output whether another
  * checkout's manifest has the same tree hash (reproducibility). The outputs themselves are not copied anywhere.
@@ -33,12 +34,14 @@ function output(id,kind,rel){
 let commit=null,clean=null;
 try{commit=execFileSync('git',['rev-parse','HEAD'],{cwd:repo,encoding:'utf8'}).trim();clean=execFileSync('git',['status','--porcelain'],{cwd:repo,encoding:'utf8'}).trim()==='';}catch{/* not a git checkout */}
 const pkg=JSON.parse(readFileSync(path.join(repo,'package.json'),'utf8'));
-const outputs=[output('workbench','browser build (npm run build)','dist'),output('concept-viewer','standalone viewer (committed, npm run build:concept-standalone)','dist-standalone/concept-viewer.html'),output('sdk','SDK release folder (npm run sdk:pack)','dist-sdk')];
+const outputs=[output('workbench','browser build (npm run build)','dist'),output('concept-viewer','standalone viewer (committed, npm run build:concept-standalone)','dist-standalone/concept-viewer.html'),output('sdk','SDK release folder (npm run sdk:pack)','dist-sdk'),output('runtime-companion','optional Python companion (npm run runtime:pack)','dist-runtime')];
 const clientsDir=path.join(repo,'dist-clients');
 if(existsSync(clientsDir))for(const id of readdirSync(clientsDir).sort())if(statSync(path.join(clientsDir,id)).isDirectory())outputs.push(output('client:'+id,'selected client build (npm run build:client)','dist-clients/'+id));
 let sdkArchive=null;
 try{const m=JSON.parse(readFileSync(path.join(repo,'dist-sdk','sdk-release.json'),'utf8'));sdkArchive={name:m.archive.name,bytes:m.archive.bytes,sha256:m.archive.sha256,sourceCommit:m.sourceCommit,sourceTreeClean:m.sourceTreeClean,files:m.files.length};}catch{/* not packed */}
-const manifest={format:'datapass.release-manifest',version:1,package:pkg.name,packageVersion:pkg.version,sourceCommit:commit,sourceTreeClean:clean,generatedAt:new Date().toISOString(),node:process.version,platform:`${process.platform}-${process.arch}`,sdkArchive,outputs};
+let runtimeArchive=null;
+try{const m=JSON.parse(readFileSync(path.join(repo,'dist-runtime','runtime-companion.json'),'utf8'));runtimeArchive={name:m.archive.name,bytes:m.archive.bytes,sha256:m.archive.sha256,sdkVersion:m.sdkVersion,sourceCommit:m.sourceCommit,sourceTreeClean:m.sourceTreeClean,files:m.files.length};}catch{/* not packed or no readable companion manifest; outputs still inventory the bytes */}
+const manifest={format:'datapass.release-manifest',version:1,package:pkg.name,packageVersion:pkg.version,sourceCommit:commit,sourceTreeClean:clean,generatedAt:new Date().toISOString(),node:process.version,platform:`${process.platform}-${process.arch}`,sdkArchive,runtimeArchive,outputs};
 if(compare){
   const other=JSON.parse(readFileSync(compare,'utf8'));
   manifest.comparison={against:{sourceCommit:other.sourceCommit,platform:other.platform,generatedAt:other.generatedAt},outputs:outputs.map(o=>{const t=other.outputs.find(x=>x.id===o.id);
