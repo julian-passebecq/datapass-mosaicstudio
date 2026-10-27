@@ -27,8 +27,8 @@ npm run client:new -- my-project --family content --title "Client project"
 npm run client:context -- my-project
 npm run client:check -- my-project
 npm run build:client -- my-project
-npm run dev
-# Open the printed address with ?app=my-project
+npm run client:dev -- my-project
+# Open the exact loopback URL printed by the command
 ```
 
 Read `docs/recipes/START.md`, then the generated `.generated/client-context/<id>/GUIDE.md`. Five families remain: content, knowledge, analytics, spatial and replay. Families are compositions, not appearance restrictions. Actual blocks/resources determine optional capabilities.
