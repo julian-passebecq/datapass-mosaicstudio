@@ -1,6 +1,46 @@
 # DataPass MosaicStudio
 
+A browser analytics workbench and source SDK for building technical websites. The workbench runs SQL with DuckDB-WASM; the SDK composes typed results, charts, documents and optional spatial views into focused client applications.
+
+**Status: alpha source SDK.** The checked-in version is 0.13.1. Local release packages, this public source repository and a deployed website are separate deliverables. The repository does not currently grant a general reuse license; see [the license inventory](docs/licenses/THIRD_PARTY_INVENTORY.md).
+
+## Engineering overview
+
+| Concern | Implementation to inspect |
+| --- | --- |
+| Separate reusable framework from client logic | [Framework source](src/framework/) and [client applications](clients/) |
+| Calculate once, inspect several representations | [Artifact and runtime contracts](spec/), [foundation guide](docs/FOUNDATION_KIT.md) |
+| Run real SQL in the browser; use Python only through an explicit local service | [Workbench guide](docs/WORKBENCH_AUTHORING.md), [runtime companion](docs/RUNTIME_COMPANION.md) |
+| Check source, contracts, client builds and browser behavior | [Tests](tests/), [CI workflow](.github/workflows/ci.yml), [recorded CI runs](https://github.com/julian-passebecq/datapass-mosaicstudio/actions/workflows/ci.yml) |
+
+The reference applications use synthetic data and illustrative geometry. Their results demonstrate software behavior, not validated client engineering outcomes. Optional capabilities are selected per client; a content-only website does not need the analytics workbench or 3D.
+
+## Start with the smallest useful client
+
+Prerequisites: **Node.js 22.16 or later** (CI uses Node 22), npm and Git. Run these commands from a clean checkout. Bootstrap fetches the three public, commit-pinned repositories in [`upstreams.lock.json`](upstreams.lock.json); the first run needs network access. Python is optional for this content-only client and is needed separately for local runtime features.
+
+```sh
+npm ci
+npm run bootstrap
+npm run client:families
+npm run client:new -- my-project --family content --title "Client project"
+npm run client:context -- my-project
+npm run client:check -- my-project
+npm run build:client -- my-project
+npm run dev
+# Open the printed address with ?app=my-project
+```
+
+Read `docs/recipes/START.md`, then the generated `.generated/client-context/<id>/GUIDE.md`. Five families remain: content, knowledge, analytics, spatial and replay. Families are compositions, not appearance restrictions. Actual blocks/resources determine optional capabilities.
+
+A compact portfolio can stay content-only. It does not need a database, task journal, 3D or knowledge service. The repository still installs its pinned development dependency set; capability planning isolates delivered code and author context, not separate npm installation packages.
+
+## Source layout and release history
+
 **v0.13 alpha source SDK for AI-built technical websites, with a browser authoring workbench.** Client content, approved data, domain calculations and page composition live under `clients/<id>/`; reusable state, contracts and rendering live under `src/framework/`. One repository, separate entry points: a lightweight presentation surface (selected client builds, the standalone concept viewer) and a traditional browser workbench at the root. T3 is an optional consumer, never a prerequisite.
+
+<details>
+<summary>Version history and local release boundaries</summary>
 
 **0.13.1** (local release, no tag or publication) is a patch of 0.13.0: release archive extraction, runtime pairing and mobile provenance hardened (#102), and the wind reference notebook records its Weibull `k` in the exported artifact lineage (#103). No contract or stored format changed. Release notes: [`docs/RELEASE_NOTES.md`](docs/RELEASE_NOTES.md#0131-2026-10-23); upgrade from and rollback to 0.13.0: [`docs/CONSUMING.md`](docs/CONSUMING.md#0130--0131).
 
@@ -15,6 +55,8 @@
 **0.10.0** (local release, no tag or publication) completed the full-release packet of 2026-10-10: Artifact contract parity (Schema/TypeScript/Python), an opt-in Jupyter kernel adapter, `.ipynb` exchange and a durable result store, real React/Contoso consumer interop, the finished coding/architecture explanations, the recovery record and a hashed, install-tested package set. Install, upgrade from 0.9.0, rollback, license status and acceptance mapping: [`docs/RELEASE_0.10.md`](docs/RELEASE_0.10.md). No license is granted (see [`docs/licenses/THIRD_PARTY_INVENTORY.md`](docs/licenses/THIRD_PARTY_INVENTORY.md)); public SDK publication is not authorized.
 
 0.9 extends 0.8 (rc3 plus the night packages, PR #34; RC history in `docs/RELEASE_0.8_RC.md`). Release notes, acceptance mapping and evidence: [`docs/RELEASE_0.9.md`](docs/RELEASE_0.9.md). No deployment, package publication or donor-repository modification is implied.
+
+</details>
 
 ## What's new in 0.9
 
@@ -33,24 +75,6 @@
 - **galaxy-navigator** ([`clients/galaxy-navigator/`](clients/galaxy-navigator/)): one registry snapshot shown as a 3D galaxy, an exportable isometric SVG, a graph, a list, a contract matrix and a board, with one shared selection.
 - **concept-viewer** ([`clients/concept-viewer/`](clients/concept-viewer/)): reference viewer for concept spec files (open, drop or `?spec=`), with pan/zoom on the isometric view, SVG export and a film.
 - **Fabric Bricks** ([`clients/fabric-bricks/`](clients/fabric-bricks/)) is a **draft**: a provisional, synthetic reference client kept without further investment; architecture concept visuals continue in concept spec and Architecture Atlas.
-
-## Start with the smallest useful client
-
-```sh
-npm ci
-npm run bootstrap
-npm run client:families
-npm run client:new -- my-project --family content --title "Client project"
-npm run client:context -- my-project
-npm run dev
-# Open the printed address with ?app=my-project
-npm run client:check -- my-project
-npm run build:client -- my-project
-```
-
-Read `docs/recipes/START.md`, then the generated `.generated/client-context/<id>/GUIDE.md`. Five families remain: content, knowledge, analytics, spatial and replay. Families are compositions, not appearance restrictions. Actual blocks/resources determine optional capabilities.
-
-A compact portfolio can stay content-only. It does not need a database, task journal, 3D or knowledge service. The repository still installs its pinned development dependency set; capability planning isolates delivered code and author context, not separate npm installation packages.
 
 ## New: calculate once, inspect several representations
 
