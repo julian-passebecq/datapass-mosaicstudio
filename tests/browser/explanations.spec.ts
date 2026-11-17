@@ -8,7 +8,7 @@ import {clientCspFor} from '../../scripts/client-csp.mjs';
 // light content/motion outputs load no database, kernel, WebGL or T3 (request capture plus a WebGL context spy).
 // FR-06: the draft Fabric Bricks route still works.
 // Reference clients run on the workbench preview (baseURL). Non-reference clients are not in the default production
-// workbench (AGENTS.md rule 17), so they are built as selected clients and served with their production CSP.
+// workbench (FRAMEWORK-CONTRACTS rule 17), so they are built as selected clients and served with their production CSP.
 let errors: string[] = [], requests: string[] = [], origin = '';
 // Code that would bring a database, WebGL or 3D renderer: wasm and JS chunks only. A shared stylesheet such as
 // scene3d-*.css carries no renderer; the WebGL-context spy and the canvas count below cover the runtime side.

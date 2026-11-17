@@ -10,7 +10,7 @@ build_data.py:
 Nothing is fetched and nothing is written here. The bundles stay on the local disk of whoever builds;
 the repository never contains producer output. Every file read is checked against the byte count and
 sha256 listed in export.json. Anything unexpected raises ExportError with a readable message, so a bad
-export leaves the build failing instead of half-rendering (AGENTS.md rule 8).
+export leaves the build failing instead of half-rendering (FRAMEWORK-CONTRACTS rule 8).
 """
 from __future__ import annotations
 

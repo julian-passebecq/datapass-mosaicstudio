@@ -3,7 +3,7 @@ import {existsSync,readdirSync,lstatSync} from 'node:fs';
 import path from 'node:path';
 import {clientStatusFor} from './client-csp.mjs';
 const references=['wind-reference','operations-reference','architecture-reference','experience-reference','energy-replay-reference','motion-reference','foundation-reference','model-reference'];
-/** AGENTS.md rule 17 public references (read-only copy for client:check; the build list above is the source). */
+/** FRAMEWORK-CONTRACTS rule 17 public references (read-only copy for client:check; the build list above is the source). */
 export const referenceClients:readonly string[]=Object.freeze([...references]);
 export function validClientId(id:string){return /^[a-z][a-z0-9-]{0,59}$/.test(id);}
 export function clientDirectory(id:string){if(!validClientId(id))throw new Error('Invalid client id');const dir=path.resolve('clients',id);if(!existsSync(path.join(dir,'app.ts'))||lstatSync(dir).isSymbolicLink())throw new Error('Client does not exist or is a symlink: '+id);return dir;}

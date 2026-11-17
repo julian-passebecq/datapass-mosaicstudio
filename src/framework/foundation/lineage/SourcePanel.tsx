@@ -5,7 +5,7 @@ import './lineage.css';
 
 /**
  * Citation source panel: the cited file with the exact line range highlighted and scrolled into view.
- * Plain navigation over supplied, inert text (AGENTS rule 28): not a live repository or an execution receipt.
+ * Plain navigation over supplied, inert text (FRAMEWORK-CONTRACTS rule 28): not a live repository or an execution receipt.
  */
 export function SourcePanel({sources,focus,onClose}:{sources:readonly SourceArtifact[];focus:EvidenceLink|null;onClose?():void}){
   const source=focus?sources.find(s=>s.path===focus.path):undefined;
