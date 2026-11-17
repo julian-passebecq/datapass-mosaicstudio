@@ -11,13 +11,13 @@ A browser analytics workbench and source SDK for building technical websites. Th
 | Separate reusable framework from client logic | [Framework source](src/framework/) and [client applications](clients/) |
 | Calculate once, inspect several representations | [Artifact and runtime contracts](spec/), [foundation guide](docs/FOUNDATION_KIT.md) |
 | Run real SQL in the browser; use Python only through an explicit local service | [Workbench guide](docs/WORKBENCH_AUTHORING.md), [runtime companion](docs/RUNTIME_COMPANION.md) |
-| Check source, contracts, client builds and browser behavior | [Tests](tests/), [CI workflow](.github/workflows/ci.yml), [recorded CI runs](https://github.com/julian-passebecq/datapass-mosaicstudio/actions/workflows/ci.yml) |
+| Check source, contracts, builds and client behavior | [Tests](tests/), [GitLab CI](.gitlab-ci.yml), [private mirror pipelines](https://gitlab.com/juliandatapass-group/datapass-mosaicstudio/-/pipelines); [GitHub Actions](.github/workflows/ci.yml) also covers Python and browsers |
 
 The reference applications use synthetic data and illustrative geometry. Their results demonstrate software behavior, not validated client engineering outcomes. Optional capabilities are selected per client; a content-only website does not need the analytics workbench or 3D.
 
 ## Start with the smallest useful client
 
-Prerequisites: **Node.js 22.16 or later** (CI uses Node 22), npm and Git. Run these commands from a clean checkout. Bootstrap fetches the three public, commit-pinned repositories in [`upstreams.lock.json`](upstreams.lock.json); the first run needs network access. Python is optional for this content-only client and is needed separately for local runtime features.
+Prerequisites: **Node.js 22.16 or later**, npm and Git. GitHub Actions uses Node 22; the GitLab job uses the installed Node on the fleet's Windows `imac` runner and records its version in the log. Run these commands from a clean checkout. Bootstrap fetches the three public, commit-pinned repositories in [`upstreams.lock.json`](upstreams.lock.json); the first run needs network access. Python is optional for this content-only client and is needed separately for local runtime features.
 
 ```sh
 npm ci
