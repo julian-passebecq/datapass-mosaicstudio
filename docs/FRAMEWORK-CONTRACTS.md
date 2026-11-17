@@ -1,0 +1,43 @@
+# MosaicStudio framework contracts
+
+The design contracts of the framework and the reference clients. Read the ones for the capability you touch.
+
+- This repository is a web-first framework/application, not a VS Code clone or notebook IDE.
+- Preserve the upstream visual engines. `.upstream/` is ignored, immutable and commit-pinned. Do not edit those directories or copy their application shells into the framework.
+- Existing visual stories use VizForge; semantic explanations use ConceptMotion. D3/React Flow/Three are rendering libraries, not a reason to create duplicate story clocks.
+- SQLRooms and UWData Mosaic own the current data-workbench concerns. The small website runtime is not a new SQL engine or a replacement Mosaic query coordinator.
+- Keep source SDK types/validators/runtime under `src/framework/`; client data, model logic, pages and visual resources belong under `clients/<id>/`.
+- Client generation must not overwrite existing folders. Selected-client builds must not include other client source/public data or workbench WASM by default.
+- Imported documents stay inert. No eval, Function constructor, shell, Python or executable SQL snippets in imported UI manifests. Trusted source bindings are a separate boundary.
+- Validate field values and complete saved-state snapshots before changing state. A bad import must leave the current application unchanged.
+- Model inputs and view state are distinct. Camera, selection and playback updates must not rerun unrelated model calculations or server tasks.
+- Tasks are explicit, bounded and cancellable. Ignore stale/superseded results. A progress animation is not proof of computation.
+- No dataset bytes, task results, source functions or secrets in saved UI state. User input values may still be sensitive; disclose this before export.
+- Reference data and geometry must be labelled synthetic. No invented client evidence, model accuracy, scientific validation, runtime execution or production status.
+- Responsive layout and reduced-motion/manual controls are release requirements. Inspect actual rendered screenshots; do not approve only source-level tests or generated mockups.
+- Public website builds are not access control. Client data, documentation and public assets must be approved before publication.
+- Public reference clients are `wind-reference`, `operations-reference`, `architecture-reference`, `experience-reference`, `energy-replay-reference`, `motion-reference`, `foundation-reference`, and `model-reference`. The default production workbench must not include arbitrary new clients.
+- Read `docs/recipes/START.md` and the client-focused generated guide first. Use the longer AI/experience guides only for the capabilities actually needed.
+- An explorer has one selected identity across Spatial, Map and Library. Context facets, camera targets and an explicit open-project action must remain separate concepts; do not duplicate content or selection state per renderer.
+- Native scroll tours are optional. Do not intercept wheel input or remove accessible direct controls. Pause tour following for direct interaction, restored state, hidden pages and reduced motion.
+- Explorer state must be jointly validated and updated atomically through the helpers. Individual valid field values can still form an invalid combined context.
+- A real client may justify a generic framework extension. Isolate it, document it and prove it with a concrete consumer plus regressions. Keep arbitrary client-specific features in client-owned TSX rather than mutating the shared framework for every page.
+- The engineering replay consumes supplied samples. Reuse the existing player scheduler; never invent observations, silently fill missing data, add an unrelated autoplay timer or treat illustrative geometry as a validated Foil'o model.
+- Custom components should declare minimum `customCapabilities`; undeclared legacy components retain all renderers. This is a build contract, not a security sandbox.
+- Selected-client build evidence must confirm optional 3D is absent where unneeded and only requested after a visitor chooses it when the default is 2D. Keep family metadata out of business/model logic.
+- Authored motion is an optional SVG/D3 capability. Isometric projection must not force Three.js or a data-workbench dependency. Keep source-owned narrative and semantic IDs separate from renderer state.
+- Reuse the original VizForge player for progression. D3 transitions are finite visual interpolation, not another autoplay or simulation clock. Seek/reverse/restore select deterministic targets; never reexecute domain actions.
+- SourceArtifact text and exact evidence references are public, inert excerpts. Do not treat an authored state or code reference as proof of execution, authorization or client correctness.
+- WorkspaceShell, SourceReader and MotionViewport are separately reusable source components. Do not force the whole workbench or motion application shell onto every client.
+- Artifact views reuse existing renderers; changing a representation or inspector must not run domain calculations. ViewProfile is presentation filtering, not an access-control or redaction boundary.
+- RunJournal observes SiteRuntime; it must never become a second scheduler. Synchronous task-run observers are read-only and failures must not corrupt task results. History is bounded and in-memory unless a client explicitly supplies approved storage.
+- Capture exact declared inputs and distinguish observed outcomes from declared model/provider metadata. Local dependency revisions are not content hashes or verified cloud lineage. An unobserved terminal outcome is not a cancellation or success.
+- Run/artifact exports include potentially sensitive result data. They are separate from saved UI values and require deliberate sharing review. Never silently retain old results under a failed/new run.
+- Static knowledge is literal search over approved excerpts, not automatic RAG. Authored summaries and exact excerpts must remain distinct. Check the actual serialized context byte size, not a differently formatted preview.
+- Semantic navigation uses existing view fields with source-only joint validation. Projection/facet changes preserve identity; hidden selection is not erased. Real Galaxy data must come from its canonical registry.
+- Publication metadata defaults to preview/noindex. Public mode requires an explicit canonical URL and approved source-owned assets. Robots directives are not authentication, and metadata generation is not deployment or full SSR.
+- The compact portfolio does not require spatial navigation, a journal, SQLRooms or 3D. Foil'o geometry/physics cannot be inferred from a conventional turbine reference. The five clients are pressure tests, not five products completed by a framework pass.
+- Imported model geometry uses the bounded static GLB profile only. Verify exact bytes and semantic node ownership before the pinned GLTFLoader decodes them. Do not weaken the profile to make an arbitrary asset load.
+- A model part ID is a semantic contract tied to the approved hashed file, not a node name guess. Every rendered mesh has one non-overlapping semantic owner. Asset integrity is not license, scientific or engineering validation.
+- Model selection, camera, exploded amount, wireframe/isolate/cutaway and annotations are view state. They must not rerun domain calculations. Reuse the shared Three viewport and original StoryPlayer rather than creating a model-specific render/playback loop.
+- `model3d` is optional. Do not add it, Three.js or GLTFLoader to a compact portfolio or ordinary analytical client without an actual spatial requirement. Unsupported textures, codecs, animations or CAD behavior require a separate measured extension.
