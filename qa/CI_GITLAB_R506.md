@@ -29,6 +29,11 @@ Validation: the GitHub PR body records the final head SHA, the exact-head
 GitLab pipeline URL/status and the independent review result. Pipeline history:
 https://gitlab.com/juliandatapass-group/datapass-mosaicstudio/-/pipelines?ref=ci%2Fgitlab-pipeline
 
+Independent Sonnet 5.5 high review of the initial CI commit found no blocker.
+Its coverage concerns are documented above and in AGENTS.md; added an explicit
+Node 22.16 minimum check. A fresh mirror has no earlier CRLF checkout to reuse;
+the job's checkout environment keeps LF for subsequent runs.
+
 Open questions: none. Rollback: revert the CI/documentation commits on GitHub
 and push the reverted branch to the mirror; leave the private mirror and its
 pipeline history intact. No deployment or merge was performed.

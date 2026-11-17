@@ -4,7 +4,7 @@ A browser analytics workbench (DuckDB-WASM) and a source SDK for technical websi
 
 ## Build and test
 - `npm test`, `npm run typecheck`, the contract checks, a production build and the browser checks (`npm run test:browser`). Node 22.16 or later; `npm run bootstrap` fetches the commit-pinned upstreams in `upstreams.lock.json`.
-- CI: private GitLab mirror `juliandatapass-group/datapass-mosaicstudio`, remote `gitlab`; `.gitlab-ci.yml` runs core tests, contracts, typecheck/production build and client/visual checks on `local-windows, imac`. Push branches to both remotes and quote the GitLab pipeline URL in the GitHub PR. The existing GitHub Actions Studio web gate also covers Python and browser flows; the GitLab job does not replace that broader qualification.
+- CI: private GitLab mirror `juliandatapass-group/datapass-mosaicstudio`, remote `gitlab`; `.gitlab-ci.yml` runs core tests, contracts, typecheck/production build and client/visual checks on `local-windows, imac`. Python-dependent tests may skip when their prerequisites are absent. Push branches to both remotes and quote the GitLab pipeline URL in the GitHub PR. The existing GitHub Actions Studio web gate is broader: it also covers Python/Jupyter, browser/product-loop flows, isolated client builds, fixtures, doctor and release-package verification. The GitLab job is a subset of that qualification.
 
 ## Guidelines
 - `.upstream/` is pinned and never edited, so upstream updates stay a clean pull.

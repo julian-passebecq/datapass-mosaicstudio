@@ -24,6 +24,8 @@ studio-tests:
     - $env:PATH = 'C:\Program Files\nodejs;' + $env:PATH
     - node --version
     - if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+    - node -e "const [major,minor]=process.versions.node.split('.').map(Number); if(major<22||(major===22&&minor<16)){console.error('Node 22.16 or later required');process.exit(1)}"
+    - if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     - npm.cmd ci --no-audit --no-fund
     - if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
     - npm.cmd run bootstrap
