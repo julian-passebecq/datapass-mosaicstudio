@@ -223,7 +223,7 @@ Clients in `clients/`. "Public reference" = listed in `AGENTS.md` rule 17. Famil
 | Client screenshots | `npm run client:capture` | kept |
 | SDK release archive + manifest | `scripts/sdk-pack.mjs` | new |
 
-Run and journal exports hold result data and are separate from saved UI state (AGENTS.md rule 33).
+Run and journal exports hold result data and are separate from saved UI state (FRAMEWORK-CONTRACTS rule 33).
 
 ## 8. Contracts
 

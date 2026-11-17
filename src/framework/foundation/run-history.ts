@@ -2,7 +2,7 @@
  * A reference records what was observed (ids, declared metadata, captured inputs, outcome, timestamps,
  * artifact id) and never the artifact payload, rows, task messages, source functions or secrets.
  * Restored references are labelled restored: they were not rerun and their results were not kept.
- * Without `AppDefinition.runHistory` nothing here runs and no storage is touched (AGENTS.md rule 31). */
+ * Without `AppDefinition.runHistory` nothing here runs and no storage is touched (FRAMEWORK-CONTRACTS rule 31). */
 import type {Manifest,Scalar} from '../types.ts';
 import {identifier,strict,text,object} from '../guards.ts';
 import {boundedJson,freezeValue,integerRange} from './safety.ts';

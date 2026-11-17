@@ -13,7 +13,7 @@ for(const id of ids){
   const dir=path.resolve('clients',id);if((await lstat(dir)).isSymbolicLink())throw new Error('Symbolic client directory refused');
   // F213: every client declares a status; a missing profile is refused like a missing status (DP-CLI-001).
   const profile=await readClientProfile(id),status=validateClientStatus(profile?.status,id);
-  if((status==='reference')!==referenceClients.includes(id))throw new Error(`${CLIENT_STATUS_INVALID} Client ${id}: status "reference" is reserved for the AGENTS.md rule 17 public references (${referenceClients.join(', ')}). Fix: use "prototype", "draft" or "frozen".`);
+  if((status==='reference')!==referenceClients.includes(id))throw new Error(`${CLIENT_STATUS_INVALID} Client ${id}: status "reference" is reserved for the FRAMEWORK-CONTRACTS rule 17 public references (${referenceClients.join(', ')}). Fix: use "prototype", "draft" or "frozen".`);
   const definition=await loadClient(id);
   await checkModelAssets(definition,dir);
   const runtime=new SiteRuntime(definition);if(runtime.manifest.id!==id)throw new Error('Folder and app id differ: '+id);
