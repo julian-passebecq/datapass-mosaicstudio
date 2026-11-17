@@ -16,9 +16,12 @@ studio-tests:
   variables:
     NODE_OPTIONS: --max-old-space-size=4096
     # Keep checkout bytes stable for source-copy and generated-contract tests.
-    GIT_CONFIG_COUNT: '1'
+    GIT_CONFIG_COUNT: '2'
     GIT_CONFIG_KEY_0: core.autocrlf
     GIT_CONFIG_VALUE_0: 'false'
+    # Pinned upstreams contain deep snapshot paths; also inherited by bootstrap.
+    GIT_CONFIG_KEY_1: core.longpaths
+    GIT_CONFIG_VALUE_1: 'true'
   script:
     - $ErrorActionPreference = 'Stop'
     - $env:PATH = 'C:\Program Files\nodejs;' + $env:PATH

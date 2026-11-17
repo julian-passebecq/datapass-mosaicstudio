@@ -37,3 +37,15 @@ the job's checkout environment keeps LF for subsequent runs.
 Open questions: none. Rollback: revert the CI/documentation commits on GitHub
 and push the reverted branch to the mirror; leave the private mirror and its
 pipeline history intact. No deployment or merge was performed.
+
+The first real run on `imac` failed in upstream bootstrap because Git refused
+deep Windows paths. Added job-scoped `core.longpaths=true`, inherited by the
+bootstrap's child Git commands. The red run also proves failures propagate:
+https://gitlab.com/juliandatapass-group/datapass-mosaicstudio/-/pipelines/3079625071
+The shared imac runner had a queue of about 20 jobs, so qualification used a
+temporary project runner on the same machine, with the same tags and shell,
+an isolated build folder, and one job per invocation. Its registration is
+removed after each run; the shared runner and other jobs are untouched.
+
+Local verification passed: 836 tests passed, 6 skipped, 0 failed; contract drift,
+production build/typecheck and all 20 client/visual contract checks passed.
