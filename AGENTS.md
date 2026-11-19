@@ -1,6 +1,6 @@
 # DataPass MosaicStudio
 
-A browser analytics workbench (DuckDB-WASM) and a source SDK for technical websites. The framework lives in `src/framework/`; each client's data, model logic, pages and assets live in `clients/<id>/`. DataPass Studio releases are built from here. Start small: `docs/recipes/START.md`, then `npm run client:families` and `npm run client:context -- <id>`. `docs/FRAMEWORK-CONTRACTS.md` holds the design contracts per capability.
+A browser analytics workbench (DuckDB-WASM) and a source SDK for technical websites. The framework lives in `src/framework/`; each client's data, model logic, pages and assets live in `clients/<id>/`. DataPass Studio releases are built from here. Start small: `docs/recipes/START.md`, then `npm run client:families` and `npm run client:context -- <id>`. `docs/FRAMEWORK-CONTRACTS.md` holds the design contracts per capability. Project log: `LOG.md`.
 
 ## Build and test
 - `npm test`, `npm run typecheck`, the contract checks, a production build and the browser checks (`npm run test:browser`). Node 22.16 or later; `npm run bootstrap` fetches the commit-pinned upstreams in `upstreams.lock.json`.
@@ -13,5 +13,8 @@ A browser analytics workbench (DuckDB-WASM) and a source SDK for technical websi
 - Reference data and geometry are labelled synthetic; no invented client evidence, accuracy or production status.
 - A public build is not access control: client data and assets are approved before anything is published.
 - Look at real rendered screenshots, not only source-level tests.
+
+## Log
+Append one line to `LOG.md` for each completed change. Include UTC time, backlog row, what changed and a proof reference. Add corrections as new entries. Read new entries from the app root with `python3 ~/work/record/bin/since.py LOG.md --reader <your-role>`.
 
 How work flows: the fleet guideline every session loads (`~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md`). CI recipe and runners: datapass-fleet-facade `AGENTS.md`.
